@@ -461,6 +461,66 @@ run('schedule-tool', async t => {
         while (S.hi > h1) re.undo();
         out.barUndo = JSON.stringify(S.data.trump.schedule) === sch0;
 
+        // ---- 分割、Shift 多選、合併（挑留哪筆）／刪除多筆、只有一筆也能拖、選單不超出畫面 ----
+        const segEl = (i, k = 'stay') => tb().querySelector(`.seg.${k}[data-i="${i}"]`);
+        const clickSeg = (i, shiftKey = false) => segEl(i).dispatchEvent(new MouseEvent('click', {bubbles: true, cancelable: true, shiftKey}));
+        const selIs = () => [...tb().querySelectorAll('.seg.stay.sel')].map(s => +s.dataset.i);
+        await ctxBar(6 * 60 + 23);
+        const spNear = mItems(0).find(b => b.textContent.startsWith('分割'));
+        out.splitNear = [spNear?.textContent, spNear?.disabled, spNear?.title];
+        await ctxBar(12 * 60 + 2);
+        out.splitMenu = mItems(0).map(b => b.textContent);
+        mItems(0).find(b => b.textContent.startsWith('分割')).click();
+        out.split = [JSON.stringify(S.data.trump.schedule[1]), S.data.trump.schedule.length, S.schSel.i, S.hi - h1];
+        // 單選 0 → Shift＋點 1：反白兩段、卡片區寫已選 2 筆
+        clickSeg(0); clickSeg(1, true);
+        out.multi = [selIs(), document.querySelector('#view .schslot')?.textContent];
+        // 右鍵範圍內：只有合併／刪除；合併子選單同內容去重
+        await ctxBar(8 * 60);
+        out.multiMenu = mItems(0).map(b => b.textContent);
+        hover(0, /^合併/);
+        out.mergeL1 = mItems(1).map(b => b.textContent);
+        mItems(1)[0].click();
+        out.merged = [JSON.stringify(S.data.trump.schedule) === sch0, S.schSel.i, !S.schMulti];
+        re.undo(); re.render();
+        // 選 1 → Shift＋點 2（床），合併留床：時間用第 1 筆的
+        clickSeg(1); clickSeg(2, true);
+        await ctxBar(13 * 60);
+        hover(0, /^合併/);
+        out.mergeL1b = mItems(1).map(b => b.textContent);
+        mItems(1).find(b => b.textContent.includes('bed')).click();
+        out.mergedBed = JSON.stringify(S.data.trump.schedule);
+        re.undo(); re.render();
+        // 右鍵範圍外：回到單選選單
+        clickSeg(1); clickSeg(2, true);
+        await ctxBar(8 * 60);
+        out.outside = [mItems(0)[0]?.textContent.startsWith('插入作息'), !S.schMulti, selIs()];
+        document.querySelectorAll('.ctxmenu').forEach(m => m.remove());
+        // 刪除 2 筆 → 剩一筆
+        clickSeg(1); clickSeg(2, true);
+        await ctxBar(13 * 60);
+        mItems(0).find(b => b.textContent === '刪除 2 筆').click();
+        out.delRange = [JSON.stringify(S.data.trump.schedule), S.schSel.i];
+        // 只有一筆：抓 06:20 的分界線往右拖 1 小時（浮框只寫抵達）
+        const one = segEl(0), or = one.getBoundingClientRect(), oy = or.top + or.height / 2, ox = or.left + 1;
+        const pe1 = (type, x, el = tb()) => el.dispatchEvent(new PointerEvent(type, {bubbles: true, cancelable: true, button: 0, pointerId: 1, clientX: x, clientY: oy}));
+        pe1('pointermove', ox, one);
+        out.oneGrab = tb().classList.contains('grab');
+        pe1('pointerdown', ox, one);
+        pe1('pointermove', ox + (xOf(30) - xOf(0)));
+        pe1('pointermove', ox + (xOf(60) - xOf(0)));
+        out.oneTip = document.querySelector('#view .daybar .dragtip:not([hidden])')?.textContent ?? '';
+        pe1('pointerup', ox + (xOf(60) - xOf(0)));
+        out.oneDrag = S.data.trump.schedule.map(s => s.t);
+        // 選單不超出畫面：展開到第 3 層，每層都在視窗裡、可捲動
+        await ctxBar(23 * 60 + 50);
+        hover(0, /^插入作息/); hover(1, /^m_04x05$/); hover(2, /trump-inn-f1$/);
+        out.menuFit = [...document.querySelectorAll('.ctxmenu')].map(m => {const r = m.getBoundingClientRect(); return r.left >= 0 && r.top >= 0 && r.right <= innerWidth + 0.5 && r.bottom <= innerHeight + 0.5;});
+        out.menuScroll = getComputedStyle(document.querySelector('.ctxmenu')).overflowY;
+        document.querySelectorAll('.ctxmenu').forEach(m => m.remove());
+        while (S.hi > h1) re.undo();
+        out.multiUndo = JSON.stringify(S.data.trump.schedule) === sch0;
+
         // ---- 卡片：點時間改（出發型／訖＝下一筆平移）、目的地按鈕＝分層選單打 ✔ ----
         S.schSel = {id: 'trump', i: 0}; re.render();
         const plk = re.SP.buildPlan(S.data.trump.schedule, re.S.ext.nav.edges, re.S.ext.nav.nodes).plan;
@@ -743,7 +803,7 @@ run('schedule-tool', async t => {
     t.eq('點一段：進表單、選那張卡片、右欄作息地圖', JSON.stringify(r.gPick), JSON.stringify(['form', 'trump', 1, 'sched', true, 'm_04x05/trump-inn-f2']));
     t.eq('點角色名：進表單', JSON.stringify(r.gName), JSON.stringify(['form', 'musk']));
     t.eq('總覽拖分界線：照原型別平移、一筆 undo、留在總覽', JSON.stringify(r.gShift), JSON.stringify(['@22:20', 1, 'table']));
-    t.eq('時序條右鍵（落在停留段）：插入／改目的地／類型／刪除', JSON.stringify(r.barMenu), JSON.stringify(['插入作息（10:00 抵達）', '改目的地', '類型', '刪除這筆']));
+    t.eq('時序條右鍵（落在停留段）：插入／改目的地／類型／刪除', JSON.stringify(r.barMenu), JSON.stringify(['插入作息（10:00 抵達）', '分割（10:00）', '改目的地', '類型', '刪除這筆']));
     t.eq('插入 ▸ 世界圖 ＋ 在地圖上選', JSON.stringify(r.barL1), JSON.stringify(['m_04x05', '🗺 在地圖上選…']));
     t.check('世界圖 ▸ 自己的點＋🏠 室內圖（不列門、樓梯、只有門的空屋）', r.barL2.includes('musk-p1') && r.barL2.includes('🏠 trump-inn-f1') && !r.barL2.includes('trump-inn') && !r.barL2.some(x => /house-0[1-7]$/.test(x)), JSON.stringify(r.barL2));
     t.check('🏠 室內圖 ▸ 點（不列 door／stair-up）', r.barL3.includes('sit-1') && r.barL3.includes('trump-p1') && !r.barL3.includes('door') && !r.barL3.includes('stair-up'), JSON.stringify(r.barL3));
@@ -754,7 +814,7 @@ run('schedule-tool', async t => {
     t.eq('拖過頭：前一段最少停 10 分', r.clamped, 10);
     t.check('類型下拉：（無）＋清單＋新類型', r.typeOpts[0] === '（無）' && r.typeOpts.includes('午餐') && r.typeOpts.at(-1) === '＋ 新類型…', JSON.stringify(r.typeOpts));
     t.eq('選午餐：寫 type、段內寫午餐、type 排在 t 後面', JSON.stringify(r.typed), JSON.stringify(['lunch', '午餐', 't,map,go,type']));
-    t.eq('右鍵段：一樣的選單', JSON.stringify(r.segMenu), JSON.stringify(['插入作息（10:20 抵達）', '改目的地', '類型', '刪除這筆']));
+    t.eq('右鍵段：一樣的選單', JSON.stringify(r.segMenu), JSON.stringify(['插入作息（10:20 抵達）', '分割（10:20）', '改目的地', '類型', '刪除這筆']));
     t.eq('刪除：前後同目的地合併，回到原本、選前一筆', JSON.stringify(r.delMerged), JSON.stringify([true, 0]));
     t.check('在地圖上選：地圖上方提示', /插入 15:00 抵達的目的地/.test(r.pickBar ?? ''), r.pickBar);
     t.eq('點 sit-2：插入（夾一小時）、提示消失', JSON.stringify(r.picked2), JSON.stringify(['@06:20 trump-p1 | @15:00 sit-2 | 16:00 trump-p1 | @22:50 bed', true]));
@@ -775,6 +835,23 @@ run('schedule-tool', async t => {
     t.eq('沒作息的 NPC：空的時序條＋提示', JSON.stringify(r.emptyBar), JSON.stringify([true, '（沒有作息，右鍵插入）']));
     t.eq('第一筆只插一筆', r.firstIns, JSON.stringify([{t: '@09:00', map: 'm/m_04x05', go: 'musk-p1'}]));
     t.eq('卡片測試全部 undo 回原狀', r.cardUndo, true);
+    t.eq('分割：離邊緣不到 10 分反灰', JSON.stringify(r.splitNear), JSON.stringify(['分割（06:20）', true, '離段的邊緣至少 10 分']));
+    t.eq('分割：在選單裡', JSON.stringify(r.splitMenu), JSON.stringify(['插入作息（12:00 抵達）', '分割（12:00）', '改目的地', '類型', '刪除這筆']));
+    t.eq('分割：新的一筆 @12:00 同目的地、選它、一筆 undo', JSON.stringify(r.split), JSON.stringify([JSON.stringify({t: '@12:00', go: 'trump-p1', map: 'm_04x05/trump-inn-f1'}), 3, 1, 1]));
+    t.check('Shift＋點：反白兩段、卡片區寫已選 2 筆', JSON.stringify(r.multi[0]) === '[0,1]' && /^已選 2 筆（06:20～/.test(r.multi[1]), JSON.stringify(r.multi));
+    t.eq('多選右鍵：只有合併／刪除', JSON.stringify(r.multiMenu), JSON.stringify(['合併 2 筆', '刪除 2 筆']));
+    t.eq('合併子選單：同內容去重', r.mergeL1.length, 1);
+    t.eq('合併同目的地：回到原狀、選合併那筆、清掉多選', JSON.stringify(r.merged), JSON.stringify([true, 0, true]));
+    t.eq('合併子選單：兩筆不同各一行', r.mergeL1b.length, 2);
+    t.eq('合併留床：時間用範圍第一筆的', r.mergedBed, JSON.stringify([{t: '@06:20', go: 'trump-p1', map: 'm_04x05/trump-inn-f1'}, {t: '@12:00', go: 'bed', map: 'm_04x05/trump-inn-f2'}]));
+    t.eq('右鍵範圍外：回到單選選單', JSON.stringify(r.outside), JSON.stringify([true, true, [0]]));
+    t.eq('刪除 2 筆：剩一筆', JSON.stringify(r.delRange), JSON.stringify([JSON.stringify([{t: '@06:20', go: 'trump-p1', map: 'm_04x05/trump-inn-f1'}]), 0]));
+    t.eq('只有一筆：分界線游標 ↔', r.oneGrab, true);
+    t.eq('只有一筆：浮框只寫抵達', r.oneTip, '抵達 07:20');
+    t.eq('只有一筆：拖 1 小時', JSON.stringify(r.oneDrag), JSON.stringify(['@07:20']));
+    t.check('選單每層都在視窗裡', r.menuFit.length >= 3 && r.menuFit.every(Boolean), JSON.stringify(r.menuFit));
+    t.eq('選單太高可捲動', r.menuScroll, 'auto');
+    t.eq('分割／多選測試全部 undo 回原狀', r.multiUndo, true);
     t.check('滑過別人用的點：占用時間圖列出誰的第幾筆、提示右鍵', r.hoverOthersOcc.some(x => /^musk (\d+,)*2(,|$)/.test(x)) &&r.hoverOthers.endsWith('右鍵＝新增目的地／改目的地…'), JSON.stringify([r.hoverOthersOcc, r.hoverOthers]));
     t.eq('左鍵點物件不改資料', JSON.stringify(r.leftNoop), JSON.stringify(['trump-p1', true]));
     t.eq('右鍵物件：新增目的地／改成選中那筆', JSON.stringify(r.objMenu), JSON.stringify(['新增目的地…', '改成選中那筆（06:20）的目的地']));

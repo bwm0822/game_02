@@ -59,16 +59,60 @@ export function dragRange(plan, j)
 
 export const clampDelta = (d, r) => (r ? Math.max(r[0], Math.min(r[1], d)) : 0);
 
-// 刪除第 i 筆；刪完前後兩筆同目的地＝刪掉後面那筆（插入再刪剛好復原）。回傳要選的 index（沒了＝-1）
-export function removeAt(sch, i)
+// 分割：時刻 t 那段停留切成兩筆同目的地（新的一筆 @t 抵達，其他欄位抄原本那筆）
+// 回傳 {i}＝切的是第幾筆，或 {why}＝不能切的原因
+export function splitCheck(segs, t)
 {
-    sch.splice(i, 1);
+    const g = segs?.find(x => x.kind === 'stay' && mod(t - x.s) < x.len);
+    if (!g) return {why: '要點在停留段上（走路段不能分割）'};
+    const off = mod(t - g.s);
+    if (off < MIN_STAY || g.len - off < MIN_STAY) return {why: `離段的邊緣至少 ${MIN_STAY} 分`};
+    return {i: g.i};
+}
+
+export function splitAt(sch, i, t)
+{
+    sch.splice(i + 1, 0, {...sch[i], t: `@${hhmm(mod(t))}`});
+    return i + 1;
+}
+
+// 從第 s 筆開始連續 len 筆（可繞回開頭）的 index
+export const rangeIdx = (n, s, len) => Array.from({length: len}, (_, k) => (s + k) % n);
+
+// 錨點 a、點了 k：取時間順序比較短的那一邊 → {s, len}
+export function pickRange(n, a, k)
+{
+    const fwd = mod2(k - a, n), back = mod2(a - k, n);
+    return fwd <= back ? {s: a, len: fwd + 1} : {s: k, len: back + 1};
+}
+const mod2 = (x, n) => ((x % n) + n) % n;
+
+const spliceOut = (sch, idx) => {for (const k of [...idx].sort((x, y) => y - x)) sch.splice(k, 1);};
+
+// 合併第 s 筆起連續 len 筆：留 keep 那筆的內容、時間用第 s 筆的 t；回傳合併後那筆的 index
+export function mergeRange(sch, s, len, keep)
+{
+    const idx = rangeIdx(sch.length, s, len);
+    const out = {...sch[keep], t: sch[s].t};
+    sch[s] = out;
+    spliceOut(sch, idx.filter(k => k !== s));
+    return sch.indexOf(out);
+}
+
+// 刪除第 s 筆起連續 len 筆；刪完前後兩筆同目的地＝刪掉後面那筆（插入再刪剛好復原）。回傳要選的 index（沒了＝-1）
+export function removeRange(sch, s, len)
+{
+    const idx = rangeIdx(sch.length, s, len);
+    const pos = s - idx.filter(k => k < s).length;
+    spliceOut(sch, idx);
     const n = sch.length;
     if (n < 2) return n ? 0 : -1;
-    const a = (i - 1 + n) % n, b = i % n;
+    const a = (pos - 1 + n) % n, b = pos % n;
     if (a !== b && sameDest(sch[a], sch[b])) {sch.splice(b, 1); return b === 0 ? sch.length - 1 : a;}
     return a;
 }
+
+export const removeAt = (sch, i) => removeRange(sch, i, 1);
 
 // 分層目的地：[{map, room: bool, names:[...]}]，世界圖（m/ 開頭）底下掛 m_xxx/ 的室內圖；藏 port（門、樓梯）跟 @格子；只剩門的室內圖不列
 export function destTree(nav)

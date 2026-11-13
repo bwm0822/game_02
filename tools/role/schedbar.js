@@ -65,6 +65,7 @@ export function dayBarEl(plan, sch, warns, opt = {})
     if (!segs0) return h('div', {class: 'daybar none dim'}, '作息資料有問題，無法排時刻表');
     const pct = (m) => `${(m / DAY) * 100}%`;
     const bar = h('div', {class: 'track'});
+    const isSel = (i) => (opt.multi ? opt.multi.includes(i) : opt.sel === i);
     const fill = (pl, list, segs) => {
         const tyOf = (i) => opt.typeName?.(list[i]) ?? '';
         bar.replaceChildren(
@@ -73,7 +74,7 @@ export function dayBarEl(plan, sch, warns, opt = {})
                 const label = g.kind === 'stay' ? `${tyOf(g.i)}${g.do === 'patrol' ? '↻' : ''}` : g.kind === 'nope' ? '⚠' : '';
                 const style = `left:${pct(s)};` + (g.kind === 'nope' ? '' : `width:${pct(len)};`) + (g.kind === 'stay' ? `background:${mapColor(g.map)};` : '');
                 const map = list[g.i]?.map ?? '';
-                return h('div', {class: `seg ${g.kind}` + (opt.sel === g.i ? ' sel' : '') + (opt.dim?.(map) ? ' dim' : ''),
+                return h('div', {class: `seg ${g.kind}` + (isSel(g.i) ? ' sel' : '') + (opt.dim?.(map) ? ' dim' : ''),
                     dataset: {i: g.i, map, kind: g.kind, l: s === g.s ? 1 : 0, r: s + len === g.s + g.len || s + len === mod(g.s + g.len) ? 1 : 0},
                     title: tip({...g, go: g.go ?? destOf(list[g.i])}, pl, tyOf(g.i)), style}, label);
             })));
@@ -83,7 +84,7 @@ export function dayBarEl(plan, sch, warns, opt = {})
     const tOf = (x) => {const rc = bar.getBoundingClientRect(); return Math.max(0, Math.min(DAY - 1, ((x - rc.left) / rc.width) * DAY));};
     // 滑鼠底下哪條分界線能拖：停留段的左右邊緣、整塊走路段；回傳第幾筆的走路段（j）
     const grab = (e) => {
-        if (!opt.onShift || sch.length < 2) return -1;
+        if (!opt.onShift || !sch.length) return -1;
         const el = e.target.closest?.('.seg');
         if (!el) return -1;
         const i = +el.dataset.i, n = sch.length, rc = el.getBoundingClientRect();
@@ -112,7 +113,7 @@ export function dayBarEl(plan, sch, warns, opt = {})
         e.preventDefault();
         try {bar.setPointerCapture(e.pointerId);} catch {}
         const t0 = toMin(sch[j].t);
-        drag = {j, x0: e.clientX, t0, delta: 0, moved: false, range: dragRange(plan, j) ?? [0, 0]};
+        drag = {j, x0: e.clientX, t0, delta: 0, moved: false, range: sch.length === 1 ? [1 - DAY, DAY - 1] : dragRange(plan, j) ?? [0, 0]};
     });
     bar.addEventListener('pointermove', (e) => {
         if (!drag)
@@ -134,7 +135,7 @@ export function dayBarEl(plan, sch, warns, opt = {})
         const pl = opt.planOf(list);
         fill(pl.plan, list, daySegs(pl.plan, list, pl.warns) ?? []);
         const n = list.length, p = pl.plan?.[drag.j], pre = pl.plan?.[(drag.j - 1 + n) % n], nx = pl.plan?.[(drag.j + 1) % n];
-        tipEl.textContent = p ? `停 ${dur(mod(p.dep - pre.arr))} ｜ 抵達 ${hhmm(p.arr)} ｜ 停 ${dur(mod(nx.dep - p.arr))}` : list[drag.j].t;
+        tipEl.textContent = p && n === 1 ? `抵達 ${hhmm(p.arr)}` : p ? `停 ${dur(mod(p.dep - pre.arr))} ｜ 抵達 ${hhmm(p.arr)} ｜ 停 ${dur(mod(nx.dep - p.arr))}` : list[drag.j].t;
         tipEl.style.left = pct(tOf(e.clientX));
         tipEl.hidden = false;
         hover(e.clientX, p ? hhmm(p.arr) : list[drag.j].t.replace(/^@/, ''));
@@ -156,7 +157,7 @@ export function dayBarEl(plan, sch, warns, opt = {})
     bar.addEventListener('click', (e) => {
         if (swallow) return;
         const el = e.target.closest?.('.seg');
-        if (el) {e.stopPropagation(); opt.onPick?.(+el.dataset.i);}
+        if (el) {e.stopPropagation(); opt.onPick?.(+el.dataset.i, e.shiftKey);}
     });
     if (opt.onMenu) bar.addEventListener('contextmenu', (e) => opt.onMenu(e, Math.round(tOf(e.clientX))));
     if (opt.bare) return h('div', {class: 'daybar'}, bar, tipEl);
@@ -168,8 +169,9 @@ export function dayBarEl(plan, sch, warns, opt = {})
 
 export const axisEl = () => h('div', {class: 'axis'}, [0, 6, 12, 18, 24].map(t => h('span', {style: `left:${(t / 24) * 100}%`}, String(t))));
 
-// 只換反白（不重畫）
+// 只換反白（不重畫）；i 可以是 index 陣列（多選）
 export function markSel(root, i)
 {
-    for (const s of root.querySelectorAll('.daybar .seg')) s.classList.toggle('sel', +s.dataset.i === i);
+    const on = Array.isArray(i) ? (k) => i.includes(k) : (k) => k === i;
+    for (const s of root.querySelectorAll('.daybar .seg')) s.classList.toggle('sel', on(+s.dataset.i));
 }

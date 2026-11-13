@@ -118,8 +118,9 @@
 .ghost { position: fixed; z-index: 30; pointer-events: none; display: flex; align-items: center; gap: 4px; padding: 2px 6px;
          background: rgba(43, 45, 49, .85); border: 1px solid #4da3ff; border-radius: 4px; }
 .ghost .ico { background: none; }
-.ctxmenu { position: fixed; z-index: 20; display: flex; flex-direction: column; min-width: 160px; padding: 4px 0;
+.ctxmenu { position: fixed; z-index: 20; display: flex; flex-direction: column; min-width: 160px; padding: 4px 0; max-height: 100vh; overflow-y: auto; overflow-x: hidden; box-sizing: border-box;
            background: #2b2d31; border: 1px solid #666; box-shadow: 0 4px 12px rgba(0,0,0,.5); }
+.ctxmenu > * { flex-shrink: 0; }
 .ctxmenu button { border: 0; border-radius: 0; background: none; text-align: left; padding: 3px 12px; white-space: nowrap; }
 .ctxmenu button:hover:not(:disabled) { background: #2f6db5; }
 .ctxmenu button:disabled { color: #777; }

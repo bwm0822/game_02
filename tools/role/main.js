@@ -287,7 +287,7 @@ function menu(e, items)
     menuAt(e.clientX, e.clientY, items, 0);
 }
 
-function menuAt(x, y, items, lv)
+function menuAt(x, y, items, lv, flipX = null)
 {
     const el = h('div', {class: 'ctxmenu', dataset: {lv}, style: `left:${x}px;top:${y}px`},
         items.filter(Boolean).map(it => {
@@ -300,15 +300,16 @@ function menuAt(x, y, items, lv)
                 for (const o of el.querySelectorAll('button.open')) o.classList.remove('open');
                 if (!sub?.length || b.disabled) return;
                 b.classList.add('open');
-                const rc = b.getBoundingClientRect();
-                menuAt(rc.right, rc.top - 4, sub, lv + 1);
+                const rc = b.getBoundingClientRect(), box = el.getBoundingClientRect();
+                menuAt(box.right, rc.top - 4, sub, lv + 1, box.left);
             };
             return b;
         }));
     document.body.append(el);
+    // 放不下：子選單翻到母選單左邊（flipX＝母選單左緣），再不行貼齊畫面；太高就在選單裡捲動
     const rc = el.getBoundingClientRect();
+    if (rc.right > innerWidth) el.style.left = `${Math.max(0, flipX !== null && flipX - rc.width >= 0 ? flipX - rc.width : innerWidth - rc.width)}px`;
     if (rc.bottom > innerHeight) el.style.top = `${Math.max(0, innerHeight - rc.height)}px`;
-    if (rc.right > innerWidth) el.style.left = `${Math.max(0, innerWidth - rc.width)}px`;
     return el;
 }
 
@@ -633,10 +634,26 @@ function openSch(id, i)
     document.querySelector(`#view .card[data-sch="${i}"]`)?.scrollIntoView({block: 'nearest'});
 }
 
+// 多選（Shift＋點）：S.schMulti＝{id, s, len, n}，從第 s 筆起連續 len 筆；筆數變了（undo、刪除…）就失效＝null
+const schMulti = (id) => {
+    const m = S.schMulti, n = S.data[id]?.schedule?.length ?? 0;
+    return m?.id === id && m.n === n && m.len >= 2 ? SE.rangeIdx(n, m.s, m.len) : null;
+};
+
+function pickSch(id, i, shift)
+{
+    const a = schSel(id), n = S.data[id].schedule?.length ?? 0;
+    if (!shift || a < 0 || a === i || n < 2) return selectSch(id, i);
+    S.schMulti = {id, n, ...SE.pickRange(n, a, i)};
+    SB.markSel(document.getElementById('view'), schMulti(id));
+    document.querySelector('#view .schslot')?.replaceChildren(schSlot(id));
+}
+
 function selectSch(id, i)
 {
-    if (S.schSel?.id === id && S.schSel.i === i) return;
+    if (S.schSel?.id === id && S.schSel.i === i && !S.schMulti) return;
     S.schSel = {id, i};
+    S.schMulti = null;
     if (S.routeEdit && !editingRoute(id, i)) {S.routeEdit = null; for (const b of document.querySelectorAll('#view .routebtn.on')) {b.classList.remove('on'); b.textContent = '✎ 編輯路線';}}
     const m = S.data[id].schedule[i]?.map;
     if (m) SM.setMap(m);
@@ -741,16 +758,65 @@ function barMenu(e, id, t)
     const pl = planOf(id), segs = a.length ? SB.daySegs(pl.plan, a, pl.warns) : [];
     const ins = Math.round(t / SE.SNAP) * SE.SNAP;
     const hit = segs ? SE.entryAt(segs, t) : -1;
+    const multi = schMulti(id);
+    if (multi && multi.includes(hit)) return menu(e, [
+        [`合併 ${multi.length} 筆`, null, '', mergeMenu(id, multi)],
+        [`刪除 ${multi.length} 筆`, () => delRange(id, multi)],
+    ]);
     const insert = (m, d) => insertSch(id, ins, m, d);
     const change = (m, d) => setDest(id, hit, m, d);
+    const sp = a.length && segs ? SE.splitCheck(segs, ins) : {why: a.length ? '作息資料有問題，先修好' : '沒有作息'};
     menu(e, [
         [`插入作息（${SP.hhmm(SP.mod(ins))} 抵達）`, null, segs ? '' : '作息資料有問題，先修好', destMenu(insert, () => pickOnMap(id, `插入 ${SP.hhmm(SP.mod(ins))} 抵達的目的地`, insert))],
+        a.length > 0 && [`分割（${SP.hhmm(SP.mod(ins))}）`, () => splitSch(id, sp.i, ins), sp.why ?? ''],
         hit >= 0 && ['改目的地', null, '', destMenu(change, () => pickOnMap(id, '改目的地', change))],
         hit >= 0 && ['類型', null, '', typeMenu(id, hit)],
         hit >= 0 && '-',
         hit >= 0 && ['刪除這筆', () => delSch(id, hit)],
     ]);
-    if (hit >= 0 && schSel(id) !== hit) selectSch(id, hit);
+    if (hit >= 0 && (schSel(id) !== hit || S.schMulti)) selectSch(id, hit);
+}
+
+// 分割：t 那段停留切成兩筆同目的地，選新的那筆
+function splitSch(id, i, t)
+{
+    commit(() => {S.schSel = {id, i: SE.splitAt(S.data[id].schedule, i, t)};});
+    status(`分割：${SP.hhmm(SP.mod(t))} 起另成一筆`);
+}
+
+// 合併子選單：每筆一行（同內容去重），選了留它的目的地／do／type／route
+function mergeMenu(id, idx)
+{
+    const a = S.data[id].schedule, seen = new Set();
+    return idx.map(k => {
+        const {t, ...rest} = a[k], key = JSON.stringify(rest);
+        if (seen.has(key)) return null;
+        seen.add(key);
+        return [`${schLabel(id, k)} 抵達 ${destName(a[k].map, a[k])}${a[k].do ? ` ${a[k].do}` : ''}`, () => mergeSch(id, k)];
+    });
+}
+
+function mergeSch(id, keep)
+{
+    const m = S.schMulti, n = m.len;
+    commit(() => {
+        S.schSel = {id, i: SE.mergeRange(S.data[id].schedule, m.s, m.len, keep)};
+        S.schMulti = null;
+    });
+    status(`合併 ${n} 筆`);
+}
+
+function delRange(id, idx)
+{
+    const m = S.schMulti;
+    commit(() => {
+        const a = S.data[id].schedule;
+        const k = SE.removeRange(a, m.s, m.len);
+        if (!a.length) delete S.data[id].schedule;
+        S.schSel = {id, i: k};
+        S.schMulti = null;
+    });
+    status(`刪除 ${idx.length} 筆`);
 }
 
 // 刪除：時間交給前一段，前後同目的地合併
@@ -1126,7 +1192,15 @@ const schLabel = (id, i) => {
 
 function schSlot(id)
 {
-    const list = S.data[id].schedule ?? [], i = schSel(id);
+    const list = S.data[id].schedule ?? [], i = schSel(id), multi = schMulti(id);
+    if (multi)
+    {
+        const pl = planOf(id), segs = SB.daySegs(pl.plan, list, pl.warns);
+        const stay = (k) => segs?.find(g => g.kind === 'stay' && g.i === k);
+        const first = stay(multi[0]), last = stay(multi.at(-1));
+        const span = first && last ? `（${SP.hhmm(first.s)}～${SP.hhmm(SP.mod(last.s + last.len))}）` : '';
+        return h('div', {class: 'schhint'}, `已選 ${multi.length} 筆${span}　右鍵合併／刪除；點一下（不按 Shift）回到單選`);
+    }
     return i < 0 ? h('div', {class: 'schhint dim'}, list.length ? '點時序條上的一段來編輯' : '在時序條上按右鍵插入作息')
         : schCard(id, list, i, planOf(id));
 }
@@ -1143,8 +1217,8 @@ function schedBox(id, v)
             v !== undefined && h('button', {type: 'button', onclick: () => set(id, ['schedule'], undefined)}, '移除')),
         open && (() => {
             const pl = planOf(id);
-            return [SB.dayBarEl(pl.plan, list, pl.warns, {sel: schSel(id), typeName: s => SC.typeName(S.ext.local, s?.type),
-                onPick: (i) => selectSch(id, i),
+            return [SB.dayBarEl(pl.plan, list, pl.warns, {sel: schSel(id), multi: schMulti(id), typeName: s => SC.typeName(S.ext.local, s?.type),
+                onPick: (i, shift) => pickSch(id, i, shift),
                 onMenu: (e, t) => barMenu(e, id, t),
                 planOf: (sch) => SP.buildPlan(sch, nav.edges, nav.nodes),
                 onShift: (j, d) => shiftSch(id, j, d)}),
