@@ -880,7 +880,9 @@ async function newType(id, i)
 // x＝schedMapEl 給的 {name, type, door, tile, blocked, inNav, enter}
 async function mapMenu(e, id, map, x)
 {
-    const point = x.type === 'point' && [['改名…', () => renamePoint(map, x.name)], ['刪除…', () => deletePoint(map, x.name)]];
+    const dn = x.door?.o.name;
+    const point = x.type === 'point' ? [['改名…', () => renamePoint(map, x.name)], ['刪除…', () => deletePoint(map, x.name)]]
+        : dn ? [[`改名 ${dn}…`, () => renamePoint(map, dn)]] : null;
     if (S.routeEdit) return point && menu(e, point);
     const obj = x.name ?? x.door?.o.name, i = schSel(id);
     const dest = obj ? {go: obj} : {at: x.tile};
@@ -918,13 +920,17 @@ async function checkStale()
     finally {staleBusy = false;}
 }
 
-async function writeMap(map, fn, msg)
+const writeMap = (map, fn, msg) => writeMaps([map], d => fn(d[map]), msg);
+
+// fn({地圖: data})，全部改好才一起寫
+async function writeMaps(maps, fn, msg)
 {
-    try {if (await ME.editMap(S.assets.dir, map, fn) === false) return false;}
+    let done;
+    try {done = await ME.editMaps(S.assets.dir, maps, fn);}
     catch (e) {status(e.message); return false;}
-    forgetMap(map);
-    SH.notifySaved(`maps/${map}.json`);
-    status(`${msg}：已寫入 maps/${map}.json（Tiled 開著這張圖的話要重新載入，不然 Tiled 存檔會蓋掉）`);
+    if (done === false) return false;
+    for (const m of done) {forgetMap(m); SH.notifySaved(`maps/${m}.json`);}
+    status(`${msg}：已寫入 ${done.map(m => `maps/${m}.json`).join('、')}（Tiled 開著這張圖的話要重新載入，不然 Tiled 存檔會蓋掉）`);
     await checkStale();
     renderRight();
     return true;
@@ -957,9 +963,12 @@ const movePoint = (map, name, x, y) => writeMap(map, data => ME.movePoint(data, 
 async function renamePoint(map, from)
 {
     const d = await SM.mapData(map);
-    const to = await askPointName(`改名 ${from}`, from, new Set([...d.named.keys()].filter(k => k !== from)));
-    if (!to || to === from || !await writeMap(map, data => ME.renamePoint(data, map, from, to), `改名 ${from} → ${to}`)) return;
     const users = ME.usersOf(S.data, map, from);
+    const refs = await ME.portsTo(await ME.listMaps(S.assets.dir), ME.portsReader(S.assets.dir), map, from);
+    const also = [refs.length && ME.portsText(refs), users.length && `role.json：${ME.usersText(users)}`].filter(Boolean);
+    const to = await askPointName(`改名 ${from}${also.length ? `（一起改：${also.join('；')}）` : ''}`, from, new Set([...d.named.keys()].filter(k => k !== from)));
+    if (!to || to === from) return;
+    if (!await writeMaps([...new Set([map, ...refs.map(r => r.map)])], files => ME.renameNamed((m) => files[m], map, from, to, refs), `改名 ${from} → ${to}`)) return;
     if (!users.length) return;
     commit(() => ME.renameRefs(S.data, map, from, to));
     await D.save();

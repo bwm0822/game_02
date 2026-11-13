@@ -735,6 +735,20 @@ run('schedule-tool', async t => {
         out.dupName = await runAns(re.renamePoint(F1, 'trump-p9'), dl => {dl.querySelector('input').value = 'trump-p1'; return 'ok';});
         out.dupStatus = $('status').textContent;
 
+        // 門改名：右鍵門有「改名 stair-up…」；trump-inn-f2 的 stair-dn（port 指過來）一起改；改回去 f2 一字不差
+        const origF2 = await (await fetch('/assets/maps/m_04x05/trump-inn-f2.json')).text();
+        await write(mapsDir, 'trump-inn-f2.json', origF2);
+        const readF2 = async () => (await (await mapsDir.getFileHandle('trump-inn-f2.json')).getFile()).text();
+        const portIn = (m, nm) => objs(m).find(o => o.name === nm)?.properties?.find(p => p.name === 'port')?.value;
+        await until(() => cv()?.st.data?.named.has('stair-up'));
+        out.doorMenu = await ctxObj('stair-up');
+        out.doorAsk = await runAns((async () => {await ctxObj('stair-up', '改名 stair-up…'); await until(() => /改名 stair-up → stair-x：已寫入/.test($('status').textContent));})(),
+            dl => {dl.querySelector('input').value = 'stair-x'; return 'ok';});
+        out.doorRenamed = [!!objs(await readMap()).find(o => o.name === 'stair-x'), portIn(JSON.parse(await readF2()), 'stair-dn')];
+        await until(() => cv()?.st.data?.named.has('stair-x'));
+        out.doorBack = await runAns(re.renamePoint(F1, 'stair-x'), dl => {dl.querySelector('input').value = 'stair-up'; return 'ok';});
+        out.doorBackSame = [await readF2() === origF2, !!objs(await readMap()).find(o => o.name === 'stair-up')];
+
         // 刪除：有人用擋、沒人用確認後刪
         out.delUsed = await runAns(re.deletePoint(F1, 'trump-p9'), () => 'ok');
         out.stillThere = !!objs(await readMap()).find(o => o.name === 'trump-p9');
@@ -959,9 +973,13 @@ run('schedule-tool', async t => {
     t.eq('寫完地圖：路網過期提示＋更新鈕', JSON.stringify(r.stale), JSON.stringify(['["m_04x05/trump-inn-f1"]', '⚠ 路網已過期（trump-inn-f1.json 比 navgraph.json 新）更新路網']));
     t.check('卡片標 ⚠ 路網裡沒有、只剩一個時間欄', (r.cardMiss ?? '').includes('⚠ 路網裡沒有 m_04x05/trump-inn-f1:trump-p2') && r.cardMiss.startsWith('時間：06:20（抵達）'), r.cardMiss);
     t.eq('拖 point：對齊格子、往右兩格、拖完不會當成點空地', JSON.stringify(r.moved), JSON.stringify([64, 0, false]));
-    t.eq('改名：問名稱、有警告問存檔', JSON.stringify(r.renameAsk), JSON.stringify(['改名 trump-p2', '有 1 個問題']));
+    t.eq('改名：問名稱（列出 role.json 會改的）、有警告問存檔', JSON.stringify(r.renameAsk), JSON.stringify(['改名 trump-p2（一起改：role.json：trump 第 1 筆）', '有 1 個問題']));
     t.eq('改名：地圖改了、role.json 引用跟著改並存檔', JSON.stringify(r.renamed), JSON.stringify([true, true, 'trump-p9', 'trump-p9']));
-    t.eq('改成同圖已有的名字擋住', JSON.stringify([r.dupName, r.dupStatus]), JSON.stringify([['改名 trump-p9'], '這張圖已經有 trump-p1']));
+    t.eq('改成同圖已有的名字擋住', JSON.stringify([r.dupName, r.dupStatus]), JSON.stringify([['改名 trump-p9（一起改：role.json：trump 第 1 筆）'], '這張圖已經有 trump-p1']));
+    t.check('右鍵門：有「改名 stair-up…」', r.doorMenu.includes('改名 stair-up…'), r.doorMenu.join());
+    t.eq('門改名：對話框列出 f2 指過來的門', JSON.stringify(r.doorAsk), JSON.stringify(['改名 stair-up（一起改：m_04x05/trump-inn-f2 的門 stair-dn）']));
+    t.eq('門改名：f1 改名、f2 的 stair-dn 的 port 跟著改', JSON.stringify(r.doorRenamed), JSON.stringify([true, 'stair-x']));
+    t.check('門改回原名：f2 一字不差', r.doorBackSame.every(Boolean), JSON.stringify([r.doorBack, r.doorBackSame]));
     t.eq('有作息用到不能刪', JSON.stringify([r.delUsed, r.stillThere]), JSON.stringify([['不能刪 trump-p9'], true]));
     t.eq('沒人用：確認後刪掉', JSON.stringify([r.delAsk, r.deleted]), JSON.stringify([['刪除 trump-p9？'], true]));
     t.eq('更新路網：POST、顯示節點數跟警告', JSON.stringify(r.nav), JSON.stringify([true, '路網已更新：61 個節點，1 個警告\n測試警告']));

@@ -196,18 +196,7 @@ async function loadSpawns()
 }
 
 // maps/ 底下的地圖（不含 _ 開頭的舊檔），名稱＝相對 maps/、不含 .json
-async function listMaps()
-{
-    const out = [];
-    const walk = async (dir, pre) => {
-        const {dirs, files} = await FS.listDir(dir);
-        for (const f of files) if (f.name.endsWith('.json') && !f.name.startsWith('_')) out.push(pre + f.name.slice(0, -5));
-        for (const d of dirs) if (!d.name.startsWith('_') && !d.name.startsWith('.')) await walk(d, `${pre}${d.name}/`);
-    };
-    const maps = await FS.tryDir(S.assets.dir, 'maps');
-    if (maps) await walk(maps, '');
-    return out.sort();
-}
+const listMaps = () => PE.listMaps(S.assets.dir);
 
 async function loadWorld()
 {
@@ -896,7 +885,7 @@ function mapEl(name)
                 h('div', {class: 'tsub'}, `落腳點 ${o.props.port || '（沒寫）'}`),
                 ...(issue ? [h('div', {class: 'twarn'}, `⚠ ${issue.msg}`)] : []),
                 ...(show.points && o.name && spotsOf(st).has(o.name) ? [occupyEl(spotsOf(st).get(o.name).rows, {map: name, now: S.timeOn ? S.t : null})] : []),
-                h('div', {class: 'thint'}, issue?.level === 'error' ? '地圖不存在，點了不會跳' : '點＝進去'));
+                h('div', {class: 'thint'}, `${issue?.level === 'error' ? '地圖不存在，點了不會跳' : '點＝進去'}${o.name ? '、右鍵＝改名' : ''}`));
         }
         else
         {
@@ -1022,6 +1011,7 @@ function mapEl(name)
             if (hit || inMap(st.data, t)) pointMenu(e, st, hit, t);
             return;
         }
+        if (hit.door) {doorMenu(e, st, hit.door); return;}
         if (!hit.role) return;
         S.pick = hit.role;
         redraw();
@@ -1059,7 +1049,7 @@ function mapEl(name)
             h('button', {type: 'button', title: '回世界總覽', onclick: () => selectMap(name)}, '總覽'),
             h('button', {type: 'button', class: 'back', disabled: !S.back.length, title: S.back.length ? `回到 ${S.back.at(-1)}（點門進來之前那張）` : '點門進來的才能返回',
                 onclick: goBack}, '← 返回'),
-            h('span', {class: 'help', title: '滾輪縮放、按住中鍵拖曳平移；點角色選取、拖曳移動、Del 刪除、右鍵選單；右欄調色盤點一個角色再點地圖放置；淡色圓點是作息 point（點了跳到角色分頁、拖曳移動、右鍵改名／刪除，右鍵空地新增）；橘框 🚪 是門，點了進那張地圖（← 返回 回來）'}, '?')),
+            h('span', {class: 'help', title: '滾輪縮放、按住中鍵拖曳平移；點角色選取、拖曳移動、Del 刪除、右鍵選單；右欄調色盤點一個角色再點地圖放置；淡色圓點是作息 point（點了跳到角色分頁、拖曳移動、右鍵改名／刪除，右鍵空地新增）；橘框 🚪 是門，點了進那張地圖（← 返回 回來）、右鍵改名（別張圖指過來的門一起改）'}, '?')),
         nav,
         placing,
         h('div', {class: 'cvbox'}, cv, tip, msg),
@@ -1132,7 +1122,17 @@ function pointMenu(e, st, hit, tile)
     if (items.length) menu(e, items);
 }
 
-// ---------- 作息 point（寫 Tiled 地圖；改名連帶改 role.json 的 go／route，同一筆 undo） ----------
+// 門右鍵：改名（沒名字的不能）／進去（同左鍵）
+function doorMenu(e, st, door)
+{
+    const nm = door.o.name, bad = door.issue?.level === 'error';
+    menu(e, [
+        nm && [`改名 ${nm}…`, () => act(renamePoint(st.name, nm))],
+        [`↗ 進去 ${DR.targetOf(door).map}`, () => (bad ? status(`⚠ ${door.issue.msg}`) : enterDoor(st.name, door))],
+    ].filter(Boolean));
+}
+
+// ---------- 作息 point、門（寫 Tiled 地圖；改名連帶改別張圖指過來的門的 port、role.json 的 go／route，同一筆 undo） ----------
 async function askPointName(title, value, taken)
 {
     const inp = h('input', {size: 24, value});
@@ -1168,14 +1168,16 @@ async function renamePoint(map, from)
     const d = await mapDataOf(map);
     if (!d) return;
     const users = PE.usersOf(S.roles, map, from);
-    const to = await askPointName(`改名 ${from}${users.length ? `（role.json 一起改：${PE.usersText(users)}）` : ''}`, from,
+    const refs = await PE.portsTo(S.maps.map(m => m.name), (m) => S.sums[m]?.ports, map, from);
+    const also = [refs.length && PE.portsText(refs), users.length && `role.json：${PE.usersText(users)}`].filter(Boolean);
+    const to = await askPointName(`改名 ${from}${also.length ? `（一起改：${also.join('；')}）` : ''}`, from,
         new Set([...d.named.keys()].filter(k => k !== from)));
     if (!to || to === from) return;
-    const mf = ED.mapFile(map);
-    await writeFiles(users.length ? [mf, ROLE] : [mf], files => {
-        PE.renamePoint(files[mf], map, from, to);
+    const mfs = [...new Set([map, ...refs.map(r => r.map)])].map(ED.mapFile);
+    await writeFiles(users.length ? [...mfs, ROLE] : mfs, files => {
+        PE.renameNamed((m) => files[ED.mapFile(m)], map, from, to, refs);
         if (users.length) PE.renameRefs(files[ROLE], map, from, to);
-    }, `point 改名 ${from} → ${to}`, '', map);
+    }, `改名 ${from} → ${to}`, '', map);
 }
 
 async function deletePoint(map, pname)

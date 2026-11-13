@@ -1,8 +1,10 @@
-// 作息 point 改 Tiled 地圖（只動 point，角色分頁的作息地圖跟地圖分頁共用）：讀硬碟上的地圖 json → 改 → 照 Tiled 排版寫回（tiledjson.js）
+// 作息 point 改 Tiled 地圖（新增／移動／刪除只動 point，改名 point 跟門都能、連帶改別張圖指過來的門；角色分頁的作息地圖跟地圖分頁共用）：讀硬碟上的地圖 json → 改 → 照 Tiled 排版寫回（tiledjson.js）
 // 另外看路網是不是過期：地圖檔比 navgraph.json 新；過期橫幅、「更新路網」
 import * as FS from './fs.js';
 import {h} from './dom.js';
 import {stringify, eolOf} from './tiledjson.js';
+import {loadMap} from '../../src/data/navgrid.js';
+import {isPortObj} from '../../src/data/mapcheck.js';
 
 const file = (name) => `maps/${name}.json`;
 
@@ -11,13 +13,68 @@ const isPointRaw = (o) => o.type === 'point' || /(^|\/)point\.tj$/.test(o.templa
 // fn(data) 改 data；回傳 false＝不寫；throw Error＝不寫、訊息給呼叫端
 export async function editMap(assets, name, fn)
 {
-    const {dir, file: fh} = await FS.resolveFile(assets, file(name));
-    const text = await (await fh.getFile()).text();
-    const data = JSON.parse(text);
-    if (fn(data) === false) return false;
-    await FS.writeFile(dir, fh.name, new Blob([stringify(data, eolOf(text))]));
-    return true;
+    return await editMaps(assets, [name], d => fn(d[name])) !== false;
 }
+
+// 好幾張圖一起改：fn({地圖: data})；全部改好才一起寫，回傳有變的地圖名（都沒變＝[]、fn 回 false＝false）
+export async function editMaps(assets, names, fn)
+{
+    const src = {};
+    for (const n of names)
+    {
+        const {dir, file: fh} = await FS.resolveFile(assets, file(n));
+        src[n] = {dir, name: fh.name, text: await (await fh.getFile()).text()};
+    }
+    const data = Object.fromEntries(names.map(n => [n, JSON.parse(src[n].text)]));
+    if (fn(data) === false) return false;
+    const out = [];
+    for (const n of names)
+    {
+        const text = stringify(data[n], eolOf(src[n].text));
+        if (text === src[n].text) continue;
+        await FS.writeFile(src[n].dir, src[n].name, new Blob([text]));
+        out.push(n);
+    }
+    return out;
+}
+
+// maps/ 底下所有地圖（_ 開頭、. 開頭的資料夾不算）
+export async function listMaps(assets)
+{
+    const out = [];
+    const walk = async (dir, pre) => {
+        const {dirs, files} = await FS.listDir(dir);
+        for (const f of files) if (f.name.endsWith('.json') && !f.name.startsWith('_')) out.push(pre + f.name.slice(0, -5));
+        for (const d of dirs) if (!d.name.startsWith('_') && !d.name.startsWith('.')) await walk(d, `${pre}${d.name}/`);
+    };
+    const maps = await FS.tryDir(assets, 'maps');
+    if (maps) await walk(maps, '');
+    return out.sort();
+}
+
+// 讀專案資料夾的 json（相對 assets），讀不到＝null
+export const readerOf = (assets) => async (rel) => {
+    try {return JSON.parse(await (await (await FS.resolveFile(assets, rel)).file.getFile()).text());}
+    catch {return null;}
+};
+
+// 門的 port 指到 mapName:pname 的（落腳點）：portsOf(地圖)＝那張圖的門（已套 template）→ [{map, id, name}]
+export async function portsTo(maps, portsOf, mapName, pname)
+{
+    const out = [];
+    for (const m of maps)
+        for (const o of await portsOf(m) ?? [])
+            if (String(o.props.map) === mapName && String(o.props.port ?? '') === pname) out.push({map: m, id: o.id, name: o.name});
+    return out;
+}
+
+// portsOf 讀硬碟（角色分頁用；地圖分頁有徽章算好的）
+export const portsReader = (assets) => {
+    const read = readerOf(assets);
+    return async (m) => (await loadMap(m, read))?.objs.filter(isPortObj) ?? null;
+};
+
+export const portsText = (refs) => refs.map(r => `${r.map} 的門 ${r.name || `#${r.id}`}`).join('、');
 
 const objects = (data) => data.layers.filter(l => l.type === 'objectgroup').flatMap(l => l.objects);
 const byName = (data, name) => objects(data).find(o => o.name === name);
@@ -44,12 +101,29 @@ export function movePoint(data, pname, x, y)
     Object.assign(o, {x, y});
 }
 
-export function renamePoint(data, mapName, from, to)
+// 具名物件（point、門…）改名：get(地圖)＝那張圖的 data；refs＝portsTo() 找到的門，port 一起改
+export function renameNamed(get, mapName, from, to, refs = [])
 {
+    const data = get(mapName);
     if (byName(data, to)) throw new Error(`${mapName} 已經有 ${to}`);
     const o = byName(data, from);
     if (!o) throw new Error(`找不到 ${from}`);
     o.name = to;
+    for (const r of refs)
+    {
+        const d = objects(get(r.map)).find(x => x.id === r.id);
+        if (!d) throw new Error(`${r.map} 找不到門 #${r.id}`);
+        setStrProp(d, 'port', to);
+    }
+}
+
+// 同 Tiled：properties 照名稱排
+function setStrProp(o, name, value)
+{
+    const ps = o.properties ?? [];
+    const p = ps.find(x => x.name === name);
+    if (p) p.value = value;
+    else o.properties = [...ps, {name, type: 'string', value}].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
 }
 
 export function deletePoint(data, pname)

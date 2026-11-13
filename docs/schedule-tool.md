@@ -41,15 +41,15 @@
     - **新增目的地…**：物件上＝`go`、空地＝`at:[tx, ty]`（不建 point）。問**抵達時間**（`timePick()` 選擇器，同卡片的時間欄、見 [role-editor.md](role-editor.md)；預設選中那筆的抵達 +1 小時，沒選＝08:00），然後跟時序條右鍵插入同一支 `insertSch()`（**夾一小時**），選到新那筆、一筆 undo；同一時間擋下（狀態列）。走不到的格子、這張圖不在路網裡＝反灰
     - **改成選中那筆（HH:MM）的目的地**（有選）：改那筆的 `map`＋`go`／`at`，兩個互換時新 key 放在舊 key 的位置（`putDest()`）
     - **新增 point…**（空地）：問名稱寫進 Tiled 地圖（見下），不碰作息
-    - point 另有 改名…／刪除…；門另有「進入」
+    - point 另有 改名…／刪除…；門另有「進入」跟 `改名 <名>…`（同 point 改名，見下）
   - **門**：`tools/common/doors.js`（地圖分頁共用：`portsOf()`／`drawDoors()`／`doorAt()`／`landAt()`／`drawFlash()`）畫橘框 🚪（壞門紅／黃，門指到的地圖要讀進來才知道，讀完再補畫），單擊＝切到目的地圖、鏡頭移到落腳點閃一下；「← 返回」回點門前那張（`M.back` 堆疊，用下拉／標籤／麵包屑換圖就清空）；路網外的地圖也能進去看（下拉多一個「（路網沒有）」），但右鍵新增目的地反灰
 - **格子 `at` 的臨時路網**：`navgraph.json` 還沒有的 `at` 節點，`main.js` 的 `fillAt()` 用 `SM.spotOf()`＋`bestPath()` 在記憶體補節點跟 walk 邊（同 `scripts/navgraph.js` 的算法，存在 `S.atNav`，`navAll()` 合併給 `buildPlan()`），時刻表／路線馬上算得出來；橫幅同時寫「N 個作息格子還沒進路網」，按「更新路網」才寫進 navgraph.json。地圖改了（寫檔、別的分頁廣播）就整包重算（`forgetMap()`）。卡片上 `at` 顯示成「格子 x, y」欄位
 - **顯示 ▾**（`tools/common/showmenu.js` 的 `createShowMenu()`，記在 `tools.role.sched.show`，只存勾了的；存過就不套預設）：這個角色其他行程（預設勾；不勾只畫選中那筆的編號）、其他角色的點（綠字 `id 編號`）、物件名稱（後面有名稱過濾框，記 `tools.role.sched.show.filter`，規則見 [map-tool.md](map-tool.md)）、格子可走（`buildGrid()` 的結果：紅＝擋住、黃＝權重大於 1）、座標（預設勾；沒勾＝滑過真正的空地不出浮動框，作息用到的 `@x,y` 格子、具名物件、門照常有，游標方框照畫）。
 
-- **改 point（寫 Tiled 地圖）**：`tools/common/pointedit.js`（地圖分頁共用，另有路網過期橫幅 `navBanner()`、`updateNavgraph()`），**只動 point**（type `point` 或用 `point.tj` 的），家具、門只能點選。每次都從硬碟重讀地圖 json → 改 → 寫回，然後 `SM.forget(map)` 重烤、廣播 `maps/<地圖>.json`（地圖分頁收），收到別的分頁（地圖分頁放角色）廣播的 `maps/…` 也 `SM.forget()` 重畫、狀態列提醒「Tiled 開著這張圖要重新載入，不然 Tiled 存檔會蓋掉」。
+- **改 point（寫 Tiled 地圖）**：`tools/common/pointedit.js`（地圖分頁共用，另有路網過期橫幅 `navBanner()`、`updateNavgraph()`），**只動 point**（type `point` 或用 `point.tj` 的），家具只能點選，門只能改名。每次都從硬碟重讀地圖 json → 改 → 寫回，然後 `SM.forget(map)` 重烤、廣播 `maps/<地圖>.json`（地圖分頁收），收到別的分頁（地圖分頁放角色）廣播的 `maps/…` 也 `SM.forget()` 重畫、狀態列提醒「Tiled 開著這張圖要重新載入，不然 Tiled 存檔會蓋掉」。
   - 新增：右鍵空地「新增 point…」（巡邏編輯模式是左鍵點空地）→ 問名稱（預設 `<角色id>-p<n>`，只能英數 `-` `_`、同圖撞名擋）→ 加 `{id: nextobjectid, name, template: <相對>/templates/point.tj, x, y}`（x/y＝點到的格子左上角）、`nextobjectid` +1，放進已經有 point 的物件層（沒有就第一個物件層）；不碰作息（要當目的地再右鍵它「改成第 N 筆」）
   - 拖曳：左鍵按住 point 移超過 4px 才算拖，黃虛線框是放開後的格子，放開寫檔；拖過的那次 click 吃掉（不會變成點空地）
-  - 右鍵 point：改名（同圖撞名擋；所有角色作息裡同 `map` 的 `go`／巡邏 `route` 一起改並**立刻存 role.json**，有檢查警告照常問「仍然存檔」）、刪除（還有作息用到就擋、列出誰的第幾筆；沒人用確認後刪）
+  - 右鍵 point／門：改名（同圖撞名擋；對話框標題「一起改：…」列出別張圖 `port` 指過來的門（`ME.portsTo()`＋`portsReader()` 掃 `ME.listMaps()` 的全部地圖、套 template）跟作息；這張圖跟那些門的地圖用 `ME.editMaps()` 一起寫（`renameNamed()`，地圖分頁同一支）；所有角色作息裡同 `map` 的 `go`／巡邏 `route` 一起改並**立刻存 role.json**，有檢查警告照常問「仍然存檔」；角色分頁的地圖寫檔沒有 undo）、刪除（還有作息用到就擋、列出誰的第幾筆；沒人用確認後刪）
   - 讀地圖先走專案資料夾（`SM.setReader()`，剛寫的、測試的 OPFS 假資料夾），讀不到才走 dev server
 - **Tiled 排版**：`tools/common/tiledjson.js` 的 `stringify()` 照 Tiled 的規則輸出（最外層 `{ `、key 縮排、物件陣列元素縮排 +7、`}, ` 分隔、`\/`、非 ASCII 寫 `\uXXXX`、換行照原檔），git diff 只多出改的那幾行。專案的地圖讀進來再寫出去一字不差（測試會檢查全部地圖）；`forest-01`、`house-08`、`trump-inn-f1` 有幾行手改過的排版（`},` 少空白、多空行），工具寫它們時會順便整理成 Tiled 的樣子，資料不變。
 - **路網過期**：`ME.staleMaps()` 比檔案時間，路網裡的地圖有比 `json/navgraph.json` 新的就在右欄頂端顯示「⚠ 路網已過期（xxx.json 比 navgraph.json 新）［更新路網］」（切到作息、重畫右欄、寫完地圖時檢查）；**不自動重跑**，按鈕才打 `POST /__tools/navgraph`，結果（節點數、警告）顯示在橫幅下面，跑完重讀 navgraph.json。卡片的目的地不在路網裡就在卡片上標「⚠ 路網裡沒有 地圖:點」。在 Tiled 改了地圖一樣會被比出來。

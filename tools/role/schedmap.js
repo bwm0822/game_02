@@ -583,7 +583,7 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
         ...navBanner({stale, atStale, onUpdate, navMsg}),
         editBar,
         pick && h('div', {class: 'routeedit pickbar'}, `${pick}：點物件或空地（可以點門進去），Esc 取消`),
-        h('div', {class: 'opts'}, mapSel, back, h('span', {class: 'help', title: '滾輪縮放、按住中鍵拖曳平移；點門（橘框 🚪）進去、「← 返回」回來；點路線上的「→ 地圖」切過去；右鍵空地或物件＝新增目的地／改目的地；拖 point 改位置'}, '?')),
+        h('div', {class: 'opts'}, mapSel, back, h('span', {class: 'help', title: '滾輪縮放、按住中鍵拖曳平移；點門（橘框 🚪）進去、「← 返回」回來；點路線上的「→ 地圖」切過去；右鍵空地或物件＝新增目的地／改目的地，右鍵 point／門還能改名（別張圖指過來的門、作息一起改）；拖 point 改位置'}, '?')),
         crumbs,
         h('div', {class: 'cvbox'}, cv, tip, msg),
         h('div', {class: 'opts'}, SHOW.showMenu(redraw, [], {names: () => [...(st.data?.named.keys() ?? [])]}), PZ.zoomField(view), PZ.centerBtn(view, '整張地圖放回中央、倍率剛好裝滿畫布')));

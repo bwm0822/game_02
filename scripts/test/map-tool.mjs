@@ -641,6 +641,28 @@ run('map-tool', async t => {
         await settle();
         out.noLand = [S.sel, document.getElementById('status').textContent, S.back.at(-1)];
 
+        // ================= 門改名：右鍵選單；別張圖指過來的門（m_04x05 的 karen-home、fixture-02 的 to-kh）port 一起改、一筆 undo =================
+        const W4 = 'm/m_04x05';
+        const origKh = await readText(`${KH}.json`), origW4 = await readText(`${W4}.json`), origF2 = await readText('fixture-02.json');
+        const objsOf = async (m) => JSON.parse(await readText(`${m}.json`)).layers.filter(l => l.type === 'objectgroup').flatMap(l => l.objects);
+        const portOf = async (m, nm) => (await objsOf(m)).find(o => o.name === nm)?.properties?.find(p => p.name === 'port')?.value;
+        await settle();
+        cv().dispatchEvent(new PointerEvent('pointermove', {bubbles: true, ...mid(doorOf('door'))}));
+        out.dtipKh = [...document.querySelectorAll('#view .tip > div')].map(e => e.textContent).join(' | ');
+        cv().dispatchEvent(new MouseEvent('contextmenu', {bubbles: true, cancelable: true, ...mid(doorOf('door'))}));
+        out.doorMenu = [...document.querySelectorAll('.ctxmenu button')].map(b => b.textContent);
+        const hiD = S.hi;
+        saved.length = 0;
+        document.querySelector('.ctxmenu button').click();
+        await answer(d => {out.doorRenTitle = d.querySelector('.title').textContent; d.querySelector('input').value = 'front'; return 'ok';});
+        await until(() => S.hi === hiD + 1);
+        await settle();
+        out.doorRenamed = [!!(await objsOf(KH)).find(o => o.name === 'front'), await portOf(W4, 'karen-home'), await portOf('fixture-02', 'to-kh'), await portOf('fixture-02', 'to-kh-bad'),
+            S.hist[S.hi - 1].files.map(f => f.rel).sort().join(), [`maps/${KH}.json`, `maps/${W4}.json`, 'maps/fixture-02.json'].every(f => saved.includes(f)),
+            S.sums['fixture-02'].issues.length];
+        await mt.undo();
+        out.doorUndo = [await readText(`${KH}.json`) === origKh, await readText(`${W4}.json`) === origW4, await readText('fixture-02.json') === origF2];
+
         // ================= 作息 point：右鍵新增、拖曳、改名（連 role.json 一筆 undo）、刪除 =================
         const roleFile = async () => (await (await jsonDir.getFileHandle('role.json')).getFile()).text();
         const writeRole = async (text) => {const w = await (await jsonDir.getFileHandle('role.json')).createWritable(); await w.write(text); await w.close();};
@@ -843,6 +865,13 @@ run('map-tool', async t => {
     t.check('← 返回：回上一張、堆疊少一筆', r.goBack.join() === 'm_04x05/karen-home,m/m_04x05,false', r.goBack.join());
     t.eq('壞門：地圖不存在紅、落腳點找不到黃', r.bad, 'to-kh:ok,to-nowhere:error,to-kh-bad:warn');
     t.check('壞門算進左欄 ⚠', r.badBadge[0] === '⚠2' && /不存在的地圖「no-such-map」/.test(r.badBadge[1]) && /落腳點「nope」/.test(r.badBadge[1]), r.badBadge.join(' | '));
+    t.check('滑過門：提示右鍵改名', /右鍵＝改名/.test(r.dtipKh), r.dtipKh);
+    t.eq('右鍵門：改名／進去', r.doorMenu.join(), '改名 door…,↗ 進去 m/m_04x05');
+    t.check('門改名對話框：列出指過來的門', /m\/m_04x05 的門 karen-home/.test(r.doorRenTitle) && /fixture-02 的門 to-kh/.test(r.doorRenTitle) && !/to-kh-bad/.test(r.doorRenTitle), r.doorRenTitle);
+    t.check('門改名：自己改名、指過來的門 port 一起改（to-kh-bad 不動）、三檔一筆 undo、都廣播、沒多出 ⚠',
+        r.doorRenamed[0] && r.doorRenamed[1] === 'front' && r.doorRenamed[2] === 'front' && r.doorRenamed[3] === 'nope'
+        && r.doorRenamed[4] === `maps/fixture-02.json,maps/m/m_04x05.json,maps/m_04x05/karen-home.json` && r.doorRenamed[5] && r.doorRenamed[6] === 2, JSON.stringify(r.doorRenamed));
+    t.check('門改名 undo：三張圖一字不差', r.doorUndo.every(Boolean), r.doorUndo.join());
     t.check('滑過壞門：⚠ 原因、點了不會跳', /⚠ 門「to-nowhere」指到不存在的地圖/.test(r.badTip) && /點了不會跳/.test(r.badTip), r.badTip);
     t.check('點地圖不存在的門：不跳、狀態列提示', r.noJump[0] === 'fixture-02' && /不存在的地圖/.test(r.noJump[1]), r.noJump.join(' | '));
     t.eq('顯示 ▾ 關掉門：點不到', r.hidden, 'fixture-02');
@@ -875,7 +904,7 @@ run('map-tool', async t => {
     t.check('有作息用：刪除擋、列出誰的第幾筆', r.delBlock[0] === '不能刪 p1' && /zz 第 1 筆、zz 第 2 筆/.test(r.delBlock[1]) && r.delBlocked[0], r.delBlock.join(' | '));
     t.eq('預設名稱取最小空號', r.newDef2, 'p2');
     t.check('改成已有的名字擋', /這張圖已經有 p2/.test(r.renameDup[0]), r.renameDup.join());
-    t.check('改名對話框列出 role.json 會改的', /role\.json 一起改：zz 第 1 筆、zz 第 2 筆/.test(r.renameTitle), r.renameTitle);
+    t.check('改名對話框列出 role.json 會改的', /一起改：role\.json：zz 第 1 筆、zz 第 2 筆/.test(r.renameTitle), r.renameTitle);
     t.check('改名：地圖＋role.json 的 go／route 一筆寫完、兩個都廣播、重讀角色',
         r.ptRenamed[0] && r.ptRenamed[1] && r.ptRenamed[2] === 'home' && r.ptRenamed[3] === 'home,@1,1' && r.ptRenamed[4] && r.ptRenamed[5] && r.ptRenamed[6] === 'maps/fixture-01.json,json/role.json' && r.ptRenamed[7] === 'home',
         JSON.stringify(r.ptRenamed));
