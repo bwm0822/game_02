@@ -28,6 +28,7 @@ export function stayAt(segs, t, n)
 }
 
 // 插入：新目的地 t 抵達，停 STAY 分後回原處（出發型）；回原處的時間超過原本下一筆出發＝只插一筆
+// 同目的地也一樣夾一小時（原地不動，給那一小時另標類型）
 // i＝插入點所在那筆（-1＝作息是空的）；回傳新那筆的 index
 export function insertAt(sch, plan, i, t, map, dest)
 {
@@ -36,7 +37,7 @@ export function insertAt(sch, plan, i, t, map, dest)
     const n = sch.length, p = plan?.[i], next = plan?.[(i + 1) % n];
     const back = mod(t + STAY);
     const room = p && next ? mod(next.dep - p.arr) || DAY : DAY;
-    const ret = p && mod(back - p.arr) < room && !sameDest(sch[i], add);
+    const ret = p && mod(back - p.arr) < room;
     sch.splice(i + 1, 0, add);
     if (ret)
     {

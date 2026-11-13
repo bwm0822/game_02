@@ -503,6 +503,18 @@ run('schedule-tool', async t => {
         out.segMenu = mItems(0).map(b => b.textContent);
         mItems(0).find(b => b.textContent === '刪除這筆').click();
         out.delMerged = [JSON.stringify(S.data.trump.schedule) === sch0, S.schSel.i];
+        // 同目的地插入：也夾一小時（不是佔掉剩下的），刪中間那筆合併回原本
+        const insSame = async (min) => {
+            await ctxBar(min);
+            hover(0, /^插入作息/); hover(1, /^m_04x05$/); hover(2, /trump-inn-f1$/);
+            mItems(3).find(b => b.textContent.replace('✔ ', '') === 'trump-p1').click();
+            return S.data.trump.schedule.map(s => `${s.t} ${s.go}`).join(' | ');
+        };
+        out.sameIns = [await insSame(12 * 60), S.schSel.i];
+        re.undo();
+        out.sameFull = await insSame(22 * 60 + 10);
+        re.undo();
+        out.sameUndo = JSON.stringify(S.data.trump.schedule) === sch0;
         // 在地圖上選：插入 15:00 → 挑選模式 → 點 sit-2
         await ctxBar(15 * 60);
         hover(0, /^插入作息/);
@@ -901,6 +913,10 @@ run('schedule-tool', async t => {
     t.eq('選午餐：寫 type、段內寫午餐、type 排在 t 後面', JSON.stringify(r.typed), JSON.stringify(['lunch', '午餐', 't,map,go,type']));
     t.eq('右鍵段：一樣的選單', JSON.stringify(r.segMenu), JSON.stringify(['插入作息（10:20 抵達）', '分割（10:20）', '改目的地', '類型', '刪除這筆']));
     t.eq('刪除：前後同目的地合併，回到原本、選前一筆', JSON.stringify(r.delMerged), JSON.stringify([true, 0]));
+    t.eq('同目的地插入：也夾一小時（12:00 抵達、13:00 出發回原處）、選新那筆', JSON.stringify(r.sameIns),
+        JSON.stringify(['@06:20 trump-p1 | @12:00 trump-p1 | 13:00 trump-p1 | @22:50 bed', 1]));
+    t.eq('同目的地塞不下一小時：只插一筆（＝分割）', r.sameFull, '@06:20 trump-p1 | @22:10 trump-p1 | @22:50 bed');
+    t.eq('同目的地插入 undo 回原狀', r.sameUndo, true);
     t.check('在地圖上選：地圖上方提示', /插入 15:00 抵達的目的地/.test(r.pickBar ?? ''), r.pickBar);
     t.eq('點 sit-2：插入（夾一小時）、提示消失', JSON.stringify(r.picked2), JSON.stringify(['@06:20 trump-p1 | @15:00 sit-2 | 16:00 trump-p1 | @22:50 bed', true]));
     t.eq('Esc 取消挑選', JSON.stringify(r.pickEsc), JSON.stringify([true, true]));

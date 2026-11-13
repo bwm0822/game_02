@@ -712,7 +712,9 @@ function insertSch(id, t, map, dest)
         S.schSel = {id, i: k};
     });
     if (map) SM.setMap(map);
-    status(`插入：${SP.hhmm(m)} 抵達 ${destName(map, dest)}${S.data[id].schedule.length - a.length > 1 ? `，${SP.hhmm(SP.mod(m + SE.STAY))} 回原處` : ''}`);
+    const two = S.data[id].schedule.length - a.length > 1;
+    const sameD = at >= 0 && SE.sameDest(S.data[id].schedule[at], {map, ...dest});
+    status(`插入：${SP.hhmm(m)} 抵達 ${destName(map, dest)}${two ? `，${SP.hhmm(SP.mod(m + SE.STAY))} 回原處` : sameD ? '（剩不到一小時，等於分割）' : ''}`);
 }
 
 // 地圖右鍵「新增目的地…」：問抵達時間（預設選中那筆抵達 +1 小時，沒選＝08:00）再插入
