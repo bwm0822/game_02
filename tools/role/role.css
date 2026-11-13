@@ -28,7 +28,7 @@
 .smap .routeedit { flex: none; margin-bottom: 6px; padding: 4px 8px; background: #1e3d1a; border: 1px solid #5aa845; border-radius: 4px; color: #c8f0b8; font-size: 13px; }
 .card .times.patrol { color: #9fe08a; }
 /* 作息 24 小時橫條（schedbar.js） */
-.daybar { margin: 4px 0 10px; font-size: 12px; }
+.daybar { margin: 20px 0 10px; font-size: 12px; }
 .daybar.none { font-size: 13px; }
 .daybar .track { position: relative; height: 22px; background: #1d1f22; border: 1px solid #3a3d44; border-radius: 3px; overflow: hidden; }
 .daybar .hr { position: absolute; top: 0; bottom: 0; width: 1px; background: #2c2f34; }
@@ -42,7 +42,7 @@
 .daybar { position: relative; }
 .daybar .track { user-select: none; touch-action: none; }
 .daybar .track .empty { position: absolute; left: 6px; top: 3px; font-size: 12px; pointer-events: none; }
-.daybar .dragtip { position: absolute; top: -20px; transform: translateX(-50%); z-index: 3; padding: 1px 6px; border-radius: 3px;
+.daybar .dragtip { position: absolute; top: 24px; transform: translateX(-50%); z-index: 3; padding: 1px 6px; border-radius: 3px;
     background: #111; border: 1px solid #4fc3f7; color: #fff; white-space: nowrap; pointer-events: none; font-size: 12px; }
 .daybar .seg.sel { box-shadow: 0 0 0 2px #4fc3f7 inset; filter: brightness(1.2); }
 .daybar .axis { position: relative; height: 14px; color: #888; }
@@ -73,8 +73,8 @@
 .gantt .knob { position: absolute; top: -1px; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: #ffd54f; pointer-events: none; }
 .daybar .seg.dim { opacity: .2; }
 .daybar .track.grab, .daybar .track.grab .seg { cursor: ew-resize; }
-.daybar .hovline { position: absolute; top: 0; height: 38px; width: 1px; margin-left: -0.5px; background: rgba(255, 255, 255, .7); pointer-events: none; z-index: 2; }
-.daybar .hovt { position: absolute; top: 24px; transform: translateX(-50%); z-index: 3; padding: 0 4px; line-height: 14px; border-radius: 3px;
+.daybar .hovline { position: absolute; top: -4px; height: 28px; width: 1px; margin-left: -0.5px; background: rgba(255, 255, 255, .7); pointer-events: none; z-index: 2; }
+.daybar .hovt { position: absolute; top: -18px; transform: translateX(-50%); z-index: 3; padding: 0 4px; line-height: 14px; border-radius: 3px;
     background: #e8e8e8; color: #111; font-size: 11px; pointer-events: none; }
 .daybar .hovline[hidden], .daybar .hovt[hidden] { display: none; }
 .smap .pickbar { background: #173246; border-color: #4fc3f7; color: #cdeefc; }
