@@ -611,6 +611,16 @@ run('schedule-tool', async t => {
         out.grabCur = [tb().classList.contains('grab'), getComputedStyle(wk).cursor];
         tb().dispatchEvent(new PointerEvent('pointerleave', {pointerId: 1}));
         out.hovGone = [hovT()?.hidden, tb().classList.contains('grab')];
+        // hover 一段＝同一筆作息的段都亮（跨午夜切成兩塊的停留段＋走路段），別筆不亮、離開全拿掉
+        const stays = [...tb().querySelectorAll('.seg.stay')];
+        const wrapI = stays.map(s => s.dataset.i).find((i, k, a) => a.indexOf(i) !== k);
+        const ofI = (i) => [...tb().querySelectorAll(`.seg[data-i="${i}"]`)];
+        const lastPiece = ofI(wrapI).filter(s => s.dataset.kind === 'stay').at(-1), lr = lastPiece?.getBoundingClientRect();
+        lastPiece?.dispatchEvent(new PointerEvent('pointermove', {bubbles: true, pointerId: 1, clientX: lr.left + lr.width / 2, clientY: lr.top + lr.height / 2}));
+        out.hovSame = [wrapI, ofI(wrapI).map(s => `${s.dataset.kind}:${s.classList.contains('hov')}`).join(),
+            [...tb().querySelectorAll('.seg')].filter(s => s.dataset.i !== wrapI && s.classList.contains('hov')).length];
+        tb().dispatchEvent(new PointerEvent('pointerleave', {pointerId: 1}));
+        out.hovSameGone = tb().querySelectorAll('.seg.hov').length;
         S.schSel = {id: 'trump', i: 0}; re.render();
         document.querySelector('#view [data-k="schedule.0.dest"]').click();
         await until(() => document.querySelector('.ctxmenu'));
@@ -904,6 +914,9 @@ run('schedule-tool', async t => {
     t.eq('按住 Shift：到 1 分', r.hovShift, '14:33');
     t.eq('滑到走路段：游標 ↔（段自己的 pointer 不蓋掉）', JSON.stringify(r.grabCur), JSON.stringify([true, 'ew-resize']));
     t.eq('離開時序條：時間標籤藏起來', JSON.stringify(r.hovGone), JSON.stringify([true, false]));
+    t.check('hover 跨午夜那段：同一筆的兩塊停留＋走路段都亮、別筆不亮', r.hovSame[0] != null && /^(\w+:true,?)+$/.test(r.hovSame[1]) && (r.hovSame[1].match(/stay/g) ?? []).length === 2
+        && /walk/.test(r.hovSame[1]) && r.hovSame[2] === 0, JSON.stringify(r.hovSame));
+    t.eq('離開時序條：hover 反白全拿掉', r.hovSameGone, 0);
     t.check('目的地按鈕：分層選單、目前所在打 ✔', r.destL0[0] === '✔ m_04x05' && r.destL0.at(-1) === '🗺 在地圖上選…', JSON.stringify(r.destL0));
     t.eq('✔ 掛在室內圖跟點上', JSON.stringify([r.destL1, r.destL2]), JSON.stringify([['✔ 🏠 trump-inn-f1'], ['✔ trump-p1']]));
     t.eq('選 sit-1：改 map＋go、按鈕跟著換', JSON.stringify(r.destSet), JSON.stringify(['m_04x05/trump-inn-f1', 'sit-1', '🏠 trump-inn-f1 ▸ sit-1']));

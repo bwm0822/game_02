@@ -105,6 +105,13 @@ export function dayBarEl(plan, sch, warns, opt = {})
         hovLine.style.left = hovT.style.left = left;
         hovT.textContent = text;
     };
+    // 滑過一段＝同一筆作息的段都亮（走路＋停留、跨午夜切成兩塊的）
+    let hovI = null;
+    const hovSeg = (i) => {
+        if (i === hovI) return;
+        hovI = i;
+        for (const s of bar.querySelectorAll('.seg')) s.classList.toggle('hov', i !== null && +s.dataset.i === i);
+    };
     let drag = null, swallow = false;
     bar.addEventListener('pointerdown', (e) => {
         if (e.button !== 0) return;
@@ -119,12 +126,15 @@ export function dayBarEl(plan, sch, warns, opt = {})
         if (!drag)
         {
             bar.classList.toggle('grab', grab(e) >= 0);
+            const el = e.target.closest?.('.seg');
+            hovSeg(el ? +el.dataset.i : null);
             const step = e.shiftKey ? 1 : SNAP;
             hover(e.clientX, hhmm(mod(Math.round(tOf(e.clientX) / step) * step)));
             return;
         }
         if (!drag.moved && Math.abs(e.clientX - drag.x0) < 3) return;
         drag.moved = true;
+        hovI = null;
         const raw = tOf(e.clientX) - tOf(drag.x0);
         const step = e.shiftKey ? 1 : 10;
         const want = Math.round((drag.t0 + raw) / step) * step - drag.t0;
@@ -140,7 +150,7 @@ export function dayBarEl(plan, sch, warns, opt = {})
         tipEl.hidden = false;
         hover(e.clientX, p ? hhmm(p.arr) : list[drag.j].t.replace(/^@/, ''));
     });
-    bar.addEventListener('pointerleave', () => {if (!drag) {hover(0, null); bar.classList.remove('grab');}});
+    bar.addEventListener('pointerleave', () => {if (!drag) {hover(0, null); hovSeg(null); bar.classList.remove('grab');}});
     const end = () => {
         const d = drag;
         drag = null;
