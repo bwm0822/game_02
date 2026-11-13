@@ -130,7 +130,7 @@ run('schedule-tool', async t => {
         const p0 = pl.plan[0];
         out.times0 = card(0).querySelector('.times')?.textContent;
         const p1 = pl.plan[1];
-        out.times0Want = `走：${re.SP.hhmm(p0.dep)}（${re.SB.dur(p0.cost)}）待：06:20 ~ ${re.SP.hhmm(p1.dep)}（${re.SB.dur(re.SP.mod(p1.dep - p0.arr))}）`;
+        out.times0Want = `走：${re.SP.hhmm(p0.dep)}（${re.SB.dur(p0.cost)}）待：06:20 ~ ${re.SP.hhmm(p1.dep)}（${re.SP.hhmm(re.SP.mod(p1.dep - p0.arr)).replace(':', ' 時 ')} 分）`;
         out.cardNoMap = [!document.querySelector('#view .card [data-k="schedule.0.map"]'), !document.querySelector('#view .card [data-k="schedule.0.t#mode"]'),
             document.querySelector('#view .card [data-k="schedule.0.dest"]')?.textContent];
         out.dep0 = re.SP.mod(p0.dep + p0.cost) === 6 * 60 + 20;
@@ -469,6 +469,27 @@ run('schedule-tool', async t => {
         pickT('schedule.0.dep', '06:00');
         out.depPick = S.data.trump.schedule[0].t;
         while (S.hi > h1) re.undo();
+        // 停留長度：「HH 時 MM 分」選擇器，改了下一筆平移；最短 10 分
+        S.schSel = {id: 'trump', i: 0}; re.render();
+        out.stayText = document.querySelector('#view .tpick[data-k="schedule.0.stay"]')?.textContent;
+        pickT('schedule.0.stay', '02:00');
+        out.stayPick = [S.data.trump.schedule[1].t, `@${re.SP.hhmm(6 * 60 + 20 + 120 + plk[1].cost)}`];
+        pickT('schedule.0.stay', '00:05');
+        out.stayMin = [S.data.trump.schedule[1].t, `@${re.SP.hhmm(6 * 60 + 20 + 10 + plk[1].cost)}`];
+        while (S.hi > h1) re.undo();
+        // hover 時序條：刻度列顯示游標時間（對齊 10 分、Shift＝1 分）；邊緣／走路段游標 ↔；離開就藏
+        S.schSel = {id: 'trump', i: 0}; re.render();
+        const mv = (el, min, extra = {}) => el.dispatchEvent(new PointerEvent('pointermove', {bubbles: true, pointerId: 1, clientX: xOf(min), clientY: tb().getBoundingClientRect().top + 8, ...extra}));
+        const hovT = () => document.querySelector('#view .daybar .hovt');
+        mv(tb(), 14 * 60 + 33);
+        out.hov = [hovT()?.hidden, hovT()?.textContent, !document.querySelector('#view .daybar .hovline').hidden, tb().classList.contains('grab')];
+        mv(tb(), 14 * 60 + 33, {shiftKey: true});
+        out.hovShift = hovT()?.textContent;
+        const wk = tb().querySelector('.seg.walk[data-i="1"]'), wkr = wk.getBoundingClientRect();
+        wk.dispatchEvent(new PointerEvent('pointermove', {bubbles: true, pointerId: 1, clientX: wkr.left + wkr.width / 2, clientY: wkr.top + wkr.height / 2}));
+        out.grabCur = [tb().classList.contains('grab'), getComputedStyle(wk).cursor];
+        tb().dispatchEvent(new PointerEvent('pointerleave', {pointerId: 1}));
+        out.hovGone = [hovT()?.hidden, tb().classList.contains('grab')];
         S.schSel = {id: 'trump', i: 0}; re.render();
         document.querySelector('#view [data-k="schedule.0.dest"]').click();
         await until(() => document.querySelector('.ctxmenu'));
@@ -741,6 +762,13 @@ run('schedule-tool', async t => {
     t.eq('全部 undo 回原狀', r.barUndo, true);
     t.eq('點訖改 22:00：下一筆照原型別平移（@ 抵達＝22:00＋走路）、這筆不動', JSON.stringify(r.endPick), JSON.stringify([r.endPick[1], r.endPick[1], '@06:20']));
     t.eq('點出發改 06:00：這筆變出發型', r.depPick, '06:00');
+    t.check('停留長度顯示成「HH 時 MM 分」', /^\d\d 時 \d\d 分$/.test(r.stayText ?? ''), r.stayText);
+    t.eq('停留改 2 小時：下一筆照原型別平移', r.stayPick[0], r.stayPick[1]);
+    t.eq('停留最短 10 分', r.stayMin[0], r.stayMin[1]);
+    t.eq('hover 時序條：刻度列顯示游標時間（對齊 10 分）、直線、中間不是邊緣', JSON.stringify(r.hov), JSON.stringify([false, '14:30', true, false]));
+    t.eq('按住 Shift：到 1 分', r.hovShift, '14:33');
+    t.eq('滑到走路段：游標 ↔（段自己的 pointer 不蓋掉）', JSON.stringify(r.grabCur), JSON.stringify([true, 'ew-resize']));
+    t.eq('離開時序條：時間標籤藏起來', JSON.stringify(r.hovGone), JSON.stringify([true, false]));
     t.check('目的地按鈕：分層選單、目前所在打 ✔', r.destL0[0] === '✔ m_04x05' && r.destL0.at(-1) === '🗺 在地圖上選…', JSON.stringify(r.destL0));
     t.eq('✔ 掛在室內圖跟點上', JSON.stringify([r.destL1, r.destL2]), JSON.stringify([['✔ 🏠 trump-inn-f1'], ['✔ trump-p1']]));
     t.eq('選 sit-1：改 map＋go、按鈕跟著換', JSON.stringify(r.destSet), JSON.stringify(['m_04x05/trump-inn-f1', 'sit-1', '🏠 trump-inn-f1 ▸ sit-1']));

@@ -1039,16 +1039,20 @@ function schTimes(id, i, pl, s)
     const late = pl.warns.find(w => w.i === i && w.kind === 'late'), lateNx = pl.warns.find(w => w.i === j && w.kind === 'late');
     const pre = pl.plan[(i - 1 + n) % n];
     const stay = n === 1 ? null : lateNx ? 0 : SP.mod(nx.dep - p.arr);
-    const endPick = (v) => {
-        const cur = planOf(id).plan?.[j];
-        if (!cur) return;
-        const s2 = S.data[id].schedule[j];
-        set(id, ['schedule', j, 't'], SE.shiftT(s2.t, SP.mod(SE.toMin(v) - cur.dep + 720) - 720));
+    // 下一筆平移成「停 m 分」（每次照當下的時刻表算差值，滾輪連續寫也對）
+    const stayTo = (m) => {
+        const pl2 = planOf(id), a = pl2.plan?.[i], b = pl2.plan?.[j];
+        if (!a || !b) return;
+        const now = pl2.warns.some(w => w.i === j && w.kind === 'late') ? 0 : SP.mod(b.dep - a.arr);
+        const d = m - now;
+        if (d) set(id, ['schedule', j, 't'], SE.shiftT(S.data[id].schedule[j].t, d));
     };
+    const endPick = (v) => {const a = planOf(id).plan?.[i]; if (a) stayTo(SP.mod(SE.toMin(v) - a.arr));};
+    const stayPick = (v) => stayTo(Math.max(SE.MIN_STAY, SE.toMin(v)));
     return h('div', {class: 'times' + (late || !p.path || lateNx ? ' bad' : '')},
         h('span', {class: 'tw'}, '走：', p.path ? [timePick(`${k}.dep`, SP.hhmm(p.dep), v => put(v)), `（${SB.dur(p.cost)}）`] : `從 ${p.from} 走不到`),
         h('span', {class: 'ts'}, '待：', timePick(`${k}.t`, SP.hhmm(p.arr), v => put(`@${v}`)), ' ~ ',
-            n === 1 ? '整天' : [timePick(`${k}.end`, SP.hhmm(nx.dep), endPick), `（${SB.dur(stay)}）`]),
+            n === 1 ? '整天' : [timePick(`${k}.end`, SP.hhmm(nx.dep), endPick), '（', timePick(`${k}.stay`, SP.hhmm(stay), stayPick, {unit: true}), '）']),
         late && h('div', {class: 'tlate'}, `排不下：晚 ${late.late} 分（上一筆 ${SP.hhmm(pre.arr)} 才到）`),
         lateNx && h('div', {class: 'tlate'}, `下一筆排不下：晚 ${lateNx.late} 分`));
 }

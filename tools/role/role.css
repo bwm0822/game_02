@@ -72,6 +72,11 @@
 .gantt .cur { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #ffd54f; z-index: 1; pointer-events: none; }
 .gantt .knob { position: absolute; top: -1px; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: #ffd54f; pointer-events: none; }
 .daybar .seg.dim { opacity: .2; }
+.daybar .track.grab, .daybar .track.grab .seg { cursor: ew-resize; }
+.daybar .hovline { position: absolute; top: 0; height: 38px; width: 1px; margin-left: -0.5px; background: rgba(255, 255, 255, .7); pointer-events: none; z-index: 2; }
+.daybar .hovt { position: absolute; top: 24px; transform: translateX(-50%); z-index: 3; padding: 0 4px; line-height: 14px; border-radius: 3px;
+    background: #e8e8e8; color: #111; font-size: 11px; pointer-events: none; }
+.daybar .hovline[hidden], .daybar .hovt[hidden] { display: none; }
 .smap .pickbar { background: #173246; border-color: #4fc3f7; color: #cdeefc; }
 .schhint { margin: 4px 0 8px; }
 .ctxmenu button.sub::after { content: '▸'; float: right; margin-left: 12px; color: #999; }

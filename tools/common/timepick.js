@@ -78,14 +78,16 @@ document.addEventListener('keydown', (e) => {
 document.addEventListener('scroll', () => pop && place(), true);
 
 // k：data-k 前綴（時／分兩段是 `${k}.h`／`${k}.m`）；pick(HH:MM)：選了就呼叫（作息卡片＝立刻寫、對話框＝只改框裡的值）
-export function timePick(k, value, pick)
+// opt.unit＝顯示成「HH 時 MM 分」（長度用，值一樣是 HH:MM）
+export function timePick(k, value, pick, opt = {})
 {
     let cur = value ?? '';
     const ok = parse(cur), bad = cur !== '' && !ok;
     const [hs, ms] = ok ? cur.split(':') : bad ? (cur.includes(':') ? cur.split(':', 2) : [cur, '--']) : ['--', '--'];
     const segH = h('span', {class: 'tp-seg', dataset: {k: `${k}.h`}}, hs);
     const segM = h('span', {class: 'tp-seg', dataset: {k: `${k}.m`}}, ms);
-    const wrap = h('span', {class: 'tpick' + (bad ? ' bad' : ''), dataset: {k}, title: bad ? `時間要是 HH:MM：${cur}` : null}, segH, ':', segM);
+    const wrap = h('span', {class: 'tpick' + (bad ? ' bad' : ''), dataset: {k}, title: bad ? `時間要是 HH:MM：${cur}` : null},
+        ...(opt.unit ? [segH, ' 時 ', segM, ' 分'] : [segH, ':', segM]));
     const put = (v) => {
         cur = v;
         [segH.textContent, segM.textContent] = v.split(':');

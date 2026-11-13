@@ -1,7 +1,7 @@
 // 作息 24 小時橫條：buildPlan() 的時刻表 → 一列分段（之後全 NPC 總覽疊很多列也用這支）
 import {h} from '../common/dom.js';
 import {DAY, mod, hhmm, destOf} from '../../src/data/schedplan.js';
-import {toMin, shiftT as shift, dragRange} from './schedit.js';
+import {toMin, shiftT as shift, dragRange, SNAP} from './schedit.js';
 
 const PALETTE = ['#3f7fbf', '#4f9a4a', '#b5793a', '#8a5bb0', '#3a9a94', '#b0544f', '#9a9a3a', '#5b6fc4', '#b05b8f', '#6b8a3a'];
 
@@ -94,6 +94,16 @@ export function dayBarEl(plan, sch, warns, opt = {})
         return -1;
     };
     const tipEl = h('div', {class: 'dragtip', hidden: true});
+    // 游標時間：刻度列那排跟著游標的小標籤＋細直線（總覽每列不畫）
+    const hovLine = h('i', {class: 'hovline', hidden: true}), hovT = h('span', {class: 'hovt', hidden: true});
+    const hover = (x, text) => {
+        if (opt.bare) return;
+        hovLine.hidden = hovT.hidden = text === null;
+        if (text === null) return;
+        const rc = bar.getBoundingClientRect(), left = `${Math.max(0, Math.min(rc.width, x - rc.left))}px`;
+        hovLine.style.left = hovT.style.left = left;
+        hovT.textContent = text;
+    };
     let drag = null, swallow = false;
     bar.addEventListener('pointerdown', (e) => {
         if (e.button !== 0) return;
@@ -105,7 +115,13 @@ export function dayBarEl(plan, sch, warns, opt = {})
         drag = {j, x0: e.clientX, t0, delta: 0, moved: false, range: dragRange(plan, j) ?? [0, 0]};
     });
     bar.addEventListener('pointermove', (e) => {
-        if (!drag) {bar.style.cursor = grab(e) >= 0 ? 'ew-resize' : ''; return;}
+        if (!drag)
+        {
+            bar.classList.toggle('grab', grab(e) >= 0);
+            const step = e.shiftKey ? 1 : SNAP;
+            hover(e.clientX, hhmm(mod(Math.round(tOf(e.clientX) / step) * step)));
+            return;
+        }
         if (!drag.moved && Math.abs(e.clientX - drag.x0) < 3) return;
         drag.moved = true;
         const raw = tOf(e.clientX) - tOf(drag.x0);
@@ -121,11 +137,14 @@ export function dayBarEl(plan, sch, warns, opt = {})
         tipEl.textContent = p ? `停 ${dur(mod(p.dep - pre.arr))} ｜ 抵達 ${hhmm(p.arr)} ｜ 停 ${dur(mod(nx.dep - p.arr))}` : list[drag.j].t;
         tipEl.style.left = pct(tOf(e.clientX));
         tipEl.hidden = false;
+        hover(e.clientX, p ? hhmm(p.arr) : list[drag.j].t.replace(/^@/, ''));
     });
+    bar.addEventListener('pointerleave', () => {if (!drag) {hover(0, null); bar.classList.remove('grab');}});
     const end = () => {
         const d = drag;
         drag = null;
         tipEl.hidden = true;
+        hover(0, null);
         if (!d?.moved) return;
         swallow = true;
         setTimeout(() => {swallow = false;}, 0);
@@ -144,7 +163,7 @@ export function dayBarEl(plan, sch, warns, opt = {})
     const segs = segs0;
     const maps = [...new Set(segs.filter(g => g.kind === 'stay').map(g => g.map))];
     const legend = h('div', {class: 'legend'}, maps.map(m => h('span', {title: m ?? ''}, h('b', {style: `background:${mapColor(m)}`}), m?.split('/').at(-1) ?? '?')));
-    return h('div', {class: 'daybar'}, bar, tipEl, axisEl(), legend);
+    return h('div', {class: 'daybar'}, bar, tipEl, hovLine, hovT, axisEl(), legend);
 }
 
 export const axisEl = () => h('div', {class: 'axis'}, [0, 6, 12, 18, 24].map(t => h('span', {style: `left:${(t / 24) * 100}%`}, String(t))));
