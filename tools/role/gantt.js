@@ -3,13 +3,55 @@ import {h} from '../common/dom.js';
 import {DAY, mod, hhmm} from '../../src/data/schedplan.js';
 import * as SB from './schedbar.js';
 
-const KT = 'tools.role.gantt.t', KM = 'tools.role.gantt.map';
+const KT = 'tools.role.gantt.t', KM = 'tools.role.gantt.map', KH = 'tools.role.gantt.hide';
 const load = (k) => {try {return localStorage.getItem(k);} catch {return null;}};
 const save = (k, v) => {try {v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v);} catch {}};
+const loadHide = () => {try {const a = JSON.parse(load(KH)); return new Set(Array.isArray(a) ? a : []);} catch {return new Set();}};
 
-export const G = {t: +(load(KT) ?? 18 * 60) || 0, map: load(KM) || null};
+// hide＝藏起來的角色 id（記藏的，新角色預設顯示）
+export const G = {t: +(load(KT) ?? 18 * 60) || 0, map: load(KM) || null, hide: loadHide()};
 export function setT(t) {G.t = mod(Math.round(t)); save(KT, String(G.t));}
 export function setMap(m) {G.map = m || null; save(KM, G.map);}
+export function setHide(ids, on)
+{
+    for (const id of ids) on ? G.hide.add(id) : G.hide.delete(id);
+    save(KH, G.hide.size ? JSON.stringify([...G.hide]) : null);
+}
+
+// 「角色 ▾」：照子分類分組的勾選清單（組標題＝整組）、全部／全不勾
+function rolePicker(all, data, rerender)
+{
+    const shown = all.filter(id => !G.hide.has(id)).length;
+    const btn = h('button', {type: 'button', class: 'showbtn', dataset: {k: 'ganttRoles'}}, `角色（${shown}/${all.length}）▾`);
+    let pop = null;
+    const close = () => {pop?.remove(); pop = null; document.removeEventListener('pointerdown', outside, true);};
+    const outside = (e) => {if (!pop?.contains(e.target) && e.target !== btn) close();};
+    const change = (ids, on) => {setHide(ids, !on); close(); rerender(); document.querySelector('[data-k=ganttRoles]')?.click();};
+    const box = (ids, text, title) => {
+        const n = ids.filter(id => !G.hide.has(id)).length;
+        const b = h('input', {type: 'checkbox', checked: n === ids.length, dataset: {role: title ?? ''}, onchange: e => change(ids, e.target.checked)});
+        b.indeterminate = n > 0 && n < ids.length;
+        return h('label', {class: title === undefined ? 'ggrphead' : ''}, b, text);
+    };
+    btn.onclick = () => {
+        if (pop) return close();
+        const groups = [];
+        for (const id of all) (groups.find(g => g.grp === (data[id].grp ?? '')) ?? groups[groups.push({grp: data[id].grp ?? '', ids: []}) - 1]).ids.push(id);
+        pop = h('div', {class: 'showpop gpick'},
+            h('div', {class: 'gpall'},
+                h('button', {type: 'button', onclick: () => change(all, true)}, '全部'),
+                h('button', {type: 'button', onclick: () => change(all, false)}, '全不勾')),
+            groups.map(g => h('div', {class: 'gpgrp'}, box(g.ids, g.grp || '（無子分類）'),
+                g.ids.map(id => box([id], h('span', null, id, h('span', {class: 'dim'}, ` ${data[id].lab ?? ''}`)), id)))));
+        document.body.append(pop);
+        const rc = btn.getBoundingClientRect();
+        pop.style.left = `${Math.max(0, Math.min(rc.left, innerWidth - pop.offsetWidth - 4))}px`;
+        pop.style.top = `${rc.bottom + 2}px`;
+        pop.style.maxHeight = `${innerHeight - rc.bottom - 8}px`;
+        document.addEventListener('pointerdown', outside, true);
+    };
+    return btn;
+}
 
 const toMin = (s) => {
     const m = /^(\d{1,2}):(\d{2})$/.exec(s.trim());
@@ -17,10 +59,11 @@ const toMin = (s) => {
 };
 const short = (m) => m?.split('/').at(-1) ?? '?';
 
-// o：{ids（已篩好、照 role.json 順序）, data, planOf(id), onRole(id), onSeg(id, i), typeName(s), planFor(sch)＝拖曳中的試算, onShift(id, j, delta)＝拖分界線放開}
+// o：{ids（已篩好、照 role.json 順序）, data, planOf(id), onRole(id), onSeg(id, i), typeName(s), planFor(sch)＝拖曳中的試算, onShift(id, j, delta)＝拖分界線放開,
+//     onMenu(e, id, t)＝右鍵, onMulti(id, i)＝Shift＋點, multiOf(id)＝那列多選的 index（沒有＝null）}
 export function ganttEl(o)
 {
-    const rows = o.ids.map(id => {
+    const rows = o.ids.filter(id => !G.hide.has(id)).map(id => {
         const r = o.data[id], sch = Array.isArray(r.schedule) ? r.schedule : [];
         const pl = sch.length ? o.planOf(id) : {plan: null, warns: []};
         return {id, r, sch, pl, segs: sch.length ? SB.daySegs(pl.plan, sch, pl.warns) : null};
@@ -76,9 +119,10 @@ export function ganttEl(o)
         ...g.rows.map(w => {
             const now = h('div', {class: 'gnow'});
             nows.push({w, el: now});
-            const bar = !w.sch.length ? h('div', {class: 'daybar'}, h('div', {class: 'track empty'}, h('span', {class: 'dim'}, '（沒有作息）')))
-                : SB.dayBarEl(w.pl.plan, w.sch, w.pl.warns, {segs: w.segs, bare: true, sel: -1, onPick: (i) => o.onSeg(w.id, i),
-                    typeName: o.typeName, planOf: o.planFor, onShift: (j, d) => o.onShift(w.id, j, d), dim: G.map ? (m) => m !== G.map : null});
+            const bar = SB.dayBarEl(w.pl.plan, w.sch, w.pl.warns, {segs: w.segs ?? (w.sch.length ? null : []), bare: true, sel: -1, multi: o.multiOf?.(w.id),
+                onPick: (i, shift) => (shift && o.onMulti ? o.onMulti(w.id, i) : o.onSeg(w.id, i)),
+                onMenu: o.onMenu && ((e, t) => o.onMenu(e, w.id, t)),
+                typeName: o.typeName, planOf: o.planFor, onShift: (j, d) => o.onShift(w.id, j, d), dim: G.map ? (m) => m !== G.map : null});
             bar.querySelector('.track')?.append(cur('cur'));
             return h('div', {class: 'grole' + (w.sch.length ? '' : ' nosch'), dataset: {id: w.id}},
                 h('div', {class: 'gname'}, h('a', {onclick: () => o.onRole(w.id)}, w.id), h('span', {class: 'dim'}, w.r.lab ?? '')),
@@ -87,7 +131,8 @@ export function ganttEl(o)
     ]);
 
     const el = h('div', {class: 'gantt'},
-        h('div', {class: 'gtop'}, h('label', null, '時間 ', inp), h('span', {class: 'dim'}, '在上方時間軸按住拖曳；點圖例只看一張圖'), legend),
+        h('div', {class: 'gtop'}, h('label', null, '時間 ', inp), rolePicker(o.ids, o.data, o.rerender),
+            h('span', {class: 'dim'}, '在上方時間軸按住拖曳；點圖例只看一張圖；右鍵時序條編輯、Shift＋點多選'), legend),
         h('div', {class: 'grole ghead'}, h('div', {class: 'gname'}), head, h('div', {class: 'gnow dim'}, '此刻')),
         body);
     update();

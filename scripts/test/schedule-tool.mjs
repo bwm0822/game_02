@@ -297,6 +297,67 @@ run('schedule-tool', async t => {
         S.view = 'table'; re.render();
         rowOf('musk').querySelector('.gname a').click();
         out.gName = [S.view, S.sel];
+
+        // ---- 總覽也能編輯：右鍵同一份選單、Shift＋點多選、在地圖上選進表單；角色 ▾ 勾選顯示 ----
+        {
+            localStorage.removeItem('tools.role.gantt.hide'); re.GT.G.hide.clear();
+            S.view = 'table'; S.schMulti = null; re.render();
+            const hg = S.hi, sch0g = JSON.stringify(S.data.trump.schedule);
+            const trk = (id) => rowOf(id).querySelector('.track');
+            const gx = (id, min) => {const rc = trk(id).getBoundingClientRect(); return rc.left + rc.width * min / 1440;};
+            const gMenu = async (id, min) => {
+                document.querySelectorAll('.ctxmenu').forEach(m => m.remove());
+                trk(id).dispatchEvent(new MouseEvent('contextmenu', {bubbles: true, cancelable: true, button: 2, clientX: gx(id, min), clientY: trk(id).getBoundingClientRect().top + 8}));
+                await until(() => document.querySelector('.ctxmenu'));
+            };
+            const gItems = (lv) => [...document.querySelectorAll(`.ctxmenu[data-lv="${lv}"] button`)];
+            const gHover = (lv, rx) => gItems(lv).find(x => rx.test(x.textContent))?.dispatchEvent(new MouseEvent('mouseenter'));
+            const gSeg = (id, i, shiftKey) => rowOf(id).querySelector(`.seg.stay[data-i="${i}"]`).dispatchEvent(new MouseEvent('click', {bubbles: true, cancelable: true, shiftKey}));
+            const gSel = (id) => [...rowOf(id).querySelectorAll('.seg.stay.sel')].map(s => +s.dataset.i);
+            await gMenu('trump', 12 * 60 + 2);
+            out.ggMenu = gItems(0).map(b => b.textContent);
+            gItems(0).find(b => b.textContent.startsWith('分割')).click();
+            out.ggSplit = [S.data.trump.schedule.length, S.view, S.hi - hg];
+            gSeg('trump', 0, true);
+            out.ggShift1 = [gSel('trump'), S.view];
+            gSeg('trump', 1, true);
+            out.ggShift2 = [gSel('trump'), S.view];
+            await gMenu('trump', 8 * 60);
+            out.ggMulti = gItems(0).map(b => b.textContent);
+            gHover(0, /^合併/);
+            gItems(1)[0].click();
+            out.ggMerged = [JSON.stringify(S.data.trump.schedule) === sch0g, S.view, !S.schMulti];
+            // 範圍外右鍵：清掉多選、一般選單
+            re.undo(); re.render();
+            gSeg('trump', 0, true); gSeg('trump', 1, true);
+            await gMenu('trump', 23 * 60);
+            out.ggOutside = [gItems(0)[0]?.textContent.startsWith('插入作息'), !S.schMulti, gSel('trump')];
+            // 在地圖上選：進表單、右欄挑選模式
+            gHover(0, /^插入作息/);
+            gItems(1).find(b => b.textContent.includes('在地圖上選')).click();
+            await until(() => right()?.querySelector('.smap .pickbar'));
+            out.ggPick = [S.view, S.sel, !!S.pick, S.rtab];
+            document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', bubbles: true}));
+            while (S.hi > hg) re.undo();
+            out.ggUndo = JSON.stringify(S.data.trump.schedule) === sch0g;
+            // 沒作息的那列：右鍵能插入
+            S.view = 'table'; re.render();
+            const empty = npcs.find(id => !S.data[id].schedule?.length);
+            if (empty) {await gMenu(empty, 9 * 60); out.ggEmpty = [gItems(0)[0]?.textContent, rowOf(empty).querySelector('.empty')?.textContent];}
+            document.querySelectorAll('.ctxmenu').forEach(m => m.remove());
+            // 角色 ▾：取消 trump → 那列消失、記住、按鈕數字；全部 → 回來
+            const rb = () => g().querySelector('[data-k=ganttRoles]');
+            out.ggBtn = rb()?.textContent;
+            rb().click();
+            const pk = () => document.querySelector('.gpick');
+            out.ggPop = [!!pk(), pk()?.querySelectorAll('input[data-role]:not([data-role=""])').length, pk()?.querySelectorAll('.ggrphead').length];
+            const cb = pk().querySelector('input[data-role="trump"]');
+            cb.checked = false; cb.dispatchEvent(new Event('change'));
+            out.ggHide = [!rowOf('trump'), localStorage.getItem('tools.role.gantt.hide'), rb()?.textContent, !!pk()];
+            [...pk().querySelectorAll('.gpall button')].find(b => b.textContent === '全部').click();
+            out.ggAll = [!!rowOf('trump'), localStorage.getItem('tools.role.gantt.hide'), rb()?.textContent];
+            pk()?.remove();
+        }
         S.sel = 'trump'; S.view = 'form'; S.tab = 0; S.schSel = {id: 'trump', i: 0}; re.render();
         localStorage.removeItem('tools.role.gantt.t'); localStorage.removeItem('tools.role.gantt.map');
 
@@ -835,6 +896,20 @@ run('schedule-tool', async t => {
     t.eq('沒作息的 NPC：空的時序條＋提示', JSON.stringify(r.emptyBar), JSON.stringify([true, '（沒有作息，右鍵插入）']));
     t.eq('第一筆只插一筆', r.firstIns, JSON.stringify([{t: '@09:00', map: 'm/m_04x05', go: 'musk-p1'}]));
     t.eq('卡片測試全部 undo 回原狀', r.cardUndo, true);
+    t.eq('總覽右鍵：跟表單同一份選單', JSON.stringify(r.ggMenu), JSON.stringify(['插入作息（12:00 抵達）', '分割（12:00）', '改目的地', '類型', '刪除這筆']));
+    t.eq('總覽分割：寫進去、留在總覽、一筆 undo', JSON.stringify(r.ggSplit), JSON.stringify([3, 'table', 1]));
+    t.eq('總覽 Shift＋點第一下：反白那段、不跳頁', JSON.stringify(r.ggShift1), JSON.stringify([[0], 'table']));
+    t.eq('總覽 Shift＋點第二下：反白範圍', JSON.stringify(r.ggShift2), JSON.stringify([[0, 1], 'table']));
+    t.eq('總覽多選右鍵：合併／刪除', JSON.stringify(r.ggMulti), JSON.stringify(['合併 2 筆', '刪除 2 筆']));
+    t.eq('總覽合併：回原狀、留在總覽、清掉多選', JSON.stringify(r.ggMerged), JSON.stringify([true, 'table', true]));
+    t.eq('總覽範圍外右鍵：一般選單、清掉多選', JSON.stringify(r.ggOutside), JSON.stringify([true, true, []]));
+    t.eq('總覽在地圖上選：進表單、挑選模式、右欄作息', JSON.stringify(r.ggPick), JSON.stringify(['form', 'trump', true, 'sched']));
+    t.eq('總覽編輯全部 undo 回原狀', r.ggUndo, true);
+    t.check('總覽沒作息那列：右鍵能插入', !r.ggEmpty || (/^插入作息/.test(r.ggEmpty[0]) && r.ggEmpty[1] === '（沒有作息，右鍵插入）'), JSON.stringify(r.ggEmpty));
+    t.eq('角色 ▾ 按鈕：顯示數/總數', r.ggBtn, `角色（${r.gRows[2]}/${r.gRows[2]}）▾`);
+    t.check('角色 ▾：每個角色一格、照子分類分組', r.ggPop[0] && r.ggPop[1] === r.gRows[2] && r.ggPop[2] === r.gGroupsWant.length, JSON.stringify(r.ggPop));
+    t.eq('取消 trump：那列消失、記藏的、數字、清單還開著', JSON.stringify(r.ggHide), JSON.stringify([true, '["trump"]', `角色（${r.gRows[2] - 1}/${r.gRows[2]}）▾`, true]));
+    t.eq('全部：回來、清掉記錄', JSON.stringify(r.ggAll), JSON.stringify([true, null, `角色（${r.gRows[2]}/${r.gRows[2]}）▾`]));
     t.eq('分割：離邊緣不到 10 分反灰', JSON.stringify(r.splitNear), JSON.stringify(['分割（06:20）', true, '離段的邊緣至少 10 分']));
     t.eq('分割：在選單裡', JSON.stringify(r.splitMenu), JSON.stringify(['插入作息（12:00 抵達）', '分割（12:00）', '改目的地', '類型', '刪除這筆']));
     t.eq('分割：新的一筆 @12:00 同目的地、選它、一筆 undo', JSON.stringify(r.split), JSON.stringify([JSON.stringify({t: '@12:00', go: 'trump-p1', map: 'm_04x05/trump-inn-f1'}), 3, 1, 1]));

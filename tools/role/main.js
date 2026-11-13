@@ -625,7 +625,7 @@ const schSel = (id) => {
 function openSch(id, i)
 {
     if (!S.data[id]?.schedule?.[i]) {S.sel = id; S.view = 'form'; render(); return;}
-    Object.assign(S, {sel: id, view: 'form', schSel: {id, i}, rtab: 'sched'});
+    Object.assign(S, {sel: id, view: 'form', schSel: {id, i}, schMulti: null, rtab: 'sched'});
     try {localStorage.setItem('tools.role.rtab', 'sched');} catch {}
     S.secOpen['作息'] = true;
     S.open.schedule = true;
@@ -635,18 +635,29 @@ function openSch(id, i)
 }
 
 // 多選（Shift＋點）：S.schMulti＝{id, s, len, n}，從第 s 筆起連續 len 筆；筆數變了（undo、刪除…）就失效＝null
-const schMulti = (id) => {
+// multiSel＝反白用（總覽 Shift＋點第一下只有一筆也反白）；schMulti＝真的多選（≥2 筆）
+const multiSel = (id) => {
     const m = S.schMulti, n = S.data[id]?.schedule?.length ?? 0;
-    return m?.id === id && m.n === n && m.len >= 2 ? SE.rangeIdx(n, m.s, m.len) : null;
+    return m?.id === id && m.n === n && n ? SE.rangeIdx(n, m.s, m.len) : null;
 };
+const schMulti = (id) => {const x = multiSel(id); return x?.length >= 2 ? x : null;};
 
 function pickSch(id, i, shift)
 {
     const a = schSel(id), n = S.data[id].schedule?.length ?? 0;
     if (!shift || a < 0 || a === i || n < 2) return selectSch(id, i);
-    S.schMulti = {id, n, ...SE.pickRange(n, a, i)};
+    S.schMulti = {id, n, a, ...SE.pickRange(n, a, i)};
     SB.markSel(document.getElementById('view'), schMulti(id));
     document.querySelector('#view .schslot')?.replaceChildren(schSlot(id));
+}
+
+// 總覽 Shift＋點：錨點＝這列第一次 Shift＋點的那段（S.schMulti.a），換列重來
+function ganttMulti(id, i)
+{
+    const n = S.data[id].schedule?.length ?? 0, m = S.schMulti;
+    const a = m?.id === id && m.n === n ? m.a : i;
+    S.schMulti = {id, n, a, ...(a === i ? {s: i, len: 1} : SE.pickRange(n, a, i))};
+    render();
 }
 
 function selectSch(id, i)
@@ -748,17 +759,22 @@ function pickOnMap(id, text, fn)
 {
     S.pick = {id, text, fn};
     if (S.rtab !== 'sched') {S.rtab = 'sched'; try {localStorage.setItem('tools.role.rtab', 'sched');} catch {}}
-    renderRight();
+    if (S.view === 'form' && S.sel === id) return renderRight();
+    Object.assign(S, {sel: id, view: 'form', schMulti: null});
+    S.secOpen['作息'] = true;
+    S.open.schedule = true;
+    render();
 }
 
-// 時序條右鍵：t＝那裡的分鐘
-function barMenu(e, id, t)
+// 時序條右鍵：t＝那裡的分鐘；gantt＝總覽那列（不選取、不跳頁，只有「在地圖上選」進表單）
+function barMenu(e, id, t, gantt = false)
 {
     const a = S.data[id].schedule ?? [];
     const pl = planOf(id), segs = a.length ? SB.daySegs(pl.plan, a, pl.warns) : [];
     const ins = Math.round(t / SE.SNAP) * SE.SNAP;
     const hit = segs ? SE.entryAt(segs, t) : -1;
     const multi = schMulti(id);
+    if (gantt && S.schMulti && !multi?.includes(hit)) {S.schMulti = null; render();}
     if (multi && multi.includes(hit)) return menu(e, [
         [`合併 ${multi.length} 筆`, null, '', mergeMenu(id, multi)],
         [`刪除 ${multi.length} 筆`, () => delRange(id, multi)],
@@ -774,7 +790,7 @@ function barMenu(e, id, t)
         hit >= 0 && '-',
         hit >= 0 && ['刪除這筆', () => delSch(id, hit)],
     ]);
-    if (hit >= 0 && (schSel(id) !== hit || S.schMulti)) selectSch(id, hit);
+    if (!gantt && hit >= 0 && (schSel(id) !== hit || S.schMulti)) selectSch(id, hit);
 }
 
 // 分割：t 那段停留切成兩筆同目的地，選新的那筆
@@ -1393,6 +1409,9 @@ function draw()
         typeName: s => SC.typeName(S.ext.local, s?.type),
         planFor: (sch) => {const nav = navAll(); return SP.buildPlan(sch, nav.edges, nav.nodes);},
         onShift: shiftSch,
+        onMenu: (e, id, t) => barMenu(e, id, t, true),
+        onMulti: ganttMulti,
+        multiOf: multiSel,
     }));
     if (tabKind)
         document.querySelector('#view .tabs').append(h('select', {title: '子分類', dataset: {k: 'grpFilter'}, onchange: e => {S.grp = e.target.value; render();}},

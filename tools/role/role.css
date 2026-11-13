@@ -69,6 +69,10 @@
 .gantt .gaxis .axis span:first-child { transform: none; }
 .gantt .gaxis .axis span:last-child { transform: translateX(-100%); }
 .gantt .track.empty { display: flex; align-items: center; padding-left: 6px; font-size: 12px; }
+.gpick { overflow-y: auto; min-width: 200px; }
+.gpick .gpall { display: flex; gap: 4px; margin-bottom: 4px; }
+.gpick .gpgrp { display: flex; flex-direction: column; gap: 2px; padding-left: 18px; }
+.gpick .gpgrp > .ggrphead { margin-left: -18px; font-weight: bold; }
 .gantt .cur { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #ffd54f; z-index: 1; pointer-events: none; }
 .gantt .knob { position: absolute; top: -1px; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: #ffd54f; pointer-events: none; }
 .daybar .seg.dim { opacity: .2; }
