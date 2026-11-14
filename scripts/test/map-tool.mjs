@@ -577,6 +577,16 @@ run('map-tool', async t => {
             wh(-100); const w3 = S.t;
             mt.setTime(23 * 60 + 59, true); wh(100); const w4 = S.t;
             out.wheel = [w1, w2, w3, w4, document.querySelector('#view [data-k=timeT]').value];
+            // ↑↓：↑＝+1、↓＝−1、Shift＝±10（HH:MM 欄跟滑桿都可以）
+            const tinp = document.querySelector('#view [data-k=timeT]');
+            const kd = (el, key, shiftKey = false) => el.dispatchEvent(new KeyboardEvent('keydown', {key, shiftKey, bubbles: true, cancelable: true}));
+            tinp.focus();
+            kd(tinp, 'ArrowUp'); const k1 = S.t;
+            kd(tinp, 'ArrowUp', true); const k2 = S.t;
+            kd(rng, 'ArrowDown'); const k3 = S.t;
+            kd(tinp, 'ArrowDown'); kd(tinp, 'ArrowDown');
+            out.keys = [k1, k2, k3, S.t, tinp.value];
+            tinp.blur();
             S.nav = nav0; S.plans = plans0; S.roles = roles0;
             mt.setTime(11 * 60, false);
         }
@@ -888,6 +898,7 @@ run('map-tool', async t => {
     t.eq('時間游標：單向巡邏跑完畫在終點', JSON.stringify(r.posDone), JSON.stringify([9, 1, 'stay']));
     t.eq('時間游標：下一筆從巡邏終點出發', JSON.stringify(r.posBack), JSON.stringify([5, 1, 'walk']));
     t.eq('時間軸滾輪：下 +1、Shift +10、上 −1、23:59 再 +1 繞回 00:00', JSON.stringify(r.wheel), JSON.stringify([477, 487, 486, 0, '00:00']));
+    t.eq('時間軸 ↑↓：↑ +1、Shift +10、↓ −1（滑桿也行）、HH:MM 欄跟著', JSON.stringify(r.keys), JSON.stringify([1, 11, 10, 8, '00:08']));
     t.check('打 12:00：自動打開、trump 停在 1F trump-p1、記住、人數', /trump:stay:trump-p1/.test(r.t12[0]) && r.t12[1] && r.t12[2] === '720' && r.t12[3] === '1' && /這張圖 \d+ 人/.test(r.t12[4]), JSON.stringify(r.t12));
     t.check('滑過作息 NPC：浮動框時間、點名、第幾筆', /trump.*（作息）/.test(r.ttip ?? '') && /12:00 在 trump-p1（第 \d+ 筆）/.test(r.ttip ?? ''), r.ttip);
     t.check('03:00：1F 沒有 trump、2F 床上有', !r.t3f1 && r.t3f2 === 'stay:bed', `${r.t3f1} ${r.t3f2}`);

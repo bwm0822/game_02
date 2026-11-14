@@ -1115,7 +1115,7 @@ function mapEl(name)
         timeBar(st));
 }
 
-// 🕒 時間游標：勾了才畫具名 NPC；時間可打 HH:MM、拖滑桿（10 分一格）或在滑桿／輸入框上滾輪（下＝+1 分、上＝−1，Shift＝±10，跨午夜繞回），記住
+// 🕒 時間游標：勾了才畫具名 NPC；時間可打 HH:MM、拖滑桿（10 分一格）或在滑桿／輸入框上滾輪（下＝+1 分、上＝−1）、↑↓（↑＝+1、↓＝−1），Shift＝±10，跨午夜繞回，記住
 function timeBar(st)
 {
     const chk = h('input', {type: 'checkbox', dataset: {k: 'timeOn'}, checked: S.timeOn, onchange: e => setTime(S.t, e.target.checked)});
@@ -1126,10 +1126,17 @@ function timeBar(st)
         setTime(S.t + d * (e.shiftKey ? 10 : 1), true);
         if (document.activeElement === inp) inp.value = hhmm(S.t);
     };
-    const inp = h('input', {class: 'num', size: 5, dataset: {k: 'timeT'}, value: hhmm(S.t), title: '滾輪＝±1 分（Shift＝±10）', onwheel: wheel,
+    const key = (e) => {
+        const d = e.key === 'ArrowUp' ? 1 : e.key === 'ArrowDown' ? -1 : 0;
+        if (!d) return;
+        e.preventDefault();
+        setTime(S.t + d * (e.shiftKey ? 10 : 1), true);
+        if (document.activeElement === inp) inp.value = hhmm(S.t);
+    };
+    const inp = h('input', {class: 'num', size: 5, dataset: {k: 'timeT'}, value: hhmm(S.t), title: '滾輪／↑↓＝±1 分（Shift＝±10）', onwheel: wheel, onkeydown: key,
         onchange: e => {const v = toMin(e.target.value); v === null ? (e.target.value = hhmm(S.t)) : setTime(v, true);}});
-    const rng = h('input', {type: 'range', class: 'trange', min: 0, max: 1430, step: 10, value: S.t, dataset: {k: 'timeR'}, title: '拖＝10 分一格、滾輪＝±1 分（Shift＝±10）',
-        onwheel: wheel, oninput: e => setTime(+e.target.value, true)});
+    const rng = h('input', {type: 'range', class: 'trange', min: 0, max: 1430, step: 10, value: S.t, dataset: {k: 'timeR'}, title: '拖／←→＝10 分一格、滾輪／↑↓＝±1 分（Shift＝±10）',
+        onwheel: wheel, onkeydown: key, oninput: e => setTime(+e.target.value, true)});
     const cnt = h('span', {class: 'dim'});
     st.updateTime = () => {
         chk.checked = S.timeOn;
