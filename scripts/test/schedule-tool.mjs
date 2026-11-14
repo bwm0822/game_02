@@ -943,7 +943,7 @@ run('schedule-tool', async t => {
         re.commit(() => {S.data['guard-1'].schedule[0] = {t: '@08:00', go: 'guard-p1', map: 'm/m_04x05', do: 'patrol', route: ['guard-p1', 'guard-p2', 'guard-p3', 'guard-p2', 'guard-p4'], wait: 3};});
         S.sel = 'guard-1'; S.schSel = {id: 'guard-1', i: 0}; re.SM.setMap('m/m_04x05'); re.render();
         const g1 = S.data['guard-1'].schedule[0];
-        out.patrolInfo = cards()[0].querySelector('.times.patrol')?.textContent;
+        out.patrolInfo = cards()[0].querySelector('.times.patrol')?.firstChild.textContent;
         const gk = g1.route.map(n => `m/m_04x05:${n}`);
         const walk = gk.reduce((a, k, j) => a + re.SP.edgeCost(S.ext.nav.edges, k, gk[(j + 1) % gk.length]), 0);
         const hm = n => (n >= 60 ? `${Math.floor(n / 60)} 小時${n % 60 ? ` ${n % 60} 分` : ''}` : `${n} 分`);
@@ -956,11 +956,33 @@ run('schedule-tool', async t => {
         const setMode = async (v) => {modeSel().value = v; modeSel().dispatchEvent(new Event('change')); await sleep(50); await until(() => cv()?.st.patrol); return cv().st.patrol;};
         let pm = await setMode('back1');
         const info = cards()[0].querySelector('.times.patrol')?.textContent ?? '';
-        out.back1 = [S.data['guard-1'].schedule[0].mode, pm.lines.map(l => l.kind).join(), pm.end, info.startsWith('巡邏一趟'), info.includes('停 8×3'), info.endsWith('之後停在 guard-p1')];
+        out.back1 = [S.data['guard-1'].schedule[0].mode, pm.lines.map(l => l.kind).join(), pm.end, info.startsWith('巡邏一趟'), info.includes('停 8×3'), info.includes('之後停在 guard-p1')];
         pm = await setMode('oneway');
         out.oneway = [pm.lines.map(l => l.kind).join(), pm.end];
         pm = await setMode('loop');
         out.modeBack = ['mode' in S.data['guard-1'].schedule[0], pm.end];
+        // 設成待的時間：入口＝第一點（不加）＋N 圈；一筆 undo；剛好＝反灰；圈數不存檔、重畫還在；塞不下反灰不改
+        // 路線先改短（guard-p1 ⇄ guard-p2），兩圈才塞得下
+        const gH = S.hi;
+        re.commit(() => {S.data['guard-1'].schedule[0].route = ['guard-p1', 'guard-p2'];});
+        await sleep(50);
+        const gE = S.ext.nav.edges, gLap = re.SP.edgeCost(gE, 'm/m_04x05:guard-p1', 'm/m_04x05:guard-p2') + re.SP.edgeCost(gE, 'm/m_04x05:guard-p2', 'm/m_04x05:guard-p1') + 2 * 3;
+        const gStay = () => {const p = re.SP.buildPlan(S.data['guard-1'].schedule, S.ext.nav.edges, S.ext.nav.nodes).plan; return re.SP.mod(p[1].dep - p[0].arr);};
+        const gBtn = () => cards()[0].querySelector('.syncbtn'), gLaps = () => cards()[0].querySelector('.syncstay .laps');
+        const gH1 = S.hi;
+        out.sync0 = [gBtn().textContent, gBtn().disabled, gLaps().value];
+        gBtn().click(); await sleep(50);
+        out.sync1 = [gStay() === gLap, S.hi - gH1, gBtn().textContent, gBtn().disabled];
+        gLaps().value = '2'; gLaps().dispatchEvent(new Event('change')); await sleep(20);
+        out.sync2 = [gLaps().value, gBtn().textContent, gBtn().title.includes(`2 圈×`)];
+        gBtn().click(); await sleep(50);
+        out.sync3 = [gStay() === 2 * gLap, gLaps().value];
+        gLaps().value = '99'; gLaps().dispatchEvent(new Event('change')); await sleep(20);
+        const gBefore = JSON.stringify(S.data['guard-1'].schedule);
+        out.sync4 = [gBtn().disabled, gBtn().title.startsWith('塞不下'), JSON.stringify(S.data['guard-1'].schedule) === gBefore];
+        S.patrolLaps = {};
+        while (S.hi > gH) re.undo();
+        re.render();
         await sleep(50);
         out.badges = cv().st.routeHits.map(b => b.idx).join();
         // 編輯路線：按鈕切換、地圖上方提示
@@ -1247,6 +1269,11 @@ run('schedule-tool', async t => {
     t.eq('一次原路來回：雙向箭頭、沒有回起點、停 p1、卡片一趟（折返點只停一次）', JSON.stringify(r.back1), JSON.stringify(['back1', 'back,back,back,back', 'guard-p1', true, true, true]));
     t.eq('單向：停在最後一點', JSON.stringify(r.oneway), JSON.stringify(['fwd,fwd,fwd,fwd', 'guard-p4']));
     t.eq('選回多次循環：刪掉 mode、沒有終點', JSON.stringify(r.modeBack), JSON.stringify([false, null]));
+    t.eq('設成待的時間：按鈕、圈數預設 1', JSON.stringify(r.sync0), JSON.stringify(['⇥ 設成待的時間', false, '1']));
+    t.eq('按了：待＝一圈、一筆 undo、變 ✔ 剛好反灰', JSON.stringify(r.sync1), JSON.stringify([true, 1, '✔ 剛好', true]));
+    t.eq('圈數改 2：重畫還在、按鈕回來、title 寫 2 圈', JSON.stringify(r.sync2), JSON.stringify(['2', '⇥ 設成待的時間', true]));
+    t.eq('按了：待＝兩圈', JSON.stringify(r.sync3), JSON.stringify([true, '2']));
+    t.eq('塞不下：反灰、title 寫塞不下、不改資料', JSON.stringify(r.sync4), JSON.stringify([true, true, true]));
     t.eq('每經過一次一個號碼', r.badges, '0,1,2,3,4');
     t.eq('編輯路線：按鈕變完成、地圖上方提示', JSON.stringify(r.editOn), JSON.stringify(['✔ 完成', true, true]));
     t.eq('點點加到路線最後', r.added6, 'guard-p1,guard-p2,guard-p3,guard-p2,guard-p4,guard-p3');

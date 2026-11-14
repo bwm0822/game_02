@@ -1076,16 +1076,36 @@ function routeDel(id, idx)
 }
 
 // 一圈／一趟多久（同遊戲 COM_Schedule._initPatrol：每點停 wait＋走到下一點；一趟的終點不算停）
-function patrolInfo(s)
+// 後面「設成待的時間」：待＝入口走到 route[0]＋N 圈（一次／單向＝一趟），只套用一次（stayTo），塞不下／一筆／剛好＝反灰
+S.patrolLaps = {};                                // `${id}.${i}` → 圈數（不存檔）
+function patrolInfo(id, i, s, pl)
 {
     if (!(s.route ?? []).length) return null;
-    const {pts, repeat} = SP.patrolTrip(s), wait = s.wait ?? 0, k = (n) => `${s.map}:${n}`;
-    const legs = SP.patrolLegs(s).map(([a, b]) => [a, b, SP.edgeCost(navAll().edges, k(a), k(b))]);
+    const edges = navAll().edges, {pts, repeat} = SP.patrolTrip(s), wait = s.wait ?? 0, k = (n) => `${s.map}:${n}`;
+    const legs = SP.patrolLegs(s).map(([a, b]) => [a, b, SP.edgeCost(edges, k(a), k(b))]);
     const bad = legs.find(l => l[2] === Infinity);
     if (bad) return h('div', {class: 'times bad'}, `巡邏：${bad[0]} 走不到 ${bad[1]}（路網）`);
-    const walk = legs.reduce((a, l) => a + l[2], 0), stops = repeat ? pts.length : pts.length - 1;
-    const sum = `${hm(walk + wait * stops)}（走 ${hm(walk)}＋停 ${stops}×${wait}）`;
-    return h('div', {class: 'times patrol'}, repeat ? `巡邏一圈 ${sum}` : `巡邏一趟 ${sum}，之後停在 ${SP.patrolEnd(s)}`);
+    const walk = legs.reduce((a, l) => a + l[2], 0), stops = repeat ? pts.length : pts.length - 1, trip = walk + wait * stops;
+    const sum = `${hm(trip)}（走 ${hm(walk)}＋停 ${stops}×${wait}）`;
+    const lk = `${id}.${i}`, laps = repeat ? S.patrolLaps[lk] ?? 1 : 1;
+    const c0 = SP.schKey(s) === k(pts[0]) ? 0 : SP.edgeCost(edges, SP.schKey(s), k(pts[0]));
+    const want = c0 + laps * trip, stay = stayOf(pl, i);
+    const n = pl.plan?.length ?? 0, r = n > 1 ? SE.dragRange(pl.plan, (i + 1) % n) : null;
+    const max = stay === null ? 0 : stay + (r?.[1] ?? 0);
+    const calc = `${c0 ? `入口走到 ${pts[0]} ${hm(c0)}＋` : ''}${repeat ? `${laps} 圈×${hm(trip)}` : `一趟 ${hm(trip)}`}＝${hm(want)}`;
+    const why = c0 === Infinity ? `入口走不到 ${pts[0]}（路網）`
+        : stay === null ? (n < 2 ? '只有一筆作息（待一整天）' : '排不出時刻表')
+        : want < SE.MIN_STAY ? `最少待 ${SE.MIN_STAY} 分（${calc}）`
+        : want > max ? `塞不下：要待 ${hm(want)}，最多 ${hm(max)}（下一筆至少停 ${SE.MIN_STAY} 分）`
+        : null;
+    const same = !why && want === stay;
+    return h('div', {class: 'times patrol'}, repeat ? `巡邏一圈 ${sum}` : `巡邏一趟 ${sum}，之後停在 ${SP.patrolEnd(s)}`,
+        h('span', {class: 'syncstay'},
+            repeat && ['　待 ', h('input', {class: 'num laps', type: 'number', min: 1, value: laps, dataset: {k: `schedule.${i}.laps`},
+                onchange: e => {S.patrolLaps[lk] = Math.max(1, parseInt(e.target.value, 10) || 1); document.querySelector('#view .schslot')?.replaceChildren(schSlot(id));}}), ' 圈'],
+            ' ', h('button', {type: 'button', class: 'syncbtn', disabled: !!why || same, dataset: {k: `schedule.${i}.sync`},
+                title: why ?? (same ? `已經剛好：${calc}` : `待的時間改成 ${calc}（下一筆照原型別平移）`),
+                onclick: () => stayTo(id, i, want)}, same ? '✔ 剛好' : '⇥ 設成待的時間')));
 }
 
 function hm(n)
@@ -1247,7 +1267,7 @@ function schCard(id, list, i, pl)
             h('span', {class: 'sum'}, `${s.type ? `${SC.typeName(S.ext.local, s.type)}：` : ''}${SC.schSummary(s)}`),
             h('button', {type: 'button', title: '刪除（時間交給前一段，前後同目的地會合併）', onclick: () => delSch(id, i)}, '×')),
         schTimes(id, i, pl, s),
-        s.do === 'patrol' && patrolInfo(s),
+        s.do === 'patrol' && patrolInfo(id, i, s, pl),
         h('div', {class: 'sub'},
             h('label', {title: 'map＋go／at'}, '目的地', destBtn(id, i, s)),
             h('label', {title: 'type（只是標籤，時序條上顯示）'}, '類型', h('select', {dataset: {k: `${k}.type`}, onchange: e => {
