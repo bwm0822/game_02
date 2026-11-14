@@ -1,4 +1,5 @@
 // HH:MM 時間選擇：不能打字，點「時」或「分」彈出 5 格選單（中間＝目前值、上下各兩格、循環），
+// 寫完重讀同 k 的格子（呼叫端夾過值、重畫過＝接著從夾過的值滾），
 // 滾輪一格 ±1 滾就寫、點格子寫入並關閉、點外面／Esc 關（不還原）；空的／壞的從 08:00 起算，選了就整個寫成合法 HH:MM
 // 連續滾併成一步 undo：選單格子的 data-k 跟 H.arrow(k) 同一個，hist.js 的 mousedown 不會斷開；
 // 打開時拿掉焦點，免得每次寫完重畫還原焦點觸發 focusin 斷開
@@ -43,6 +44,9 @@ function set(v)
     pop.pick(`${pad(pop.hm[0])}:${pad(pop.hm[1])}`);
     H.clear();
     if (!pop) return;
+    const w = document.querySelector(`.tpick[data-k="${CSS.escape(pop.k)}"]`);
+    const now = w && parse([...w.querySelectorAll('.tp-seg')].map(e => e.textContent).join(':'));
+    if (now) pop.hm = now;
     draw();
     place();
 }

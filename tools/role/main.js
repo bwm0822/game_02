@@ -275,10 +275,10 @@ async function removeGrp(kind, g)
 
 // ---------- 右鍵選單 ----------
 const closeMenu = () => {for (const m of document.querySelectorAll('.ctxmenu')) m.remove();};
-addEventListener('pointerdown', (e) => {if (!e.target.closest?.('.ctxmenu')) closeMenu();});
+addEventListener('pointerdown', (e) => {if (!e.target.closest?.('.ctxmenu, .tpick-pop')) closeMenu();});
 addEventListener('keydown', (e) => {if (e.key === 'Escape') {closeMenu(); if (S.pick) {S.pick = null; renderRight();}}});
 
-// items: [[文字, fn, 反灰的原因（有＝不能按，滑過看原因）, 子選單 items]]，'-'＝分隔線，falsy 略過；有子選單的滑過展開在右邊
+// items: [[文字, fn, 反灰的原因（有＝不能按，滑過看原因）, 子選單 items]]，'-'＝分隔線，DOM 元素原樣放，falsy 略過；有子選單的滑過展開在右邊
 function menu(e, items)
 {
     e.preventDefault();
@@ -292,6 +292,14 @@ function menuAt(x, y, items, lv, flipX = null)
     const el = h('div', {class: 'ctxmenu', dataset: {lv}, style: `left:${x}px;top:${y}px`},
         items.filter(Boolean).map(it => {
             if (it === '-') return h('hr');
+            if (it instanceof Node)
+            {
+                it.addEventListener('mouseenter', () => {
+                    for (const m of document.querySelectorAll('.ctxmenu')) if (+m.dataset.lv > lv) m.remove();
+                    for (const o of el.querySelectorAll('button.open')) o.classList.remove('open');
+                });
+                return it;
+            }
             const sub = it[3]?.filter(Boolean);
             const b = h('button', {type: 'button', class: sub ? 'sub' : '', disabled: !!it[2] || (sub && !sub.length), title: it[2] || null,
                 onclick: () => {if (!sub) {closeMenu(); it[1]?.();}}}, it[0]);
@@ -789,7 +797,7 @@ function barMenu(e, id, t, gantt = false)
         a.length > 0 && [`分割（${SP.hhmm(SP.mod(ins))}）`, () => splitSch(id, sp.i, ins), sp.why ?? ''],
         hit >= 0 && ['改目的地', null, '', destMenu(change, () => pickOnMap(id, '改目的地', change))],
         hit >= 0 && ['類型', null, '', typeMenu(id, hit)],
-        hit >= 0 && ['待多久…', () => askStay(id, hit), !pl.plan?.[hit] ? '作息資料有問題，先修好' : a.length < 2 ? '只有一筆＝整天' : ''],
+        hit >= 0 && stayRow(id, hit, !pl.plan?.[hit] ? '作息資料有問題，先修好' : a.length < 2 ? '只有一筆＝整天' : ''),
         hit >= 0 && '-',
         hit >= 0 && ['刪除這筆', () => delSch(id, hit)],
     ]);
@@ -1116,33 +1124,38 @@ const planOf = (id) => {
     return SP.buildPlan(S.data[id].schedule, nav.edges, nav.nodes);
 };
 
+// 第 i 筆停幾分（下一筆排不下＝0）；只有一筆／排不出時刻表＝null
+const stayOf = (pl, i) => {
+    const n = pl.plan?.length ?? 0, a = pl.plan?.[i], b = pl.plan?.[(i + 1) % n];
+    if (!a || !b || n < 2) return null;
+    return pl.warns.some(w => w.i === (i + 1) % n && w.kind === 'late') ? 0 : SP.mod(b.dep - a.arr);
+};
+
 // 第 i 筆改成「停 m 分」＝下一筆照原型別平移（每次照當下的時刻表算差值，滾輪連續寫也對）
+// 夾在 [MIN_STAY, 下一筆也至少停 MIN_STAY]（同拖分界線的 dragRange），夾到了寫狀態列
 function stayTo(id, i, m)
 {
-    const pl = planOf(id), n = pl.plan?.length ?? 0, j = (i + 1) % n;
-    const a = pl.plan?.[i], b = pl.plan?.[j];
-    if (!a || !b || n < 2) return;
-    const now = pl.warns.some(w => w.i === j && w.kind === 'late') ? 0 : SP.mod(b.dep - a.arr);
-    const d = m - now;
-    if (d) set(id, ['schedule', j, 't'], SE.shiftT(S.data[id].schedule[j].t, d));
+    const pl = planOf(id), now = stayOf(pl, i);
+    if (now === null) return;
+    const j = (i + 1) % pl.plan.length, r = SE.dragRange(pl.plan, j);
+    const max = Math.max(SE.MIN_STAY, now + (r?.[1] ?? 0));
+    const v = Math.max(SE.MIN_STAY, Math.min(max, m));
+    if (v !== now) set(id, ['schedule', j, 't'], SE.shiftT(S.data[id].schedule[j].t, v - now));
+    if (v < m) status(`最多待到 ${SP.hhmm(SP.mod(pl.plan[i].arr + max))}（下一筆至少停 ${SE.MIN_STAY} 分）`);
+    else if (v > m) status(`最少待 ${SE.MIN_STAY} 分`);
 }
 
-// 右鍵「待多久…」：對話框 待到 [HH:MM]（[H 時 MM 分]）兩格連動，確定才寫（只平移下一筆）
-async function askStay(id, i)
+// 右鍵選單的「待多久 [HH 時 MM 分]」：點時／分＝timePick，選了就寫（stayTo），選單不關、數字照寫完的重畫
+function stayRow(id, i, why)
 {
-    const pl = planOf(id), n = pl.plan.length, p = pl.plan[i], nx = pl.plan[(i + 1) % n];
-    const late = pl.warns.some(w => w.i === (i + 1) % n && w.kind === 'late');
-    let stay = late ? 0 : SP.mod(nx.dep - p.arr);
-    const row = h('label', {class: 'stayask'});
-    const draw = () => row.replaceChildren('待到 ',
-        timePick('stayAsk.end', SP.hhmm(SP.mod(p.arr + stay)), v => {stay = SP.mod(SE.toMin(v) - p.arr); draw();}),
-        '（', timePick('stayAsk.stay', SP.hhmm(stay), v => {stay = SE.toMin(v); draw();}, {unit: true}), '）');
+    const row = h('div', {class: 'ctxrow' + (why ? ' dis' : ''), title: why || null});
+    const draw = () => {
+        const cur = why ? null : stayOf(planOf(id), i);
+        row.replaceChildren('待多久', cur === null ? h('span', null, '-- 時 -- 分') :
+            timePick('stayMenu', SP.hhmm(cur), v => {stayTo(id, i, SE.toMin(v)); draw();}, {unit: true}));
+    };
     draw();
-    const s = S.data[id].schedule[i];
-    if (await ask('待多久', [h('div', null, `${SP.hhmm(p.arr)} 抵達 ${destName(s.map, s)}`), row], [['ok', '確定'], ['cancel', '取消']]) !== 'ok') return;
-    stay = Math.max(SE.MIN_STAY, stay);
-    stayTo(id, i, stay);
-    status(`待多久：${destName(s.map, s)} 待到 ${SP.hhmm(SP.mod(p.arr + stay))}（${SB.dur(stay)}）`);
+    return row;
 }
 
 // 卡片第一行：走：[出發]（N 分）　待：[抵達] ~ [訖]（停多久）；三個時間都能點來改
@@ -1161,9 +1174,9 @@ function schTimes(id, i, pl, s)
     const n = pl.plan.length, j = (i + 1) % n, nx = pl.plan[j];
     const late = pl.warns.find(w => w.i === i && w.kind === 'late'), lateNx = pl.warns.find(w => w.i === j && w.kind === 'late');
     const pre = pl.plan[(i - 1 + n) % n];
-    const stay = n === 1 ? null : lateNx ? 0 : SP.mod(nx.dep - p.arr);
+    const stay = stayOf(pl, i);
     const endPick = (v) => {const a = planOf(id).plan?.[i]; if (a) stayTo(id, i, SP.mod(SE.toMin(v) - a.arr));};
-    const stayPick = (v) => stayTo(id, i, Math.max(SE.MIN_STAY, SE.toMin(v)));
+    const stayPick = (v) => stayTo(id, i, SE.toMin(v));
     return h('div', {class: 'times' + (late || !p.path || lateNx ? ' bad' : '')},
         h('span', {class: 'tw'}, '走：', p.path ? [timePick(`${k}.dep`, SP.hhmm(p.dep), v => put(v)), `（${SB.dur(p.cost)}）`] : `從 ${p.from} 走不到`),
         h('span', {class: 'ts'}, '待：', timePick(`${k}.t`, SP.hhmm(p.arr), v => put(`@${v}`)), ' ~ ',

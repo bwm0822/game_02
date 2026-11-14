@@ -128,6 +128,9 @@
 .ctxmenu button { border: 0; border-radius: 0; background: none; text-align: left; padding: 3px 12px; white-space: nowrap; }
 .ctxmenu button:hover:not(:disabled) { background: #2f6db5; }
 .ctxmenu button:disabled { color: #777; }
+.ctxmenu .ctxrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 3px 12px; white-space: nowrap; }
+.ctxmenu .ctxrow.dis { color: #777; }
+.ctxmenu .ctxrow .tp-seg { cursor: pointer; }
 .ctxmenu hr { width: 100%; margin: 4px 0; border: 0; border-top: 1px solid #444; }
 
 #dlgPart { max-width: 640px; }
