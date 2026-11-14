@@ -969,6 +969,37 @@ run('schedule-tool', async t => {
         }
         out.removed6 = S.data['guard-1'].schedule[0].route.join();
         re.undo();
+        // Shift＋點號碼＝標記（紅底），之後的點插在它前面、標記跟著走
+        const badge = async (idx, type, opts = {}) => {
+            await until(() => cv()?.st.routeHits.some(b => b.idx === idx));
+            const b = cv().st.routeHits.find(x => x.idx === idx);
+            evAt(b.x + b.w / 2, b.y + b.h / 2, type, opts);
+        };
+        const rt6 = () => S.data['guard-1'].schedule[0].route.join();
+        await badge(2, 'click', {shiftKey: true});
+        await until(() => cv()?.st.routeMark === 2);
+        out.mark = [S.routeEdit.mark, right().querySelector('.smap .routeedit').textContent.includes('插在 3 guard-p3 前面')];
+        await badge(1, 'pointermove');
+        out.markTip = right().querySelector('.smaptip').textContent;
+        await at('guard-p4', 'click');
+        await at('guard-p1', 'click');
+        out.markAdd = [rt6(), S.routeEdit.mark];
+        await badge(0, 'contextmenu');
+        out.markDelBefore = [rt6(), S.routeEdit.mark];
+        await badge(3, 'contextmenu');
+        out.markDelSelf = [rt6(), S.routeEdit.mark];
+        re.undo(); re.undo(); re.undo(); re.undo();
+        await badge(4, 'click', {shiftKey: true});
+        await badge(4, 'click', {shiftKey: true});
+        out.markToggle = S.routeEdit.mark;
+        await badge(1, 'click', {shiftKey: true});
+        await badge(4, 'click', {shiftKey: true});
+        out.markMove = S.routeEdit.mark;
+        document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', bubbles: true}));
+        out.markEsc = [S.routeEdit?.mark, !!S.routeEdit];
+        await at('guard-p3', 'click');
+        out.markGone = rt6();
+        re.undo();
         // 別張圖的點不能加
         re.SM.setMap('m_04x05/trump-inn-f1'); re.render();
         await at('trump-p1', 'click');
@@ -1205,6 +1236,15 @@ run('schedule-tool', async t => {
     t.eq('編輯路線：按鈕變完成、地圖上方提示', JSON.stringify(r.editOn), JSON.stringify(['✔ 完成', true, true]));
     t.eq('點點加到路線最後', r.added6, 'guard-p1,guard-p2,guard-p3,guard-p2,guard-p4,guard-p3');
     t.eq('右鍵號碼拿掉那一次', r.removed6, 'guard-p1,guard-p2,guard-p3,guard-p4');
-    t.eq('別張圖的點不能加', JSON.stringify(r.otherMap), JSON.stringify([5, '巡邏路線只能用 m/m_04x05 的點']));
+    t.eq('Shift＋點號碼：標記、編輯列提示插在它前面', JSON.stringify(r.mark), JSON.stringify([2, true]));
+    t.check('號碼 hover：第幾個＋Shift／右鍵提示', r.markTip.startsWith('第 2 個：guard-p2') && r.markTip.includes('Shift＋點＝標記'), r.markTip);
+    t.eq('標記後連點：依序插在標記前、標記跟著走', JSON.stringify(r.markAdd), JSON.stringify(['guard-p1,guard-p2,guard-p4,guard-p1,guard-p3,guard-p2,guard-p4', 4]));
+    t.eq('右鍵刪標記前面的：標記號碼 −1', JSON.stringify(r.markDelBefore), JSON.stringify(['guard-p2,guard-p4,guard-p1,guard-p3,guard-p2,guard-p4', 3]));
+    t.eq('右鍵刪標記那顆：取消標記', JSON.stringify(r.markDelSelf), JSON.stringify(['guard-p2,guard-p4,guard-p1,guard-p2,guard-p4', null]));
+    t.eq('Shift＋點同一顆＝取消標記', r.markToggle, null);
+    t.eq('Shift＋點別顆＝標記換過去', r.markMove, 4);
+    t.eq('Esc 先取消標記、還在編輯路線', JSON.stringify(r.markEsc), JSON.stringify([null, true]));
+    t.eq('取消標記後點點照舊加到最後', r.markGone, 'guard-p1,guard-p2,guard-p3,guard-p2,guard-p4,guard-p3');
+    t.eq('別張圖的點不能加',JSON.stringify(r.otherMap), JSON.stringify([5, '巡邏路線只能用 m/m_04x05 的點']));
     t.eq('Esc 結束編輯', JSON.stringify(r.editOff), JSON.stringify([null, '✎ 編輯路線']));
 });

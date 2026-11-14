@@ -1013,7 +1013,7 @@ async function updateNav()
 }
 
 // ---------- 巡邏路線 ----------
-S.routeEdit = null;                              // 編輯中的巡邏 {id, i}
+S.routeEdit = null;                              // 編輯中的巡邏 {id, i, mark?}，mark＝標記的第幾次（新點插在它前面）
 const editingRoute = (id, i) => S.routeEdit?.id === id && S.routeEdit.i === i;
 function toggleRouteEdit(id, i)
 {
@@ -1030,20 +1030,45 @@ function toggleRouteEdit(id, i)
 }
 addEventListener('keydown', (e) => {
     if (e.key !== 'Escape' || !S.routeEdit || document.querySelector('dialog[open]')) return;
+    if (routeMark() != null) {S.routeEdit.mark = null; return renderRight();}
     S.routeEdit = null;
     render();
 });
+
+// 標記超出 route（undo、外部改檔）就當沒標
+function routeMark()
+{
+    const re = S.routeEdit, m = re?.mark;
+    if (m == null) return null;
+    if (m < (S.data[re.id]?.schedule?.[re.i]?.route?.length ?? 0)) return m;
+    re.mark = null;
+    return null;
+}
+
+function routeToggleMark(idx)
+{
+    if (!S.routeEdit) return;
+    S.routeEdit.mark = routeMark() === idx ? null : idx;
+    renderRight();
+}
 
 function routeAdd(id, map, name)
 {
     const i = S.routeEdit?.i, s = S.data[id].schedule[i];
     if (map !== s.map) return status(`巡邏路線只能用 ${s.map} 的點`);
-    commit(() => {const a = S.data[id].schedule[i]; a.route = [...(a.route ?? []), name];});
+    const m = routeMark();
+    if (m != null) S.routeEdit.mark = m + 1;
+    commit(() => {
+        const a = S.data[id].schedule[i], rt = [...(a.route ?? [])];
+        rt.splice(m ?? rt.length, 0, name);
+        a.route = rt;
+    });
 }
 
 function routeDel(id, idx)
 {
-    const i = S.routeEdit?.i;
+    const i = S.routeEdit?.i, m = routeMark();
+    if (m != null) S.routeEdit.mark = idx === m ? null : idx < m ? m - 1 : m;
     commit(() => {
         const a = S.data[id].schedule[i], rt = (a.route ?? []).filter((_, k) => k !== idx);
         a.route = rt.length ? rt : undefined;
@@ -1334,7 +1359,7 @@ function renderRight()
             onNew: (m, x, y, d) => newPoint(id, m, x, y, d), onMove: movePoint, onMenu: (e, m, x) => mapMenu(e, id, m, x),
             stale: S.stale, atStale: atMissing().length, onUpdate: updateNav, navMsg: S.navMsg,
             patrol: r.schedule?.[schSel(id)]?.do === 'patrol' ? r.schedule[schSel(id)] : null, editRoute: editingRoute(id, schSel(id)),
-            onRouteAdd: (m, n) => routeAdd(id, m, n), onRouteDel: (k) => routeDel(id, k),
+            onRouteAdd: (m, n) => routeAdd(id, m, n), onRouteDel: (k) => routeDel(id, k), routeMark: routeMark(), onRouteMark: routeToggleMark,
             pick: S.pick?.id === id ? S.pick.text : null, onPick: (m, x) => {const fn = S.pick?.fn; S.pick = null; fn?.(m, x.name ? {go: x.name} : {at: x.tile}); renderRight();},
             id, occ: occAll,
             others: Object.entries(S.data).filter(([o]) => o !== id).flatMap(([o, x]) => (Array.isArray(x.schedule) ? x.schedule.map((s, i) => ({id: o, i, s})) : []))})
