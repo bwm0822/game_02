@@ -1115,25 +1115,27 @@ function mapEl(name)
         timeBar(st));
 }
 
-// ↑↓ 調時間（整頁，見最下面的 keydown）：↑＝+1 分、↓＝−1、Shift＝±10，跨午夜繞回，沒勾會勾起來；HH:MM 欄有焦點時欄位跟著
+// 方向鍵調時間（整頁，見最下面的 keydown）：↑↓＝±1 分；←→＝上一個／下一個整 10 分（已經整 10 分＝±10）；Shift 沒作用，跨午夜繞回，沒勾會勾起來
+// HH:MM 欄有焦點：←→ 照常移文字游標（不處理）、↑↓ 調時間且欄位跟著
 function stepTime(e)
 {
-    const d = e.key === 'ArrowUp' ? 1 : e.key === 'ArrowDown' ? -1 : 0;
-    if (!d) return false;
+    const inp = e.target?.dataset?.k === 'timeT';
+    const t = e.key === 'ArrowUp' ? S.t + 1 : e.key === 'ArrowDown' ? S.t - 1
+        : inp ? null : e.key === 'ArrowRight' ? (Math.floor(S.t / 10) + 1) * 10 : e.key === 'ArrowLeft' ? (Math.ceil(S.t / 10) - 1) * 10 : null;
+    if (t === null) return false;
     e.preventDefault();
-    setTime(S.t + d * (e.shiftKey ? 10 : 1), true);
-    const inp = document.activeElement;
-    if (inp?.dataset?.k === 'timeT') inp.value = hhmm(S.t);
+    setTime(t, true);
+    if (inp) e.target.value = hhmm(S.t);
     return true;
 }
 
-// 🕒 時間游標：勾了才畫具名 NPC；時間可打 HH:MM、拖滑桿（10 分一格）或整頁按 ↑↓（stepTime()），記住
+// 🕒 時間游標：勾了才畫具名 NPC；時間可打 HH:MM、拖滑桿（10 分一格）或整頁按方向鍵（stepTime()），記住
 function timeBar(st)
 {
     const chk = h('input', {type: 'checkbox', dataset: {k: 'timeOn'}, checked: S.timeOn, onchange: e => setTime(S.t, e.target.checked)});
-    const inp = h('input', {class: 'num', size: 5, dataset: {k: 'timeT'}, value: hhmm(S.t), title: '↑↓＝±1 分（Shift＝±10）',
+    const inp = h('input', {class: 'num', size: 5, dataset: {k: 'timeT'}, value: hhmm(S.t), title: '↑↓＝±1 分（←→ 在這裡移游標；焦點在別處時 ←→＝整 10 分）',
         onchange: e => {const v = toMin(e.target.value); v === null ? (e.target.value = hhmm(S.t)) : setTime(v, true);}});
-    const rng = h('input', {type: 'range', class: 'trange', min: 0, max: 1430, step: 10, value: S.t, dataset: {k: 'timeR'}, title: '拖／←→＝10 分一格、↑↓＝±1 分（Shift＝±10）',
+    const rng = h('input', {type: 'range', class: 'trange', min: 0, max: 1430, step: 10, value: S.t, dataset: {k: 'timeR'}, title: '拖＝10 分一格、←→＝上／下一個整 10 分、↑↓＝±1 分（整頁都能按）',
         oninput: e => setTime(+e.target.value, true)});
     const cnt = h('span', {class: 'dim'});
     st.updateTime = () => {

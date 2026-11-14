@@ -587,6 +587,22 @@ run('map-tool', async t => {
             kd(rng, 'ArrowUp'); const k6 = S.t;
             tinp.blur();
             out.keys = [k1, k2, k3, k4, k5, k6];
+            // ←→：上／下一個整 10 分、已整 10 分＝±10、跨午夜、Shift 沒作用、滑桿也行、HH:MM 欄裡不處理（移游標）
+            mt.setTime(7 * 60 + 56, true);
+            kd(document.body, 'ArrowRight'); const r1 = S.t;
+            kd(cv(), 'ArrowRight', {shiftKey: true}); const r2 = S.t;
+            mt.setTime(7 * 60 + 56, true);
+            kd(document.body, 'ArrowLeft'); const r3 = S.t;
+            kd(rng, 'ArrowLeft'); const r4 = S.t;
+            mt.setTime(23 * 60 + 55, true);
+            kd(document.body, 'ArrowRight'); const r5 = S.t;
+            kd(document.body, 'ArrowLeft'); const r6 = S.t;
+            tinp.focus();
+            const ev = new KeyboardEvent('keydown', {key: 'ArrowRight', bubbles: true, cancelable: true});
+            tinp.dispatchEvent(ev);
+            const r7 = [S.t, ev.defaultPrevented];
+            tinp.blur();
+            out.lr = [r1, r2, r3, r4, r5, r6, r7];
             S.nav = nav0; S.plans = plans0; S.roles = roles0;
             mt.setTime(11 * 60, false);
         }
@@ -898,8 +914,10 @@ run('map-tool', async t => {
     t.eq('時間游標：單向巡邏跑完畫在終點', JSON.stringify(r.posDone), JSON.stringify([9, 1, 'stay']));
     t.eq('時間游標：下一筆從巡邏終點出發', JSON.stringify(r.posBack), JSON.stringify([5, 1, 'walk']));
     t.check('時間軸滾輪不調時間', r.wheelOff);
-    t.eq('↑↓ 整頁調時間：畫布上 ↑ 從 23:59 繞回 00:00 並勾起、Shift +10、↓ −1、Ctrl 不理、HH:MM 欄／滑桿有焦點也行', JSON.stringify(r.keys),
-        JSON.stringify([[0, true], 10, 9, 9, [8, '00:08'], 9]));
+    t.eq('↑↓ 整頁調時間：畫布上 ↑ 從 23:59 繞回 00:00 並勾起、Shift 沒作用、↓ −1、Ctrl 不理、HH:MM 欄／滑桿有焦點也行', JSON.stringify(r.keys),
+        JSON.stringify([[0, true], 1, 0, 0, [1439, '23:59'], 0]));
+    t.eq('←→：07:56 → 08:00 → 08:10（Shift 沒作用）、07:56 ← 07:50 ← 07:40（滑桿）、23:55 → 00:00 ← 23:50、HH:MM 欄裡不處理', JSON.stringify(r.lr),
+        JSON.stringify([480, 490, 470, 460, 0, 1430, [1430, false]]));
     t.check('打 12:00：自動打開、trump 停在 1F trump-p1、記住、人數', /trump:stay:trump-p1/.test(r.t12[0]) && r.t12[1] && r.t12[2] === '720' && r.t12[3] === '1' && /這張圖 \d+ 人/.test(r.t12[4]), JSON.stringify(r.t12));
     t.check('滑過作息 NPC：浮動框時間、點名、第幾筆', /trump.*（作息）/.test(r.ttip ?? '') && /12:00 在 trump-p1（第 \d+ 筆）/.test(r.ttip ?? ''), r.ttip);
     t.check('03:00：1F 沒有 trump、2F 床上有', !r.t3f1 && r.t3f2 === 'stay:bed', `${r.t3f1} ${r.t3f2}`);
