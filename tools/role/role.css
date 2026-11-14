@@ -12,6 +12,11 @@
 .smap .opts:first-child { margin: 0 0 6px; }
 .smap .opts { max-width: none; align-items: center; }
 .smap .opts select { max-width: 100%; }
+.smap .timebar { flex: 1 1 260px; display: flex; align-items: center; gap: 4px 8px; justify-content: flex-end; }
+.smap .timebar input.trange { flex: 1; min-width: 100px; }
+.smap .timebar label { display: inline-flex; align-items: center; gap: 3px; }
+.smap .timebar .away { padding: 1px 6px; background: #5a3a14; border: 1px solid #ff9f43; color: #ffd8b0; border-radius: 3px; white-space: nowrap; }
+.smap .timebar .away[hidden] { display: none; }
 .card[data-sch].sel { border-color: #4fc3f7; box-shadow: 0 0 0 1px #4fc3f7 inset; }
 .card .times { color: #8fd0ef; font-size: 13px; margin: -2px 0 6px; }
 .card .times.bad { color: #ff7b7b; }

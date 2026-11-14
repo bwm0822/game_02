@@ -1028,6 +1028,18 @@ function toggleRouteEdit(id, i)
     }
     render();
 }
+// 作息地圖的時間游標：方向鍵（滑鼠在右欄、右欄是作息、沒在打字；焦點在時間軸的 HH:MM／滑桿也行）
+S.overRight = false;
+document.getElementById('right').addEventListener('pointerenter', () => {S.overRight = true;});
+document.getElementById('right').addEventListener('pointerleave', () => {S.overRight = false;});
+addEventListener('keydown', (e) => {
+    if (S.view !== 'form' || S.rtab !== 'sched' || e.ctrlKey || e.metaKey || e.altKey || document.querySelector('dialog[open]')) return;
+    const st = document.querySelector('#right .smap canvas')?.st;
+    if (!st?.stepTime) return;
+    if (/^schedTime[TR]$/.test(e.target?.dataset?.k ?? '')) return void st.stepTime(e);
+    if (S.overRight && !e.target.matches?.('input, textarea, select')) st.stepTime(e);
+});
+
 addEventListener('keydown', (e) => {
     if (e.key !== 'Escape' || !S.routeEdit || document.querySelector('dialog[open]')) return;
     if (routeMark() != null) {S.routeEdit.mark = null; return renderRight();}
@@ -1177,6 +1189,10 @@ const planOf = (id) => {
     const nav = navAll();
     return SP.buildPlan(S.data[id].schedule, nav.edges, nav.nodes);
 };
+
+// 全部排得出時刻表的角色 {id: {plan, sch, segs}}（作息地圖的時間游標）
+const allPlans = () => Object.fromEntries(Object.entries(S.data).filter(([, x]) => Array.isArray(x.schedule) && x.schedule.length)
+    .map(([o, x]) => {const pl = planOf(o); return [o, pl.plan && {plan: pl.plan, sch: x.schedule, segs: SB.daySegs(pl.plan, x.schedule, pl.warns)}];}).filter(([, p]) => p));
 
 // 全部有作息的角色 [{id, sch, segs}]（占用時間圖、相衝）
 const occAll = () => Object.entries(S.data).filter(([, x]) => Array.isArray(x.schedule) && x.schedule.length)
@@ -1386,7 +1402,9 @@ function renderRight()
             onRouteAdd: (m, n) => routeAdd(id, m, n), onRouteDel: (k) => routeDel(id, k), routeMark: routeMark(), onRouteMark: routeToggleMark,
             pick: S.pick?.id === id ? S.pick.text : null, onPick: (m, x) => {const fn = S.pick?.fn; S.pick = null; fn?.(m, x.name ? {go: x.name} : {at: x.tile}); renderRight();},
             id, occ: occAll,
-            others: Object.entries(S.data).filter(([o]) => o !== id).flatMap(([o, x]) => (Array.isArray(x.schedule) ? x.schedule.map((s, i) => ({id: o, i, s})) : []))})
+            others: Object.entries(S.data).filter(([o]) => o !== id).flatMap(([o, x]) => (Array.isArray(x.schedule) ? x.schedule.map((s, i) => ({id: o, i, s})) : [])),
+            time: {get: () => ({t: GT.G.t, on: GT.G.on}), set: (t, on) => {GT.setT(t); GT.setOn(on);}},
+            plans: allPlans, refs: {roles: S.data, items: S.ext.items, parts: S.ext.parts}})
         : previewEl(r, S.ext.items, S.ext.parts));
 }
 

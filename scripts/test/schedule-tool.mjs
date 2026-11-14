@@ -1042,6 +1042,54 @@ run('schedule-tool', async t => {
         out.editOff = [S.routeEdit, cards()[0].querySelector('.routebtn').textContent];
         S.sel = 'trump';
 
+        // ---- 時間游標（跟甘特圖「此刻」共用）----
+        {
+            const G = re.GT.G, t0 = G.t, on0 = G.on, npcs0 = re.SM.show.npcs;
+            const tr = re.SP.buildPlan(S.data.trump.schedule, S.ext.nav.edges, S.ext.nav.nodes).plan, s0 = S.data.trump.schedule[0];
+            S.schSel = {id: 'trump', i: 0};
+            re.SM.setMap(s0.map); re.render();
+            await until(() => cv()?.st.data);
+            const tOn = () => right().querySelector('[data-k=schedTimeOn]'), tIn = () => right().querySelector('[data-k=schedTimeT]');
+            re.SM.show.npcs = false;
+            out.tbar = [!!right().querySelector('.smap .opts .timebar'), tOn().checked === on0];
+            if (tOn().checked) tOn().click();
+            out.tOff = cv().st.npcs.length;
+            tIn().value = re.SP.hhmm(re.SP.mod(tr[0].arr + 5)); tIn().dispatchEvent(new Event('change'));
+            await sleep(30);
+            out.tMine = [G.t === re.SP.mod(tr[0].arr + 5), G.on, tOn().checked, cv().st.npcs.map(x => `${x.id}:${x.n.name}`).join(), right().querySelector('[data-k=schedAway]').hidden];
+            out.tMineWant = `trump:${re.SP.destOf(s0)}`;
+            // 不在這張圖：→ 按鈕，點了切過去
+            const j = S.data.trump.schedule.findIndex(s => s.map !== s0.map);
+            if (j >= 0)
+            {
+                tIn().value = re.SP.hhmm(re.SP.mod(tr[j].arr + 5)); tIn().dispatchEvent(new Event('change'));
+                await sleep(30);
+                const aw = right().querySelector('[data-k=schedAway]');
+                out.tAway = [aw.hidden, aw.textContent, cv().st.npcs.length];
+                aw.click();
+                await until(() => cv()?.st.name === S.data.trump.schedule[j].map && cv().st.data);
+                out.tAway.push(cv().st.name === S.data.trump.schedule[j].map, right().querySelector('[data-k=schedAway]').hidden, cv().st.npcs.some(x => x.id === 'trump'));
+                out.tAwayWant = `→ ${S.data.trump.schedule[j].map.split('/').at(-1)}`;
+            }
+            // 「顯示 ▾」勾其他角色（時間游標）：人只會變多、trump 還是橘的那個
+            const nMine = cv().st.npcs.length;
+            re.SM.show.npcs = true; re.render();
+            await until(() => cv()?.st.data);
+            out.tOthers = [cv().st.npcs.length >= nMine, cv().st.npcs.some(x => x.id === 'trump'), cv().st.id];
+            re.SM.show.npcs = npcs0;
+            // 方向鍵：滑鼠在右欄才有效，↑ +1、→ 下一個整 10 分；離開右欄不理
+            const kd = (key) => document.body.dispatchEvent(new KeyboardEvent('keydown', {key, bubbles: true, cancelable: true}));
+            re.GT.setT(7 * 60 + 56); re.render();
+            await until(() => cv()?.st.data);
+            right().dispatchEvent(new PointerEvent('pointerenter'));
+            kd('ArrowUp'); const k1 = G.t;
+            kd('ArrowRight'); const k2 = [G.t, tIn().value];
+            right().dispatchEvent(new PointerEvent('pointerleave'));
+            kd('ArrowUp'); const k3 = G.t;
+            out.tKeys = [k1, ...k2, k3];
+            re.GT.setT(t0); re.GT.setOn(on0); re.render();
+        }
+
         right().querySelector('[data-rtab=look]').click();
         out.back = [!!right().querySelector('.pv:not(.smap)'), localStorage.getItem('tools.role.rtab')];
         localStorage.removeItem('tools.role.sched.map');
@@ -1240,7 +1288,7 @@ run('schedule-tool', async t => {
     t.check('點門：進到目的地圖、← 返回 能按、作息沒動', r.entered[0] === r.doorTo && r.entered[1] === false && r.entered[2] === 2, JSON.stringify([r.doorTo, r.entered]));
     t.eq('← 返回 回到點門前那張', JSON.stringify(r.backed), JSON.stringify(['m_04x05/trump-inn-f1', true]));
     t.check('座標沒勾：空地沒浮動框、方框照畫', r.noCoord.every(Boolean), r.noCoord.join());
-    t.eq('顯示 ▾ 預設勾本角色其他行程、座標', JSON.stringify(r.showDefault), JSON.stringify(['mine:true', 'others:false', 'names:false', 'grid:false', 'coord:true']));
+    t.eq('顯示 ▾ 預設勾本角色其他行程、座標', JSON.stringify(r.showDefault), JSON.stringify(['mine:true', 'others:false', 'npcs:false', 'names:false', 'grid:false', 'coord:true']));
     t.eq('作息地圖也有名稱過濾框：sit-* 只中 sit-1、記自己的 key、自動勾物件名稱', JSON.stringify(r.schFilter), JSON.stringify([true, true, false, 'sit-*', true]));
     t.eq('勾格子可走：記住、按鈕數字', JSON.stringify(r.showSaved), JSON.stringify(['{"mine":true,"coord":true,"grid":true}', '顯示（3）▾', true]));
     t.check('格子權重有算出牆', r.wall);
@@ -1289,4 +1337,10 @@ run('schedule-tool', async t => {
     t.eq('取消標記後點點照舊加到最後', r.markGone, 'guard-p1,guard-p2,guard-p3,guard-p2,guard-p4,guard-p3');
     t.eq('別張圖的點不能加',JSON.stringify(r.otherMap), JSON.stringify([5, '巡邏路線只能用 m/m_04x05 的點']));
     t.eq('Esc 結束編輯', JSON.stringify(r.editOff), JSON.stringify([null, '✎ 編輯路線']));
+    t.eq('時間游標：作息地圖置中那行有時間軸、開關照甘特圖共用的狀態', JSON.stringify(r.tbar), JSON.stringify([true, true]));
+    t.eq('時間游標關著：不畫人', r.tOff, 0);
+    t.eq('打時間：寫進甘特圖的此刻、自動勾、只畫這個角色在目的地、沒有 → 按鈕', JSON.stringify(r.tMine), JSON.stringify([true, true, true, r.tMineWant, true]));
+    if (r.tAway) t.eq('不在這張圖：→ 地圖按鈕、這張圖沒人；點了切過去、按鈕藏、畫在那張圖', JSON.stringify(r.tAway), JSON.stringify([false, r.tAwayWant, 0, true, true, true]));
+    t.eq('勾其他角色（時間游標）：人不會變少、trump 還在、橘色的是 trump', JSON.stringify(r.tOthers), JSON.stringify([true, true, 'trump']));
+    t.eq('方向鍵（滑鼠在右欄）：↑ +1、→ 下一個整 10 分、HH:MM 跟著；離開右欄不理', JSON.stringify(r.tKeys), JSON.stringify([477, 480, '08:00', 480]));
 });

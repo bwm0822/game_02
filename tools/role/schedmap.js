@@ -8,9 +8,13 @@ import {mapData, gridOf, drawGrid, snapTile, spotOf} from '../common/mapview.js'
 import * as DR from '../common/doors.js';
 import {navBanner} from '../common/pointedit.js';
 import {spotsOn, clashOf, occupyEl} from './occupy.js';
+import {daySegs} from './schedbar.js';
+import * as TP from '../common/schedpos.js';
+import {spriteOf, forgetSprites} from '../map/roles.js';
 export {setReader, forget, mapData, spotOf, gridOf} from '../common/mapview.js';
 
 const SHOW = createShowMenu('tools.role.sched.show', [['mine', '這個角色其他行程', '#e8743b'], ['others', '其他角色的點', '#9ccc65'],
+    ['npcs', '其他角色（時間游標）', '#4fc3f7'],
     ['names', '物件名稱', '#dddddd', {filter: true}], ['grid', '格子可走（紅＝擋住、黃＝慢）', '#ff7777'], ['coord', '座標（滑過空地的浮動框）', '#aaccff']], {mine: true, coord: true});
 export const show = SHOW.show;
 export const nameOk = SHOW.nameOk;
@@ -244,6 +248,7 @@ function draw(cv, st)
         }
     }
     drawBadges(g, st, K);
+    TP.drawNpcs(g, K, st.npcs, st.roles, {sprites: st.sprites, mine: st.id});
     drawLabels(g, st, K);
     // 拖曳中的 point：放開後會落在的格子
     if (st.drag?.moved)
@@ -461,9 +466,12 @@ async function portsFor(d)
 // 巡邏：opt.patrol＝選中那筆（do 是 patrol 才給）、opt.editRoute＝編輯路線中（點物件＝onRouteAdd(map, name)、點空地＝onNew(map, x, y, data)、右鍵號碼＝onRouteDel(第幾個)、Shift＋點號碼＝onRouteMark(第幾個)）
 // opt.routeMark＝標記的第幾個（紅底，新點插在它前面）
 // 挑目的地：opt.pick＝提示文字（有＝挑選模式，左鍵點物件／空地＝onPick(map, {name?, tile})，門照樣能進去）
+// 時間游標：opt.time＝{get() → {t, on}, set(t, on)}（甘特圖的「此刻」）、opt.plans()＝全部角色 {id: {plan, sch, segs}}（勾「其他角色（時間游標）」才用）、
+//   opt.refs＝{roles, items, parts}（合成角色圖、錨點）；這個角色橘色，不在這張圖時時間軸旁出現「→ 地圖」；canvas.st.stepTime(e)＝方向鍵調時間
 export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {}, others = [], id = null, occ = () => [],
     onNew = null, onMove = null, onMenu = null, stale = null, atStale = 0, onUpdate = null, navMsg = '',
-    patrol = null, editRoute = false, onRouteAdd = null, onRouteDel = null, routeMark = null, onRouteMark = null, pick = null, onPick = null} = {})
+    patrol = null, editRoute = false, onRouteAdd = null, onRouteDel = null, routeMark = null, onRouteMark = null, pick = null, onPick = null,
+    time = null, plans = () => ({}), refs = null} = {})
 {
     const free = M.map && M.free === M.map;
     const name = M.map && (maps.includes(M.map) || free) ? M.map : (r.schedule?.find(s => maps.includes(s.map))?.map ?? maps[0]);
@@ -473,7 +481,8 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
     const tip = h('div', {class: 'smaptip', hidden: true});
     const msg = h('div', {class: 'smapmsg dim', hidden: true});
     const legs = legsOf(plan?.[sel], edges);
-    const st = {name, schedule: r.schedule, plan, sel, others, occ, data: null, hover: null, cell: null, door: null, ports: [], legs, route: null, hits: [], patrol: null, routeHits: [], editRoute, routeMark};
+    const st = {name, schedule: r.schedule, plan, sel, others, occ, data: null, hover: null, cell: null, door: null, ports: [], legs, route: null, hits: [], patrol: null, routeHits: [], editRoute, routeMark,
+        id, roles: refs?.roles ?? {}, npcs: [], sprites: new Map()};
     const markName = routeMark != null && patrol?.route?.[routeMark] ? `${routeMark + 1} ${patrol.route[routeMark]}` : null;
     const inBox = (p, b) => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h;
     const go = (m) => {setMap(m); refresh();};
@@ -619,6 +628,31 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
         onMenu(e, name, {name: x.n?.name, type: x.n?.type, door: x.door, tile: x.tile, blocked: x.blocked, inNav,
             enter: x.door && x.door.issue?.level !== 'error' ? () => {enterDoor(name, x.door); refresh();} : null});
     });
+    // 時間游標：這個角色（橘）＋勾了「其他角色（時間游標）」的其他人；這個角色不在這張圖＝時間軸旁「→ 地圖」
+    const mine = plan && r.schedule?.length ? {plan, sch: r.schedule, segs: daySegs(plan, r.schedule)} : null;
+    forgetSprites();
+    const away = h('button', {type: 'button', class: 'away', dataset: {k: 'schedAway'}, hidden: true});
+    const calcNpcs = () => {
+        const {t, on} = time?.get() ?? {t: 0, on: false};
+        const ps = on ? {...(show.npcs ? plans() : {}), ...(mine && id ? {[id]: mine} : {})} : {};
+        st.npcs = st.data ? TP.npcsOn(st, st.data, name, ps, t, edges) : [];
+        const pos = on && mine ? TP.posOf(mine, t, edges) : null;
+        away.hidden = !pos || pos.map === name;
+        if (!away.hidden) Object.assign(away, {textContent: `→ ${shortMap(pos.map)}`, title: `${hhmm(t)} ${id} 在 ${pos.map}，點了切過去`, onclick: () => go(pos.map)});
+        const need = refs ? st.npcs.filter(x => !st.sprites.has(x.id)) : [];
+        if (need.length) Promise.all(need.map(async x => st.sprites.set(x.id, await spriteOf(x.id, refs)))).then(redraw);
+    };
+    const setT = (t, on) => {time.set(mod(Math.round(t)), on); calcNpcs(); bar.update(); redraw();};
+    const bar = time && TP.timeBarEl(time.get, setT, {k: 'schedTime', extra: away,
+        title: `照作息算 ${id ?? '這個角色'} 這個時刻實際在哪（橘；走路中＝路上那格、巡邏＝路線上；「顯示 ▾」勾其他角色（時間游標）＝其他人藍色）；時間跟總覽甘特圖的「此刻」共用；滑鼠在右欄時方向鍵也能調`});
+    st.stepTime = (e) => {
+        const t = time && TP.stepKey(e, time.get().t);
+        if (t == null) return false;
+        e.preventDefault();
+        setT(t, true);
+        if (/timeT$/.test(e.target?.dataset?.k ?? '')) e.target.value = hhmm(time.get().t);
+        return true;
+    };
     const land = M.land?.map === name ? M.land : null;
     if (land) M.land = null;
     if (M.focus && M.focus.map !== name) M.focus = null;
@@ -630,6 +664,7 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
             st.route = routeOn(d, legs, name);
             st.patrol = patrol?.map === name ? patrolOn(d, patrol) : null;
         }
+        calcNpcs();
         if (d && !view.set) PZ.center(view);
         if (d && land && !DR.landAt(st, view, land.port)) {msg.textContent = `⚠ ${name} 找不到落腳點「${land.port}」`; msg.hidden = false;}
         // 對準目的地：結果記在 M.shown，閃完之前右欄重畫（checkStale…）的新畫布接著閃、照樣顯示 ⚠
@@ -667,5 +702,6 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
         h('div', {class: 'opts'}, mapSel, back, h('span', {class: 'help', title: '滾輪縮放、按住中鍵拖曳平移；點門（橘框 🚪）進去、「← 返回」回來；點路線上的「→ 地圖」切過去；右鍵空地或物件＝新增目的地／改目的地，右鍵 point／門還能改名（別張圖指過來的門、作息一起改）；拖 point 改位置'}, '?')),
         crumbs,
         h('div', {class: 'cvbox'}, cv, tip, msg),
-        h('div', {class: 'opts'}, SHOW.showMenu(redraw, [], {names: () => [...(st.data?.named.keys() ?? [])]}), PZ.zoomField(view), PZ.centerBtn(view, '整張地圖放回中央、倍率剛好裝滿畫布')));
+        h('div', {class: 'opts'}, SHOW.showMenu(() => {calcNpcs(); redraw();}, [], {names: () => [...(st.data?.named.keys() ?? [])]}), PZ.zoomField(view), PZ.centerBtn(view, '整張地圖放回中央、倍率剛好裝滿畫布'),
+            bar));
 }

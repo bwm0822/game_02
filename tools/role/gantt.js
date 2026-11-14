@@ -9,9 +9,11 @@ const load = (k) => {try {return localStorage.getItem(k);} catch {return null;}}
 const save = (k, v) => {try {v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v);} catch {}};
 const loadHide = () => {try {const a = JSON.parse(load(KH)); return new Set(Array.isArray(a) ? a : []);} catch {return new Set();}};
 
-// hide＝藏起來的角色 id（記藏的，新角色預設顯示）
-export const G = {t: +(load(KT) ?? 18 * 60) || 0, map: load(KM) || null, hide: loadHide()};
+// hide＝藏起來的角色 id（記藏的，新角色預設顯示）；t＝「此刻」（作息地圖的時間游標共用）、on＝作息地圖的時間游標開關
+const KO = 'tools.role.sched.time';
+export const G = {t: +(load(KT) ?? 18 * 60) || 0, map: load(KM) || null, hide: loadHide(), on: load(KO) === '1'};
 export function setT(t) {G.t = mod(Math.round(t)); save(KT, String(G.t));}
+export function setOn(on) {G.on = !!on; save(KO, G.on ? '1' : '0');}
 export function setMap(m) {G.map = m || null; save(KM, G.map);}
 export function setHide(ids, on)
 {
