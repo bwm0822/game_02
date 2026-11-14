@@ -686,8 +686,8 @@ function worldEl()
         h('div', {class: 'cvbox'}, cv, tip),
         h('div', {class: 'opts'}, PZ.zoomField(WORLD_VIEW), PZ.centerBtn(WORLD_VIEW, '整個世界放回中央、倍率剛好裝滿畫布'),
             h('span', {class: 'legend'}, h('i', {style: `background:${DOT.fixed}`}), '常駐', h('i', {style: `background:${DOT.grp}`}), '@群組',
-                h('i', {style: `background:${DOT.error}`}), '⚠', h('i', {style: 'background:#26e0e0'}), '作息')),
-        timeBar(st));
+                h('i', {style: `background:${DOT.error}`}), '⚠', h('i', {style: 'background:#26e0e0'}), '作息'),
+            timeBar(st)));
 }
 
 // ---------- 中間：地圖 ----------
@@ -1107,8 +1107,8 @@ function mapEl(name)
         nav,
         placing,
         h('div', {class: 'cvbox'}, cv, tip, msg),
-        h('div', {class: 'opts'}, SHOW.showMenu(redraw, [], {names: () => [...(st.data?.named.keys() ?? [])]}), PZ.zoomField(view), PZ.centerBtn(view, '整張地圖放回中央、倍率剛好裝滿畫布')),
-        timeBar(st));
+        h('div', {class: 'opts'}, SHOW.showMenu(redraw, [], {names: () => [...(st.data?.named.keys() ?? [])]}), PZ.zoomField(view), PZ.centerBtn(view, '整張地圖放回中央、倍率剛好裝滿畫布'),
+            timeBar(st)));
 }
 
 // 方向鍵調時間（整頁，見最下面的 keydown）：↑↓＝±1 分；←→＝上一個／下一個整 10 分（已經整 10 分＝±10）；Shift 沒作用，跨午夜繞回，沒勾會勾起來
@@ -1139,7 +1139,7 @@ function timeBar(st)
         rng.value = S.t;
     };
     st.updateTime();
-    return h('div', {class: 'opts timebar', title: '照 role.json 的作息（同遊戲 ScheduleManager）算具名 NPC 這個時刻實際在哪（走路中＝路上那格、巡邏＝路線上）；虛線框＝走路中'},
+    return h('span', {class: 'timebar', title:'照 role.json 的作息（同遊戲 ScheduleManager）算具名 NPC 這個時刻實際在哪（走路中＝路上那格、巡邏＝路線上）；虛線框＝走路中'},
         h('label', null, chk, '🕒 作息'), inp, rng);
 }
 
