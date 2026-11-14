@@ -318,9 +318,11 @@ run('schedule-tool', async t => {
             out.gHovDrag = [g().querySelector('.ghovt').hidden, [...g().querySelectorAll('.gendt:not([hidden])')].map(x => x.textContent).at(-1),
                 g().querySelectorAll('.gendt:not([hidden])').length, g().querySelectorAll('.gend:not([hidden])').length === 2 * g().querySelectorAll('.track').length,
                 !!rowOf('trump').querySelector('.gend:not([hidden])')];
+            const gst = g().querySelector('.ghead .gaxis .axis'), gdt = [...g().querySelectorAll('.gendt:not([hidden])')].map(x => x.getBoundingClientRect());
+            out.gStays = [gst.querySelectorAll('.stayt').length, gdt.every(r => r.bottom <= gst.getBoundingClientRect().top + 1)];
             pe2('pointerup', x2 - dx);
             out.gShift = [S.data.trump.schedule[1].t, S.hi - hg, S.view];
-            out.gEndsGone = g().querySelectorAll('.gendt:not([hidden]), .gend:not([hidden])').length;
+            out.gEndsGone = g().querySelectorAll('.gendt:not([hidden]), .gend:not([hidden]), .stayt').length;
             re.undo();
         }
         // 滑過總覽某列的時序條：頂端時間軸標籤（對齊 10 分、Shift＝1 分）＋每列＆時間軸一條細白線（同位置），離開就藏
@@ -536,6 +538,8 @@ run('schedule-tool', async t => {
         const plWalk = re.SP.buildPlan(S.data.trump.schedule.map((s, k) => (k === 2 ? {...s, t: '11:30'} : s)), re.S.ext.nav.edges, re.S.ext.nav.nodes).plan;
         out.dragEnds = [endTs().join(' '), `11:30 ${re.SP.hhmm(plWalk[2].arr)}`, document.querySelectorAll('#view .daybar .endmk:not([hidden])').length,
             document.querySelector('#view .daybar .hovt').hidden, document.querySelector('#view .daybar .hovline').hidden, !document.querySelector('#view .daybar .dragtip')];
+        out.dragStays = [document.querySelectorAll('#view .daybar .axis .stayt').length, [...document.querySelectorAll('#view .daybar .stayt')].every(x => /^待 \d+:\d\d$/.test(x.textContent)),
+            tb().classList.contains('grabbing')];
         pe('pointerup', wx + (xOf(30) - xOf(0)));
         out.dragged = [S.data.trump.schedule[2].t, S.data.trump.schedule[1].t, S.hi - h1];
         out.dragEndsGone = endTs().length;
@@ -558,8 +562,14 @@ run('schedule-tool', async t => {
             pe('pointermove', sx + (xOf(20) - xOf(0)));
             const p20 = re.SP.buildPlan(S.data.trump.schedule.map((s, k) => (k === 1 || k === 2 ? {...s, t: re.SE.shiftT(s.t, 20)} : s)), re.S.ext.nav.edges, re.S.ext.nav.nodes).plan;
             out.blockEnds = [endTs().join(' '), `${re.SP.hhmm(p20[1].arr)} ${re.SP.hhmm(p20[2].dep)}`, document.querySelector('#view .daybar .hovt').hidden];
+            const fmt = (m) => `待 ${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`;
+            const stayOf = (p, k) => re.SP.mod(p[(k + 1) % p.length].dep - p[k].arr);
+            const sts = [...document.querySelectorAll('#view .daybar .axis .stayt')], rs = sts.map(x => x.getBoundingClientRect()).sort((a, b) => a.left - b.left);
+            out.blockStays = [sts.map(x => x.textContent).sort().join(), [0, 1, 2].map(k => fmt(stayOf(p20, k))).sort().join(), sts.includes(sts.find(x => x.textContent === fmt(len0))),
+                rs.every((r, k) => k === 0 || r.left >= rs[k - 1].right), tb().classList.contains('grabbing'), getComputedStyle(st()).cursor];
             pe('pointerup', sx + (xOf(20) - xOf(0)));
             out.block = [S.data.trump.schedule.map(s => s.t).join(), [t0[0], re.SE.shiftT(t0[1], 20), re.SE.shiftT(t0[2], 20), ...t0.slice(3)].join(), stay1() === len0, S.hi - hb];
+            out.blockStaysGone = [document.querySelectorAll('#view .daybar .stayt').length, tb().classList.contains('grabbing')];
             re.undo();
             // 往左拖過頭：前一筆最少停 10 分，自己的停留還是不變
             const sr2 = st().getBoundingClientRect(), sx2 = sr2.left + sr2.width / 2;
@@ -1018,7 +1028,8 @@ run('schedule-tool', async t => {
     t.eq('點角色名：進表單', JSON.stringify(r.gName), JSON.stringify(['form', 'musk']));
     t.eq('總覽拖分界線：照原型別平移、一筆 undo、留在總覽', JSON.stringify(r.gShift), JSON.stringify(['@22:20', 1, 'table']));
     t.eq('總覽拖曳中：游標標籤藏、頂端時間軸兩端時間（右＝抵達）、豎線貫穿每列', JSON.stringify(r.gHovDrag), JSON.stringify([true, '22:20', 2, true, true]));
-    t.eq('總覽放開：兩端時間收起', r.gEndsGone, 0);
+    t.eq('總覽拖曳中：待的時間在頂端刻度列（2 個）、兩端時間在它上面', JSON.stringify(r.gStays), JSON.stringify([2, true]));
+    t.eq('總覽放開：兩端時間、待的時間收起', r.gEndsGone, 0);
     t.eq('總覽滑過：頂端標籤 14:30（對齊 10 分）、每列＋時間軸都有線、同位置', JSON.stringify(r.gHov), JSON.stringify([false, '14:30', true, true, 1, true, true]));
     t.eq('總覽滑過＋Shift：1 分', r.gHovShift, '14:33');
     t.eq('總覽離開時序條：標籤跟線都藏', JSON.stringify(r.gHovGone), JSON.stringify([true, true, false]));
@@ -1031,7 +1042,11 @@ run('schedule-tool', async t => {
     t.eq('拖分界線中：兩端＝出發／抵達時間＋豎線、游標標籤跟白線藏、沒有下方浮框',
         JSON.stringify([r.dragEnds[0], r.dragEnds.slice(2)]), JSON.stringify([r.dragEnds[1], [2, true, true, true]]));
     t.eq('放開：兩端時間收起', r.dragEndsGone, 0);
-    t.eq('滑到停留段中間：游標 move（不是 ↔）', JSON.stringify(r.moveCur), JSON.stringify([true, false, 'move']));
+    t.eq('拖分界線中：刻度列 2 個「待 H:MM」（前一筆＋這筆）、不是握拳', JSON.stringify(r.dragStays), JSON.stringify([2, true, false]));
+    t.eq('滑到停留段中間：游標是手（不是 ↔）', JSON.stringify(r.moveCur), JSON.stringify([true, false, 'grab']));
+    t.eq('拖停留段中間：刻度列 3 個待的時間（前、自己不變、後）、不重疊、握拳',
+        JSON.stringify([r.blockStays[0], ...r.blockStays.slice(2)]), JSON.stringify([r.blockStays[1], true, true, true, 'grabbing']));
+    t.eq('放開：待的時間收起、不握拳', JSON.stringify(r.blockStaysGone), JSON.stringify([0, false]));
     t.eq('拖停留段中間：兩端＝抵達／離開、游標標籤藏', JSON.stringify([r.blockEnds[0], r.blockEnds[2]]), JSON.stringify([r.blockEnds[1], true]));
     t.eq('整塊平移：這筆跟下一筆一起平移 20 分、停留不變、一筆 undo', JSON.stringify([r.block[0], r.block[2], r.block[3]]), JSON.stringify([r.block[1], true, 1]));
     t.eq('整塊往左拖過頭：前一筆最少停 10 分、自己停留不變', JSON.stringify(r.blockClamp), JSON.stringify([10, true]));

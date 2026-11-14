@@ -56,8 +56,26 @@ function tip(g, plan, ty)
 
 const EDGE = 4;
 
+// 拖曳中各停留段「待 H:MM」：items＝[{t 中點分鐘, len}]，排在 host（刻度列）裡，左到右往外推開不重疊；null＝收起
+export function stayLabels(host, items)
+{
+    for (const x of host.querySelectorAll('.stayt')) x.remove();
+    if (!items?.length) return;
+    const W = host.getBoundingClientRect().width;
+    const els = items.map(it => ({x: (it.t / DAY) * W, el: h('div', {class: 'stayt'}, `待 ${Math.floor(it.len / 60)}:${String(it.len % 60).padStart(2, '0')}`)}))
+        .sort((a, b) => a.x - b.x);
+    host.append(...els.map(e => e.el));
+    let right = -Infinity;
+    for (const e of els)
+    {
+        const w = e.el.offsetWidth, left = Math.max(0, Math.min(W - w, Math.max(e.x - w / 2, right + 2)));
+        e.el.style.left = `${left}px`;
+        right = left + w;
+    }
+}
+
 // opt.sel＝選中第幾筆（-1＝沒有）、opt.onPick(i)＝點了某段、opt.bare＝不畫刻度跟圖例（總覽每列）、opt.typeName(s)＝段內寫的類型名
-// opt.dim(map)＝true 的段變淡（總覽點圖例）、opt.onHover(t, text)＝bare 時的游標時間（離開＝null）、opt.onEnds(ts)＝bare 時拖曳中兩端的時刻（放開＝null）
+// opt.dim(map)＝true 的段變淡（總覽點圖例）、opt.onHover(t, text)＝bare 時的游標時間（離開＝null）、opt.onEnds(ts)／opt.onStays(items)＝bare 時拖曳中兩端的時刻／各停留段（給 stayLabels()，放開＝null）
 // 編輯：opt.onMenu(e, t)＝右鍵（t＝那裡的分鐘）；opt.planOf(sch)＝{plan, warns}、opt.onShift(js, delta)＝拖曳放開，js 那幾筆一起平移
 //（分界線＝第 j 筆的走路段 [j]、停留段中間＝整塊 [i, i+1]）
 export function dayBarEl(plan, sch, warns, opt = {})
@@ -105,8 +123,15 @@ export function dayBarEl(plan, sch, warns, opt = {})
         const ts = n === 1 ? [p.arr] : g.kind === 'block' ? [p.arr, pl[(g.j + 1) % n].dep] : [p.dep, p.arr];
         return ts[0] === ts.at(-1) ? [ts[0]] : ts;
     };
+    // 拖曳中會變的停留段（分界線＝前一筆＋這筆、整塊＝前一筆＋自己＋下一筆），標在段的中點
+    const staysOf = (g, segs) => {
+        const n = sch.length, ks = new Set(g.kind === 'block' ? [-1, 0, 1].map(d => (g.j + d + n) % n) : [(g.j - 1 + n) % n, g.j]);
+        return (segs ?? []).filter(s => s.kind === 'stay' && ks.has(s.i)).map(s => ({t: mod(s.s + s.len / 2), len: s.len}));
+    };
+    const axis = opt.bare ? null : axisEl();
     // 兩端：短豎線＋時間，左邊那個靠右對齊、右邊那個靠左對齊（不會疊）；bare 交給 opt.onEnds
     const endEls = [0, 1].map(() => ({mk: h('i', {class: 'endmk', hidden: true}), t: h('span', {class: 'endt', hidden: true})}));
+    const showStays = (items) => (opt.bare ? opt.onStays?.(items) : stayLabels(axis, items));
     const showEnds = (ts) => {
         if (opt.bare) return opt.onEnds?.(ts);
         const w = bar.getBoundingClientRect().width;
@@ -148,6 +173,7 @@ export function dayBarEl(plan, sch, warns, opt = {})
         if (!g) return;
         e.preventDefault();
         drag = {...g, x0: e.clientX, t0: toMin(sch[g.j].t), delta: 0, moved: false, range: rangeOf(g), pointerId: e.pointerId};
+        bar.classList.toggle('grabbing', g.kind === 'block');
         // 還沒 capture 前在外面放開也要結束
         window.addEventListener('pointerup', end, {once: true});
     });
@@ -178,9 +204,10 @@ export function dayBarEl(plan, sch, warns, opt = {})
         if (delta === drag.delta) return;
         drag.delta = delta;
         const list = sch.map((s, k) => (drag.js.includes(k) ? {...s, t: shift(s.t, delta)} : s));
-        const pl = opt.planOf(list);
-        fill(pl.plan, list, daySegs(pl.plan, list, pl.warns) ?? []);
+        const pl = opt.planOf(list), segs = daySegs(pl.plan, list, pl.warns) ?? [];
+        fill(pl.plan, list, segs);
         showEnds(endsOf(drag, pl.plan));
+        showStays(staysOf(drag, segs));
     });
     bar.addEventListener('pointerleave', () => {if (!drag) {hover(0, null); hovSeg(null); cursor(null);}});
     function end()
@@ -188,7 +215,9 @@ export function dayBarEl(plan, sch, warns, opt = {})
         if (!drag) return;
         const d = drag;
         drag = null;
+        bar.classList.remove('grabbing');
         showEnds(null);
+        showStays(null);
         if (!d?.moved) return;
         swallow = true;
         setTimeout(() => {swallow = false;}, 0);
@@ -207,7 +236,7 @@ export function dayBarEl(plan, sch, warns, opt = {})
     const segs = segs0;
     const maps = [...new Set(segs.filter(g => g.kind === 'stay').map(g => g.map))];
     const legend = h('div', {class: 'legend'}, maps.map(m => h('span', {title: m ?? ''}, h('b', {style: `background:${mapColor(m)}`}), m?.split('/').at(-1) ?? '?')));
-    return h('div', {class: 'daybar'}, bar, hovLine, hovT, ...endEls.flatMap(x => [x.mk, x.t]), axisEl(), legend);
+    return h('div', {class: 'daybar'}, bar, hovLine, hovT, ...endEls.flatMap(x => [x.mk, x.t]), axis, legend);
 }
 
 export const axisEl = () => h('div', {class: 'axis'}, [0, 6, 12, 18, 24].map(t => h('span', {style: `left:${(t / 24) * 100}%`}, String(t))));

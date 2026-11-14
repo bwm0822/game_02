@@ -45,8 +45,8 @@
 .daybar .seg.sel { box-shadow: 0 0 0 2px #4fc3f7 inset; filter: brightness(1.2); }
 .daybar .axis { position: relative; height: 14px; color: #888; }
 .daybar .axis span { position: absolute; transform: translateX(-50%); }
-.daybar .axis span:first-child { transform: none; }
-.daybar .axis span:last-child { transform: translateX(-100%); }
+.daybar .axis span:first-of-type { transform: none; }
+.daybar .axis span:last-of-type { transform: translateX(-100%); }
 .daybar .legend { display: flex; flex-wrap: wrap; gap: 2px 10px; color: #aaa; }
 .daybar .legend b { display: inline-block; width: 10px; height: 10px; margin-right: 3px; border-radius: 2px; vertical-align: -1px; }
 /* 總覽「作息」分頁（gantt.js） */
@@ -64,8 +64,8 @@
 .gantt .gaxis .track { position: relative; height: 10px; background: #1d1f22; border: 1px solid #3a3d44; border-radius: 3px; }
 .gantt .gaxis .axis { position: relative; height: 14px; color: #888; }
 .gantt .gaxis .axis span { position: absolute; transform: translateX(-50%); }
-.gantt .gaxis .axis span:first-child { transform: none; }
-.gantt .gaxis .axis span:last-child { transform: translateX(-100%); }
+.gantt .gaxis .axis span:first-of-type { transform: none; }
+.gantt .gaxis .axis span:last-of-type { transform: translateX(-100%); }
 .gantt .track.empty { display: flex; align-items: center; padding-left: 6px; font-size: 12px; }
 .gpick { overflow-y: auto; min-width: 200px; }
 .gpick .gpall { display: flex; gap: 4px; margin-bottom: 4px; }
@@ -79,13 +79,16 @@
 .daybar .hovt { position: absolute; top: -18px; transform: translateX(-50%); z-index: 3; padding: 0 4px; line-height: 14px; border-radius: 3px;
     background: #e8e8e8; color: #111; font-size: 11px; pointer-events: none; }
 .daybar .hovline[hidden], .daybar .hovt[hidden] { display: none; }
-.daybar .track.move, .daybar .track.move .seg { cursor: move; }
+.daybar .track.move, .daybar .track.move .seg { cursor: grab; }
+.daybar .track.grabbing, .daybar .track.grabbing .seg { cursor: grabbing; }
+.axis .stayt { position: absolute; top: 0; z-index: 3; padding: 0 4px; line-height: 14px; border-radius: 3px;
+    background: #2b2d31; border: 1px solid #4fc3f7; color: #cdeefc; font-size: 11px; white-space: nowrap; pointer-events: none; }
 .daybar .endmk { position: absolute; top: -8px; height: 32px; width: 2px; margin-left: -1px; background: #4fc3f7; pointer-events: none; z-index: 2; }
 .daybar .endt { position: absolute; top: -20px; z-index: 3; padding: 0 4px; line-height: 14px; border-radius: 3px;
     background: #4fc3f7; color: #111; font-size: 11px; white-space: nowrap; pointer-events: none; }
 .daybar .endmk[hidden], .daybar .endt[hidden] { display: none; }
 .gantt .gend { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #4fc3f7; pointer-events: none; z-index: 2; }
-.gantt .gendt { position: absolute; top: 10px; z-index: 3; padding: 0 4px; line-height: 14px; border-radius: 3px;
+.gantt .gendt { position: absolute; top: -3px; z-index: 3; padding: 0 4px; line-height: 14px; border-radius: 3px;
     background: #4fc3f7; color: #111; font-size: 11px; white-space: nowrap; pointer-events: none; }
 .gantt .gend[hidden], .gantt .gendt[hidden] { display: none; }
 .gantt .gaxis { position: relative; }

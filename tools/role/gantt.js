@@ -93,7 +93,7 @@ export function ganttEl(o)
 
     // 頂端時間軸：按住拖游標
     const track = h('div', {class: 'track'});
-    const head = h('div', {class: 'gaxis'}, track, SB.axisEl());
+    const axis = SB.axisEl(), head = h('div', {class: 'gaxis'}, track, axis);
     const tAt = (e) => {const rc = track.getBoundingClientRect(); return Math.max(0, Math.min(DAY - 1, ((e.clientX - rc.left) / rc.width) * DAY));};
     head.onpointerdown = (e) => {
         if (e.button !== 0) return;
@@ -117,7 +117,8 @@ export function ganttEl(o)
     };
     track.append(hovLine());
     head.append(hovT);
-    // 拖曳中兩端：頂端時間軸各一個時間（左靠右、右靠左對齊），豎線貫穿每列
+    const onStays = (items) => SB.stayLabels(axis, items);
+    // 拖曳中兩端：頂端細條上各一個時間（左靠右、右靠左對齊），豎線貫穿每列
     const ends = [0, 1].map(() => ({lines: [], t: h('span', {class: 'gendt', hidden: true})}));
     const endLines = () => ends.map(x => {const c = h('i', {class: 'gend', hidden: true}); x.lines.push(c); return c;});
     const onEnds = (ts) => {
@@ -150,7 +151,7 @@ export function ganttEl(o)
             const bar = SB.dayBarEl(w.pl.plan, w.sch, w.pl.warns, {segs: w.segs ?? (w.sch.length ? null : []), bare: true, sel: -1, multi: o.multiOf?.(w.id),
                 onPick: (i, shift) => (shift && o.onMulti ? o.onMulti(w.id, i) : o.onSeg(w.id, i)),
                 onMenu: o.onMenu && ((e, t) => o.onMenu(e, w.id, t)),
-                typeName: o.typeName, planOf: o.planFor, onShift: (js, d) => o.onShift(w.id, js, d), dim: G.map ? (m) => m !== G.map : null, onHover, onEnds});
+                typeName: o.typeName, planOf: o.planFor, onShift: (js, d) => o.onShift(w.id, js, d), dim: G.map ? (m) => m !== G.map : null, onHover, onEnds, onStays});
             bar.querySelector('.track')?.append(cur('cur'), hovLine(), ...endLines());
             return h('div', {class: 'grole' + (w.sch.length ? '' : ' nosch'), dataset: {id: w.id}},
                 h('div', {class: 'gname'}, h('a', {onclick: () => o.onRole(w.id)}, w.id), h('span', {class: 'dim'}, w.r.lab ?? '')),
