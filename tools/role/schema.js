@@ -98,7 +98,9 @@ export function shownFields(r)
 }
 
 // ---------- 作息 ----------
-export const SCH_FIELDS = ['t', 'type', 'map', 'go', 'at', 'do', 'route', 'wait'];
+export const SCH_FIELDS = ['t', 'type', 'map', 'go', 'at', 'do', 'route', 'mode', 'wait'];
+// 巡邏模式（schedplan.js 的 PATROL_MODES，沒寫＝loop）
+export const MODE_NAMES = {oneway: '單向', back1: '一次原路來回', back: '多次原路來回', loop1: '一次循環', loop: '多次循環'};
 // 作息類型：local.json 的 sch.<id>（只是標籤，遊戲現在不讀）
 export const schTypes = (local) => Object.keys(local ?? {}).filter(k => k.startsWith('sch.')).map(k => k.slice(4));
 export const typeName = (local, t) => (t ? local?.[`sch.${t}`]?.lab ?? t : '');

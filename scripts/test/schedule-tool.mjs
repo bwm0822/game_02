@@ -950,6 +950,17 @@ run('schedule-tool', async t => {
         out.patrolWant = `巡邏一圈 ${hm(walk + 3 * 5)}（走 ${hm(walk)}＋停 5×3）`;        await until(() => cv()?.st.patrol);
         const pt = cv().st.patrol;
         out.patrolLines = [pt.lines.map(l => l.kind).join(), pt.lines.every(l => !l.broken)];
+        // 巡邏模式：下拉五種、預設多次循環；一次原路來回＝雙向無回起點、停 p1；單向停最後一點；選回多次循環刪掉 mode
+        const modeSel = () => cards()[0].querySelector('select[data-k="schedule.0.mode"]');
+        out.modeOpts = [[...modeSel().options].map(o => o.value).join(), modeSel().value];
+        const setMode = async (v) => {modeSel().value = v; modeSel().dispatchEvent(new Event('change')); await sleep(50); await until(() => cv()?.st.patrol); return cv().st.patrol;};
+        let pm = await setMode('back1');
+        const info = cards()[0].querySelector('.times.patrol')?.textContent ?? '';
+        out.back1 = [S.data['guard-1'].schedule[0].mode, pm.lines.map(l => l.kind).join(), pm.end, info.startsWith('巡邏一趟'), info.includes('停 8×3'), info.endsWith('之後停在 guard-p1')];
+        pm = await setMode('oneway');
+        out.oneway = [pm.lines.map(l => l.kind).join(), pm.end];
+        pm = await setMode('loop');
+        out.modeBack = ['mode' in S.data['guard-1'].schedule[0], pm.end];
         await sleep(50);
         out.badges = cv().st.routeHits.map(b => b.idx).join();
         // 編輯路線：按鈕切換、地圖上方提示
@@ -1231,7 +1242,11 @@ run('schedule-tool', async t => {
     t.eq('沒人用：確認後刪掉', JSON.stringify([r.delAsk, r.deleted]), JSON.stringify([['刪除 trump-p9？'], true]));
     t.eq('更新路網：POST、顯示節點數跟警告', JSON.stringify(r.nav), JSON.stringify([true, '路網已更新：61 個節點，1 個警告\n測試警告']));
     t.eq('巡邏卡片：一圈幾小時幾分（走＋停 n×wait）', r.patrolInfo, r.patrolWant);
-    t.eq('巡邏路線：入口就是第一點不畫、4 段＋回起點虛線、都走得到', JSON.stringify(r.patrolLines), JSON.stringify(['loop,loop,loop,loop,close', true]));
+    t.eq('巡邏路線：入口就是第一點不畫、4 段＋回起點虛線、都走得到', JSON.stringify(r.patrolLines), JSON.stringify(['fwd,fwd,fwd,fwd,close', true]));
+    t.eq('巡邏模式下拉：五種、沒寫＝多次循環', JSON.stringify(r.modeOpts), JSON.stringify(['oneway,back1,back,loop1,loop', 'loop']));
+    t.eq('一次原路來回：雙向箭頭、沒有回起點、停 p1、卡片一趟（折返點只停一次）', JSON.stringify(r.back1), JSON.stringify(['back1', 'back,back,back,back', 'guard-p1', true, true, true]));
+    t.eq('單向：停在最後一點', JSON.stringify(r.oneway), JSON.stringify(['fwd,fwd,fwd,fwd', 'guard-p4']));
+    t.eq('選回多次循環：刪掉 mode、沒有終點', JSON.stringify(r.modeBack), JSON.stringify([false, null]));
     t.eq('每經過一次一個號碼', r.badges, '0,1,2,3,4');
     t.eq('編輯路線：按鈕變完成、地圖上方提示', JSON.stringify(r.editOn), JSON.stringify(['✔ 完成', true, true]));
     t.eq('點點加到路線最後', r.added6, 'guard-p1,guard-p2,guard-p3,guard-p2,guard-p4,guard-p3');

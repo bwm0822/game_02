@@ -2,7 +2,7 @@
 import {h} from '../common/dom.js';
 import * as PZ from '../common/panzoom.js';
 import {bestPath} from '../../src/data/navgrid.js';
-import {edgeCost, hhmm, mod, destOf, atName, parseAt} from '../../src/data/schedplan.js';
+import {edgeCost, hhmm, mod, destOf, atName, parseAt, patrolMode, patrolEnd} from '../../src/data/schedplan.js';
 import {createShowMenu} from '../common/showmenu.js';
 import {mapData, gridOf, drawGrid, snapTile, spotOf} from '../common/mapview.js';
 import * as DR from '../common/doors.js';
@@ -75,17 +75,41 @@ function walkLine(d, a, b)
     return best ? {pts: [best.sp, ...best.path].map(px), broken: false} : {pts: [a.cen, b.cen], broken: true};
 }
 
-// 巡邏（同遊戲 COM_Schedule）：入口 go → route[0]（kind entry），route 依序走（loop），最後一點回 route[0]（close，虛線）
+// 巡邏（同遊戲 COM_Schedule）：入口 go → route[0]（kind entry），route 依序走（fwd ➜；原路來回＝back ⟷），循環的最後一點回 route[0]（close，虛線 ➜）
+// end＝一次／單向走完停的點（標「停」）
 function patrolOn(d, s)
 {
     const rt = (s.route ?? []).filter(Boolean);
     if (!rt.length) return null;
-    const lines = [], at = (n) => spotOf(d, n);
+    const lines = [], at = (n) => spotOf(d, n), mode = patrolMode(s);
     const add = (a, b, kind) => {if (at(a) && at(b) && a !== b) lines.push({...walkLine(d, at(a), at(b)), kind});};
+    const back = mode === 'back' || mode === 'back1';
     add(destOf(s), rt[0], 'entry');
-    for (let i = 0; i + 1 < rt.length; i++) add(rt[i], rt[i + 1], 'loop');
-    if (rt.length > 1) add(rt.at(-1), rt[0], 'close');
-    return {lines, route: rt};
+    for (let i = 0; i + 1 < rt.length; i++) add(rt[i], rt[i + 1], back ? 'back' : 'fwd');
+    if (rt.length > 1 && (mode === 'loop' || mode === 'loop1')) add(rt.at(-1), rt[0], 'close');
+    return {lines, route: rt, end: patrolEnd(s)};
+}
+
+// 折線中間（照長度）畫箭頭；both＝兩頭都畫（⟷）
+function arrowMid(g, pts, K, both)
+{
+    const segs = pts.slice(1).map((p, i) => [pts[i], p, Math.hypot(p.x - pts[i].x, p.y - pts[i].y)]);
+    let half = segs.reduce((a, s) => a + s[2], 0) / 2;
+    const s = segs.find(x => (half -= x[2]) <= 0);
+    if (!s || !s[2]) return;
+    const [a, b, len] = s, f = 1 + half / len;
+    const x = a.x + (b.x - a.x) * f, y = a.y + (b.y - a.y) * f, ux = (b.x - a.x) / len, uy = (b.y - a.y) / len;
+    const head = (dir, off) => {
+        const L = 9 / K, W = 5 / K, tx = x + ux * dir * off, ty = y + uy * dir * off;
+        g.beginPath();
+        g.moveTo(tx + ux * dir * L / 2, ty + uy * dir * L / 2);
+        g.lineTo(tx - ux * dir * L / 2 - uy * W, ty - uy * dir * L / 2 + ux * W);
+        g.lineTo(tx - ux * dir * L / 2 + uy * W, ty - uy * dir * L / 2 - ux * W);
+        g.closePath();
+        g.fill(); g.stroke();
+    };
+    if (both) {head(1, 6 / K); head(-1, 6 / K);}
+    else head(1, 0);
 }
 
 const views = new Map();
@@ -315,6 +339,26 @@ function drawPatrol(g, st, K)
         g.stroke();
     }
     g.setLineDash([]);
+    g.strokeStyle = '#000';
+    g.lineWidth = 1 / K;
+    for (const ln of pt.lines)
+    {
+        if (ln.kind === 'entry') continue;
+        g.fillStyle = ln.broken ? '#ff5555' : '#7ddc5a';
+        arrowMid(g, ln.pts, K, ln.kind === 'back');
+    }
+    const n = pt.end && spotOf(st.data, pt.end);
+    if (!n) return;
+    g.font = `bold ${11 / K}px sans-serif`;
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    const w = 20 / K, hh = 14 / K, x = n.cen.x, y = n.cen.y + 14 / K;
+    g.fillStyle = '#b71c1c';
+    g.beginPath();
+    g.roundRect(x - w / 2, y - hh / 2, w, hh, 3 / K);
+    g.fill(); g.stroke();
+    g.fillStyle = '#fff';
+    g.fillText('停', x, y + 0.5 / K);
 }
 
 // 巡邏每個路點旁邊一排號碼（走到第幾個；重複經過就好幾個），號碼的範圍記在 st.routeHits（右鍵刪那一次）

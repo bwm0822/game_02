@@ -3,7 +3,7 @@ import {GM} from '../core/setting.js'
 import TimeSystem from '../systems/time.js'
 import Record from '../infra/record.js'
 import NavGraph from '../core/navgraph.js'
-import {parseAt} from '../data/schedplan.js'
+import {parseAt, patrolTrip} from '../data/schedplan.js'
 import {T,dlog} from '../core/debug.js'
 const _tag = 'schedule';
 
@@ -68,15 +68,18 @@ export class COM_Schedule extends Com
         return pts.length ? pts[Math.min(taken, pts.length)-1] : sp;
     }
 
-    // 巡邏：抵達入口(go)後，依 route 循環走，每個路點停 wait 回合
+    // 巡邏：抵達入口(go)後，依 patrolTrip() 的路點走（模式見 schedplan.js），每個路點停 wait 回合；一次／單向走完停在終點(_pi===pts.length)
     // 實體化時依「抵達入口後經過的時間」推算走到哪；之後被拖住就晚到，不重新推算
     _initPatrol()
     {
         const{root}=this.ctx;
         const st = this.st, sh = this._sh;
-        const keys = sh.route.map(name=>`${sh.map}:${name}`);
+        const {pts, repeat} = patrolTrip(sh);
+        const keys = pts.map(name=>`${sh.map}:${name}`);
         const wait = sh.wait ?? 0;
         const n = keys.length;
+        const cost = (a,b)=>a===b ? 0 : NavGraph.cost(a,b);
+        const nextOf = (i)=>repeat ? (i+1)%n : i+1;
         this._pi = 0;
         this._wait = 0;
         this._patrolI = st.i;
@@ -86,18 +89,25 @@ export class COM_Schedule extends Com
         if(!entry || !first) {return;}
 
         let e = Math.max(0, this.now - (st.at ?? this.now));
-        const c0 = st.node===keys[0] ? 0 : NavGraph.cost(st.node, keys[0]);
+        const c0 = cost(st.node, keys[0]);
         if(e < c0) {root.updatePos?.(this._walkPos(entry.getPts(root)[0], first, e)); return;}
         e -= c0;
 
-        const loop = keys.reduce((sum,k,i)=>sum + wait + NavGraph.cost(k, keys[(i+1)%n]), 0);
-        if(loop>0 && loop<Infinity) {e %= loop;}
+        if(repeat)
+        {
+            const loop = keys.reduce((sum,k,i)=>sum + wait + cost(k, keys[(i+1)%n]), 0);
+            if(loop>0 && loop<Infinity) {e %= loop;}
+        }
 
         for(let i=0;i<n;i++)
         {
-            const cur = this._go(keys[i]), nxt = this._go(keys[(i+1)%n]);
-            if(!cur || !nxt) {return;}
-            this._pi = (i+1)%n;
+            const cur = this._go(keys[i]);
+            if(!cur) {return;}
+            const j = nextOf(i);
+            if(j>=n) {this._pi = n; root.updatePos?.(this._walkPos(cur.getPts(root)[0], cur, 0)); return;}
+            const nxt = this._go(keys[j]);
+            if(!nxt) {return;}
+            this._pi = j;
             if(e < wait)
             {
                 this._wait = wait - e;
@@ -105,9 +115,9 @@ export class COM_Schedule extends Com
                 return;
             }
             e -= wait;
-            const cost = NavGraph.cost(keys[i], keys[(i+1)%n]);
-            if(e < cost) {root.updatePos?.(this._walkPos(cur.getPts(root)[0], nxt, e)); return;}
-            e -= cost;
+            const c = cost(keys[i], keys[j]);
+            if(e < c) {root.updatePos?.(this._walkPos(cur.getPts(root)[0], nxt, e)); return;}
+            e -= c;
         }
     }
 
@@ -115,19 +125,21 @@ export class COM_Schedule extends Com
     {
         const{root,bb}=this.ctx;
         const sh = this._sh;
+        const {pts, repeat} = patrolTrip(sh);
         if(this._patrolI!==this.st.i) {this._pi = 0; this._wait = 0; this._patrolI = this.st.i;}
         this._key = null;
 
+        if(this._pi>=pts.length) {return;}
         if(this._wait>0) {this._wait--; return;}
 
-        const go = this._go(`${sh.map}:${sh.route[this._pi]}`);
+        const go = this._go(`${sh.map}:${pts[this._pi]}`);
         if(!go) {return;}
         if(bb.go!==go) {bb.go = go; root.clearPath?.();}
 
         if(root.isAt(go))
         {
             this._wait = sh.wait ?? 0;
-            this._pi = (this._pi+1) % sh.route.length;
+            this._pi = repeat ? (this._pi+1) % pts.length : this._pi+1;
             root.clearPath?.();
         }
         else if(bb.path) {await root.cmd_move();}

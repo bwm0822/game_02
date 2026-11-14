@@ -16,7 +16,7 @@ import {buildPlan, DAY, mod} from '../data/schedplan.js'
 export default class ScheduleManager
 {
     static scene;
-    static plans = {};      // id -> [{key, dep, arr, do}]，dep/arr 是一天中的分鐘
+    static plans = {};      // id -> [{key, end, dep, arr, do}]，dep/arr 是一天中的分鐘，end＝結束後從哪出發（有終點的巡邏＝終點）
 
     static get now() {return TimeSystem.toTotalMinutes(TimeSystem.time);}
 
@@ -92,7 +92,7 @@ export default class ScheduleManager
             if(at > depAt) {depAt = at; i = k;}
         });
 
-        const from = plan[(i-1+n)%n].key;
+        const from = plan[(i-1+n)%n].end;
         let node = from, t = depAt;
         const path = NavGraph.route(from, plan[i].key)?.path ?? [];
         while(path.length && t + NavGraph.cost(node, path[0]) <= now)
@@ -115,6 +115,7 @@ export default class ScheduleManager
     static _depart(id, st, at)
     {
         const plan = this.plans[id];
+        if(!st.path.length && NavGraph.has(plan[st.i].end)) {st.node = plan[st.i].end;}   // 有終點的巡邏：當作已經走到終點
         st.i = (st.i+1) % plan.length;
         const r = NavGraph.route(st.node, plan[st.i].key);
         if(!r) {console.warn(`[Schedule] ${id} 從 ${st.node} 走不到 ${plan[st.i].key}，留在原地`);}

@@ -1075,17 +1075,17 @@ function routeDel(id, idx)
     });
 }
 
-// 一圈多久（同遊戲 COM_Schedule._initPatrol 的 loop：每點停 wait＋走到下一點）
+// 一圈／一趟多久（同遊戲 COM_Schedule._initPatrol：每點停 wait＋走到下一點；一趟的終點不算停）
 function patrolInfo(s)
 {
-    const rt = s.route ?? [];
-    if (!rt.length) return null;
-    const keys = rt.map(n => `${s.map}:${n}`), wait = s.wait ?? 0;
-    const legs = keys.map((k, j) => (k === keys[(j + 1) % keys.length] ? 0 : SP.edgeCost(navAll().edges, k, keys[(j + 1) % keys.length])));
-    const bad = legs.findIndex(c => c === Infinity);
-    if (bad >= 0) return h('div', {class: 'times bad'}, `巡邏：${rt[bad]} 走不到 ${rt[(bad + 1) % rt.length]}（路網）`);
-    const walk = legs.reduce((a, b) => a + b, 0);
-    return h('div', {class: 'times patrol'}, `巡邏一圈 ${hm(walk + wait * rt.length)}（走 ${hm(walk)}＋停 ${rt.length}×${wait}）`);
+    if (!(s.route ?? []).length) return null;
+    const {pts, repeat} = SP.patrolTrip(s), wait = s.wait ?? 0, k = (n) => `${s.map}:${n}`;
+    const legs = SP.patrolLegs(s).map(([a, b]) => [a, b, SP.edgeCost(navAll().edges, k(a), k(b))]);
+    const bad = legs.find(l => l[2] === Infinity);
+    if (bad) return h('div', {class: 'times bad'}, `巡邏：${bad[0]} 走不到 ${bad[1]}（路網）`);
+    const walk = legs.reduce((a, l) => a + l[2], 0), stops = repeat ? pts.length : pts.length - 1;
+    const sum = `${hm(walk + wait * stops)}（走 ${hm(walk)}＋停 ${stops}×${wait}）`;
+    return h('div', {class: 'times patrol'}, repeat ? `巡邏一圈 ${sum}` : `巡邏一趟 ${sum}，之後停在 ${SP.patrolEnd(s)}`);
 }
 
 function hm(n)
@@ -1264,9 +1264,13 @@ function schCard(id, list, i, pl)
             s.do === 'patrol' && [
                 h('button', {type: 'button', class: 'routebtn' + (editingRoute(id, i) ? ' on' : ''), title: '在右欄地圖上點選路點（Esc 結束）',
                     onclick: (e) => {e.stopPropagation(); toggleRouteEdit(id, i);}}, editingRoute(id, i) ? '✔ 完成' : '✎ 編輯路線'),
-                h('label', {title: 'route（依序循環，要來回就重複寫）'}, '路線', h('input', {size: 40, dataset: {k: `${k}.route`, combo: nav, tags: ''},
+                h('label', {title: 'route（依序走的路點，怎麼走看「模式」）'}, '路線', h('input', {size: 40, dataset: {k: `${k}.route`, combo: nav, tags: ''},
                     value: (s.route ?? []).join(', '),
                     onchange: e => {const a = e.target.value.split(',').map(x => x.trim()).filter(Boolean); put('route', a.length ? a : undefined);}})),
+                h('label', {title: 'mode（沒寫＝多次循環；多次＝重複到這筆結束，一次／單向走完停在終點、下一筆從終點出發）'}, '模式',
+                    h('select', {dataset: {k: `${k}.mode`}, onchange: e => put('mode', e.target.value === 'loop' ? undefined : e.target.value)},
+                        Object.entries(SC.MODE_NAMES).map(([v, n]) => h('option', {value: v, selected: v === SP.patrolMode(s)}, n)),
+                        s.mode && !(s.mode in SC.MODE_NAMES) && h('option', {value: s.mode, selected: true}, `⚠ ${s.mode}`))),
                 h('label', {title: 'wait（每個路點停幾回合）'}, '停留', h('input', {class: 'num', dataset: {k: `${k}.wait`}, value: s.wait ?? '',
                     onchange: e => put('wait', parseNum(e.target.value))})),
             ]),
