@@ -286,9 +286,25 @@ run('schedule-tool', async t => {
             const hg = S.hi, w = rowOf('trump').querySelector('.seg.walk[data-i="1"]'), tr2 = rowOf('trump').querySelector('.track');
             const r2 = w.getBoundingClientRect(), y2 = r2.top + r2.height / 2, x2 = r2.left + r2.width / 2, dx = tr2.getBoundingClientRect().width * 30 / 1440;
             const pe2 = (type, x, el = tr2) => el.dispatchEvent(new PointerEvent(type, {bubbles: true, cancelable: true, button: 0, pointerId: 1, clientX: x, clientY: y2}));
-            pe2('pointerdown', x2, w); pe2('pointermove', x2 - dx / 2); pe2('pointermove', x2 - dx); pe2('pointerup', x2 - dx);
+            pe2('pointerdown', x2, w); pe2('pointermove', x2 - dx / 2); pe2('pointermove', x2 - dx);
+            out.gHovDrag = g().querySelector('.ghovt')?.textContent;
+            pe2('pointerup', x2 - dx);
             out.gShift = [S.data.trump.schedule[1].t, S.hi - hg, S.view];
             re.undo();
+        }
+        // 滑過總覽某列的時序條：頂端時間軸標籤（對齊 10 分、Shift＝1 分）＋每列＆時間軸一條細白線（同位置），離開就藏
+        {
+            const tr3 = rowOf('trump').querySelector('.track'), rc3 = tr3.getBoundingClientRect();
+            const mv3 = (min, extra = {}) => tr3.dispatchEvent(new PointerEvent('pointermove', {bubbles: true, pointerId: 1, clientX: rc3.left + rc3.width * min / 1440, clientY: rc3.top + 8, ...extra}));
+            const hovs = () => [...g().querySelectorAll('.ghov')];
+            mv3(14 * 60 + 33);
+            const lefts = new Set(hovs().map(c => c.style.left));
+            out.gHov = [g().querySelector('.ghovt').hidden, g().querySelector('.ghovt').textContent, hovs().length === g().querySelectorAll('.grole .track').length,
+                hovs().every(c => !c.hidden), lefts.size, !!g().querySelector('.ghead .ghov'), !!rowOf('musk').querySelector('.ghov')];
+            mv3(14 * 60 + 33, {shiftKey: true});
+            out.gHovShift = g().querySelector('.ghovt').textContent;
+            tr3.dispatchEvent(new PointerEvent('pointerleave', {pointerId: 1}));
+            out.gHovGone = [g().querySelector('.ghovt').hidden, hovs().every(c => c.hidden), !!g().querySelector('.hovt:not([hidden])')];
         }
         // 點 trump 的床那段：進表單、選第 2 張卡片、右欄作息
         rowOf('trump').querySelector('.seg.stay[data-i="1"]').click();
@@ -934,6 +950,10 @@ run('schedule-tool', async t => {
     t.eq('點一段：進表單、選那張卡片、右欄作息地圖', JSON.stringify(r.gPick), JSON.stringify(['form', 'trump', 1, 'sched', true, 'm_04x05/trump-inn-f2']));
     t.eq('點角色名：進表單', JSON.stringify(r.gName), JSON.stringify(['form', 'musk']));
     t.eq('總覽拖分界線：照原型別平移、一筆 undo、留在總覽', JSON.stringify(r.gShift), JSON.stringify(['@22:20', 1, 'table']));
+    t.eq('總覽拖曳中：頂端時間軸標籤＝拖到的抵達時間', r.gHovDrag, '22:20');
+    t.eq('總覽滑過：頂端標籤 14:30（對齊 10 分）、每列＋時間軸都有線、同位置', JSON.stringify(r.gHov), JSON.stringify([false, '14:30', true, true, 1, true, true]));
+    t.eq('總覽滑過＋Shift：1 分', r.gHovShift, '14:33');
+    t.eq('總覽離開時序條：標籤跟線都藏', JSON.stringify(r.gHovGone), JSON.stringify([true, true, false]));
     t.eq('時序條右鍵（落在停留段）：插入／改目的地／類型／刪除', JSON.stringify(r.barMenu), JSON.stringify(['插入作息（10:00 抵達）', '分割（10:00）', '改目的地', '類型', '刪除這筆']));
     t.eq('插入 ▸ 世界圖 ＋ 在地圖上選', JSON.stringify(r.barL1), JSON.stringify(['m_04x05', '🗺 在地圖上選…']));
     t.check('世界圖 ▸ 自己的點＋🏠 室內圖（不列門、樓梯、只有門的空屋）', r.barL2.includes('musk-p1') && r.barL2.includes('🏠 trump-inn-f1') && !r.barL2.includes('trump-inn') && !r.barL2.some(x => /house-0[1-7]$/.test(x)), JSON.stringify(r.barL2));

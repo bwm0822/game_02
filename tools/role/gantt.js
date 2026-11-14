@@ -104,6 +104,19 @@ export function ganttEl(o)
     };
     const cur = (cls) => {const c = h('i', {class: cls}); curs.push(c); return c;};
     track.append(cur('cur'), cur('knob'));
+    // 滑過時序條：每列＋頂端時間軸各一條細白線、時間軸上一個時間標籤（同表單的游標時間）
+    const hovs = [], hovT = h('span', {class: 'ghovt', hidden: true});
+    const hovLine = () => {const c = h('i', {class: 'ghov', hidden: true}); hovs.push(c); return c;};
+    const onHover = (t, text) => {
+        for (const c of [...hovs, hovT])
+        {
+            c.hidden = t === null;
+            if (t !== null) c.style.left = pct(t);
+        }
+        if (t !== null) hovT.textContent = text;
+    };
+    track.append(hovLine());
+    head.append(hovT);
 
     const legend = h('div', {class: 'legend glegend'}, maps.map(m => {
         const cnt = h('small');
@@ -122,8 +135,8 @@ export function ganttEl(o)
             const bar = SB.dayBarEl(w.pl.plan, w.sch, w.pl.warns, {segs: w.segs ?? (w.sch.length ? null : []), bare: true, sel: -1, multi: o.multiOf?.(w.id),
                 onPick: (i, shift) => (shift && o.onMulti ? o.onMulti(w.id, i) : o.onSeg(w.id, i)),
                 onMenu: o.onMenu && ((e, t) => o.onMenu(e, w.id, t)),
-                typeName: o.typeName, planOf: o.planFor, onShift: (j, d) => o.onShift(w.id, j, d), dim: G.map ? (m) => m !== G.map : null});
-            bar.querySelector('.track')?.append(cur('cur'));
+                typeName: o.typeName, planOf: o.planFor, onShift: (j, d) => o.onShift(w.id, j, d), dim: G.map ? (m) => m !== G.map : null, onHover});
+            bar.querySelector('.track')?.append(cur('cur'), hovLine());
             return h('div', {class: 'grole' + (w.sch.length ? '' : ' nosch'), dataset: {id: w.id}},
                 h('div', {class: 'gname'}, h('a', {onclick: () => o.onRole(w.id)}, w.id), h('span', {class: 'dim'}, w.r.lab ?? '')),
                 bar, now);

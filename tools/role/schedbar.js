@@ -57,7 +57,7 @@ function tip(g, plan, ty)
 const EDGE = 4;
 
 // opt.sel＝選中第幾筆（-1＝沒有）、opt.onPick(i)＝點了某段、opt.bare＝不畫刻度跟圖例（總覽每列）、opt.typeName(s)＝段內寫的類型名
-// opt.dim(map)＝true 的段變淡（總覽點圖例）
+// opt.dim(map)＝true 的段變淡（總覽點圖例）、opt.onHover(t, text)＝bare 時的游標時間（離開＝null）
 // 編輯：opt.onMenu(e, t)＝右鍵（t＝那裡的分鐘）；opt.planOf(sch)＝{plan, warns}、opt.onShift(j, delta)＝拖第 j 筆的分界線（走路段）放開
 export function dayBarEl(plan, sch, warns, opt = {})
 {
@@ -95,10 +95,10 @@ export function dayBarEl(plan, sch, warns, opt = {})
         return -1;
     };
     const tipEl = h('div', {class: 'dragtip', hidden: true});
-    // 游標時間：刻度列那排跟著游標的小標籤＋細直線（總覽每列不畫）
+    // 游標時間：刻度列那排跟著游標的小標籤＋細直線（總覽每列不畫，交給 opt.onHover(t 分｜null, 文字) 畫整張）
     const hovLine = h('i', {class: 'hovline', hidden: true}), hovT = h('span', {class: 'hovt', hidden: true});
     const hover = (x, text) => {
-        if (opt.bare) return;
+        if (opt.bare) return opt.onHover?.(text === null ? null : tOf(x), text);
         hovLine.hidden = hovT.hidden = text === null;
         if (text === null) return;
         const rc = bar.getBoundingClientRect(), left = `${Math.max(0, Math.min(rc.width, x - rc.left))}px`;
