@@ -25,6 +25,7 @@ import * as MR from '../common/maproles.js';
 import * as SB from './schedbar.js';
 import * as GT from './gantt.js';
 import * as SE from './schedit.js';
+import {clashes} from './occupy.js';
 import {ROLE_PARTS, partFor, sexOk} from '../../src/core/equip.js';
 
 const ALL = '#all';
@@ -1126,6 +1127,10 @@ const planOf = (id) => {
     return SP.buildPlan(S.data[id].schedule, nav.edges, nav.nodes);
 };
 
+// 全部有作息的角色 [{id, sch, segs}]（占用時間圖、相衝）
+const occAll = () => Object.entries(S.data).filter(([, x]) => Array.isArray(x.schedule) && x.schedule.length)
+    .map(([o, x]) => {const pl = planOf(o); return {id: o, sch: x.schedule, segs: SB.daySegs(pl.plan, x.schedule, pl.warns)};});
+
 // 第 i 筆停幾分（下一筆排不下＝0）；只有一筆／排不出時刻表＝null
 const stayOf = (pl, i) => {
     const n = pl.plan?.length ?? 0, a = pl.plan?.[i], b = pl.plan?.[(i + 1) % n];
@@ -1281,7 +1286,9 @@ function schedBox(id, v)
             v !== undefined && h('button', {type: 'button', onclick: () => set(id, ['schedule'], undefined)}, '移除')),
         open && (() => {
             const pl = planOf(id);
-            return [SB.dayBarEl(pl.plan, list, pl.warns, {sel: schSel(id), multi: schMulti(id), typeName: s => SC.typeName(S.ext.local, s?.type),
+            let others = null;
+            const clash = (sch, segs) => clashes([...(others ??= occAll().filter(e => e.id !== id)), {id, sch, segs}]).get(id) ?? [];
+            return [SB.dayBarEl(pl.plan, list, pl.warns, {sel: schSel(id), multi: schMulti(id), typeName: s => SC.typeName(S.ext.local, s?.type), clash,
                 onPick: (i, shift) => pickSch(id, i, shift),
                 onMenu: (e, t) => barMenu(e, id, t),
                 planOf: (sch) => SP.buildPlan(sch, nav.edges, nav.nodes),
@@ -1323,8 +1330,7 @@ function renderRight()
             patrol: r.schedule?.[schSel(id)]?.do === 'patrol' ? r.schedule[schSel(id)] : null, editRoute: editingRoute(id, schSel(id)),
             onRouteAdd: (m, n) => routeAdd(id, m, n), onRouteDel: (k) => routeDel(id, k),
             pick: S.pick?.id === id ? S.pick.text : null, onPick: (m, x) => {const fn = S.pick?.fn; S.pick = null; fn?.(m, x.name ? {go: x.name} : {at: x.tile}); renderRight();},
-            id, occ: () => Object.entries(S.data).filter(([, x]) => Array.isArray(x.schedule) && x.schedule.length)
-                .map(([o, x]) => {const pl = planOf(o); return {id: o, sch: x.schedule, segs: SB.daySegs(pl.plan, x.schedule, pl.warns)};}),
+            id, occ: occAll,
             others: Object.entries(S.data).filter(([o]) => o !== id).flatMap(([o, x]) => (Array.isArray(x.schedule) ? x.schedule.map((s, i) => ({id: o, i, s})) : []))})
         : previewEl(r, S.ext.items, S.ext.parts));
 }
@@ -1457,6 +1463,7 @@ function draw()
         typeName: s => SC.typeName(S.ext.local, s?.type),
         planFor: (sch) => {const nav = navAll(); return SP.buildPlan(sch, nav.edges, nav.nodes);},
         onShift: shiftSch,
+        occ: occAll,
         onMenu: (e, id, t) => barMenu(e, id, t, true),
         onMulti: ganttMulti,
         multiOf: multiSel,

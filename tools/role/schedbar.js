@@ -78,6 +78,8 @@ export function stayLabels(host, items)
 // opt.dim(map)＝true 的段變淡（總覽點圖例）、opt.onHover(t, text)＝bare 時的游標時間（離開＝null）、opt.onEnds(ts)／opt.onStays(items)＝bare 時拖曳中兩端的時刻／各停留段（給 stayLabels()，放開＝null）
 // 編輯：opt.onMenu(e, t)＝右鍵（t＝那裡的分鐘）；opt.planOf(sch)＝{plan, warns}、opt.onShift(js, delta)＝拖曳放開，js 那幾筆一起平移
 //（分界線＝第 j 筆的走路段 [j]、停留段中間＝整塊 [i, i+1]）
+// 相衝：opt.clash(list, segs)＝[{i, s, len, with:[id]}]（occupy.js 的 clashes()，畫紅斜線＋段提示）、opt.clashName(id)＝提示裡的名字、
+// opt.onTrial(list, segs｜null)＝拖曳中試算的作息（給總覽重算別列）；回傳的元素有 repaint()
 export function dayBarEl(plan, sch, warns, opt = {})
 {
     const segs0 = opt.segs ?? (sch.length ? daySegs(plan, sch, warns) : []);
@@ -87,7 +89,9 @@ export function dayBarEl(plan, sch, warns, opt = {})
     const isSel = (i) => (opt.multi ? opt.multi.includes(i) : opt.sel === i);
     const fill = (pl, list, segs) => {
         const tyOf = (i) => opt.typeName?.(list[i]) ?? '';
-        const extra = [...bar.children].filter(c => !c.matches('.hr, .seg'));
+        const extra = [...bar.children].filter(c => !c.matches('.hr, .seg, .clash'));
+        const cl = (segs && opt.clash?.(list, segs)) ?? [];
+        const clashTip = (i) => cl.filter(c => c.i === i).map(c => `\n⚠ 撞了 ${hhmm(c.s)}～${hhmm(mod(c.s + c.len))}：${c.with.map(o => opt.clashName?.(o) ?? o).join('、')}`).join('');
         bar.replaceChildren(...extra,
             ...Array.from({length: 23}, (_, k) => h('i', {class: 'hr' + ((k + 1) % 6 ? '' : ' six'), style: `left:${pct((k + 1) * 60)}`})),
             ...segs.flatMap(g => pieces(g.s, g.len).map(([s, len]) => {
@@ -96,8 +100,9 @@ export function dayBarEl(plan, sch, warns, opt = {})
                 const map = list[g.i]?.map ?? '';
                 return h('div', {class: `seg ${g.kind}` + (isSel(g.i) ? ' sel' : '') + (opt.dim?.(map) ? ' dim' : ''),
                     dataset: {i: g.i, map, kind: g.kind, l: s === g.s ? 1 : 0, r: s + len === g.s + g.len || s + len === mod(g.s + g.len) ? 1 : 0},
-                    title: tip({...g, go: g.go ?? destOf(list[g.i])}, pl, tyOf(g.i)), style}, label);
-            })));
+                    title: tip({...g, go: g.go ?? destOf(list[g.i])}, pl, tyOf(g.i)) + (g.kind === 'stay' ? clashTip(g.i) : ''), style}, label);
+            })),
+            ...cl.flatMap(c => pieces(c.s, c.len).map(([s, len]) => h('i', {class: 'clash', dataset: {i: c.i}, style: `left:${pct(s)};width:${pct(len)}`}))));
     };
     fill(plan, sch, segs0);
     if (!sch.length) bar.append(h('span', {class: 'empty dim'}, opt.onMenu ? '（沒有作息，右鍵插入）' : '（沒有作息）'));
@@ -205,6 +210,7 @@ export function dayBarEl(plan, sch, warns, opt = {})
         drag.delta = delta;
         const list = sch.map((s, k) => (drag.js.includes(k) ? {...s, t: shift(s.t, delta)} : s));
         const pl = opt.planOf(list), segs = daySegs(pl.plan, list, pl.warns) ?? [];
+        opt.onTrial?.(list, segs);
         fill(pl.plan, list, segs);
         showEnds(endsOf(drag, pl.plan));
         showStays(staysOf(drag, segs));
@@ -219,6 +225,7 @@ export function dayBarEl(plan, sch, warns, opt = {})
         showEnds(null);
         showStays(null);
         if (!d?.moved) return;
+        opt.onTrial?.(null);
         swallow = true;
         setTimeout(() => {swallow = false;}, 0);
         if (d.delta) opt.onShift(d.js, d.delta);
@@ -232,11 +239,13 @@ export function dayBarEl(plan, sch, warns, opt = {})
         if (el) {e.stopPropagation(); opt.onPick?.(+el.dataset.i, e.shiftKey);}
     });
     if (opt.onMenu) bar.addEventListener('contextmenu', (e) => opt.onMenu(e, Math.round(tOf(e.clientX))));
-    if (opt.bare) return h('div', {class: 'daybar'}, bar);
+    // 別人拖曳中試算改了相衝：只重畫自己（段＋紅斜線）
+    const repaint = () => fill(plan, sch, segs0);
+    if (opt.bare) return Object.assign(h('div', {class: 'daybar'}, bar), {repaint});
     const segs = segs0;
     const maps = [...new Set(segs.filter(g => g.kind === 'stay').map(g => g.map))];
     const legend = h('div', {class: 'legend'}, maps.map(m => h('span', {title: m ?? ''}, h('b', {style: `background:${mapColor(m)}`}), m?.split('/').at(-1) ?? '?')));
-    return h('div', {class: 'daybar'}, bar, hovLine, hovT, ...endEls.flatMap(x => [x.mk, x.t]), axis, legend);
+    return Object.assign(h('div', {class: 'daybar'}, bar, hovLine, hovT, ...endEls.flatMap(x => [x.mk, x.t]), axis, legend), {repaint});
 }
 
 export const axisEl = () => h('div', {class: 'axis'}, [0, 6, 12, 18, 24].map(t => h('span', {style: `left:${(t / 24) * 100}%`}, String(t))));

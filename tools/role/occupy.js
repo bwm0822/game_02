@@ -51,6 +51,44 @@ export function clashOf(rows)
     return out;
 }
 
+// 全部角色的相衝（同 clashOf：同一張圖同一個點、不同角色同時 stay，巡邏路過不算）
+// entries＝[{id, sch, segs}] → Map id → [{i, s, len, with:[別人的 id]}]（同一筆、同一群人連續的一截；跨午夜接起來，len 可能超過午夜）
+export function clashes(entries)
+{
+    const spots = new Map();
+    for (const {id, sch, segs} of entries)
+        for (const g of segs ?? [])
+        {
+            const s = sch[g.i], dest = destOf(s);
+            if (g.kind !== 'stay' || !dest || !s?.map) continue;
+            const m = spots.get(`${s.map}\n${dest}`) ?? spots.set(`${s.map}\n${dest}`, new Map()).get(`${s.map}\n${dest}`);
+            const at = m.get(id) ?? m.set(id, new Int16Array(DAY).fill(-1)).get(id);
+            for (let k = 0; k < g.len; k++) at[(g.s + k) % DAY] = g.i;
+        }
+    const out = new Map();
+    for (const m of spots.values())
+    {
+        if (m.size < 2) continue;
+        const ids = [...m.keys()];
+        for (const id of ids)
+        {
+            const mine = m.get(id), list = [];
+            let cur = null;
+            for (let k = 0; k < DAY; k++)
+            {
+                const i = mine[k], w = i < 0 ? '' : ids.filter(o => o !== id && m.get(o)[k] >= 0).join('\n');
+                const sig = w && `${i}|${w}`;
+                if (cur?.sig === sig && sig) {cur.len++; continue;}
+                cur = sig ? list[list.push({sig, i, s: k, len: 1, with: w.split('\n')}) - 1] : null;
+            }
+            const a = list[0], b = list.at(-1);
+            if (list.length > 1 && a.s === 0 && b.s + b.len === DAY && a.sig === b.sig) {b.len += a.len; list.shift();}
+            if (list.length) out.set(id, [...(out.get(id) ?? []), ...list.map(({sig, ...c}) => c)]);
+        }
+    }
+    return out;
+}
+
 const here = (r, now) => now != null && r.segs.some(g => mod(now - g.s) < g.len);
 
 // opt.map＝地圖（顏色）、opt.now＝現在幾分（畫白線、此刻在這的人加粗）、opt.mine＝排第一、名字橘色的角色、opt.sel＝mine 選中第幾筆（那段加白框）

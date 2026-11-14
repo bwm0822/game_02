@@ -339,6 +339,34 @@ run('schedule-tool', async t => {
             tr3.dispatchEvent(new PointerEvent('pointerleave', {pointerId: 1}));
             out.gHovGone = [g().querySelector('.ghovt').hidden, hovs().every(c => c.hidden), !!g().querySelector('.hovt:not([hidden])')];
         }
+        // 相衝：假 NPC zc 10:00～11:00 也停在 trump-p1 → trump 那段撞的那截紅斜線、提示多一行；藏起來照算（已隱藏）；拖 zc 即時重畫 trump 那列
+        {
+            S.data.zc = {kind: 'npc', schedule: [{t: '@10:00', map: F1m, go: 'trump-p1'}, {t: '11:00', map: F1m, go: 'sit-2'}]};
+            re.render();
+            const tSeg = () => rowOf('trump').querySelector('.seg.stay[data-i="0"]');
+            out.gClash = [rowOf('trump').querySelectorAll('.clash').length > 0, tSeg().title.split('\n').some(l => /^⚠ 撞了 10:00～11:00：.*\bzc\b/.test(l)),
+                getComputedStyle(rowOf('trump').querySelector('.clash')).pointerEvents, !!rowOf('zc').querySelector('.clash')];
+            re.GT.G.hide.add('zc'); re.render();
+            out.gClashHide = [!rowOf('zc'), tSeg().title.split('\n').some(l => /^⚠ 撞了 10:00～11:00：.*zc（已隱藏）/.test(l))];
+            re.GT.G.hide.delete('zc'); re.render();
+            // 拖 zc 那段中間往右 30 分：放開前 trump 那列就重畫成 10:30～11:30
+            const zs = rowOf('zc').querySelector('.seg.stay[data-i="0"]'), ztr = rowOf('zc').querySelector('.track'), zr = zs.getBoundingClientRect();
+            const zx = zr.left + zr.width / 2, zy = zr.top + zr.height / 2, zdx = ztr.getBoundingClientRect().width * 30 / 1440;
+            const pz = (type, x, el = ztr) => el.dispatchEvent(new PointerEvent(type, {bubbles: true, cancelable: true, button: 0, pointerId: 1, clientX: x, clientY: zy}));
+            pz('pointerdown', zx, zs); pz('pointermove', zx + zdx / 2); pz('pointermove', zx + zdx);
+            out.gClashLive = [S.data.zc.schedule[0].t, tSeg().title.split('\n').some(l => /^⚠ 撞了 10:30～11:30：.*\bzc\b/.test(l))];
+            pz('pointerup', zx + zdx);
+            out.gClashDrop = [S.data.zc.schedule.map(s => s.t).join(), tSeg().title.split('\n').some(l => /^⚠ 撞了 10:30～11:30：.*\bzc\b/.test(l))];
+            re.undo();
+            // 表單的單條時序條也標（undo 會連 zc 一起還原掉，重塞）
+            S.data.zc = {kind: 'npc', schedule: [{t: '@10:00', map: F1m, go: 'trump-p1'}, {t: '11:00', map: F1m, go: 'sit-2'}]};
+            S.view = 'form'; S.sel = 'trump'; re.render();
+            const fSeg = document.querySelector('#view .daybar .seg.stay[data-i="0"]');
+            out.fClash = [document.querySelectorAll('#view .daybar .track .clash').length > 0, fSeg.title.split('\n').some(l => /^⚠ 撞了 10:00～11:00：.*\bzc\b/.test(l))];
+            delete S.data.zc;
+            S.view = 'table'; re.render();
+            out.clashGone = !rowOf('trump').querySelector('.seg.stay[data-i="0"]').title.includes('zc');
+        }
         // 點 trump 的床那段：進表單、選第 2 張卡片、右欄作息
         rowOf('trump').querySelector('.seg.stay[data-i="1"]').click();
         await until(() => cv()?.st.data && cv().st.flash);
@@ -1030,6 +1058,12 @@ run('schedule-tool', async t => {
     t.eq('總覽拖曳中：游標標籤藏、頂端時間軸兩端時間（右＝抵達）、豎線貫穿每列', JSON.stringify(r.gHovDrag), JSON.stringify([true, '22:20', 2, true, true]));
     t.eq('總覽拖曳中：待的時間在頂端刻度列（2 個）、兩端時間在它上面', JSON.stringify(r.gStays), JSON.stringify([2, true]));
     t.eq('總覽放開：兩端時間、待的時間收起', r.gEndsGone, 0);
+    t.eq('相衝：撞到的那截紅斜線（不擋滑鼠）、段提示多一行「⚠ 撞了 10:00～11:00：zc」、對方那列也標', JSON.stringify(r.gClash), JSON.stringify([true, true, 'none', true]));
+    t.eq('相衝：對方藏起來照算、提示寫（已隱藏）', JSON.stringify(r.gClashHide), JSON.stringify([true, true]));
+    t.eq('相衝：拖對方那段，放開前這列就重畫成新時間', JSON.stringify(r.gClashLive), JSON.stringify(['@10:00', true]));
+    t.eq('相衝：放開寫進去、照樣標', JSON.stringify(r.gClashDrop), JSON.stringify(['@10:30,11:30', true]));
+    t.eq('相衝：表單的時序條也標', JSON.stringify(r.fClash), JSON.stringify([true, true]));
+    t.eq('相衝：拿掉對方就不標', r.clashGone, true);
     t.eq('總覽滑過：頂端標籤 14:30（對齊 10 分）、每列＋時間軸都有線、同位置', JSON.stringify(r.gHov), JSON.stringify([false, '14:30', true, true, 1, true, true]));
     t.eq('總覽滑過＋Shift：1 分', r.gHovShift, '14:33');
     t.eq('總覽離開時序條：標籤跟線都藏', JSON.stringify(r.gHovGone), JSON.stringify([true, true, false]));

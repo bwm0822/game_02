@@ -39,6 +39,8 @@
 .daybar .seg.late { top: 0; bottom: 0; background: rgba(255, 70, 70, .75); }
 .daybar .seg.nope { top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #ff5050; overflow: visible; line-height: 22px; }
 .daybar .seg.hov { filter: brightness(1.25); }
+.daybar .clash { position: absolute; top: 2px; bottom: 2px; pointer-events: none; z-index: 1;
+    background: repeating-linear-gradient(135deg, rgba(255, 60, 60, .85) 0 3px, transparent 3px 7px); box-shadow: 0 0 0 1px #ff4040 inset; }
 .daybar { position: relative; }
 .daybar .track { user-select: none; touch-action: none; }
 .daybar .track .empty { position: absolute; left: 6px; top: 3px; font-size: 12px; pointer-events: none; }

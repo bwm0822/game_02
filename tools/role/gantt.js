@@ -2,6 +2,7 @@
 import {h} from '../common/dom.js';
 import {DAY, mod, hhmm} from '../../src/data/schedplan.js';
 import * as SB from './schedbar.js';
+import * as OC from './occupy.js';
 
 const KT = 'tools.role.gantt.t', KM = 'tools.role.gantt.map', KH = 'tools.role.gantt.hide';
 const load = (k) => {try {return localStorage.getItem(k);} catch {return null;}};
@@ -59,7 +60,7 @@ const toMin = (s) => {
 };
 const short = (m) => m?.split('/').at(-1) ?? '?';
 
-// o：{ids（已篩好、照 role.json 順序）, data, planOf(id), onRole(id), onSeg(id, i), typeName(s), planFor(sch)＝拖曳中的試算, onShift(id, j, delta)＝拖分界線放開,
+// o：{ids（已篩好、照 role.json 順序）, data, planOf(id), onRole(id), onSeg(id, i), typeName(s), planFor(sch)＝拖曳中的試算, onShift(id, js, delta)＝拖曳放開, occ()＝全部角色的 [{id, sch, segs}]（算相衝）,
 //     onMenu(e, id, t)＝右鍵, onMulti(id, i)＝Shift＋點, multiOf(id)＝那列多選的 index（沒有＝null）}
 export function ganttEl(o)
 {
@@ -141,6 +142,19 @@ export function ganttEl(o)
             onclick: () => {setMap(G.map === m ? null : m); o.rerender();}}, h('b', {style: `background:${SB.mapColor(m)}`}), short(m), cnt);
     }));
 
+    // 相衝：全部角色（含藏起來／搜尋濾掉的）一起算；拖曳中用試算那列重算、重畫有關的列
+    const shown = new Set(rows.map(w => w.id)), base = o.occ?.() ?? [], bars = new Map();
+    let trial = null, memo = null;
+    const clashMap = () => memo ??= OC.clashes(trial ? base.map(e => (e.id === trial.id ? trial : e)) : base);
+    const involved = (id) => (clashMap().get(id) ?? []).flatMap(c => c.with);
+    const onTrial = (id) => (list, segs) => {
+        const before = involved(id);
+        trial = list ? {id, sch: list, segs} : null;
+        memo = null;
+        for (const o2 of new Set([...before, ...involved(id)])) bars.get(o2)?.repaint();
+    };
+    const clashName = (id) => (shown.has(id) ? id : `${id}（已隱藏）`);
+
     const groups = [];
     for (const w of rows) (groups.find(g => g.grp === (w.r.grp ?? '')) ?? groups[groups.push({grp: w.r.grp ?? '', rows: []}) - 1]).rows.push(w);
     const body = groups.flatMap(g => [
@@ -151,7 +165,9 @@ export function ganttEl(o)
             const bar = SB.dayBarEl(w.pl.plan, w.sch, w.pl.warns, {segs: w.segs ?? (w.sch.length ? null : []), bare: true, sel: -1, multi: o.multiOf?.(w.id),
                 onPick: (i, shift) => (shift && o.onMulti ? o.onMulti(w.id, i) : o.onSeg(w.id, i)),
                 onMenu: o.onMenu && ((e, t) => o.onMenu(e, w.id, t)),
-                typeName: o.typeName, planOf: o.planFor, onShift: (js, d) => o.onShift(w.id, js, d), dim: G.map ? (m) => m !== G.map : null, onHover, onEnds, onStays});
+                typeName: o.typeName, planOf: o.planFor, onShift: (js, d) => o.onShift(w.id, js, d), dim: G.map ? (m) => m !== G.map : null, onHover, onEnds, onStays,
+                clash: () => clashMap().get(w.id) ?? [], clashName, onTrial: onTrial(w.id)});
+            bars.set(w.id, bar);
             bar.querySelector('.track')?.append(cur('cur'), hovLine(), ...endLines());
             return h('div', {class: 'grole' + (w.sch.length ? '' : ' nosch'), dataset: {id: w.id}},
                 h('div', {class: 'gname'}, h('a', {onclick: () => o.onRole(w.id)}, w.id), h('span', {class: 'dim'}, w.r.lab ?? '')),
