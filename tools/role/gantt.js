@@ -117,6 +117,21 @@ export function ganttEl(o)
     };
     track.append(hovLine());
     head.append(hovT);
+    // 拖曳中兩端：頂端時間軸各一個時間（左靠右、右靠左對齊），豎線貫穿每列
+    const ends = [0, 1].map(() => ({lines: [], t: h('span', {class: 'gendt', hidden: true})}));
+    const endLines = () => ends.map(x => {const c = h('i', {class: 'gend', hidden: true}); x.lines.push(c); return c;});
+    const onEnds = (ts) => {
+        ends.forEach((x, k) => {
+            const m = ts?.[k];
+            for (const c of [...x.lines, x.t]) {c.hidden = m === undefined; if (m !== undefined) c.style.left = pct(m);}
+            if (m === undefined) return;
+            x.t.textContent = hhmm(m);
+            const w = track.getBoundingClientRect().width, px = (m / DAY) * w, want = ts.length === 1 ? -50 : k === 0 ? -100 : 0;
+            x.t.style.transform = `translateX(${px < 40 ? 0 : w - px < 40 ? -100 : want}%)`;
+        });
+    };
+    track.append(...endLines());
+    head.append(...ends.map(x => x.t));
 
     const legend = h('div', {class: 'legend glegend'}, maps.map(m => {
         const cnt = h('small');
@@ -135,8 +150,8 @@ export function ganttEl(o)
             const bar = SB.dayBarEl(w.pl.plan, w.sch, w.pl.warns, {segs: w.segs ?? (w.sch.length ? null : []), bare: true, sel: -1, multi: o.multiOf?.(w.id),
                 onPick: (i, shift) => (shift && o.onMulti ? o.onMulti(w.id, i) : o.onSeg(w.id, i)),
                 onMenu: o.onMenu && ((e, t) => o.onMenu(e, w.id, t)),
-                typeName: o.typeName, planOf: o.planFor, onShift: (j, d) => o.onShift(w.id, j, d), dim: G.map ? (m) => m !== G.map : null, onHover});
-            bar.querySelector('.track')?.append(cur('cur'), hovLine());
+                typeName: o.typeName, planOf: o.planFor, onShift: (js, d) => o.onShift(w.id, js, d), dim: G.map ? (m) => m !== G.map : null, onHover, onEnds});
+            bar.querySelector('.track')?.append(cur('cur'), hovLine(), ...endLines());
             return h('div', {class: 'grole' + (w.sch.length ? '' : ' nosch'), dataset: {id: w.id}},
                 h('div', {class: 'gname'}, h('a', {onclick: () => o.onRole(w.id)}, w.id), h('span', {class: 'dim'}, w.r.lab ?? '')),
                 bar, now);

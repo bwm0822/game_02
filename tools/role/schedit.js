@@ -58,7 +58,19 @@ export function dragRange(plan, j)
     return lo <= hi ? [lo, hi] : [0, 0];
 }
 
-export const clampDelta = (d, r) => (r ? Math.max(r[0], Math.min(r[1], d)) : 0);
+// 整塊平移第 i 筆（i、i+1 一起動＝第 i 筆停留不變）：前一筆跟下一筆都至少停 MIN_STAY；兩筆＝整天一起轉不限
+export function blockRange(plan, i)
+{
+    const n = plan?.length ?? 0;
+    if (n < 2) return null;
+    if (n === 2) return [1 - DAY, DAY - 1];
+    const at = (k) => plan[(i + k + n) % n];
+    const lo = MIN_STAY - mod(at(0).dep - at(-1).arr);
+    const hi = mod(at(2).dep - at(1).arr) - MIN_STAY;
+    return lo <= hi ? [lo, hi] : [0, 0];
+}
+
+export const clampDelta =(d, r) => (r ? Math.max(r[0], Math.min(r[1], d)) : 0);
 
 // 分割：時刻 t 那段停留切成兩筆同目的地（新的一筆 @t 抵達，其他欄位抄原本那筆）
 // 回傳 {i}＝切的是第幾筆，或 {why}＝不能切的原因

@@ -315,9 +315,12 @@ run('schedule-tool', async t => {
             const r2 = w.getBoundingClientRect(), y2 = r2.top + r2.height / 2, x2 = r2.left + r2.width / 2, dx = tr2.getBoundingClientRect().width * 30 / 1440;
             const pe2 = (type, x, el = tr2) => el.dispatchEvent(new PointerEvent(type, {bubbles: true, cancelable: true, button: 0, pointerId: 1, clientX: x, clientY: y2}));
             pe2('pointerdown', x2, w); pe2('pointermove', x2 - dx / 2); pe2('pointermove', x2 - dx);
-            out.gHovDrag = g().querySelector('.ghovt')?.textContent;
+            out.gHovDrag = [g().querySelector('.ghovt').hidden, [...g().querySelectorAll('.gendt:not([hidden])')].map(x => x.textContent).at(-1),
+                g().querySelectorAll('.gendt:not([hidden])').length, g().querySelectorAll('.gend:not([hidden])').length === 2 * g().querySelectorAll('.track').length,
+                !!rowOf('trump').querySelector('.gend:not([hidden])')];
             pe2('pointerup', x2 - dx);
             out.gShift = [S.data.trump.schedule[1].t, S.hi - hg, S.view];
+            out.gEndsGone = g().querySelectorAll('.gendt:not([hidden]), .gend:not([hidden])').length;
             re.undo();
         }
         // 滑過總覽某列的時序條：頂端時間軸標籤（對齊 10 分、Shift＝1 分）＋每列＆時間軸一條細白線（同位置），離開就藏
@@ -529,15 +532,47 @@ run('schedule-tool', async t => {
         pe('pointerdown', wx, walk2());
         pe('pointermove', wx + (xOf(30) - xOf(0)) / 2);
         pe('pointermove', wx + (xOf(30) - xOf(0)));
-        out.dragTip = document.querySelector('#view .daybar .dragtip:not([hidden])')?.textContent ?? '';
+        const endTs = () => [...document.querySelectorAll('#view .daybar .endt:not([hidden])')].map(x => x.textContent);
+        const plWalk = re.SP.buildPlan(S.data.trump.schedule.map((s, k) => (k === 2 ? {...s, t: '11:30'} : s)), re.S.ext.nav.edges, re.S.ext.nav.nodes).plan;
+        out.dragEnds = [endTs().join(' '), `11:30 ${re.SP.hhmm(plWalk[2].arr)}`, document.querySelectorAll('#view .daybar .endmk:not([hidden])').length,
+            document.querySelector('#view .daybar .hovt').hidden, document.querySelector('#view .daybar .hovline').hidden, !document.querySelector('#view .daybar .dragtip')];
         pe('pointerup', wx + (xOf(30) - xOf(0)));
         out.dragged = [S.data.trump.schedule[2].t, S.data.trump.schedule[1].t, S.hi - h1];
+        out.dragEndsGone = endTs().length;
         // 拖過頭夾住：往左拖 3 小時，sit-1 最少停 10 分
         const wr2 = walk2().getBoundingClientRect(), wx2 = wr2.left + wr2.width / 2;
         pe('pointerdown', wx2, walk2()); pe('pointermove', wx2 - (xOf(180) - xOf(0))); pe('pointerup', wx2 - (xOf(180) - xOf(0)));
         const plc = re.SP.buildPlan(S.data.trump.schedule, re.S.ext.nav.edges, re.S.ext.nav.nodes).plan;
         out.clamped = re.SP.mod(plc[2].dep - plc[1].arr);
         re.undo();
+        // 停留段中間＝整塊平移：sit-1（第 1 筆）往右 20 分，第 1、2 筆一起動、停留不變、一筆 undo；兩端＝抵達／離開
+        {
+            const plOf = () => re.SP.buildPlan(S.data.trump.schedule, re.S.ext.nav.edges, re.S.ext.nav.nodes).plan;
+            const stay1 = () => {const p = plOf(); return re.SP.mod(p[2].dep - p[1].arr);};
+            const st = () => tb().querySelector('.seg.stay[data-i="1"]');
+            const sr = st().getBoundingClientRect(), sx = sr.left + sr.width / 2, hb = S.hi, len0 = stay1(), t0 = S.data.trump.schedule.map(s => s.t);
+            pe('pointermove', sx, st());
+            out.moveCur = [tb().classList.contains('move'), tb().classList.contains('grab'), getComputedStyle(st()).cursor];
+            pe('pointerdown', sx, st());
+            pe('pointermove', sx + (xOf(10) - xOf(0)));
+            pe('pointermove', sx + (xOf(20) - xOf(0)));
+            const p20 = re.SP.buildPlan(S.data.trump.schedule.map((s, k) => (k === 1 || k === 2 ? {...s, t: re.SE.shiftT(s.t, 20)} : s)), re.S.ext.nav.edges, re.S.ext.nav.nodes).plan;
+            out.blockEnds = [endTs().join(' '), `${re.SP.hhmm(p20[1].arr)} ${re.SP.hhmm(p20[2].dep)}`, document.querySelector('#view .daybar .hovt').hidden];
+            pe('pointerup', sx + (xOf(20) - xOf(0)));
+            out.block = [S.data.trump.schedule.map(s => s.t).join(), [t0[0], re.SE.shiftT(t0[1], 20), re.SE.shiftT(t0[2], 20), ...t0.slice(3)].join(), stay1() === len0, S.hi - hb];
+            re.undo();
+            // 往左拖過頭：前一筆最少停 10 分，自己的停留還是不變
+            const sr2 = st().getBoundingClientRect(), sx2 = sr2.left + sr2.width / 2;
+            pe('pointerdown', sx2, st()); pe('pointermove', sx2 - (xOf(300) - xOf(0))); pe('pointerup', sx2 - (xOf(300) - xOf(0)));
+            const pb = plOf();
+            out.blockClamp = [re.SP.mod(pb[1].dep - pb[0].arr), stay1() === len0];
+            re.undo();
+            // 單擊中間（沒拖）照舊是選取
+            const sr3 = st().getBoundingClientRect(), sx3 = sr3.left + sr3.width / 2;
+            pe('pointerdown', sx3, st()); pe('pointerup', sx3, st());
+            st().dispatchEvent(new MouseEvent('click', {bubbles: true, cancelable: true, clientX: sx3}));
+            out.blockClick = [S.schSel.i, S.hi - hb];
+        }
         // 類型：卡片下拉選午餐 → 時序條段內寫「午餐」
         const tsel = document.querySelector('#view [data-k="schedule.1.type"]');
         out.typeOpts = [...tsel.options].map(o => o.textContent);
@@ -660,7 +695,7 @@ run('schedule-tool', async t => {
         pe1('pointerdown', ox, one);
         pe1('pointermove', ox + (xOf(30) - xOf(0)));
         pe1('pointermove', ox + (xOf(60) - xOf(0)));
-        out.oneTip = document.querySelector('#view .daybar .dragtip:not([hidden])')?.textContent ?? '';
+        out.oneTip = [...document.querySelectorAll('#view .daybar .endt:not([hidden])')].map(x => x.textContent).join(' ');
         pe1('pointerup', ox + (xOf(60) - xOf(0)));
         out.oneDrag = S.data.trump.schedule.map(s => s.t);
         // 選單不超出畫面：展開到第 3 層，每層都在視窗裡、可捲動
@@ -982,7 +1017,8 @@ run('schedule-tool', async t => {
     t.eq('點一段：進表單、選那張卡片、右欄作息地圖', JSON.stringify(r.gPick), JSON.stringify(['form', 'trump', 1, 'sched', true, 'm_04x05/trump-inn-f2', true, true]));
     t.eq('點角色名：進表單', JSON.stringify(r.gName), JSON.stringify(['form', 'musk']));
     t.eq('總覽拖分界線：照原型別平移、一筆 undo、留在總覽', JSON.stringify(r.gShift), JSON.stringify(['@22:20', 1, 'table']));
-    t.eq('總覽拖曳中：頂端時間軸標籤＝拖到的抵達時間', r.gHovDrag, '22:20');
+    t.eq('總覽拖曳中：游標標籤藏、頂端時間軸兩端時間（右＝抵達）、豎線貫穿每列', JSON.stringify(r.gHovDrag), JSON.stringify([true, '22:20', 2, true, true]));
+    t.eq('總覽放開：兩端時間收起', r.gEndsGone, 0);
     t.eq('總覽滑過：頂端標籤 14:30（對齊 10 分）、每列＋時間軸都有線、同位置', JSON.stringify(r.gHov), JSON.stringify([false, '14:30', true, true, 1, true, true]));
     t.eq('總覽滑過＋Shift：1 分', r.gHovShift, '14:33');
     t.eq('總覽離開時序條：標籤跟線都藏', JSON.stringify(r.gHovGone), JSON.stringify([true, true, false]));
@@ -992,7 +1028,14 @@ run('schedule-tool', async t => {
     t.check('🏠 室內圖 ▸ 點（不列 door／stair-up）', r.barL3.includes('sit-1') && r.barL3.includes('trump-p1') && !r.barL3.includes('door') && !r.barL3.includes('stair-up'), JSON.stringify(r.barL3));
     t.eq('插入夾一小時：10:00 抵達 sit-1、11:00 出發回 trump-p1、選新那筆、一筆 undo', JSON.stringify(r.barIns),
         JSON.stringify(['@06:20 trump-p1 | @10:00 sit-1 | 11:00 trump-p1 | @22:50 bed', 1, true, 1]));
-    t.check('拖曳中浮出 停｜抵達｜停', /^停 .+ ｜ 抵達 \d\d:\d\d ｜ 停 /.test(r.dragTip), r.dragTip);
+    t.eq('拖分界線中：兩端＝出發／抵達時間＋豎線、游標標籤跟白線藏、沒有下方浮框',
+        JSON.stringify([r.dragEnds[0], r.dragEnds.slice(2)]), JSON.stringify([r.dragEnds[1], [2, true, true, true]]));
+    t.eq('放開：兩端時間收起', r.dragEndsGone, 0);
+    t.eq('滑到停留段中間：游標 move（不是 ↔）', JSON.stringify(r.moveCur), JSON.stringify([true, false, 'move']));
+    t.eq('拖停留段中間：兩端＝抵達／離開、游標標籤藏', JSON.stringify([r.blockEnds[0], r.blockEnds[2]]), JSON.stringify([r.blockEnds[1], true]));
+    t.eq('整塊平移：這筆跟下一筆一起平移 20 分、停留不變、一筆 undo', JSON.stringify([r.block[0], r.block[2], r.block[3]]), JSON.stringify([r.block[1], true, 1]));
+    t.eq('整塊往左拖過頭：前一筆最少停 10 分、自己停留不變', JSON.stringify(r.blockClamp), JSON.stringify([10, true]));
+    t.eq('單擊停留段中間（沒拖）：照舊選取、不改資料', JSON.stringify(r.blockClick), JSON.stringify([1, 0]));
     t.eq('拖走路段：那筆照原型別平移 30 分、前一筆不動、一筆 undo', JSON.stringify(r.dragged), JSON.stringify(['11:30', '@10:00', 2]));
     t.eq('拖過頭：前一段最少停 10 分', r.clamped, 10);
     t.check('類型下拉：（無）＋清單＋新類型', r.typeOpts[0] === '（無）' && r.typeOpts.includes('午餐') && r.typeOpts.at(-1) === '＋ 新類型…', JSON.stringify(r.typeOpts));
@@ -1060,7 +1103,7 @@ run('schedule-tool', async t => {
     t.eq('右鍵範圍外：回到單選選單', JSON.stringify(r.outside), JSON.stringify([true, true, [0]]));
     t.eq('刪除 2 筆：剩一筆', JSON.stringify(r.delRange), JSON.stringify([JSON.stringify([{t: '@06:20', go: 'trump-p1', map: 'm_04x05/trump-inn-f1'}]), 0]));
     t.eq('只有一筆：分界線游標 ↔', r.oneGrab, true);
-    t.eq('只有一筆：浮框只寫抵達', r.oneTip, '抵達 07:20');
+    t.eq('只有一筆：兩端只標一個抵達時間', r.oneTip, '07:20');
     t.eq('只有一筆：拖 1 小時', JSON.stringify(r.oneDrag), JSON.stringify(['@07:20']));
     t.check('選單每層都在視窗裡', r.menuFit.length >= 3 && r.menuFit.every(Boolean), JSON.stringify(r.menuFit));
     t.eq('選單太高可捲動', r.menuScroll, 'auto');

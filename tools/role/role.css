@@ -42,8 +42,6 @@
 .daybar { position: relative; }
 .daybar .track { user-select: none; touch-action: none; }
 .daybar .track .empty { position: absolute; left: 6px; top: 3px; font-size: 12px; pointer-events: none; }
-.daybar .dragtip { position: absolute; top: 24px; transform: translateX(-50%); z-index: 3; padding: 1px 6px; border-radius: 3px;
-    background: #111; border: 1px solid #4fc3f7; color: #fff; white-space: nowrap; pointer-events: none; font-size: 12px; }
 .daybar .seg.sel { box-shadow: 0 0 0 2px #4fc3f7 inset; filter: brightness(1.2); }
 .daybar .axis { position: relative; height: 14px; color: #888; }
 .daybar .axis span { position: absolute; transform: translateX(-50%); }
@@ -81,6 +79,15 @@
 .daybar .hovt { position: absolute; top: -18px; transform: translateX(-50%); z-index: 3; padding: 0 4px; line-height: 14px; border-radius: 3px;
     background: #e8e8e8; color: #111; font-size: 11px; pointer-events: none; }
 .daybar .hovline[hidden], .daybar .hovt[hidden] { display: none; }
+.daybar .track.move, .daybar .track.move .seg { cursor: move; }
+.daybar .endmk { position: absolute; top: -8px; height: 32px; width: 2px; margin-left: -1px; background: #4fc3f7; pointer-events: none; z-index: 2; }
+.daybar .endt { position: absolute; top: -20px; z-index: 3; padding: 0 4px; line-height: 14px; border-radius: 3px;
+    background: #4fc3f7; color: #111; font-size: 11px; white-space: nowrap; pointer-events: none; }
+.daybar .endmk[hidden], .daybar .endt[hidden] { display: none; }
+.gantt .gend { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #4fc3f7; pointer-events: none; z-index: 2; }
+.gantt .gendt { position: absolute; top: 10px; z-index: 3; padding: 0 4px; line-height: 14px; border-radius: 3px;
+    background: #4fc3f7; color: #111; font-size: 11px; white-space: nowrap; pointer-events: none; }
+.gantt .gend[hidden], .gantt .gendt[hidden] { display: none; }
 .gantt .gaxis { position: relative; }
 .gantt .ghov { position: absolute; top: 0; bottom: 0; width: 1px; margin-left: -0.5px; background: rgba(255, 255, 255, .7); pointer-events: none; z-index: 2; }
 .gantt .ghovt { position: absolute; top: 10px; transform: translateX(-50%); z-index: 3; padding: 0 4px; line-height: 14px; border-radius: 3px;

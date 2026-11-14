@@ -857,11 +857,14 @@ function delSch(id, i)
 }
 
 // 拖分界線：第 j 筆的時間照原本型別平移
-function shiftSch(id, j, delta)
+function shiftSch(id, js, delta)
 {
     commit(() => {
-        const s = S.data[id].schedule[j];
-        s.t = SE.shiftT(s.t, delta);
+        for (const j of js)
+        {
+            const s = S.data[id].schedule[j];
+            s.t = SE.shiftT(s.t, delta);
+        }
     });
 }
 
@@ -1489,6 +1492,6 @@ async function loadRefs()
 })();
 
 // 給無頭測試用
-window.__re = {S, SM, PZ, SP, ME, SB, GT, openSch, updateNav, checkStale, renamePoint, deletePoint, toggleRouteEdit, setAssets: D.setAssets, reload: D.reload, save: D.save, commit, set, undo: D.undo, redo: D.redo, add, askNew, dup: D.dup,
+window.__re = {S, SM, PZ, SP, SE, ME, SB, GT, openSch, updateNav, checkStale, renamePoint, deletePoint, toggleRouteEdit, setAssets: D.setAssets, reload: D.reload, save: D.save, commit, set, undo: D.undo, redo: D.redo, add, askNew, dup: D.dup,
                rename: D.rename, remove: D.remove, addSch, scanRefs: D.scanRefs, validate, validateAll, render, IC, JE, SC,
                pickPart, renamePart, deletePart, genPortrait, loadRefs, grpsOf, newGrp, renameGrp, removeGrp, dropRole, setGrp, setKind, ALL};
