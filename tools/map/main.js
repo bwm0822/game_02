@@ -18,11 +18,11 @@ import {storyLists} from '../common/storyform.js';
 import {rewriteStory, groupRenamer} from '../common/storyrename.js';
 import '../common/combo.js';
 import {checkStory} from '../../src/data/storycheck.js';
-import {resolveObject, joinPath} from '../../src/data/navgrid.js';
+import {resolveObject, joinPath, bestPath} from '../../src/data/navgrid.js';
 import {spotsOn, clashOf, occupyEl} from '../role/occupy.js';
 import {isRoleObj, roleObjs, placeOf, spriteOf, forgetSprites, SPRITE_HALF} from './roles.js';
 import {roleIssues, checkMapRoles, isPortObj, portIssue} from '../../src/data/mapcheck.js';
-import {buildPlan, hhmm, mod, parseAt} from '../../src/data/schedplan.js';
+import {buildPlan, hhmm, mod, parseAt, patrolAt, edgeCost} from '../../src/data/schedplan.js';
 import {daySegs, whereAt} from '../role/schedbar.js';
 import '../common/splitter.js';
 
@@ -92,7 +92,7 @@ async function loadRefs()
     S.roles = await readJsonFile('role.json', {});
     S.items = await readJsonFile('item.json', {});
     S.parts = await PT.readParts(S.assets.json).catch(() => ({}));
-    const nav = await readJsonFile('navgraph.json', {nodes: {}, edges: {}});
+    const nav = S.nav = await readJsonFile('navgraph.json', {nodes: {}, edges: {}});
     // 有作息的角色的時刻表（同遊戲 ScheduleManager 的 buildPlan），時間游標用
     S.plans = {};
     for (const [id, r] of Object.entries(S.roles))
@@ -115,20 +115,76 @@ S.t = 8 * 60;
 try {S.timeOn = localStorage.getItem(TIME_KEY) === '1'; S.t = mod(+(localStorage.getItem(T_KEY) ?? 480) || 0);} catch {}
 const toMin = (s) => {const m = /^(\d{1,2}):(\d{2})$/.exec(s.trim()); return m && +m[1] < 24 && +m[2] < 60 ? +m[1] * 60 + +m[2] : null;};
 
-// [{id, at（whereAt）, n（具名物件）}]：停在這張圖的點、或正走向這張圖的點（走路中）；同一點好幾個人照順序排開
+// 時刻 t 實際在哪（同遊戲：走路照 buildPlan 的路線、每段 edgeCost 分；巡邏照 patrolAt）
+// {at（whereAt）, map, a, b, e, c}：在 map 這張圖的點 a（b＝正從 a 走往 b，走了 e／共 c 分；沒有＝站在 a）；穿過 port 那一分鐘算還在 a
+const keyMap = (k) => k.slice(0, k.indexOf(':')), keyName = (k) => k.slice(k.indexOf(':') + 1);
+function posOf(p, t)
+{
+    const at = whereAt(p.plan, p.sch, t, p.segs);
+    if (!at) return null;
+    const q = p.plan[at.i], s = p.sch[at.i], edges = S.nav?.edges ?? {};
+    const stand = (map, a) => ({at, map, a, b: null, e: 0, c: 0});
+    if (at.kind === 'walk')
+    {
+        const keys = [q.from, ...(q.path ?? [])];
+        let e = mod(t - q.dep);
+        for (let i = 1; i < keys.length; i++)
+        {
+            const a = keys[i - 1], b = keys[i], c = edgeCost(edges, a, b);
+            if (e >= c) {e -= c; continue;}
+            return keyMap(a) === keyMap(b) ? {at, map: keyMap(a), a: keyName(a), b: keyName(b), e, c} : stand(keyMap(a), keyName(a));
+        }
+        return stand(at.map, at.go);
+    }
+    if (s?.do === 'patrol')
+    {
+        const r = patrolAt(s, mod(t - q.arr), (a, b) => edgeCost(edges, `${s.map}:${a}`, `${s.map}:${b}`));
+        if (r?.kind === 'walk') return {at, map: s.map, a: r.a, b: r.b, e: r.e, c: r.c};
+        if (r) return stand(s.map, r.a);
+    }
+    return stand(at.map, at.go);
+}
+
+// 選了地圖：a 走往 b 走了 e 分的那一格中心（A* 格子路徑照比例取，同一張圖快取）；走不到＝兩點直線內插
+function walkCen(st, pos)
+{
+    const d = st.data, a = MV.spotOf(d, pos.a), b = MV.spotOf(d, pos.b);
+    if (!a || !b) return null;
+    if (st.walks?.data !== d) st.walks = {data: d, map: new Map()};
+    const key = `${pos.a}>${pos.b}`;
+    let path = st.walks.map.get(key);
+    if (path === undefined)
+    {
+        path = null;
+        for (const sp of a.tiles ?? [])
+        {
+            const ps = bestPath(MV.gridOf(d), sp, b.tiles ?? []);
+            if (ps && (!path || ps.length + 1 < path.length)) path = [sp, ...ps];
+        }
+        st.walks.map.set(key, path);
+    }
+    const f = pos.c > 0 ? Math.min(1, pos.e / pos.c) : 0;
+    if (!path?.length) return {x: a.cen.x + (b.cen.x - a.cen.x) * f, y: a.cen.y + (b.cen.y - a.cen.y) * f};
+    const [tx, ty] = path[Math.round(f * (path.length - 1))], tw = d.map.tilewidth, th = d.map.tileheight;
+    return {x: (tx + 0.5) * tw, y: (ty + 0.5) * th};
+}
+
+// [{id, at（whereAt）, pos, n（站的點；走路中 cen＝路上那格）}]：此刻實際在這張圖的人；同一點（或同一格）好幾個人照順序排開
 function npcsAt(st)
 {
     if (!S.timeOn || !st.data) return [];
     const out = [];
     for (const [id, p] of Object.entries(S.plans ?? {}))
     {
-        const at = whereAt(p.plan, p.sch, S.t, p.segs);
-        if (!at || at.map !== st.name) continue;
-        const n = MV.spotOf(st.data, at.go);
-        if (n) out.push({id, at, n});
+        const pos = posOf(p, S.t);
+        if (!pos || pos.map !== st.name) continue;
+        const n = MV.spotOf(st.data, pos.a);
+        if (!n) continue;
+        const cen = pos.b ? walkCen(st, pos) : null;
+        out.push({id, at: pos.at, pos, n: cen ? {...n, cen} : n, spot: cen ? `${cen.x},${cen.y}` : n.name});
     }
     const slot = new Map();
-    for (const x of out) {const k = slot.get(x.n.name) ?? 0; slot.set(x.n.name, k + 1); x.k = k;}
+    for (const x of out) {const k = slot.get(x.spot) ?? 0; slot.set(x.spot, k + 1); x.k = k;}
     return out;
 }
 
@@ -419,7 +475,7 @@ function roomsSum(world)
 
 const hiddenGroup = (layer) => layer.startsWith('@') && S.hide.has(layer.slice(1));
 
-// 時間游標在總覽：[{id, at, map, x, y（總覽單位；在室內＝null）, room}]
+// 時間游標在總覽：[{id, at, map, x, y（總覽單位；在室內＝null）, room}]；走路中＝兩點直線內插（總覽沒載格子）
 function worldNpcs(geo)
 {
     if (!S.timeOn || !geo) return [];
@@ -427,18 +483,20 @@ function worldNpcs(geo)
     const out = [];
     for (const [id, p] of Object.entries(S.plans ?? {}))
     {
-        const at = whereAt(p.plan, p.sch, S.t, p.segs);
-        if (!at) continue;
-        const c = byName.get(at.map);
+        const pos = posOf(p, S.t);
+        if (!pos) continue;
+        const {at, map} = pos, c = byName.get(map);
         if (c)
         {
-            const sm = S.sums[at.map], xy = parseAt(at.go);
-            const n = sm?.named[at.go] ?? (xy && sm?.tile && {x: (xy[0] + 0.5) * sm.tile[0], y: (xy[1] + 0.5) * sm.tile[1]});
-            if (n) out.push({id, at, map: at.map, x: c.x + n.x * geo.unit, y: c.y + n.y * geo.unit});
+            const sm = S.sums[map];
+            const pt = (name) => {const xy = parseAt(name); return sm?.named[name] ?? (xy && sm?.tile && {x: (xy[0] + 0.5) * sm.tile[0], y: (xy[1] + 0.5) * sm.tile[1]});};
+            const a = pt(pos.a), b = pos.b && pt(pos.b), f = b && pos.c > 0 ? Math.min(1, pos.e / pos.c) : 0;
+            const n = a && (b ? {x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f} : a);
+            if (n) out.push({id, at, map, x: c.x + n.x * geo.unit, y: c.y + n.y * geo.unit});
             continue;
         }
-        const parent = Object.keys(S.rooms ?? {}).find(w => S.rooms[w].includes(at.map));
-        if (parent) out.push({id, at, map: at.map, room: parent});
+        const parent = Object.keys(S.rooms ?? {}).find(w => S.rooms[w].includes(map));
+        if (parent) out.push({id, at, map, room: parent});
     }
     return out;
 }
@@ -721,11 +779,11 @@ function draw(cv, st)
         g.fillStyle = sel ? 'rgba(79,195,247,0.25)' : 'rgba(255,255,255,0.15)';
         g.fillRect(Math.floor(root.x / tw) * tw, Math.floor(root.y / th) * th, tw, th);
     }
-    // 時間游標：具名 NPC（作息）半透明畫在點上，下面藍底名字（走路中虛線框＋→）
+    // 時間游標：具名 NPC（作息）畫在此刻實際的位置（走路中＝路上那格），下面藍底名字（走路中虛線框＋「→ 目的地」）
     for (const x of st.npcs ?? [])
     {
         const c = npcCen(x), sp = st.sprites.get(x.id), r = S.roles[x.id];
-        g.globalAlpha = x.at.kind === 'walk' ? 0.45 : 0.8;
+        g.globalAlpha = 0.8;
         if (sp) g.drawImage(sp, c.x - SPRITE_HALF, c.y - SPRITE_HALF);
         g.globalAlpha = 1;
         const on = st.hover?.npc === x.id;
@@ -734,7 +792,7 @@ function draw(cv, st)
         g.lineWidth = (on ? 2 : 1) / K;
         g.strokeRect(c.x - (r?.w ?? 32) / 2, c.y - (r?.h ?? 64) / 2, r?.w ?? 32, r?.h ?? 64);
         g.setLineDash([]);
-        const txt = `${x.at.kind === 'walk' ? '→' : ''}${x.id}`;
+        const txt = x.at.kind === 'walk' ? `${x.id} → ${x.at.go}` : x.id;
         g.font = `${12 / K}px sans-serif`;
         g.textAlign = 'center';
         g.textBaseline = 'middle';
@@ -791,7 +849,7 @@ function draw(cv, st)
     cv.dataset.drawn = st.roles.length;
 }
 
-// 時間游標的 NPC 站在點上（point 中心＝站的格子），同一點好幾個往右排開
+// 時間游標的 NPC 站在點上（point 中心＝站的格子；走路中＝路上那格），同一點好幾個往右排開
 function npcCen(x)
 {
     const a = S.roles[x.id]?.anchor;
@@ -1057,21 +1115,30 @@ function mapEl(name)
         timeBar(st));
 }
 
-// 🕒 時間游標：勾了才畫具名 NPC；時間可打 HH:MM 或拖滑桿（10 分一格），記住
+// 🕒 時間游標：勾了才畫具名 NPC；時間可打 HH:MM、拖滑桿（10 分一格）或在滑桿／輸入框上滾輪（下＝+1 分、上＝−1，Shift＝±10，跨午夜繞回），記住
 function timeBar(st)
 {
     const chk = h('input', {type: 'checkbox', dataset: {k: 'timeOn'}, checked: S.timeOn, onchange: e => setTime(S.t, e.target.checked)});
-    const inp = h('input', {class: 'num', size: 5, dataset: {k: 'timeT'}, value: hhmm(S.t), onchange: e => {const v = toMin(e.target.value); v === null ? (e.target.value = hhmm(S.t)) : setTime(v, true);}});
-    const rng = h('input', {type: 'range', class: 'trange', min: 0, max: 1430, step: 10, value: S.t, dataset: {k: 'timeR'}, oninput: e => setTime(+e.target.value, true)});
+    const wheel = (e) => {
+        const d = Math.sign(e.deltaY || e.deltaX);
+        if (!d) return;
+        e.preventDefault();
+        setTime(S.t + d * (e.shiftKey ? 10 : 1), true);
+        if (document.activeElement === inp) inp.value = hhmm(S.t);
+    };
+    const inp = h('input', {class: 'num', size: 5, dataset: {k: 'timeT'}, value: hhmm(S.t), title: '滾輪＝±1 分（Shift＝±10）', onwheel: wheel,
+        onchange: e => {const v = toMin(e.target.value); v === null ? (e.target.value = hhmm(S.t)) : setTime(v, true);}});
+    const rng = h('input', {type: 'range', class: 'trange', min: 0, max: 1430, step: 10, value: S.t, dataset: {k: 'timeR'}, title: '拖＝10 分一格、滾輪＝±1 分（Shift＝±10）',
+        onwheel: wheel, oninput: e => setTime(+e.target.value, true)});
     const cnt = h('span', {class: 'dim'});
     st.updateTime = () => {
         chk.checked = S.timeOn;
         if (document.activeElement !== inp) inp.value = hhmm(S.t);
         rng.value = S.t;
-        cnt.textContent = S.timeOn && st.countText ? st.countText() : S.timeOn ? `這張圖 ${(st.npcs ?? []).filter(x => x.at.kind === 'stay').length} 人${(st.npcs ?? []).some(x => x.at.kind === 'walk') ? `、${st.npcs.filter(x => x.at.kind === 'walk').length} 人走過來` : ''}` : '';
+        cnt.textContent = S.timeOn && st.countText ? st.countText() : S.timeOn ? `這張圖 ${(st.npcs ?? []).filter(x => x.at.kind === 'stay').length} 人${(st.npcs ?? []).some(x => x.at.kind === 'walk') ? `、${st.npcs.filter(x => x.at.kind === 'walk').length} 人在路上` : ''}` : '';
     };
     st.updateTime();
-    return h('div', {class: 'opts timebar', title: '照 role.json 的作息（同遊戲 ScheduleManager）算具名 NPC 這個時刻在哪；淡的虛線框＝正走去那個點'},
+    return h('div', {class: 'opts timebar', title: '照 role.json 的作息（同遊戲 ScheduleManager）算具名 NPC 這個時刻實際在哪（走路中＝路上那格、巡邏＝路線上）；虛線框＝走路中'},
         h('label', null, chk, '🕒 作息'), inp, rng, cnt);
 }
 

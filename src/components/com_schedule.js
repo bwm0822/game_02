@@ -3,7 +3,7 @@ import {GM} from '../core/setting.js'
 import TimeSystem from '../systems/time.js'
 import Record from '../infra/record.js'
 import NavGraph from '../core/navgraph.js'
-import {parseAt, patrolTrip} from '../data/schedplan.js'
+import {parseAt, patrolTrip, patrolAt} from '../data/schedplan.js'
 import {T,dlog} from '../core/debug.js'
 const _tag = 'schedule';
 
@@ -73,52 +73,19 @@ export class COM_Schedule extends Com
     _initPatrol()
     {
         const{root}=this.ctx;
-        const st = this.st, sh = this._sh;
-        const {pts, repeat} = patrolTrip(sh);
-        const keys = pts.map(name=>`${sh.map}:${name}`);
-        const wait = sh.wait ?? 0;
-        const n = keys.length;
-        const cost = (a,b)=>a===b ? 0 : NavGraph.cost(a,b);
-        const nextOf = (i)=>repeat ? (i+1)%n : i+1;
+        const st = this.st, sh = this._sh, k = (name)=>`${sh.map}:${name}`;
         this._pi = 0;
         this._wait = 0;
         this._patrolI = st.i;
 
-        const entry = this._go(st.node);
-        const first = this._go(keys[0]);
-        if(!entry || !first) {return;}
-
-        let e = Math.max(0, this.now - (st.at ?? this.now));
-        const c0 = cost(st.node, keys[0]);
-        if(e < c0) {root.updatePos?.(this._walkPos(entry.getPts(root)[0], first, e)); return;}
-        e -= c0;
-
-        if(repeat)
-        {
-            const loop = keys.reduce((sum,k,i)=>sum + wait + cost(k, keys[(i+1)%n]), 0);
-            if(loop>0 && loop<Infinity) {e %= loop;}
-        }
-
-        for(let i=0;i<n;i++)
-        {
-            const cur = this._go(keys[i]);
-            if(!cur) {return;}
-            const j = nextOf(i);
-            if(j>=n) {this._pi = n; root.updatePos?.(this._walkPos(cur.getPts(root)[0], cur, 0)); return;}
-            const nxt = this._go(keys[j]);
-            if(!nxt) {return;}
-            this._pi = j;
-            if(e < wait)
-            {
-                this._wait = wait - e;
-                root.updatePos?.(this._walkPos(cur.getPts(root)[0], nxt, 0));
-                return;
-            }
-            e -= wait;
-            const c = cost(keys[i], keys[j]);
-            if(e < c) {root.updatePos?.(this._walkPos(cur.getPts(root)[0], nxt, e)); return;}
-            e -= c;
-        }
+        const e = Math.max(0, this.now - (st.at ?? this.now));
+        const r = patrolAt(sh, e, (a,b)=>NavGraph.cost(k(a), k(b)));
+        if(!r) {return;}
+        const from = this._go(k(r.a)), to = r.kind==='walk' ? this._go(k(r.b)) : from;
+        if(!from || !to) {return;}
+        this._pi = r.pi;
+        this._wait = r.kind==='wait' ? r.left : 0;
+        root.updatePos?.(this._walkPos(from.getPts(root)[0], to, r.kind==='walk' ? r.e : 0));
     }
 
     async _patrol()

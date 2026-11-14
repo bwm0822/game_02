@@ -33,7 +33,7 @@
 - `mode`（選填，沒寫＝`loop`）：`oneway` 單向／`back1` 一次原路來回／`back` 多次原路來回／`loop1` 一次循環／`loop` 多次循環。「多次」＝重複到這筆作息時間結束；原路來回折返點只經過一次（`p1 p2 p3 p2 p1 …`）；一次／單向走完停在終點（單向＝最後一點，`back1`／`loop1`＝`route[0]`），時間到了沒走完就直接中斷出發（不警告）
 - 路點順序、終點都由 `schedplan.js` 的 `patrolTrip()`／`patrolEnd()`／`patrolLegs()` 算（遊戲、角色分頁共用）；有終點的模式結束後**從終點出發**去下一筆：`buildPlan()` 的 `from` 跟每筆的 `end` 用 `endKey()`，`ScheduleManager._depart()` 把 `st.node` 換成終點再找路（多次的模式停在哪說不準，照舊從入口算）
 - `route` 只能是 `map` 這張圖裡的物件名稱（不跨圖）；`scripts/navgraph.js`、`ScheduleManager._buildPlan()` 都會檢查（patrol 沒寫 `route` 也會警告）
-- 抽象狀態不追蹤走到第幾個路點，只記抵達入口的時間 `at`；實體化時 `COM_Schedule._initPatrol()` 用路網花費＋`wait` 推算此刻位置（多次＝繞圈取餘數，一次／單向超過一趟就停在終點、`_pi＝路點數`；決定性，進出地圖不會亂跳）
+- 抽象狀態不追蹤走到第幾個路點，只記抵達入口的時間 `at`；實體化時 `COM_Schedule._initPatrol()` 用 `schedplan.js` 的 `patrolAt(s, e, cost)`（地圖分頁時間游標同一支）以路網花費＋`wait` 推算此刻位置（多次＝繞圈取餘數，一次／單向超過一趟就停在終點、`_pi＝路點數`；決定性，進出地圖不會亂跳）
 - 實體在場時路點進度存在元件裡（`_pi`/`_wait`），被對話/戰鬥拖住就繼續走原本的下一點，不重新推算
 - 範例：`guard-1`/`guard-2`兩人日夜輪班，守衛室是 `m_04x05/house-08`（一張床共用，換班時間保證床先空出來）
 

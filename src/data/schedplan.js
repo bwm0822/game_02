@@ -38,6 +38,35 @@ export function patrolEnd(s)
 // 這筆作息結束後從哪個節點出發去下一筆：有終點的巡邏＝終點，其他＝目的地
 export const endKey = (s) => {const e = patrolEnd(s); return e ? `${s.map}:${e}` : schKey(s);};
 
+// 巡邏抵達入口（destOf）後 e 分鐘在哪（遊戲 COM_Schedule._initPatrol、地圖分頁時間游標共用）；cost(a, b)＝兩個點（名稱）走幾分（不相鄰＝Infinity）
+// {kind:'walk', a, b, e, c, pi}＝從 a 走往 b（走了 e／共 c 分）｜{kind:'wait', a, left, pi}＝停在 a 還要 left 回合｜{kind:'done', a, pi}＝一次／單向跑完停在 a
+// pi＝下一個要去的 patrolTrip().pts 索引（done＝pts.length）；沒有 route＝null
+export function patrolAt(s, e, cost)
+{
+    const {pts, repeat} = patrolTrip(s), n = pts.length, wait = s.wait ?? 0;
+    if (!n) return null;
+    const c = (a, b) => (a === b ? 0 : cost(a, b));
+    const entry = destOf(s), c0 = c(entry, pts[0]);
+    if (e < c0) return {kind: 'walk', a: entry, b: pts[0], e, c: c0, pi: 0};
+    e -= c0;
+    if (repeat)
+    {
+        const loop = pts.reduce((sum, k, i) => sum + wait + c(k, pts[(i + 1) % n]), 0);
+        if (loop > 0 && loop < Infinity) e %= loop;
+    }
+    for (let i = 0; i < n; i++)
+    {
+        const j = repeat ? (i + 1) % n : i + 1;
+        if (j >= n) return {kind: 'done', a: pts[i], pi: n};
+        if (e < wait) return {kind: 'wait', a: pts[i], left: wait - e, pi: j};
+        e -= wait;
+        const cc = c(pts[i], pts[j]);
+        if (e < cc) return {kind: 'walk', a: pts[i], b: pts[j], e, c: cc, pi: j};
+        e -= cc;
+    }
+    return {kind: 'wait', a: pts[0], left: 0, pi: 1 % n};
+}
+
 // 巡邏要走的每一段 [a, b]（名稱，a≠b）
 export function patrolLegs(s)
 {

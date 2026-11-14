@@ -546,6 +546,40 @@ run('map-tool', async t => {
         mt.selectMap('fixture-01');
         await until(() => cv()?.st.name === 'fixture-01' && cv().st.data);
         const roles0 = S.roles, occ0 = S.occ;
+        // 時間游標畫實際位置：假路網（曼哈頓距離），zw 11:52 從 @1,1 走到 @1,9（8 分）、zp 09:00 起單向巡邏 @5,1 → @9,1（4 分）
+        {
+            const SP = await import('/src/data/schedplan.js'), SB = await import('/tools/role/schedbar.js');
+            const FX = 'fixture-01', K = (x, y) => `${FX}:@${x},${y}`, P = [[1, 1], [1, 9], [5, 1], [9, 1]];
+            const nodes = {}, edges = {};
+            for (const a of P) {nodes[K(...a)] = {}; edges[K(...a)] = P.filter(b => b !== a).map(b => ({to: K(...b), cost: Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]), type: 'walk'}));}
+            const zw = [{t: '@08:00', map: FX, at: [1, 1]}, {t: '@12:00', map: FX, at: [1, 9]}];
+            const zp = [{t: '@08:00', map: FX, at: [1, 1]}, {t: '@09:00', map: FX, at: [5, 1], do: 'patrol', route: ['@5,1', '@9,1'], mode: 'oneway'}];
+            const nav0 = S.nav, plans0 = S.plans;
+            S.nav = {nodes, edges};
+            S.roles = {...roles0, zw: {schedule: zw}, zp: {schedule: zp}};
+            S.plans = {};
+            for (const [id, sch] of [['zw', zw], ['zp', zp]]) {const plan = SP.buildPlan(sch, edges, nodes).plan; S.plans[id] = {sch, plan, segs: SB.daySegs(plan, sch)};}
+            const tileOf = (id) => {const x = cv().st.npcs.find(n => n.id === id); return x && [Math.floor(x.n.cen.x / 32), Math.floor(x.n.cen.y / 32), x.at.kind];};
+            mt.setTime(11 * 60 + 56, true);
+            out.posWalk = tileOf('zw');
+            mt.setTime(9 * 60 + 2, true);
+            out.posPatrol = tileOf('zp');
+            mt.setTime(9 * 60 + 30, true);
+            out.posDone = tileOf('zp');
+            // 從終點出發：zp 回 @1,1 的路從 @9,1 走（8 分），07:56 在 @5,1
+            mt.setTime(7 * 60 + 56, true);
+            out.posBack = tileOf('zp');
+            // 滾輪：下＝+1、Shift＝+10、上＝−1、跨午夜繞回
+            const rng = document.querySelector('#view [data-k=timeR]');
+            const wh = (dy, shiftKey = false) => rng.dispatchEvent(new WheelEvent('wheel', {deltaY: dy, shiftKey, bubbles: true, cancelable: true}));
+            wh(100); const w1 = S.t;
+            wh(100, true); const w2 = S.t;
+            wh(-100); const w3 = S.t;
+            mt.setTime(23 * 60 + 59, true); wh(100); const w4 = S.t;
+            out.wheel = [w1, w2, w3, w4, document.querySelector('#view [data-k=timeT]').value];
+            S.nav = nav0; S.plans = plans0; S.roles = roles0;
+            mt.setTime(11 * 60, false);
+        }
         const za = [{t: '@08:00', map: 'fixture-01', at: [8, 2]}, {t: '@20:00', map: 'fixture-01', at: [3, 6], do: 'patrol', route: ['@8,2', '@10,10']}];
         const zb = [{t: '@10:00', map: 'fixture-01', at: [8, 2]}];
         S.roles = {...roles0, za: {schedule: za}, zb: {schedule: zb}};
@@ -849,6 +883,11 @@ run('map-tool', async t => {
 
     // ---- 第 6 步 ----
     t.check('時間游標預設關、不畫', r.timeOff[0] === false && r.timeOff[1] === 0, r.timeOff.join());
+    t.eq('時間游標：走路中畫在路上那格（走了一半＝@1,5）', JSON.stringify(r.posWalk), JSON.stringify([1, 5, 'walk']));
+    t.eq('時間游標：巡邏畫在路線上（@5,1 → @9,1 走了一半）', JSON.stringify(r.posPatrol), JSON.stringify([7, 1, 'stay']));
+    t.eq('時間游標：單向巡邏跑完畫在終點', JSON.stringify(r.posDone), JSON.stringify([9, 1, 'stay']));
+    t.eq('時間游標：下一筆從巡邏終點出發', JSON.stringify(r.posBack), JSON.stringify([5, 1, 'walk']));
+    t.eq('時間軸滾輪：下 +1、Shift +10、上 −1、23:59 再 +1 繞回 00:00', JSON.stringify(r.wheel), JSON.stringify([477, 487, 486, 0, '00:00']));
     t.check('打 12:00：自動打開、trump 停在 1F trump-p1、記住、人數', /trump:stay:trump-p1/.test(r.t12[0]) && r.t12[1] && r.t12[2] === '720' && r.t12[3] === '1' && /這張圖 \d+ 人/.test(r.t12[4]), JSON.stringify(r.t12));
     t.check('滑過作息 NPC：浮動框時間、點名、第幾筆', /trump.*（作息）/.test(r.ttip ?? '') && /12:00 在 trump-p1（第 \d+ 筆）/.test(r.ttip ?? ''), r.ttip);
     t.check('03:00：1F 沒有 trump、2F 床上有', !r.t3f1 && r.t3f2 === 'stay:bed', `${r.t3f1} ${r.t3f2}`);
