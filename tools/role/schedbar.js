@@ -95,7 +95,7 @@ export function dayBarEl(plan, sch, warns, opt = {})
         bar.replaceChildren(...extra,
             ...Array.from({length: 23}, (_, k) => h('i', {class: 'hr' + ((k + 1) % 6 ? '' : ' six'), style: `left:${pct((k + 1) * 60)}`})),
             ...segs.flatMap(g => pieces(g.s, g.len).map(([s, len]) => {
-                const label = g.kind === 'stay' ? `${tyOf(g.i)}${g.do === 'patrol' ? '↻' : ''}` : g.kind === 'nope' ? '⚠' : '';
+                const label = g.kind === 'stay' ? tyOf(g.i) : g.kind === 'nope' ? '⚠' : '';
                 const style = `left:${pct(s)};` + (g.kind === 'nope' ? '' : `width:${pct(len)};`) + (g.kind === 'stay' ? `background:${mapColor(g.map)};` : '');
                 const map = list[g.i]?.map ?? '';
                 return h('div', {class: `seg ${g.kind}` + (isSel(g.i) ? ' sel' : '') + (opt.dim?.(map) ? ' dim' : ''),
