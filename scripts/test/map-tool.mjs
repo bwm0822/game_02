@@ -153,7 +153,7 @@ run('map-tool', async t => {
         await until(() => wst()?.world);
         // 時間游標在總覽：12:00
         mt.setTime(12 * 60, true);
-        out.wtime = [wst().npcs.some(n => n.id === 'trump' && n.room === 'm/m_04x05'), wst().npcs.some(n => n.x != null), document.querySelector('#view .timebar .dim').textContent];
+        out.wtime = [wst().npcs.some(n => n.id === 'trump' && n.room === 'm/m_04x05'), wst().npcs.some(n => n.x != null), !document.querySelector('#view .timebar .dim')];
         mt.setTime(12 * 60, false);
         // 點格子打開
         await sleep(30); wst().redraw();
@@ -521,7 +521,7 @@ run('map-tool', async t => {
         tin.value = '12:00'; tin.dispatchEvent(new Event('change'));
         await sleep(100);
         const n12 = cv().st.npcs.map(x => `${x.id}:${x.at.kind}:${x.n.name}`);
-        out.t12 = [n12.join(), S.timeOn, localStorage.getItem('tools.map.t'), localStorage.getItem('tools.map.time'), document.querySelector('#view .timebar .dim').textContent];
+        out.t12 = [n12.join(), S.timeOn, localStorage.getItem('tools.map.t'), localStorage.getItem('tools.map.time'), !document.querySelector('#view .timebar .dim')];
         // 滑過：浮動框
         await sleep(50);
         const tx = cv().st.npcs.find(x => x.id === 'trump');
@@ -834,7 +834,7 @@ run('map-tool', async t => {
     t.check('左鍵拖：平移 30px、不開地圖', r.drag[0] === 30 && r.drag[1] === null, r.drag.join());
     t.eq('點 🏠：列室內地圖', r.roomMenu, 'm_04x05/karen-home,m_04x05/trump-inn-f1,m_04x05/trump-inn-f2');
     t.check('點小點：打開地圖、選取那個角色', r.dotClick[0] === 'm/m_03x05' && r.dotClick[1], r.dotClick.join());
-    t.check('總覽時間游標：室內的算進 🏠、世界地圖上有青點、人數', r.wtime[0] && r.wtime[1] && /全世界 \d+ 人（室內 \d+）/.test(r.wtime[2]), JSON.stringify(r.wtime));
+    t.check('總覽時間游標：室內的算進 🏠、世界地圖上有青點、時間軸沒有人數', r.wtime[0] && r.wtime[1] && r.wtime[2], JSON.stringify(r.wtime));
     t.eq('沒選地圖：右欄空的', r.noRight, 0);
     t.check('點格子：選那張、記住', r.sel[0] === 'm/m_03x05' && r.sel[1] === 'm/m_03x05', r.sel.join());
     t.check('地圖 100×100 格', r.size.join() === '3200,3200', r.size.join());
@@ -918,7 +918,7 @@ run('map-tool', async t => {
         JSON.stringify([[0, true], 1, 0, 0, [1439, '23:59'], 0]));
     t.eq('←→：07:56 → 08:00 → 08:10（Shift 沒作用）、07:56 ← 07:50 ← 07:40（滑桿）、23:55 → 00:00 ← 23:50、HH:MM 欄裡不處理', JSON.stringify(r.lr),
         JSON.stringify([480, 490, 470, 460, 0, 1430, [1430, false]]));
-    t.check('打 12:00：自動打開、trump 停在 1F trump-p1、記住、人數', /trump:stay:trump-p1/.test(r.t12[0]) && r.t12[1] && r.t12[2] === '720' && r.t12[3] === '1' && /這張圖 \d+ 人/.test(r.t12[4]), JSON.stringify(r.t12));
+    t.check('打 12:00：自動打開、trump 停在 1F trump-p1、記住、時間軸沒有人數', /trump:stay:trump-p1/.test(r.t12[0]) && r.t12[1] && r.t12[2] === '720' && r.t12[3] === '1' && r.t12[4], JSON.stringify(r.t12));
     t.check('滑過作息 NPC：浮動框時間、點名、第幾筆', /trump.*（作息）/.test(r.ttip ?? '') && /12:00 在 trump-p1（第 \d+ 筆）/.test(r.ttip ?? ''), r.ttip);
     t.check('03:00：1F 沒有 trump、2F 床上有', !r.t3f1 && r.t3f2 === 'stay:bed', `${r.t3f1} ${r.t3f2}`);
     t.check('關掉：不畫、記住', r.offAgain[0] === 0 && r.offAgain[1] === '0', r.offAgain.join());

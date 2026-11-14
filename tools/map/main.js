@@ -680,10 +680,6 @@ function worldEl()
         selectMap(x.map);
     });
     requestAnimationFrame(redraw);
-    st.countText = () => {
-        const n = st.npcs.filter(x => x.x != null).length, r = st.npcs.filter(x => x.room).length;
-        return `全世界 ${n + r} 人${r ? `（室內 ${r}）` : ''}`;
-    };
     return h('div', {class: 'mv world'},
         h('div', {class: 'opts'}, h('span', {class: 'name'}, '世界總覽'),
             h('span', {class: 'help', title: '滾輪縮放（最多 6 倍）、左鍵或中鍵拖曳平移；點一格打開那張地圖、點小點打開並選取那個角色、點 🏠 選室內地圖；藍點＝常駐、粉紅＝@群組、紅／黃＝有 ⚠'}, '?')),
@@ -1137,16 +1133,14 @@ function timeBar(st)
         onchange: e => {const v = toMin(e.target.value); v === null ? (e.target.value = hhmm(S.t)) : setTime(v, true);}});
     const rng = h('input', {type: 'range', class: 'trange', min: 0, max: 1430, step: 10, value: S.t, dataset: {k: 'timeR'}, title: '拖＝10 分一格、←→＝上／下一個整 10 分、↑↓＝±1 分（整頁都能按）',
         oninput: e => setTime(+e.target.value, true)});
-    const cnt = h('span', {class: 'dim'});
     st.updateTime = () => {
         chk.checked = S.timeOn;
         if (document.activeElement !== inp) inp.value = hhmm(S.t);
         rng.value = S.t;
-        cnt.textContent = S.timeOn && st.countText ? st.countText() : S.timeOn ? `這張圖 ${(st.npcs ?? []).filter(x => x.at.kind === 'stay').length} 人${(st.npcs ?? []).some(x => x.at.kind === 'walk') ? `、${st.npcs.filter(x => x.at.kind === 'walk').length} 人在路上` : ''}` : '';
     };
     st.updateTime();
     return h('div', {class: 'opts timebar', title: '照 role.json 的作息（同遊戲 ScheduleManager）算具名 NPC 這個時刻實際在哪（走路中＝路上那格、巡邏＝路線上）；虛線框＝走路中'},
-        h('label', null, chk, '🕒 作息'), inp, rng, cnt);
+        h('label', null, chk, '🕒 作息'), inp, rng);
 }
 
 const mapSt = () => document.querySelector('#view canvas')?.st;
