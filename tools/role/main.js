@@ -1060,7 +1060,13 @@ function patrolInfo(s)
     const bad = legs.findIndex(c => c === Infinity);
     if (bad >= 0) return h('div', {class: 'times bad'}, `巡邏：${rt[bad]} 走不到 ${rt[(bad + 1) % rt.length]}（路網）`);
     const walk = legs.reduce((a, b) => a + b, 0);
-    return h('div', {class: 'times patrol'}, `巡邏一圈 ${walk + wait * rt.length} 分（走 ${walk} 分＋停 ${rt.length}×${wait}）`);
+    return h('div', {class: 'times patrol'}, `巡邏一圈 ${hm(walk + wait * rt.length)}（走 ${hm(walk)}＋停 ${rt.length}×${wait}）`);
+}
+
+function hm(n)
+{
+    const hr = Math.floor(n / 60), m = n % 60;
+    return hr ? (m ? `${hr} 小時 ${m} 分` : `${hr} 小時`) : `${m} 分`;
 }
 
 // ---------- 作息格子 at：navgraph.json 還沒有的，先在記憶體補節點跟 walk 邊（算法同 scripts/navgraph.js），按「更新路網」才寫進去 ----------

@@ -946,8 +946,8 @@ run('schedule-tool', async t => {
         out.patrolInfo = cards()[0].querySelector('.times.patrol')?.textContent;
         const gk = g1.route.map(n => `m/m_04x05:${n}`);
         const walk = gk.reduce((a, k, j) => a + re.SP.edgeCost(S.ext.nav.edges, k, gk[(j + 1) % gk.length]), 0);
-        out.patrolWant = `巡邏一圈 ${walk + 3 * 5} 分（走 ${walk} 分＋停 5×3）`;
-        await until(() => cv()?.st.patrol);
+        const hm = n => (n >= 60 ? `${Math.floor(n / 60)} 小時${n % 60 ? ` ${n % 60} 分` : ''}` : `${n} 分`);
+        out.patrolWant = `巡邏一圈 ${hm(walk + 3 * 5)}（走 ${hm(walk)}＋停 5×3）`;        await until(() => cv()?.st.patrol);
         const pt = cv().st.patrol;
         out.patrolLines = [pt.lines.map(l => l.kind).join(), pt.lines.every(l => !l.broken)];
         await sleep(50);
@@ -1199,7 +1199,7 @@ run('schedule-tool', async t => {
     t.eq('有作息用到不能刪', JSON.stringify([r.delUsed, r.stillThere]), JSON.stringify([['不能刪 trump-p9'], true]));
     t.eq('沒人用：確認後刪掉', JSON.stringify([r.delAsk, r.deleted]), JSON.stringify([['刪除 trump-p9？'], true]));
     t.eq('更新路網：POST、顯示節點數跟警告', JSON.stringify(r.nav), JSON.stringify([true, '路網已更新：61 個節點，1 個警告\n測試警告']));
-    t.eq('巡邏卡片：一圈幾分（走＋停 n×wait）', r.patrolInfo, r.patrolWant);
+    t.eq('巡邏卡片：一圈幾小時幾分（走＋停 n×wait）', r.patrolInfo, r.patrolWant);
     t.eq('巡邏路線：入口就是第一點不畫、4 段＋回起點虛線、都走得到', JSON.stringify(r.patrolLines), JSON.stringify(['loop,loop,loop,loop,close', true]));
     t.eq('每經過一次一個號碼', r.badges, '0,1,2,3,4');
     t.eq('編輯路線：按鈕變完成、地圖上方提示', JSON.stringify(r.editOn), JSON.stringify(['✔ 完成', true, true]));
