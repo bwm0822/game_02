@@ -46,11 +46,23 @@ export function landAt(st, view, port)
 {
     const n = st.data.named.get(port);
     if (!n) return false;
-    view.ox = -(n.cen.x - st.data.W / 2) * view.zoom;
-    view.oy = -(n.cen.y - st.data.H / 2) * view.zoom;
+    flashAt(st, view, n.rect);
+    return true;
+}
+
+// 倍率不動，rect（地圖座標）的中心放到畫布正中央、閃一下；回傳開始閃的時間
+export function flashAt(st, view, rect)
+{
+    view.ox = -(rect.x + rect.w / 2 - st.data.W / 2) * view.zoom;
+    view.oy = -(rect.y + rect.h / 2 - st.data.H / 2) * view.zoom;
     PZ.setZoom(view.zoom, 0, 0, view);
-    const t0 = performance.now();
-    st.flash = {rect: n.rect, t0};
+    return flash(st, rect);
+}
+
+// 只閃不動鏡頭；t0＝從哪時開始算（畫布重建時接著閃完剩下的）
+export function flash(st, rect, t0 = performance.now())
+{
+    st.flash = {rect, t0};
     const tick = () => {
         if (st.flash?.t0 !== t0) return;
         if (performance.now() - t0 >= FLASH_MS) st.flash = null;
@@ -58,7 +70,7 @@ export function landAt(st, view, port)
         if (st.flash) requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
-    return true;
+    return t0;
 }
 
 export function drawFlash(g, st, K)

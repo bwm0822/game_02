@@ -637,7 +637,7 @@ function openSch(id, i)
     try {localStorage.setItem('tools.role.rtab', 'sched');} catch {}
     S.secOpen['作息'] = true;
     S.open.schedule = true;
-    if (S.data[id].schedule[i].map) SM.setMap(S.data[id].schedule[i].map);
+    SM.focusSch(S.data[id].schedule[i]);
     render();
     document.querySelector(`#view .card[data-sch="${i}"]`)?.scrollIntoView({block: 'nearest'});
 }
@@ -674,8 +674,7 @@ function selectSch(id, i)
     S.schSel = {id, i};
     S.schMulti = null;
     if (S.routeEdit && !editingRoute(id, i)) {S.routeEdit = null; for (const b of document.querySelectorAll('#view .routebtn.on')) {b.classList.remove('on'); b.textContent = '✎ 編輯路線';}}
-    const m = S.data[id].schedule[i]?.map;
-    if (m) SM.setMap(m);
+    SM.focusSch(S.data[id].schedule[i]);
     SB.markSel(document.getElementById('view'), i);
     document.querySelector('#view .schslot')?.replaceChildren(schSlot(id));
     renderRight();
@@ -718,8 +717,8 @@ function insertSch(id, t, map, dest)
     commit(() => {
         k = SE.insertAt(ensureArr(S.data[id], ['schedule']), pl.plan, at, m, map, dest);
         S.schSel = {id, i: k};
+        SM.focusSch(S.data[id].schedule[k]);
     });
-    if (map) SM.setMap(map);
     const two = S.data[id].schedule.length - a.length > 1;
     const sameD = at >= 0 && SE.sameDest(S.data[id].schedule[at], {map, ...dest});
     status(`插入：${SP.hhmm(m)} 抵達 ${destName(map, dest)}${two ? `，${SP.hhmm(SP.mod(m + SE.STAY))} 回原處` : sameD ? '（剩不到一小時，等於分割）' : ''}`);

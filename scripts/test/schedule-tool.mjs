@@ -200,9 +200,37 @@ run('schedule-tool', async t => {
 
         // 點時序條第 2 段：下面換成第 2 筆的卡片、橫條沒重畫（同一個元素）、地圖跳到床那層
         const bar1 = document.querySelector('#view .daybar');
+        // 換選中那筆：鏡頭對準目的地（中心在畫布正中、倍率不動）、閃那個框
+        const focused = (i) => {
+            const s = cv().st, n = re.SM.spotOf(s.data, re.SP.destOf(S.data.trump.schedule[i]));
+            const cx = n.rect.x + n.rect.w / 2 - s.data.W / 2, cy = n.rect.y + n.rect.h / 2 - s.data.H / 2;
+            return [Math.abs(s.pz.view.ox + cx * s.pz.K) < 0.5 && Math.abs(s.pz.view.oy + cy * s.pz.K) < 0.5, s.flash?.rect === n.rect];
+        };
+        const zb = [cv().st.name, cv().st.pz.view.zoom];
         bar1.querySelector('.seg.stay[data-i="1"]').click();
-        await until(() => cv()?.st.data);
+        await until(() => cv()?.st.data && cv().st.flash);
         out.sel2 = [bar1.isConnected, cards().map(c => c.dataset.sch).join(), cv().st.name, S.schSel.i];
+        out.focus2 = [...focused(1), zb[0] === cv().st.name, zb[1] === cv().st.pz.view.zoom];
+        // 同一筆再點：鏡頭不動
+        const v2 = cv().st.pz.view;
+        v2.ox += 37;
+        const ox2 = v2.ox;
+        bar1.querySelector('.seg.stay[data-i="1"]').click();
+        await sleep(50);
+        out.focusSame = cv().st.pz.view.ox === ox2;
+        // 換回第 1 筆（另一張圖）
+        bar1.querySelector('.seg.stay[data-i="0"]').click();
+        await until(() => cv()?.st.data && cv().st.flash && cv().st.name === sch[0].map);
+        out.focus1 = focused(0);
+        // 目的地找不到：鏡頭不動、顯示 ⚠
+        const s1 = S.data.trump.schedule[1], go1 = s1.go;
+        s1.go = 'no-such-spot';
+        bar1.querySelector('.seg.stay[data-i="1"]').click();
+        await until(() => cv()?.st.data && !right().querySelector('.smap .smapmsg').hidden);
+        out.focusMiss = [right().querySelector('.smap .smapmsg').textContent, !cv().st.flash];
+        s1.go = go1;
+        re.render();
+        await until(() => cv()?.st.data);
 
         // 排不下：第 2 筆改成比第 1 筆抵達還早出發 → 卡片標紅、寫晚幾分
         re.commit(() => {S.data.trump.schedule[1].t = '06:10';});
@@ -308,8 +336,8 @@ run('schedule-tool', async t => {
         }
         // 點 trump 的床那段：進表單、選第 2 張卡片、右欄作息
         rowOf('trump').querySelector('.seg.stay[data-i="1"]').click();
-        await until(() => cv()?.st);
-        out.gPick = [S.view, S.sel, S.schSel.i, S.rtab, !!card(1), cv()?.st.name];
+        await until(() => cv()?.st.data && cv().st.flash);
+        out.gPick = [S.view, S.sel, S.schSel.i, S.rtab, !!card(1), cv()?.st.name, ...focused(1)];
         // 點角色名＝進表單
         S.view = 'table'; re.render();
         rowOf('musk').querySelector('.gname a').click();
@@ -926,6 +954,10 @@ run('schedule-tool', async t => {
     t.eq('點標籤切到 2F：麵包屑跟著、2F 標籤＝出發、→ 1F', JSON.stringify(r.jumped),
         JSON.stringify(['m_04x05/trump-inn-f2', 'm_04x05/trump-inn-f2', ['出發', '→ trump-inn-f1→m_04x05/trump-inn-f1']]));
     t.eq('點時序條第 2 段：卡片換成第 2 筆、橫條沒重畫、地圖到床那層', JSON.stringify(r.sel2), JSON.stringify([true, '1', 'm_04x05/trump-inn-f2', 1]));
+    t.eq('換選中那筆：鏡頭對準目的地、閃框、倍率不動', JSON.stringify(r.focus2), JSON.stringify([true, true, true, true]));
+    t.check('同一筆再點：鏡頭不動', r.focusSame);
+    t.eq('換到另一張圖的那筆：也對準＋閃框', JSON.stringify(r.focus1), JSON.stringify([true, true]));
+    t.eq('目的地找不到：不閃、顯示 ⚠', JSON.stringify(r.focusMiss), JSON.stringify(['⚠ m_04x05/trump-inn-f2 找不到「no-such-spot」', true]));
     t.check('排不下標紅、寫晚幾分', !r.lateWant || /^times bad\|.*排不下：晚 \d+ 分/.test(r.late), r.late);
     t.check('橫條：排不下那筆塗紅', !r.lateWant || (r.lateBar.length === 1 && r.lateBar[0].startsWith('1:⚠ 排不下')), JSON.stringify(r.lateBar));
     t.eq('橫條在卡片上面', r.barFirst, true);
@@ -947,7 +979,7 @@ run('schedule-tool', async t => {
     t.eq('圖例人數＝此刻停在那張圖的人', JSON.stringify(r.gCount), JSON.stringify([r.gCount[1], r.gCount[1], true]));
     t.eq('點圖例：記住、加亮、其他地圖變淡、此刻欄加粗', JSON.stringify(r.gMap), JSON.stringify(['m_04x05/trump-inn-f1', true, true, true]));
     t.eq('再點取消', JSON.stringify(r.gMapOff), JSON.stringify([null, 0]));
-    t.eq('點一段：進表單、選那張卡片、右欄作息地圖', JSON.stringify(r.gPick), JSON.stringify(['form', 'trump', 1, 'sched', true, 'm_04x05/trump-inn-f2']));
+    t.eq('點一段：進表單、選那張卡片、右欄作息地圖', JSON.stringify(r.gPick), JSON.stringify(['form', 'trump', 1, 'sched', true, 'm_04x05/trump-inn-f2', true, true]));
     t.eq('點角色名：進表單', JSON.stringify(r.gName), JSON.stringify(['form', 'musk']));
     t.eq('總覽拖分界線：照原型別平移、一筆 undo、留在總覽', JSON.stringify(r.gShift), JSON.stringify(['@22:20', 1, 'table']));
     t.eq('總覽拖曳中：頂端時間軸標籤＝拖到的抵達時間', r.gHovDrag, '22:20');

@@ -17,7 +17,7 @@ export const nameOk = SHOW.nameOk;
 
 const KEY = 'tools.role.sched';
 
-export const M = {map: null, back: [], land: null, free: null};       // map＝目前顯示的地圖（null＝跟著作息第一筆）；back＝點門進來之前那幾張（← 返回）、land＝要落腳的 {map, port}、free＝點門進的路網外地圖
+export const M = {map: null, back: [], land: null, free: null, focus: null, shown: null};       // map＝目前顯示的地圖（null＝跟著作息第一筆）；back＝點門進來之前那幾張（← 返回）、land＝要落腳的 {map, port}、free＝點門進的路網外地圖、focus＝下次畫要對準的 {map, key}（一次性）、shown＝上次對準的結果 {map, rect, msg, t0}
 try {M.map = localStorage.getItem(`${KEY}.map`);} catch {}
 const remember = () => {try {M.map ? localStorage.setItem(`${KEY}.map`, M.map) : localStorage.removeItem(`${KEY}.map`);} catch {}};
 
@@ -369,6 +369,14 @@ export function setMap(m)
     remember();
 }
 
+// 換選中的作息：切到目的地那張圖，下次畫時鏡頭對準目的地（倍率不動）、閃一下
+export function focusSch(s)
+{
+    if (!s?.map) return;
+    setMap(s.map);
+    M.focus = {map: s.map, key: destOf(s)};
+}
+
 // 點門：記住從哪來、打開那張圖（路網外的也能看）、鏡頭移到落腳點
 function enterDoor(from, door)
 {
@@ -552,6 +560,7 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
     });
     const land = M.land?.map === name ? M.land : null;
     if (land) M.land = null;
+    if (M.focus && M.focus.map !== name) M.focus = null;
     mapData(name).then(async d => {
         st.data = d;
         if (!d) {msg.textContent = `讀不到地圖 ${name}`; msg.hidden = false;}
@@ -562,6 +571,16 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
         }
         if (d && !view.set) PZ.center(view);
         if (d && land && !DR.landAt(st, view, land.port)) {msg.textContent = `⚠ ${name} 找不到落腳點「${land.port}」`; msg.hidden = false;}
+        // 對準目的地：結果記在 M.shown，閃完之前右欄重畫（checkStale…）的新畫布接著閃、照樣顯示 ⚠
+        if (d && M.focus?.map === name)
+        {
+            const key = M.focus.key, n = key && spotOf(d, key);
+            M.focus = null;
+            M.shown = {map: name, rect: n?.rect, msg: n ? '' : `⚠ ${name} 找不到「${key ?? '（沒寫目的地）'}」`,
+                t0: n ? DR.flashAt(st, view, n.rect) : performance.now()};
+        }
+        else if (d && M.shown?.map === name && performance.now() - M.shown.t0 < DR.FLASH_MS && M.shown.rect) DR.flash(st, M.shown.rect, M.shown.t0);
+        if (d && M.shown?.map === name && M.shown.msg && performance.now() - M.shown.t0 < DR.FLASH_MS) {msg.textContent = M.shown.msg; msg.hidden = false;}
         redraw();
         // 門要讀它指到的地圖才知道壞不壞，讀完再畫
         if (d) {st.ports = await portsFor(d); redraw();}
