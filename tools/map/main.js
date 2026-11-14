@@ -1115,28 +1115,26 @@ function mapEl(name)
         timeBar(st));
 }
 
-// 🕒 時間游標：勾了才畫具名 NPC；時間可打 HH:MM、拖滑桿（10 分一格）或在滑桿／輸入框上滾輪（下＝+1 分、上＝−1）、↑↓（↑＝+1、↓＝−1），Shift＝±10，跨午夜繞回，記住
+// ↑↓ 調時間（整頁，見最下面的 keydown）：↑＝+1 分、↓＝−1、Shift＝±10，跨午夜繞回，沒勾會勾起來；HH:MM 欄有焦點時欄位跟著
+function stepTime(e)
+{
+    const d = e.key === 'ArrowUp' ? 1 : e.key === 'ArrowDown' ? -1 : 0;
+    if (!d) return false;
+    e.preventDefault();
+    setTime(S.t + d * (e.shiftKey ? 10 : 1), true);
+    const inp = document.activeElement;
+    if (inp?.dataset?.k === 'timeT') inp.value = hhmm(S.t);
+    return true;
+}
+
+// 🕒 時間游標：勾了才畫具名 NPC；時間可打 HH:MM、拖滑桿（10 分一格）或整頁按 ↑↓（stepTime()），記住
 function timeBar(st)
 {
     const chk = h('input', {type: 'checkbox', dataset: {k: 'timeOn'}, checked: S.timeOn, onchange: e => setTime(S.t, e.target.checked)});
-    const wheel = (e) => {
-        const d = Math.sign(e.deltaY || e.deltaX);
-        if (!d) return;
-        e.preventDefault();
-        setTime(S.t + d * (e.shiftKey ? 10 : 1), true);
-        if (document.activeElement === inp) inp.value = hhmm(S.t);
-    };
-    const key = (e) => {
-        const d = e.key === 'ArrowUp' ? 1 : e.key === 'ArrowDown' ? -1 : 0;
-        if (!d) return;
-        e.preventDefault();
-        setTime(S.t + d * (e.shiftKey ? 10 : 1), true);
-        if (document.activeElement === inp) inp.value = hhmm(S.t);
-    };
-    const inp = h('input', {class: 'num', size: 5, dataset: {k: 'timeT'}, value: hhmm(S.t), title: '滾輪／↑↓＝±1 分（Shift＝±10）', onwheel: wheel, onkeydown: key,
+    const inp = h('input', {class: 'num', size: 5, dataset: {k: 'timeT'}, value: hhmm(S.t), title: '↑↓＝±1 分（Shift＝±10）',
         onchange: e => {const v = toMin(e.target.value); v === null ? (e.target.value = hhmm(S.t)) : setTime(v, true);}});
-    const rng = h('input', {type: 'range', class: 'trange', min: 0, max: 1430, step: 10, value: S.t, dataset: {k: 'timeR'}, title: '拖／←→＝10 分一格、滾輪／↑↓＝±1 分（Shift＝±10）',
-        onwheel: wheel, onkeydown: key, oninput: e => setTime(+e.target.value, true)});
+    const rng = h('input', {type: 'range', class: 'trange', min: 0, max: 1430, step: 10, value: S.t, dataset: {k: 'timeR'}, title: '拖／←→＝10 分一格、↑↓＝±1 分（Shift＝±10）',
+        oninput: e => setTime(+e.target.value, true)});
     const cnt = h('span', {class: 'dim'});
     st.updateTime = () => {
         chk.checked = S.timeOn;
@@ -1640,7 +1638,9 @@ $('btnRedo').onclick = () => act(redo());
 const TYPING = 'input:not([type=checkbox]), textarea, select';
 addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {closeMenu(); if (S.place) setPlace(null); return;}
+    if (['timeT', 'timeR'].includes(e.target.dataset?.k) && stepTime(e)) return;
     if (e.target.matches?.(TYPING)) return;
+    if (!e.ctrlKey && !e.metaKey && !e.altKey && stepTime(e)) return;
     const k = e.key.toLowerCase();
     if ((e.ctrlKey || e.metaKey) && k === 'z' && !e.shiftKey) {e.preventDefault(); act(undo());}
     else if ((e.ctrlKey || e.metaKey) && (k === 'y' || (k === 'z' && e.shiftKey))) {e.preventDefault(); act(redo());}

@@ -569,24 +569,24 @@ run('map-tool', async t => {
             // 從終點出發：zp 回 @1,1 的路從 @9,1 走（8 分），07:56 在 @5,1
             mt.setTime(7 * 60 + 56, true);
             out.posBack = tileOf('zp');
-            // 滾輪：下＝+1、Shift＝+10、上＝−1、跨午夜繞回
+            // 滾輪不調時間
             const rng = document.querySelector('#view [data-k=timeR]');
-            const wh = (dy, shiftKey = false) => rng.dispatchEvent(new WheelEvent('wheel', {deltaY: dy, shiftKey, bubbles: true, cancelable: true}));
-            wh(100); const w1 = S.t;
-            wh(100, true); const w2 = S.t;
-            wh(-100); const w3 = S.t;
-            mt.setTime(23 * 60 + 59, true); wh(100); const w4 = S.t;
-            out.wheel = [w1, w2, w3, w4, document.querySelector('#view [data-k=timeT]').value];
-            // ↑↓：↑＝+1、↓＝−1、Shift＝±10（HH:MM 欄跟滑桿都可以）
+            const t0 = S.t;
+            rng.dispatchEvent(new WheelEvent('wheel', {deltaY: 100, bubbles: true, cancelable: true}));
+            out.wheelOff = S.t === t0;
+            // ↑↓：整頁（畫布、body）都有效、沒勾會勾起來、跨午夜繞回；HH:MM 欄跟滑桿有焦點也行；按 Ctrl 不理
             const tinp = document.querySelector('#view [data-k=timeT]');
-            const kd = (el, key, shiftKey = false) => el.dispatchEvent(new KeyboardEvent('keydown', {key, shiftKey, bubbles: true, cancelable: true}));
+            const kd = (el, key, o = {}) => el.dispatchEvent(new KeyboardEvent('keydown', {key, bubbles: true, cancelable: true, ...o}));
+            mt.setTime(23 * 60 + 59, false);
+            kd(cv(), 'ArrowUp'); const k1 = [S.t, S.timeOn];
+            kd(document.body, 'ArrowUp', {shiftKey: true}); const k2 = S.t;
+            kd(document.body, 'ArrowDown'); const k3 = S.t;
+            kd(document.body, 'ArrowDown', {ctrlKey: true}); const k4 = S.t;
             tinp.focus();
-            kd(tinp, 'ArrowUp'); const k1 = S.t;
-            kd(tinp, 'ArrowUp', true); const k2 = S.t;
-            kd(rng, 'ArrowDown'); const k3 = S.t;
-            kd(tinp, 'ArrowDown'); kd(tinp, 'ArrowDown');
-            out.keys = [k1, k2, k3, S.t, tinp.value];
+            kd(tinp, 'ArrowDown'); const k5 = [S.t, tinp.value];
+            kd(rng, 'ArrowUp'); const k6 = S.t;
             tinp.blur();
+            out.keys = [k1, k2, k3, k4, k5, k6];
             S.nav = nav0; S.plans = plans0; S.roles = roles0;
             mt.setTime(11 * 60, false);
         }
@@ -897,8 +897,9 @@ run('map-tool', async t => {
     t.eq('時間游標：巡邏畫在路線上（@5,1 → @9,1 走了一半）', JSON.stringify(r.posPatrol), JSON.stringify([7, 1, 'stay']));
     t.eq('時間游標：單向巡邏跑完畫在終點', JSON.stringify(r.posDone), JSON.stringify([9, 1, 'stay']));
     t.eq('時間游標：下一筆從巡邏終點出發', JSON.stringify(r.posBack), JSON.stringify([5, 1, 'walk']));
-    t.eq('時間軸滾輪：下 +1、Shift +10、上 −1、23:59 再 +1 繞回 00:00', JSON.stringify(r.wheel), JSON.stringify([477, 487, 486, 0, '00:00']));
-    t.eq('時間軸 ↑↓：↑ +1、Shift +10、↓ −1（滑桿也行）、HH:MM 欄跟著', JSON.stringify(r.keys), JSON.stringify([1, 11, 10, 8, '00:08']));
+    t.check('時間軸滾輪不調時間', r.wheelOff);
+    t.eq('↑↓ 整頁調時間：畫布上 ↑ 從 23:59 繞回 00:00 並勾起、Shift +10、↓ −1、Ctrl 不理、HH:MM 欄／滑桿有焦點也行', JSON.stringify(r.keys),
+        JSON.stringify([[0, true], 10, 9, 9, [8, '00:08'], 9]));
     t.check('打 12:00：自動打開、trump 停在 1F trump-p1、記住、人數', /trump:stay:trump-p1/.test(r.t12[0]) && r.t12[1] && r.t12[2] === '720' && r.t12[3] === '1' && /這張圖 \d+ 人/.test(r.t12[4]), JSON.stringify(r.t12));
     t.check('滑過作息 NPC：浮動框時間、點名、第幾筆', /trump.*（作息）/.test(r.ttip ?? '') && /12:00 在 trump-p1（第 \d+ 筆）/.test(r.ttip ?? ''), r.ttip);
     t.check('03:00：1F 沒有 trump、2F 床上有', !r.t3f1 && r.t3f2 === 'stay:bed', `${r.t3f1} ${r.t3f2}`);
