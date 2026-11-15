@@ -74,6 +74,7 @@ class Map
             // 群組名稱同時是存檔命名空間，改條件不會讓存檔對不上
             if(layer.name.startsWith('@'))
             {
+                if(scene.sandbox) {return;}
                 const group = layer.name.slice(1);
                 if(!evalCond(DB.spawn(group) ?? 'false'))
                 {
@@ -111,7 +112,7 @@ class Map
                 {type:'plant',classType:Plant},
                 // {type:'enemy',classType:Enemy},
                 // {type:'npc_n',classType:Npc_n},
-            ]);
+            ].filter(c=>!(scene.sandbox && c.type==='npc')));   // sandbox 的角色只有場景分頁自己放的
             objs.forEach((obj) => {obj.init_prefab?.()});
             layer.objects.forEach((obj)=>this._objParticle(scene, obj, objs));
         });

@@ -24,6 +24,10 @@ import Lang from './infra/lang.js';
 import Local from './infra/local.js';
 import Ui from './ui/uicommon.js';
 import {GM, UI as UI_DEF} from './core/setting.js';
+import { Sandbox } from './scenes/Sandbox';
+
+// 開發版 /?sandbox：工具殼「場景」分頁的 iframe，Preloader 完直接進 Sandbox（不經主選單、不寫存檔），畫布跟著 iframe 大小
+const SANDBOX = import.meta.env.DEV && new URLSearchParams(location.search).has('sandbox');
 
 //  Find out more information about the Game Config at:
 //  https://newdocs.phaser.io/docs/3.70.0/Phaser.Types.Core.GameConfig
@@ -35,7 +39,7 @@ const config = {
     // height: 600,
     parent: 'game-container',
     backgroundColor: '#000000',//'#028af8',
-    scale: {
+    scale: SANDBOX ? {mode: Phaser.Scale.RESIZE} : {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH
     },
@@ -99,8 +103,11 @@ const config = {
         GameScene,
         UI,
         Top,
+        ...(SANDBOX ? [Sandbox] : []),
     ]
 };
+
+if(SANDBOX) {document.getElementById('game-container').style.cssText = 'position:fixed; inset:0;';}
 
 const game = new Phaser.Game(config);
 

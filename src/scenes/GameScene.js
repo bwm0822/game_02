@@ -50,10 +50,10 @@ let lutAmbient = [
 
 export class GameScene extends Scene
 {
-    constructor ()
+    constructor (key='GameScene')
     {
-        console.log('[GameScene]');
-        super('GameScene');
+        console.log(`[${key}]`);
+        super(key);
     }
 
     get mapName() {return this._data.map;}

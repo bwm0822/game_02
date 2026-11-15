@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>場景</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../common/style.css">
+<style>
+    #left { width: 240px; }
+    #left .row2 { display: flex; gap: 4px; align-items: center; font-size: 14px; }
+    #left .sec { color: #aaa; font-weight: bold; font-size: 14px; }
+    #list { flex: 1; overflow: auto; }
+    #left #status { font-size: 14px; word-break: break-all; }
+    #view { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    #bar { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 5px 8px; background: #25272b; border-bottom: 1px solid #111; font-size: 14px; }
+    #bar .name { font-weight: bold; color: #ddd; }
+    #bar label { display: inline-flex; align-items: center; gap: 3px; }
+    #gamebox { flex: 1; min-height: 0; position: relative; background: #202226; }
+    #game { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+    #right { flex: none; width: 300px; overflow: auto; padding: 8px 10px; background: #25272b; border-left: 1px solid #111; font-size: 14px; }
+    .ctxmenu { position: fixed; z-index: 20; display: flex; flex-direction: column; min-width: 140px; padding: 4px 0; background: #2b2d31; border: 1px solid #666; box-shadow: 0 4px 12px rgba(0,0,0,.5); }
+    .ctxmenu button { border: 0; border-radius: 0; background: none; text-align: left; padding: 3px 12px; white-space: nowrap; }
+    .ctxmenu button:hover:not(:disabled) { background: #2f6db5; }
+</style>
+</head>
+<body>
+<main>
+    <aside id="left">
+        <div class="row2"><span class="sec grow">場景</span><button id="btnNew" title="新增場景">＋</button></div>
+        <div id="list"></div>
+        <div class="row2"><span class="grow"></span><button id="btnUndo" title="復原（Ctrl+Z，直接寫回 scenes.json）">↶</button><button id="btnRedo" title="重做（Ctrl+Y）">↷</button></div>
+        <span id="status" class="dim"></span>
+    </aside>
+    <section id="view">
+        <div id="bar">
+            <span class="name" id="sceneName"></span>
+            <label title="32×32 格線"><input type="checkbox" id="chkGrid"> 格線</label>
+            <button id="btnHome" title="整張地圖放進畫面">置中</button>
+            <span class="grow"></span>
+            <span class="dim">滾輪縮放、中鍵拖曳平移</span>
+        </div>
+        <div id="gamebox"><iframe id="game" title="sandbox"></iframe></div>
+    </section>
+    <aside id="right"><span class="dim">選物件後在這裡改屬性</span></aside>
+</main>
+
+<dialog id="dlgAsk">
+    <form method="dialog">
+        <div class="title"></div>
+        <div class="body"></div>
+        <div class="row2 buttons"></div>
+    </form>
+</dialog>
+
+<script type="module" src="./main.js"></script>
+</body>
+</html>

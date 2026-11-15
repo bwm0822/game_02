@@ -34,8 +34,11 @@ export default class Record
     //     Utility.save(Record.data);
     // }
 
+    static noSave = false;  // 開發版 sandbox（場景分頁）不能蓋掉玩家的存檔
+
     static saveGame()
     {
+        if(Record.noSave) {return;}
         Record._pruneScenes();
         Utility.save(Record.game,'game');
     }

@@ -10,6 +10,16 @@ import {GM} from '../core/setting.js';
 import UiCursor from '../ui/uicursor.js'
 import {DEBUG,T,dlog} from '../core/debug.js'
 
+// Preloader 載完的 json 解析成 DB／Local／Lang（主選單跟 sandbox 共用）
+export function loadData(scene)
+{
+    Record.loadSetting();
+    Record.loadDebug();
+    Lang.load(Lang.needsTable ? scene.cache.json.get('lang') : null);
+    Local.load(scene);
+    DB.load(scene);
+}
+
 export class MainMenu extends Scene
 {
     constructor ()
@@ -75,11 +85,7 @@ export class MainMenu extends Scene
     loadData()  // 注意: func 的名稱不能叫 load()
     {
         console.log('[MainMenu] loadData')
-        Record.loadSetting();
-        Record.loadDebug();
-        Lang.load(Lang.needsTable ? this.cache.json.get('lang') : null);
-        Local.load(this);
-        DB.load(this);
+        loadData(this);
     }
 
 
