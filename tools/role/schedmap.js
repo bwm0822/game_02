@@ -434,7 +434,7 @@ async function portsFor(d)
 // opt.routeMark＝標記的第幾個（紅底，新點插在它前面）
 // 挑目的地：opt.pick＝提示文字（有＝挑選模式，左鍵點物件／空地＝onPick(map, {name?, tile})，門照樣能進去）
 // 時間游標：opt.time＝{get() → {t, on}, set(t, on)}（甘特圖的「此刻」）、opt.plans()＝全部角色 {id: {plan, sch, segs}}（勾「其他角色（時間游標）」才用）、
-//   opt.refs＝{roles, items, parts}（合成角色圖、錨點）；這個角色橘色，不在這張圖時時間軸旁出現「→ 地圖」；canvas.st.stepTime(e)＝方向鍵調時間
+//   opt.refs＝{roles, items, parts}（合成角色圖、錨點）；這個角色橘色；canvas.st.stepTime(e)＝方向鍵調時間
 //   opt.onNow(i)＝📍 跟著動時間時，時刻落在第 i 筆（要換選中那筆就換掉 sel 並回 true，右欄由這裡重建）
 export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {}, others = [], id = null, occ = () => [],
     onNew = null, onMove = null, onMenu = null, stale = null, atStale = 0, onUpdate = null, navMsg = '',
@@ -596,17 +596,13 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
         onMenu(e, name, {name: x.n?.name, type: x.n?.type, door: x.door, tile: x.tile, blocked: x.blocked, inNav,
             enter: x.door && x.door.issue?.level !== 'error' ? () => {enterDoor(name, x.door); refresh();} : null});
     });
-    // 時間游標：這個角色（橘）＋勾了「其他角色（時間游標）」的其他人；這個角色不在這張圖＝時間軸旁「→ 地圖」
+    // 時間游標：這個角色（橘）＋勾了「其他角色（時間游標）」的其他人
     const mine = plan && r.schedule?.length ? {plan, sch: r.schedule, segs: daySegs(plan, r.schedule)} : null;
     forgetSprites();
-    const away = h('button', {type: 'button', class: 'away', dataset: {k: 'schedAway'}, hidden: true});
     const calcNpcs = () => {
         const {t, on} = time?.get() ?? {t: 0, on: false};
         const ps = on ? {...(show.npcs ? plans() : {}), ...(mine && id ? {[id]: mine} : {})} : {};
         st.npcs = st.data ? TP.npcsOn(st, st.data, name, ps, t, edges) : [];
-        const pos = on && mine ? TP.posOf(mine, t, edges) : null;
-        away.hidden = !pos || pos.map === name;
-        if (!away.hidden) Object.assign(away, {textContent: `→ ${shortMap(pos.map)}`, title: `${hhmm(t)} ${id} 在 ${pos.map}，點了切過去`, onclick: () => go(pos.map)});
         const need = refs ? st.npcs.filter(x => !st.sprites.has(x.id)) : [];
         if (need.length) Promise.all(need.map(async x => st.sprites.set(x.id, await spriteOf(x.id, refs)))).then(redraw);
     };
@@ -628,13 +624,13 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
         if (F.on && on && followMe()) return;
         calcNpcs(); bar.update(); redraw();
     };
-    const followChk = h('label', {title: mine ? '動時間時切到這個角色此刻在的那張圖、鏡頭把他置中（倍率不動）；不勾＝角色不在這張圖時旁邊出現「→ 地圖」' : '這個角色排不出時刻表'},
+    const followChk = h('label', {title: mine ? '動時間時切到這個角色此刻在的那張圖、鏡頭把他置中（倍率不動）、選當下那筆作息' : '這個角色排不出時刻表'},
         h('input', {type: 'checkbox', dataset: {k: 'schedFollow'}, checked: F.on, disabled: !mine, onchange: e => {
             F.on = e.target.checked;
             try {localStorage.setItem(FOLLOW_KEY, F.on ? '1' : '0');} catch {}
             if (F.on) setT(time.get().t, true);
         }}), '📍 跟著');
-    const bar = time && TP.timeBarEl(time.get, setT, {k: 'schedTime', extra: [followChk, away],
+    const bar = time && TP.timeBarEl(time.get, setT, {k: 'schedTime', extra: followChk,
         title: `照作息算 ${id ?? '這個角色'} 這個時刻實際在哪（橘；走路中＝路上那格、巡邏＝路線上；「顯示 ▾」勾其他角色（時間游標）＝其他人藍色）；時間跟總覽甘特圖的「此刻」共用；滑鼠在右欄時方向鍵也能調`});
     st.stepTime = (e) => {
         const t = time && TP.stepKey(e, time.get().t);

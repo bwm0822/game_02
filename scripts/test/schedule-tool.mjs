@@ -1061,20 +1061,18 @@ run('schedule-tool', async t => {
             out.tOff = cv().st.npcs.length;
             tIn().value = re.SP.hhmm(re.SP.mod(tr[0].arr + 5)); tIn().dispatchEvent(new Event('change'));
             await sleep(30);
-            out.tMine = [G.t === re.SP.mod(tr[0].arr + 5), G.on, tOn().checked, cv().st.npcs.map(x => `${x.id}:${x.n.name}`).join(), right().querySelector('[data-k=schedAway]').hidden];
+            out.tMine = [G.t === re.SP.mod(tr[0].arr + 5), G.on, tOn().checked, cv().st.npcs.map(x => `${x.id}:${x.n.name}`).join(), !right().querySelector('.timebar button')];
             out.tMineWant = `trump:${re.SP.destOf(s0)}`;
-            // 不在這張圖：→ 按鈕，點了切過去
+            // 不在這張圖（沒勾跟著）：不換圖、這張圖沒人、時間軸旁沒有按鈕；自己切過去就畫在那張
             const j = S.data.trump.schedule.findIndex(s => s.map !== s0.map);
             if (j >= 0)
             {
                 tIn().value = re.SP.hhmm(re.SP.mod(tr[j].arr + 5)); tIn().dispatchEvent(new Event('change'));
                 await sleep(30);
-                const aw = right().querySelector('[data-k=schedAway]');
-                out.tAway = [aw.hidden, aw.textContent, cv().st.npcs.length];
-                aw.click();
+                out.tAway = [cv().st.name === s0.map, cv().st.npcs.length, !right().querySelector('.timebar button')];
+                re.SM.setMap(S.data.trump.schedule[j].map); re.render();
                 await until(() => cv()?.st.name === S.data.trump.schedule[j].map && cv().st.data);
-                out.tAway.push(cv().st.name === S.data.trump.schedule[j].map, right().querySelector('[data-k=schedAway]').hidden, cv().st.npcs.some(x => x.id === 'trump'));
-                out.tAwayWant = `→ ${S.data.trump.schedule[j].map.split('/').at(-1)}`;
+                out.tAway.push(cv().st.npcs.some(x => x.id === 'trump'));
             }
             // 「顯示 ▾」勾其他角色（時間游標）：人只會變多、trump 還是橘的那個
             const nMine = cv().st.npcs.length;
@@ -1125,7 +1123,7 @@ run('schedule-tool', async t => {
                 // 他在別張圖：自動切過去、讀完置中、不出現 → 按鈕
                 typeT(re.SP.mod(tr[j].arr + 5));
                 await until(() => cv()?.st.name === mj && cv().st.data && centered());
-                out.fSwitch = [cv().st.name === mj, centered(), right().querySelector('[data-k=schedAway]').hidden, fChk().checked];
+                out.fSwitch = [cv().st.name === mj, centered(), !right().querySelector('.timebar button'), fChk().checked];
                 // 自動選當下那筆：時序條反白、卡片、地圖的路線都換成第 j 筆；跨過出發時間前後各算一筆
                 const nS = S.data.trump.schedule.length, pj = (j - 1 + nS) % nS;
                 const selNow = () => [S.schSel.i, cards().map(c => c.dataset.sch).join(), cv().st.sel, document.querySelector('#view .daybar .seg.stay.sel')?.dataset.i ?? document.querySelector('#view .daybar .seg.sel')?.dataset.i];
@@ -1170,7 +1168,7 @@ run('schedule-tool', async t => {
                 fChk().click();
                 typeT(re.SP.mod(tr[0].arr + 5));
                 await sleep(30);
-                out.fOff = [re.SM.F.on, localStorage.getItem('tools.role.sched.follow'), cv().st.name === mj, right().querySelector('[data-k=schedAway]').hidden, S.schSel.i === j];
+                out.fOff = [re.SM.F.on, localStorage.getItem('tools.role.sched.follow'), cv().st.name === mj, !right().querySelector('.timebar button'), S.schSel.i === j];
             }
             re.SM.F.on = true;
             localStorage.removeItem('tools.role.sched.follow');
@@ -1427,7 +1425,7 @@ run('schedule-tool', async t => {
     t.eq('時間游標：作息地圖置中那行有時間軸、開關照甘特圖共用的狀態', JSON.stringify(r.tbar), JSON.stringify([true, true]));
     t.eq('時間游標關著：不畫人', r.tOff, 0);
     t.eq('打時間：寫進甘特圖的此刻、自動勾、只畫這個角色在目的地、沒有 → 按鈕', JSON.stringify(r.tMine), JSON.stringify([true, true, true, r.tMineWant, true]));
-    if (r.tAway) t.eq('不在這張圖：→ 地圖按鈕、這張圖沒人；點了切過去、按鈕藏、畫在那張圖', JSON.stringify(r.tAway), JSON.stringify([false, r.tAwayWant, 0, true, true, true]));
+    if (r.tAway) t.eq('不在這張圖（沒勾跟著）：不換圖、這張圖沒人、沒有 → 按鈕；切過去就畫在那張圖', JSON.stringify(r.tAway), JSON.stringify([true, 0, true, true]));
     t.eq('勾其他角色（時間游標）：人不會變少、trump 還在、橘色的是 trump', JSON.stringify(r.tOthers), JSON.stringify([true, true, 'trump']));
     t.eq('方向鍵（滑鼠在右欄）：↑ +1、→ 下一個整 10 分、HH:MM 跟著；離開右欄不理', JSON.stringify(r.tKeys), JSON.stringify([477, 480, '08:00', 480]));
     t.eq('📍 跟著：預設勾、沒記錄', JSON.stringify(r.fDefault), JSON.stringify([true, null]));
@@ -1437,7 +1435,7 @@ run('schedule-tool', async t => {
     t.eq('📍 跟著：他在別張圖＝自動切過去、置中、沒有 → 按鈕', JSON.stringify(r.fSwitch), JSON.stringify([true, true, true, true]));
     t.check('📍 跟著：方向鍵也跟著切圖', r.fKey);
     t.eq('📍 跟著：拖滑桿拖到一半換圖也不斷（時間、新滑桿、HH:MM 跟著；放開後不再動）', JSON.stringify(r.fDrag), JSON.stringify([true, true, true, true, true, true, true]));
-    t.eq('📍 跟著：不勾＝不切圖、出現 → 按鈕、記住、不換選取', JSON.stringify(r.fOff), JSON.stringify([false, '0', true, false, true]));
+    t.eq('📍 跟著：不勾＝不切圖、沒有 → 按鈕、記住、不換選取', JSON.stringify(r.fOff), JSON.stringify([false, '0', true, true, true]));
     t.eq('📍 跟著：時刻落在第 2 筆＝自動選它（卡片、地圖路線、時序條反白）', JSON.stringify(r.fNow), JSON.stringify([1, '1', 1, '1']));
     t.eq('📍 跟著：出發前一分鐘＝停在上一筆、表單不整個重畫', JSON.stringify(r.fNowPrev), JSON.stringify([0, '0', 0, '0', true]));
     t.eq('📍 跟著：出發後一分鐘＝正走去的那筆、有路線', JSON.stringify(r.fNowWalk), JSON.stringify([1, '1', 1, '1', true]));
