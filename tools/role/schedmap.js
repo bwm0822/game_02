@@ -630,7 +630,7 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
             try {localStorage.setItem(FOLLOW_KEY, F.on ? '1' : '0');} catch {}
             if (F.on) setT(time.get().t, true);
         }}), '📍 跟著');
-    const bar = time && TP.timeBarEl(time.get, setT, {k: 'schedTime', extra: followChk,
+    const bar = time && TP.timeBarEl(time.get, setT, {k: 'schedTime', extra: followChk, range: () => (sel >= 0 ? mine?.segs.filter(g => g.i === sel) : null),
         title: `照作息算 ${id ?? '這個角色'} 這個時刻實際在哪（橘；走路中＝路上那格、巡邏＝路線上；「顯示 ▾」勾其他角色（時間游標）＝其他人藍色）；時間跟總覽甘特圖的「此刻」共用；滑鼠在右欄時方向鍵也能調`});
     st.stepTime = (e) => {
         const t = time && TP.stepKey(e, time.get().t);

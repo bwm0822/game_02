@@ -99,7 +99,7 @@
 - 畫法：角色 0.8 不透明＋藍框（走路中虛線框、名字寫 `id → 目的地點名`）。同一點（或同一格）好幾個人往右排開 24px。下面藍底名字。
 - 滑過＝名字、時間、在／正走去哪個點、第幾筆；點了跳角色分頁。只是看的，點不到也拖不動（地圖上放的角色優先）。時間軸不寫人數。
 - **📍 跟著**（時間軸最後的下拉 `[data-k=timeFollow]`，`followSel()`：排得出時刻表的 NPC 照 `grp` 分組，記 `tools.map.follow`，預設「（不跟）」；挑了人＝`setTime(S.t, true)` 馬上跟一次＋勾 🕒）：時間一動（`setTime()` 且 🕒 開著：打時間、滑桿、方向鍵、勾 🕒）就跟——選了地圖：他此刻在別張圖＝`openMap()` 切過去（同點左樹，「← 返回」不清），`S.followPend` 讓那張圖讀完 `followMap()` 置中；在這張＝倍率不動把他的框中心（`TP.followCen()`＝`npcsOn()`＋`npcCen()`）放到畫布正中（`TP.centerAt()`）。總覽：留在總覽，`followWorld()` 把世界鏡頭移到他的青點（在室內＝房子所屬那格的中心，`TP.centerView()`）。時間沒動就不跟，停下來可以自由拖鏡頭／換圖。在地圖上點 NPC 照舊跳角色分頁。
-- **滑桿拖曳**自己處理（`timeBarEl()`：pointerdown 擋掉原生、聽 window 的 pointermove，照 pointerdown 那時的滑桿位置算時間，10 分一格）：跟著換圖時整個畫面重建、滑桿換新的也不會斷，之後的時間交給畫面上同 `data-k` 的新時間軸（`el.setT`）。
+- **滑桿拖曳**自己處理（`timeBarEl()`：pointerdown 擋掉原生、聽 window 的 pointermove，照 pointerdown 那時的滑桿位置算時間，10 分一格）：跟著換圖時整個畫面重建、滑桿換新的也不會斷，之後的時間交給畫面上同 `data-k` 的新時間軸（`el.setT`）。拉鈕是一條 2px 白色細線（`appearance: none`＋`::-webkit-slider-thumb`／`::-moz-range-thumb`，樣式在 `tools/common/style.css`），`max` 1439、`step` 1＝細線精確到分（拖曳照樣吸附 10 分、最多 23:50）。軌道底下可以標作息範圍（`timeBarEl(…, {range})`，`range()` 回 `daySegs()` 的段，`.tseg.walk` 淺橘／`.tseg.stay` 深橘、跨午夜切兩塊，`el.update()` 重畫）：地圖分頁＝📍 跟著的人此刻那筆（`followRange()`，`posOf().at.i`；沒跟人＝不標）、角色分頁＝選中那筆。
 
 ## 同步
 

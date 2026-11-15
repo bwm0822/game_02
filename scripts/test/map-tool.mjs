@@ -559,7 +559,7 @@ run('map-tool', async t => {
             out.fSwitch = [S.sel === F1, centered(), fSel().value];
             // 拖滑桿：拖到一半換圖也不斷
             const rng = () => document.querySelector('#view [data-k=timeR]'), rc = rng().getBoundingClientRect();
-            const xOf = (m) => rc.left + 8 + (m / 1430) * (rc.width - 16), cy = rc.top + rc.height / 2;
+            const xOf = (m) => rc.left + 1 + (m / 1439) * (rc.width - 2), cy = rc.top + rc.height / 2;
             const ev = (el, type, m) => el.dispatchEvent(new PointerEvent(type, {bubbles: true, cancelable: true, button: 0, pointerId: 1, clientX: xOf(m), clientY: cy}));
             ev(rng(), 'pointerdown', 12 * 60);
             ev(window, 'pointermove', 23 * 60 + 30);
@@ -570,6 +570,11 @@ run('map-tool', async t => {
             ev(window, 'pointerup', 23 * 60 + 40);
             ev(window, 'pointermove', 12 * 60);
             out.fDrag.push(S.t);
+            // 時間軸底下標跟著的人此刻那筆（23:40 trump 停在 2F 床＝那筆的停留跨午夜＝兩塊深色；走路那段淺色）
+            const tsegs = () => [...document.querySelectorAll('#view .timebar .tseg')].map(x => x.className.replace('tseg ', '')).sort().join();
+            const iNow = TP.posOf(S.plans.trump, S.t, S.nav?.edges ?? {}).at.i, want = S.plans.trump.segs.filter(g => g.i === iNow && (g.kind === 'walk' || g.kind === 'stay') && g.len > 0)
+                .flatMap(g => {const s = g.s % 1440; return s + g.len > 1440 ? [g.kind, g.kind] : [g.kind];}).sort().join();
+            out.fRange = [tsegs(), want];
             // 總覽：留在總覽、鏡頭移到他所在的世界圖格子（在室內＝房子所屬的那格中心）
             mt.selectMap(F2);
             await until(() => !S.sel && cv()?.st.world);
@@ -583,7 +588,7 @@ run('map-tool', async t => {
             await settle();
             mt.setTime(12 * 60, true);
             await sleep(30);
-            out.fNone = [S.follow, localStorage.getItem('tools.map.follow'), S.sel === F2];
+            out.fNone = [S.follow, localStorage.getItem('tools.map.follow'), S.sel === F2, document.querySelectorAll('#view .timebar .tseg').length];
             mt.setTime(12 * 60, false);
         }
 
@@ -973,7 +978,8 @@ run('map-tool', async t => {
     t.eq('📍 跟著：他在別張圖＝自動切過去、置中、下拉還在', JSON.stringify(r.fSwitch), JSON.stringify([true, true, 'trump']));
     t.eq('📍 跟著：拖滑桿拖到一半換圖也不斷、放開後不再動', JSON.stringify(r.fDrag), JSON.stringify([1420, 1420, '23:40', true, true, 1420]));
     t.eq('📍 跟著：總覽留在總覽、鏡頭移到房子所屬的世界格', JSON.stringify(r.fWorld), JSON.stringify([null, true, true]));
-    t.eq('📍 跟著：（不跟）＝清記錄、不換圖', JSON.stringify(r.fNone), JSON.stringify([null, null, true]));
+    t.eq('📍 跟著：（不跟）＝清記錄、不換圖、時間軸不標範圍', JSON.stringify(r.fNone), JSON.stringify([null, null, true, 0]));
+    t.check('時間軸：底下標跟著的人此刻那筆（走路淺、停留深、跨午夜兩塊）', r.fRange[0] === r.fRange[1] && r.fRange[0].includes('stay'), JSON.stringify(r.fRange));
 
     // ---- 門 ----
     t.check('顯示 ▾「門」預設勾', r.doorShow[0] === true, r.doorShow.join());

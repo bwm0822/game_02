@@ -1135,6 +1135,21 @@ run('schedule-tool', async t => {
                 typeT(re.SP.mod(tr[j].dep + 1));
                 await until(() => cv()?.st.data && S.schSel.i === j && cv().st.sel === j);
                 out.fNowWalk = [...selNow(), !!cv().st.route];
+                // 時間軸底下標選中那筆的範圍：走路淺、停留深，跨午夜切兩塊，位置照滑桿換算（細線拉鈕＝2px）
+                const rangeOk = (i) => {
+                    const rr = right().querySelector('[data-k=schedTimeR]').getBoundingClientRect(), X = (m) => rr.left + 1 + (Math.min(m, 1439) / 1439) * (rr.width - 2);
+                    const want = re.SB.daySegs(tr, S.data.trump.schedule).filter(g => g.i === i && (g.kind === 'walk' || g.kind === 'stay') && g.len > 0)
+                        .flatMap(g => {const s = re.SP.mod(g.s), e = s + g.len; return e > 1440 ? [[g.kind, s, 1440], [g.kind, 0, e - 1440]] : [[g.kind, s, e]];});
+                    const got = [...right().querySelectorAll('.timebar .tseg')].map(x => {const b = x.getBoundingClientRect(); return [x.classList.contains('walk') ? 'walk' : 'stay', b.left, b.right];});
+                    return got.length === want.length && want.every(([k, s, e]) => got.some(([gk, l, r]) => gk === k && Math.abs(l - X(s)) < 1 && Math.abs(r - X(e)) < 1));
+                };
+                const thumbW = getComputedStyle(right().querySelector('[data-k=schedTimeR]')).appearance;
+                out.fRange = [rangeOk(j), right().querySelectorAll('.timebar .tseg.walk').length > 0, thumbW, +right().querySelector('[data-k=schedTimeR]').value === G.t];
+                typeT(re.SP.mod(tr[j].dep - 1));
+                await until(() => cv()?.st.data && S.schSel.i === pj);
+                out.fRangePrev = rangeOk(pj);
+                typeT(re.SP.mod(tr[j].dep + 1));
+                await until(() => cv()?.st.data && S.schSel.i === j);
                 // 在地圖上挑目的地中：不換選取
                 S.pick = {id: 'trump', text: '挑', fn: null};
                 typeT(re.SP.mod(tr[j].dep - 1));
@@ -1151,7 +1166,7 @@ run('schedule-tool', async t => {
                 out.fKey = cv().st.name === s0.map;
                 // 拖滑桿：拖到一半換圖也不斷（拖曳自己聽 window）
                 const rng = () => right().querySelector('[data-k=schedTimeR]'), rc = rng().getBoundingClientRect();
-                const xOf = (m) => rc.left + 8 + (m / 1430) * (rc.width - 16), cy = rc.top + rc.height / 2;
+                const xOf = (m) => rc.left + 1 + (m / 1439) * (rc.width - 2), cy = rc.top + rc.height / 2;
                 const ev = (el, type, m) => el.dispatchEvent(new PointerEvent(type, {bubbles: true, cancelable: true, button: 0, pointerId: 1, clientX: xOf(m), clientY: cy}));
                 const tA = Math.round(re.SP.mod(tr[0].arr + 30) / 10) * 10, tB = Math.round(re.SP.mod(tr[j].arr + 20) / 10) * 10, tC = re.SP.mod(tB + 10);
                 ev(rng(), 'pointerdown', tA);
@@ -1170,6 +1185,12 @@ run('schedule-tool', async t => {
                 await sleep(30);
                 out.fOff = [re.SM.F.on, localStorage.getItem('tools.role.sched.follow'), cv().st.name === mj, !right().querySelector('.timebar button'), S.schSel.i === j];
             }
+            // 沒選任何一筆：不標範圍
+            const sel0 = S.schSel;
+            S.schSel = null; re.render();
+            await until(() => cv()?.st.data);
+            out.fRangeNone = right().querySelectorAll('.timebar .tseg').length;
+            S.schSel = sel0;
             re.SM.F.on = true;
             localStorage.removeItem('tools.role.sched.follow');
             re.GT.setT(t0); re.GT.setOn(on0); re.render();
@@ -1440,4 +1461,7 @@ run('schedule-tool', async t => {
     t.eq('📍 跟著：出發前一分鐘＝停在上一筆、表單不整個重畫', JSON.stringify(r.fNowPrev), JSON.stringify([0, '0', 0, '0', true]));
     t.eq('📍 跟著：出發後一分鐘＝正走去的那筆、有路線', JSON.stringify(r.fNowWalk), JSON.stringify([1, '1', 1, '1', true]));
     t.eq('📍 跟著：在地圖上挑目的地中不換選取', r.fNowPick, 1);
+    t.eq('時間軸：底下標選中那筆的範圍（走路淺、停留深、跨午夜兩塊、位置對得上）、拉鈕不是原生圓鈕（細線）、精確到分', JSON.stringify(r.fRange), JSON.stringify([true, true, 'none', true]));
+    t.check('時間軸：換到上一筆，範圍跟著換', r.fRangePrev);
+    t.eq('時間軸：沒選任何一筆＝不標範圍', r.fRangeNone, 0);
 });

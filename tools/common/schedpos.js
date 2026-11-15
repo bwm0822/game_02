@@ -146,34 +146,50 @@ export function drawNpcs(g, K, npcs, roles, {sprites = new Map(), hover = null, 
 
 // 時間軸 `[☐ 🕒 作息] [HH:MM] [══滑桿══]`（.timebar）：get()＝{t, on}、set(t, on)；k＝data-k 前綴（地圖分頁 'time'）；el.update()＝照 get() 重畫
 // 滑桿拖曳自己處理（pointerdown 擋掉原生、聽 window）：拖到一半畫面重建（📍 跟著換圖）也不斷，之後的時間交給畫面上同 k 的新時間軸（el.setT）
+// 拉鈕是一條細線（精確到分，拖曳吸附 10 分）；range()＝要在軌道底下標的作息範圍 [{kind:'walk'|'stay', s, len}]（daySegs 的段，跨午夜自己切兩塊；null＝不標）
 const toMin = (s) => {const m = /^(\d{1,2}):(\d{2})$/.exec(s.trim()); return m && +m[1] < 24 && +m[2] < 60 ? +m[1] * 60 + +m[2] : null;};
-const RMAX = 1430, THUMB = 16;
-export function timeBarEl(get, set, {k = 'time', title = '', extra = null} = {})
+const RMAX = 1439, THUMB = 2;
+const xOf = (m) => `calc(${THUMB / 2}px + (100% - ${THUMB}px) * ${Math.min(m, RMAX) / RMAX})`;
+function rangeEls(segs)
+{
+    const out = [];
+    for (const g of segs ?? [])
+    {
+        if ((g.kind !== 'walk' && g.kind !== 'stay') || !(g.len > 0)) continue;
+        const s = mod(g.s), e = s + Math.min(g.len, 1440);
+        for (const [a, b] of e > 1440 ? [[s, 1440], [0, e - 1440]] : [[s, e]])
+            out.push(h('div', {class: `tseg ${g.kind}`, style: `left: ${xOf(a)}; width: calc(${xOf(b)} - ${xOf(a)})`}));
+    }
+    return out;
+}
+export function timeBarEl(get, set, {k = 'time', title = '', extra = null, range = null} = {})
 {
     const chk = h('input', {type: 'checkbox', dataset: {k: `${k}On`}, checked: get().on, onchange: e => set(get().t, e.target.checked)});
     const inp = h('input', {class: 'num', size: 5, dataset: {k: `${k}T`}, value: hhmm(get().t), title: '↑↓＝±1 分（←→ 在這裡移游標；焦點在別處時 ←→＝整 10 分）',
         onchange: e => {const v = toMin(e.target.value); v === null ? (e.target.value = hhmm(get().t)) : set(v, true);}});
-    const rng = h('input', {type: 'range', class: 'trange', min: 0, max: 1430, step: 10, value: get().t, dataset: {k: `${k}R`}, title: '拖＝10 分一格、←→＝上／下一個整 10 分、↑↓＝±1 分',
+    const rng = h('input', {type: 'range', class: 'trange', min: 0, max: RMAX, step: 1, value: get().t, dataset: {k: `${k}R`}, title: '拖＝10 分一格、←→＝上／下一個整 10 分、↑↓＝±1 分',
         oninput: e => set(+e.target.value, true)});
+    const segs = h('span', {class: 'tsegs'}, rangeEls(range?.()));
     rng.addEventListener('pointerdown', (e) => {
         if (e.button !== 0) return;
         e.preventDefault();
         const rc = rng.getBoundingClientRect();
         const live = () => (el.isConnected ? set : document.querySelector(`.timebar[data-k="${k}"]`)?.setT ?? set);
-        const at = (ev) => live()(Math.round(Math.max(0, Math.min(1, (ev.clientX - rc.left - THUMB / 2) / (rc.width - THUMB))) * RMAX / 10) * 10, true);
+        const at = (ev) => live()(Math.min(1430, Math.round(Math.max(0, Math.min(1, (ev.clientX - rc.left - THUMB / 2) / (rc.width - THUMB))) * RMAX / 10) * 10), true);
         const up = () => {removeEventListener('pointermove', at); removeEventListener('pointerup', up); removeEventListener('pointercancel', up);};
         at(e);
         addEventListener('pointermove', at);
         addEventListener('pointerup', up);
         addEventListener('pointercancel', up);
     });
-    const el = h('span', {class: 'timebar', title, dataset: {k}}, h('label', null, chk, '🕒 作息'), inp, rng, extra);
+    const el = h('span', {class: 'timebar', title, dataset: {k}}, h('label', null, chk, '🕒 作息'), inp, h('span', {class: 'trk'}, segs, rng), extra);
     el.setT = set;
     el.update = () => {
         const {t, on} = get();
         chk.checked = on;
         if (document.activeElement !== inp) inp.value = hhmm(t);
         rng.value = t;
+        if (range) segs.replaceChildren(...rangeEls(range()));
     };
     return el;
 }

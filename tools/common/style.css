@@ -63,6 +63,17 @@ input[data-combo] { padding-right: 20px; background: #2b2d31 url("data:image/svg
 .occ .orow { display: flex; align-items: center; gap: 4px; height: 13px; margin-bottom: 2px; }
 .occ .olab { flex: 0 0 76px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #ccc; }
 .occ .mine .olab { color: #e8743b; }
+/* 作息時間軸（schedpos.js 的 timeBarEl）：軌道底下標作息範圍（走路淺橘、停留深橘），拉鈕是一條細線 */
+.timebar .trk { position: relative; display: flex; align-items: center; height: 20px; }
+.timebar .trk::before { content: ''; position: absolute; left: 0; right: 0; top: 6px; height: 8px; border-radius: 2px; background: rgba(255,255,255,0.14); }
+.timebar .tseg { position: absolute; top: 6px; height: 8px; pointer-events: none; }
+.timebar .tseg.walk { background: rgba(255,159,67,0.45); }
+.timebar .tseg.stay { background: #ff9f43; }
+.timebar input.trange { -webkit-appearance: none; appearance: none; position: relative; width: 100%; height: 20px; margin: 0; background: transparent; cursor: pointer; }
+.timebar input.trange::-webkit-slider-runnable-track { height: 20px; background: transparent; }
+.timebar input.trange::-webkit-slider-thumb { -webkit-appearance: none; width: 2px; height: 20px; background: #fff; box-shadow: 0 0 0 1px rgba(0,0,0,0.7); }
+.timebar input.trange::-moz-range-track { height: 20px; background: transparent; }
+.timebar input.trange::-moz-range-thumb { width: 2px; height: 20px; border: 0; border-radius: 0; background: #fff; box-shadow: 0 0 0 1px rgba(0,0,0,0.7); }
 .occ .clash .olab { color: #ff6b6b; }
 .occ .otrack { position: relative; flex: 1; height: 10px; background: #333; overflow: hidden; }
 .occ .otrack .hr { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(255,255,255,.08); }

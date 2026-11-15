@@ -191,11 +191,19 @@ function followWorld(st)
     if (c) TP.centerView(WORLD_VIEW, c.cw ? c.x + c.cw / 2 : c.x, c.cw ? c.y + c.ch / 2 : c.y);
 }
 
+// 時間軸底下標跟著的人此刻那筆（時序條的段：走路中＝走去的那筆、停留中＝停的那筆）
+function followRange()
+{
+    const p = S.follow && S.plans?.[S.follow], i = p && posOf(p, S.t)?.at.i;
+    return i == null ? null : p.segs.filter(g => g.i === i);
+}
+
 function setFollow(id)
 {
     S.follow = id || null;
     try {S.follow ? localStorage.setItem(FOLLOW_KEY, S.follow) : localStorage.removeItem(FOLLOW_KEY);} catch {}
     if (S.follow) setTime(S.t, true);
+    else mapSt()?.updateTime?.();
 }
 
 // 下拉：排得出時刻表的 NPC，照 grp 分組
@@ -1074,7 +1082,7 @@ function stepTime(e)
 function timeBar(st)
 {
     const el = TP.timeBarEl(() => ({t: S.t, on: S.timeOn}), setTime,
-        {title: '照 role.json 的作息（同遊戲 ScheduleManager）算具名 NPC 這個時刻實際在哪（走路中＝路上那格、巡邏＝路線上）；虛線框＝走路中', extra: followSel()});
+        {title: '照 role.json 的作息（同遊戲 ScheduleManager）算具名 NPC 這個時刻實際在哪（走路中＝路上那格、巡邏＝路線上）；虛線框＝走路中；滑桿底下橘色＝📍 跟著的人此刻那筆作息（淺＝走路、深＝停留）', extra: followSel(), range: followRange});
     st.updateTime = el.update;
     return el;
 }
