@@ -94,7 +94,7 @@ run('scene-tool', async t => {
 
         // ---------- 第 2 步：角色 ----------
         const json = await proj.getDirectoryHandle('public').then(d => d.getDirectoryHandle('assets')).then(d => d.getDirectoryHandle('json'));
-        for (const f of ['role.json', 'item.json', 'ability.json']) await write(json, f, await (await fetch(`/assets/json/${f}`)).text());
+        for (const f of ['role.json', 'item.json', 'ability.json', 'fx.json', 'particle.json']) await write(json, f, await (await fetch(`/assets/json/${f}`)).text());
         await T.setProject(proj);
         await until(() => Object.keys(sc.S.refs.roles).length && JSON.stringify(Object.keys(sc.S.data)) === '["x"]');
         await sc.select('x');
@@ -237,6 +237,48 @@ run('scene-tool', async t => {
         out.tree2 = [...doc.querySelectorAll('#tree .item')].map(e => e.dataset.key);
         sb()._send({sb: 'key', key: 'Delete'});
         out.delProp = await until(() => !prop('p1')) && (await scDisk()).props.map(p => p.key);
+
+        // ---------- 第 5 步：特效 ----------
+        // 狀態特效：加＝fxOn（不重建角色）、tick、解除＝fxOff；存在角色的 fx
+        const fxId = Object.keys(sc.S.refs.fx).find(id => !sc.S.refs.fx[id].cell?.flash && sc.S.refs.fx[id].img);
+        const fxOn = (k) => Object.keys(pup(k)?.coms?.disp?._fxMap ?? {});
+        const r1 = pup('r1');
+        await sc.setRole('r1', {fx: [fxId]});
+        out.fxOn = await until(() => fxOn('r1').includes(fxId)) && [(await scDisk()).roles[0].fx, pup('r1') === r1];
+        sc.pickRole('r1');
+        out.fxRow = await until(() => doc.querySelector(`#right [data-fx="${fxId}"]`)) && !!doc.querySelector(`#right [data-fx="${fxId}"] button`);
+        sc.toGame({sb: 'fxTick', key: 'r1', id: fxId});
+        await sc.setRole('r1', {fx: undefined});
+        out.fxOff = await until(() => !fxOn('r1').includes(fxId)) && [(await scDisk()).roles[0].fx, pup('r1') === r1];
+
+        // 粒子發射點：stream 常駐、burst 定時噴；可跟著角色
+        const parts = Object.entries(sc.S.refs.particles);
+        const sid = parts.find(([, d]) => d.mode !== 'burst')[0], bid = parts.find(([, d]) => d.mode === 'burst')?.[0];
+        const em = (k) => sb()._emitters?.[k];
+        await sc.addEmitter(sid, 100, 100);
+        out.emit = await until(() => em('e1')?.fx?.emitter?.active) && [(await scDisk()).particles, sc.S.pick, doc.querySelector('#right .sec').textContent, sb()._pickAt(100, 100)?.key];
+        if (bid)
+        {
+            await sc.addEmitter(bid, 150, 100);
+            await sc.setEmitter('e2', {every: 300});
+            const f0 = await until(() => em('e2')?.fx) && em('e2').fx;
+            out.burst = await until(() => em('e2')?.fx !== f0, 100);
+        }
+        else out.burst = true;
+        // 跟著角色：位置變成相對角色，角色重建也跟上
+        const r1p = (await scDisk()).roles[0];
+        await sc.setEmitter('e1', {follow: 'r1', x: 0, y: -20});
+        out.follow = await until(() => em('e1')?.target === pup('r1')) && [sb()._emitPos(em('e1')).x === pup('r1').x, sb()._emitPos(em('e1')).y === pup('r1').y - 20];
+        await sc.setRole('r1', {tx: r1p.tx + 1});
+        out.followMove = await until(() => em('e1')?.target === pup('r1') && sb()._emitPos(em('e1')).x === pup('r1').x);
+        sb()._send({sb: 'moveEmitter', key: 'e1', x: 4, y: -24});
+        out.moveEm = await until(async () => (await scDisk()).particles[0].x === 4);
+        sc.toggleHide('e1');
+        out.hideEm = await until(() => em('e1')?.fx?.emitter?.visible === false) && !sb()._emitterAt(sb()._emitPos(em('e1')).x, sb()._emitPos(em('e1')).y);
+        sc.toggleHide('e1');
+        sc.pickRole('e1');
+        sb()._send({sb: 'key', key: 'Delete'});
+        out.delEm = await until(() => !em('e1')) && (await scDisk()).particles.map(e => e.key);
         return out;
     });
     t.eq('分頁：iframe 跑 /?sandbox、不寫存檔', JSON.stringify(r.boot), JSON.stringify(['sandbox', true]));
@@ -263,7 +305,7 @@ run('scene-tool', async t => {
     t.eq('面向左／右', JSON.stringify(r.face), JSON.stringify([true, true]));
     t.eq('sandbox 點選：左欄跟著選', r.pick, 'r2');
     t.check('sandbox 拖曳放開：寫檔、重建在新格子', r.move);
-    t.eq('sandbox 右鍵：放角色／擺設＋刪除', JSON.stringify(r.ctx), JSON.stringify(['在這裡放角色…（3, 3）', '在這裡放擺設…', '刪除 mary']));
+    t.eq('sandbox 右鍵：放角色／擺設／粒子＋刪除', JSON.stringify(r.ctx), JSON.stringify(['在這裡放角色…（3, 3）', '在這裡放擺設…', '在這裡放粒子…', '刪除 mary']));
     t.eq('👁 暫藏：不寫檔、點不到', JSON.stringify(r.hide), JSON.stringify([true, true]));
     t.eq('sandbox 裡按 Del：刪選中的', JSON.stringify(r.delRole), JSON.stringify([null, 'r1']));
     t.eq('sandbox 裡按 Ctrl+Z：復原、選回去', JSON.stringify(r.undoDel), JSON.stringify([['r1', 'r2'], 'r2']));
@@ -292,4 +334,15 @@ run('scene-tool', async t => {
     t.eq('擺設點得到', r.pickProp, 'p1');
     t.eq('左欄：角色跟擺設都列', JSON.stringify(r.tree2), JSON.stringify(['r1', 'r2', 'p1', 'p2']));
     t.eq('Del 刪擺設', JSON.stringify(r.delProp), JSON.stringify(['p2']));
+
+    t.check('狀態特效：加了存檔、sandbox fxOn、角色沒重建', r.fxOn?.[0]?.length === 1 && r.fxOn[1], JSON.stringify(r.fxOn));
+    t.check('狀態特效：右欄一列（tick／解除）', r.fxRow);
+    t.eq('狀態特效：解除＝fxOff、欄位拿掉、角色沒重建', JSON.stringify(r.fxOff), JSON.stringify([undefined, true]));
+    t.check('粒子：放了存檔、選起來、sandbox 噴、發射點點得到', r.emit && r.emit[0]?.[0]?.key === 'e1' && r.emit[1] === 'e1' && r.emit[2] === '粒子 e1' && r.emit[3] === 'e1', JSON.stringify(r.emit));
+    t.check('粒子：burst 照 every 定時再噴', r.burst);
+    t.eq('粒子：跟著角色（位置相對角色）', JSON.stringify(r.follow), JSON.stringify([true, true]));
+    t.check('粒子：角色重建後照樣跟上', r.followMove);
+    t.check('粒子：拖曳放開寫檔', r.moveEm);
+    t.check('粒子：👁 藏起來、點不到', r.hideEm);
+    t.eq('粒子：Del 刪', JSON.stringify(r.delEm), JSON.stringify(['e2']));
 });

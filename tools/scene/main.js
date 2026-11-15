@@ -9,7 +9,7 @@ import * as IC from '../common/icons.js';
 import {KINDS, KIND_NAMES} from '../role/schema.js';
 import * as ST from './store.js';
 
-const LS = {sel: 'tools.scene.sel', grid: 'tools.scene.grid', role: 'tools.scene.lastRole'};
+const LS = {sel: 'tools.scene.sel', grid: 'tools.scene.grid', role: 'tools.scene.lastRole', particle: 'tools.scene.lastParticle'};
 const ls = {
     get: (k) => {try {return localStorage.getItem(k);} catch {return null;}},
     set: (k, v) => {try {localStorage.setItem(k, v);} catch { /* 私密視窗 */ }},
@@ -28,7 +28,7 @@ const S = {
     redo: [],
     ready: false,                   // sandbox 開好了
     grid: ls.get(LS.grid) !== '0',
-    refs: {roles: {}, items: {}, abilities: {}},
+    refs: {roles: {}, items: {}, abilities: {}, fx: {}, particles: {}},
     act: 'attack',                  // 動作下拉：attack／walk／ab:<技能 id>
     arm: null,                      // 指定目標中 {key, kind, id}
     q: Promise.resolve(),
@@ -204,9 +204,94 @@ function setProp(key, patch)
     });
 }
 
+// ---------- 粒子發射點 ----------
+const emitters = () => scene()?.particles ?? [];
+const emOf = (key) => emitters().find(e => e.key === key);
+const isEm = (key) => /^e\d+$/.test(key ?? '');
+const emKey = () => {let i = 1; while (emOf(`e${i}`)) i++; return `e${i}`;};
+const listOf = (key) => (isProp(key) ? 'props' : isEm(key) ? 'particles' : 'roles');
+
+function addEmitter(id, x, y)
+{
+    const key = emKey();
+    return editScene(sc => {(sc.particles ??= []).push({key, id, x, y});}, key);
+}
+
+function setEmitter(key, patch)
+{
+    return editScene(sc => {
+        const e = sc.particles?.find(x => x.key === key);
+        if (!e) throw new Error(`場景裡沒有 ${key}`);
+        for (const [k, v] of Object.entries(patch)) {if (v === undefined) delete e[k]; else e[k] = v;}
+    });
+}
+
+async function askId(title, ids, cur)
+{
+    const sel = h('select', {size: 14, style: 'width: 100%'}, ids.map(id => h('option', {value: id}, id)));
+    sel.value = cur ?? ids[0] ?? '';
+    sel.ondblclick = () => $('dlgAsk').close('ok');
+    const p = ask(title, sel, [['ok', '確定'], ['cancel', '取消']]);
+    sel.focus();
+    return await p === 'ok' && sel.value ? sel.value : null;
+}
+
+async function placeEmitter(x, y)
+{
+    if (S.sel === null) return status('先選或新增一個場景');
+    const id = await askId('放粒子（particle.json）', Object.keys(S.refs.particles), ls.get(LS.particle));
+    if (!id) return;
+    ls.set(LS.particle, id);
+    await addEmitter(id, x, y);
+}
+
+function emPanel(e)
+{
+    const idSel = h('select', {dataset: {k: 'id'}, onchange: () => setEmitter(e.key, {id: idSel.value})}, Object.keys(S.refs.particles).map(id => h('option', {value: id}, id)));
+    if (!S.refs.particles[e.id]) idSel.append(h('option', {value: e.id}, `⚠ ${e.id}`));
+    idSel.value = e.id;
+    // 換跟隨對象：位置換算成相對／絕對，畫面上不動
+    const fol = h('select', {dataset: {k: 'follow'}, onchange: () => {
+        const from = roleOf(e.follow), to = roleOf(fol.value);
+        const abs = from ? {x: from.tx * 32 + 16 + e.x, y: from.ty * 32 + 16 + e.y} : {x: e.x, y: e.y};
+        const rel = to ? {x: abs.x - (to.tx * 32 + 16), y: abs.y - (to.ty * 32 + 16)} : abs;
+        setEmitter(e.key, {follow: fol.value || undefined, ...rel});
+    }}, h('option', {value: ''}, '（不跟）'), roles().map(r => h('option', {value: r.key}, `${r.key}　${r.id}`)));
+    fol.value = e.follow ?? '';
+    const n = (k, step, ph) => h('input', {type: 'number', step, value: e[k] ?? '', placeholder: ph, class: 'n', dataset: {k},
+        onchange: (ev) => setEmitter(e.key, {[k]: ev.target.value === '' ? undefined : +ev.target.value})});
+    const burst = S.refs.particles[e.id]?.mode === 'burst';
+    const row = (k, ...v) => h('tr', null, h('td', {class: 'k'}, k), h('td', null, ...v));
+    return [
+        h('div', {class: 'sec'}, `粒子 ${e.key}`),
+        h('table', {class: 'props'},
+            row('粒子', idSel),
+            row(e.follow ? '位置（相對角色）' : '位置', n('x', 1), ' ', n('y', 1)),
+            row('跟著', fol),
+            burst && row('每幾 ms 噴', n('every', 100, '1000'))),
+        h('div', {class: 'hint dim'}, '畫面上的橘色菱形＝發射點：拖曳移動、Shift 吸 16px；方向鍵 1px、Shift＋方向鍵一格'),
+        h('div', {class: 'acts'}, h('button', {onclick: () => deleteObj(e.key)}, '刪除（Del）')),
+    ];
+}
+
+// 角色身上的狀態特效（fx.json），存在角色的 fx 陣列；tick 是表演
+function fxPanel(r)
+{
+    const ids = Object.keys(S.refs.fx).filter(id => !(r.fx ?? []).includes(id));
+    const add = h('select', {dataset: {k: 'fxAdd'}}, h('option', {value: ''}, '＋ 加狀態特效…'), ids.map(id => h('option', {value: id}, id)));
+    add.onchange = () => add.value && setRole(r.key, {fx: [...(r.fx ?? []), add.value]});
+    return h('div', null,
+        h('div', {class: 'sec'}, '狀態特效', h('span', {class: 'dim'}, '（fx.json，常駐、存檔）')),
+        ...(r.fx ?? []).map(id => h('div', {class: 'row2', dataset: {fx: id}},
+            h('span', {class: S.refs.fx[id] ? '' : 'warn'}, id), h('span', {class: 'grow'}),
+            h('button', {title: '播一次 tick（DOT 扣血那下）', onclick: () => toGame({sb: 'fxTick', key: r.key, id})}, 'tick'),
+            h('button', {title: '播 end 收掉、從場景拿掉', onclick: () => setRole(r.key, {fx: r.fx.filter(x => x !== id).length ? r.fx.filter(x => x !== id) : undefined})}, '解除'))),
+        add);
+}
+
 function deleteObj(key)
 {
-    const list = isProp(key) ? 'props' : 'roles';
+    const list = listOf(key);
     return editScene(sc => {
         const i = sc[list]?.findIndex(x => x.key === key) ?? -1;
         if (i < 0) return false;
@@ -288,8 +373,9 @@ function propPanel(p)
 
 function nudge(dx, dy)
 {
-    const p = propOf(S.pick);
+    const p = propOf(S.pick), e = emOf(S.pick);
     if (p) setProp(p.key, {x: p.x + dx, y: p.y + dy});
+    else if (e) setEmitter(e.key, {x: e.x + dx, y: e.y + dy});
 }
 
 function pickRole(key)
@@ -391,6 +477,14 @@ function renderTree()
             oncontextmenu: (e) => menu(e, [['刪除', () => deleteObj(p.key)]]),
         }, h('button', {class: 'eye', title: '暫時藏起來（不存檔）', onclick: (e) => {e.stopPropagation(); toggleHide(p.key);}}, S.hidden.has(p.key) ? '◌' : '👁'),
            imgEl(p.img, 20), h('span', {class: 'id'}, p.img.startsWith(FILE) ? p.img.split('/').pop() : p.img), h('span', {class: 'mark dim'}, `${p.x},${p.y}`))),
+        h('div', {class: 'row2'}, h('span', {class: 'sec grow'}, `粒子（${emitters().length}）`),
+            h('button', {title: '放粒子發射點（放在地圖中間；也可以在畫面上右鍵）', onclick: () => placeEmitter(S.center[0] * 32 + 16, S.center[1] * 32 + 16)}, '＋')),
+        ...emitters().map(e => h('div', {
+            class: `item${e.key === S.pick ? ' sel' : ''}${S.hidden.has(e.key) ? ' hid' : ''}`, dataset: {key: e.key},
+            onclick: () => pickRole(e.key === S.pick ? null : e.key),
+            oncontextmenu: (ev) => menu(ev, [['刪除', () => deleteObj(e.key)]]),
+        }, h('button', {class: 'eye', title: '暫時藏起來（不存檔）', onclick: (ev) => {ev.stopPropagation(); toggleHide(e.key);}}, S.hidden.has(e.key) ? '◌' : '👁'),
+           h('span', {class: S.refs.particles[e.id] ? 'id' : 'id warn'}, e.id), e.follow && h('span', {class: 'lab'}, `→ ${roleOf(e.follow)?.id ?? e.follow}`), h('span', {class: 'mark dim'}, `${e.x},${e.y}`))),
     );
 }
 
@@ -414,6 +508,7 @@ function renderRight()
 {
     const r = roleOf(S.pick), box = $('right');
     if (propOf(S.pick)) return box.replaceChildren(...propPanel(propOf(S.pick)));
+    if (emOf(S.pick)) return box.replaceChildren(...emPanel(emOf(S.pick)));
     if (!r) return box.replaceChildren(h('span', {class: 'dim'}, S.sel === null ? '' : '點畫面上的角色、或左邊清單選一個；右鍵畫面放角色'));
     const idSel = roleSelect(r.id);
     idSel.onchange = () => setRole(r.key, {id: idSel.value});
@@ -430,6 +525,7 @@ function renderRight()
         h('div', {class: 'sec'}, '裝備', h('span', {class: 'dim'}, '（只改這個場景，不寫回 role.json）')),
         h('table', {class: 'props'}, SLOTS.map(([cat, name]) => h('tr', null, h('td', {class: 'k'}, name), h('td', null, equipSelect(r, cat))))),
         h('div', {class: 'acts'}, h('button', {onclick: () => deleteRole(r.key)}, '刪除（Del）')),
+        fxPanel(r),
         actPanel(r),
     );
 }
@@ -463,7 +559,7 @@ function actPanel(r)
 function refresh()
 {
     if (S.sel !== null && !(S.sel in S.data)) select(null, false);
-    if (S.pick && !roleOf(S.pick) && !propOf(S.pick)) S.pick = null;
+    if (S.pick && !roleOf(S.pick) && !propOf(S.pick) && !emOf(S.pick)) S.pick = null;
     renderList();
     renderTree();
     renderRight();
@@ -489,7 +585,7 @@ function onKey(k)
     if (k.ctrl && k.key.toLowerCase() === 'z' && !k.shift) undo();
     else if (k.ctrl && (k.key.toLowerCase() === 'y' || (k.key.toLowerCase() === 'z' && k.shift))) redo();
     else if (k.key === 'Delete' && S.pick) deleteObj(S.pick);
-    else if (k.key.startsWith('Arrow') && propOf(S.pick))
+    else if (k.key.startsWith('Arrow') && (propOf(S.pick) || emOf(S.pick)))
     {
         const d = k.shift ? 32 : 1;
         nudge({ArrowLeft: -d, ArrowRight: d}[k.key] ?? 0, {ArrowUp: -d, ArrowDown: d}[k.key] ?? 0);
@@ -510,11 +606,12 @@ addEventListener('message', (e) => {
     else if (m.sb === 'disarm') {S.arm = null; renderRight();}
     else if (m.sb === 'move') setRole(m.key, {tx: m.tx, ty: m.ty}).then(syncGame);
     else if (m.sb === 'moveProp') setProp(m.key, {x: m.x, y: m.y}).then(syncGame);
+    else if (m.sb === 'moveEmitter') setEmitter(m.key, {x: m.x, y: m.y}).then(syncGame);
     else if (m.sb === 'key') onKey(m);
     else if (m.sb === 'ctx')
     {
         const b = frame.getBoundingClientRect(), at = {clientX: b.left + m.cx, clientY: b.top + m.cy};
-        const items = [[`在這裡放角色…（${m.tx}, ${m.ty}）`, () => placeAt(m.tx, m.ty)], ['在這裡放擺設…', () => placeProp(m.wx, m.wy)]];
+        const items = [[`在這裡放角色…（${m.tx}, ${m.ty}）`, () => placeAt(m.tx, m.ty)], ['在這裡放擺設…', () => placeProp(m.wx, m.wy)], ['在這裡放粒子…', () => placeEmitter(m.wx, m.wy)]];
         if (m.key) items.push([`刪除 ${roleOf(m.key)?.id ?? m.key}`, () => deleteObj(m.key)]);
         if (S.sel === null) return status('先選或新增一個場景');
         menu(at, items);
@@ -545,7 +642,8 @@ async function loadRefs()
 {
     const json = await FS.tryDir(await FS.tryDir(await FS.tryDir(S.root, 'public'), 'assets'), 'json');
     const read = async (name) => {const fh = json && await FS.tryFile(json, name); return fh ? JSON.parse(await (await fh.getFile()).text()) : {};};
-    S.refs = {roles: await read('role.json'), items: await read('item.json'), abilities: await read('ability.json')};
+    S.refs = {roles: await read('role.json'), items: await read('item.json'), abilities: await read('ability.json'),
+              fx: await read('fx.json'), particles: await read('particle.json')};
 }
 
 async function setProject(root)
@@ -565,7 +663,7 @@ SH.onSaved((file) => {
     if (file === ST.FILE) queue(async () => {S.data = await ST.read(); refresh();});
     else if (GAME_FILES.includes(file))
     {
-        if (['role.json', 'item.json', 'ability.json'].includes(file)) queue(async () => {await loadRefs(); refresh();});
+        if (['role.json', 'item.json', 'ability.json', 'fx.json', 'particle.json'].includes(file)) queue(async () => {await loadRefs(); refresh();});
         reloadGame();
     }
 });
@@ -574,5 +672,5 @@ frame.src = '/?sandbox=1';
 refresh();
 
 // 給無頭測試用
-window.__sc = {S, setProject, addScene, dupScene, renameScene, deleteScene, select, undo, redo, addRole, setRole, setEquip, deleteRole, pickRole, toggleHide, arm, toGame, addProp, setProp, deleteObj, nudge,
+window.__sc = {S, setProject, addScene, dupScene, renameScene, deleteScene, select, undo, redo, addRole, setRole, setEquip, deleteRole, pickRole, toggleHide, arm, toGame, addProp, setProp, deleteObj, nudge, addEmitter, setEmitter,
                flush: () => S.q};

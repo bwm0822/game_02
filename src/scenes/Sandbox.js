@@ -8,6 +8,7 @@ import {GameObject} from '../core/gameobject.js'
 import {GM, GS} from '../core/setting.js'
 import Puppet from '../roles/puppet.js'
 import DB from '../data/db.js'
+import {playParticle} from '../core/particle.js'
 
 // 開發版的 gym 場景：工具殼「場景」分頁的 iframe 跑 /?sandbox，用 postMessage 操作（訊息帶 sb 欄位，見 docs/scene-tool.md）
 // 繼承 GameScene 拿真的地圖／路網／Light2D，但沒有玩家、UI、回合、作息、劇情；地圖只建地形＋靜態物件，不寫存檔
@@ -84,14 +85,17 @@ export class Sandbox extends GameScene
         const want = Object.fromEntries((scene.roles ?? []).map(r=>[r.key, r]));
         for(const p of [...this.roles])
         {
-            if(force || !want[p.key] || JSON.stringify(want[p.key])!==p._sig) {p.dismiss();}
+            if(force || !want[p.key] || Sandbox._sig(want[p.key])!==p._sig) {p.dismiss();}
         }
         const bad = [];
         for(const r of scene.roles ?? [])
         {
-            if(!this.roles.some(p=>p.key===r.key) && !this._spawn(r)) {bad.push(r.id);}
+            const p = this._puppet(r.key) ?? this._spawn(r);
+            if(!p) {bad.push(r.id); continue;}
+            this._syncFx(p, r.fx ?? []);
         }
         if(bad.length) {this._send({sb:'error', msg:`role.json 沒有：${[...new Set(bad)].join('、')}`});}
+        this._applyEmitters(scene.particles ?? [], force);
         await this._applyProps(scene.props ?? []);
         if(this._scene!==scene) {return;}   // 載外部圖的期間又來了新的場景
         this._send({sb:'loaded', map:this.mapName, w:this.map.map.width, h:this.map.map.height});
@@ -175,12 +179,108 @@ export class Sandbox extends GameScene
         const pt = this.map.tileToWorld(r.tx, r.ty);
         const p = new Puppet(this, pt.x, pt.y);
         if(!p.init_runtime(r)) {p.destroy(); return null;}
-        p._sig = JSON.stringify(r);
+        p._sig = Sandbox._sig(r);
+        p._fx = [];
         p.setVisible(!this._hidden.has(r.key));
         return p;
     }
 
     _puppet(key) {return this.roles.find(p=>p.key===key);}
+
+    // 角色資料的比對不含 fx（狀態特效另外加減，不用重建角色）
+    static _sig({fx, ...r}) {return JSON.stringify(r);}
+
+    // 狀態特效（fx.json 的 id）：新的 fxOn、拿掉的 fxOff（播 end）；走 com_disp，同遊戲
+    _syncFx(p, ids)
+    {
+        if(!p.isAlive) {return;}
+        for(const id of p._fx.filter(id=>!ids.includes(id))) {p.fxOff?.(id);}
+        for(const id of ids.filter(id=>!p._fx.includes(id)))
+        {
+            if(!DB.fx(id)) {this._send({sb:'error', msg:`fx.json 沒有 ${id}`});}
+            p.fxOn?.(id);
+        }
+        p._fx = [...ids];
+    }
+
+    //------------------------------------------------------
+    //  粒子發射點：{key, id（particle.json）, x, y, follow?（角色 key：x/y 變成相對它）, every?（burst 幾 ms 噴一次）}
+    //  畫面上畫一個橘色菱形讓它點得到、拖得動（只在 sandbox 裡，不是遊戲的東西）
+    //------------------------------------------------------
+    _applyEmitters(list, force)
+    {
+        this._emitters ??= {};
+        const want = Object.fromEntries(list.map(e=>[e.key, e]));
+        for(const [k, o] of Object.entries(this._emitters))
+        {
+            const e = want[k];
+            if(force || JSON.stringify(e)!==o.sig || (e.follow && this._puppet(e.follow)!==o.target)) {this._dropEmitter(k);}
+        }
+        const bad = [];
+        for(const e of list)
+        {
+            if(this._emitters[e.key]) {continue;}
+            const def = DB.particle(e.id);
+            if(!def) {bad.push(e.id);}
+            this._emitters[e.key] = {data:e, sig:JSON.stringify(e), def, target:e.follow ? this._puppet(e.follow) : null};
+            this._emit(this._emitters[e.key]);
+        }
+        if(bad.length) {this._send({sb:'error', msg:`particle.json 沒有：${[...new Set(bad)].join('、')}`});}
+    }
+
+    _emitPos(o)
+    {
+        const t = o.target?.active ? o.target : null;
+        return {x:(t?.x ?? 0) + o.data.x, y:(t?.y ?? 0) + o.data.y};
+    }
+
+    _emit(o)
+    {
+        if(!o.def) {return;}
+        this._emitOnce(o);
+        if(o.def.mode==='burst' && !o.timer)
+        {
+            o.timer = this.time.addEvent({delay:o.data.every ?? 1000, loop:true, callback:()=>{o.timer && this._emitOnce(o);}});
+        }
+    }
+
+    _emitOnce(o)
+    {
+        const opts = o.target?.active ? {target:o.target, ox:o.data.x, oy:o.data.y} : this._emitPos(o);
+        o.fx = playParticle(this, o.def, opts);
+        o.fx?.emitter?.setVisible(!this._hidden.has(o.data.key));
+    }
+
+    _dropEmitter(k)
+    {
+        const o = this._emitters[k];
+        o.timer?.remove();
+        o.fx?.stop(true);
+        delete this._emitters[k];
+    }
+
+    _emitterAt(wx, wy)
+    {
+        const r = 8/this.cameras.main.zoom;
+        return Object.entries(this._emitters ?? {}).find(([k, o])=>{
+            if(this._hidden.has(k)) {return false;}
+            const p = this._emitPos(o);
+            return Math.abs(p.x-wx)<=r && Math.abs(p.y-wy)<=r;
+        });
+    }
+
+    // 拖曳中：stream 的發射點直接搬，burst 下次噴就在新位置
+    _placeEmitter(o, x, y)
+    {
+        const t = o.target?.active ? o.target : null;
+        o.data = {...o.data, x:x-(t?.x ?? 0), y:y-(t?.y ?? 0)};
+        const em = o.fx?.emitter;
+        if(em?.active)
+        {
+            if(t) {em.followOffset?.set(o.data.x, o.data.y);}
+            else {em.setPosition(x, y);}
+        }
+    }
 
     //------------------------------------------------------
     //  表演（不改場景檔，「重置」回到場景檔的樣子）
@@ -246,6 +346,8 @@ export class Sandbox extends GameScene
     // 點到的東西（角色或擺設，最上面那個）：{key, role?, prop?}
     _pickAt(wx, wy)
     {
+        const em = this._emitterAt(wx, wy);   // 發射點的記號畫在最上面
+        if(em) {return {key:em[0], emitter:em[1]};}
         const hits = [
             ...this.roles.filter(p=>p.visible && p.getShapeRect?.().contains(wx, wy)).map(role=>({key:role.key, role, depth:role.depth})),
             ...Object.entries(this._props).filter(([, o])=>o.sp.visible && o.sp.getBounds().contains(wx, wy)).map(([key, prop])=>({key, prop, depth:prop.sp.depth})),
@@ -266,6 +368,13 @@ export class Sandbox extends GameScene
             const ptr = this.input.activePointer;
             const [tx, ty] = this.map.worldToTile(ptr.worldX, ptr.worldY);
             if(this.map.isInside(tx, ty)) {g.lineStyle(2/z, 0xff9933, 1).strokeRect(tx*GM.TILE_W, ty*GM.TILE_H, GM.TILE_W, GM.TILE_H);}
+        }
+        for(const [k, e] of Object.entries(this._emitters ?? {}))
+        {
+            if(this._hidden.has(k)) {continue;}
+            const {x, y} = this._emitPos(e), s = 6/z;
+            g.lineStyle(2/z, k===this._sel ? 0x7ddc5a : 0xff9933, 1).fillStyle(0x000000, 0.4)
+                .fillPoints([{x, y:y-s}, {x:x+s, y}, {x, y:y+s}, {x:x-s, y}], true).strokePoints([{x, y:y-s}, {x:x+s, y}, {x, y:y+s}, {x:x-s, y}], true);
         }
         const p = this._puppet(this._sel), o = this._props?.[this._sel];
         const r = p?.visible && p.getShapeRect ? p.getShapeRect() : o?.sp.visible ? o.sp.getBounds() : null;
@@ -292,12 +401,14 @@ export class Sandbox extends GameScene
             case 'replay': if(this._last) {this._do(this._last);} break;
             case 'reset': this._apply(this._scene, {force:true}); break;
             case 'hit': this._puppet(m.key)?.anim_hit?.(null); break;
+            case 'fxTick': this._puppet(m.key)?.fxTick?.(m.id); break;
             case 'die': this._puppet(m.key)?.die(); break;
             case 'revive': this._puppet(m.key)?.revive(); break;
             case 'hide':
                 this._hidden = new Set(m.keys);
                 this.roles.forEach(p=>p.setVisible(!this._hidden.has(p.key)));
                 Object.entries(this._props).forEach(([k, o])=>o.sp.setVisible(!this._hidden.has(k)));
+                Object.entries(this._emitters ?? {}).forEach(([k, o])=>o.fx?.emitter?.setVisible(!this._hidden.has(k)));
                 break;
         }
     }
@@ -366,6 +477,11 @@ export class Sandbox extends GameScene
             this._send({sb:'select', key:this._sel});
             if(hit?.role) {this._drag = {role:hit.role, from:this.map.worldToTile(hit.role.x, hit.role.y), to:null};}
             else if(hit?.prop) {this._drag = {prop:hit.prop, key:hit.key, dx:hit.prop.sp.x-p.worldX, dy:hit.prop.sp.y-p.worldY, moved:false};}
+            else if(hit?.emitter)
+            {
+                const e = this._emitPos(hit.emitter);
+                this._drag = {emitter:hit.emitter, key:hit.key, dx:e.x-p.worldX, dy:e.y-p.worldY, moved:false};
+            }
         });
         this.input.on('pointermove', (p)=>{
             if(this._pan)
@@ -374,7 +490,7 @@ export class Sandbox extends GameScene
                 cam.scrollX = this._pan.sx - (p.x-this._pan.x)/cam.zoom;
                 cam.scrollY = this._pan.sy - (p.y-this._pan.y)/cam.zoom;
             }
-            else if(this._drag?.prop)
+            else if(this._drag?.prop || this._drag?.emitter)
             {
                 if(!p.leftButtonDown()) {this._endDrag(); return;}
                 // 自由拖；按住 Shift 錨點吸到 16px（格子交點＋格子中心）
@@ -382,7 +498,8 @@ export class Sandbox extends GameScene
                 if(p.event.shiftKey) {[x, y] = [x, y].map(v=>Math.round(v/16)*16);}
                 else {[x, y] = [x, y].map(Math.round);}
                 this._drag.moved = true;
-                this._placeProp(this._drag.prop, x, y);
+                if(this._drag.prop) {this._placeProp(this._drag.prop, x, y);}
+                else {this._placeEmitter(this._drag.emitter, x, y);}
             }
             else if(this._drag?.role?.active)
             {
@@ -406,6 +523,12 @@ export class Sandbox extends GameScene
     {
         const d = this._drag;
         this._drag = null;
+        if(d?.emitter)
+        {
+            const {x, y} = d.emitter.data;
+            if(d.moved) {this._send({sb:'moveEmitter', key:d.key, x, y});}
+            return;
+        }
         if(d?.prop)
         {
             const {x, y} = d.prop.sp;

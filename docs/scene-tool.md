@@ -2,7 +2,7 @@
 
 模擬場景的整合驗收台：在遊戲本身裡擺角色、播動作、掛特效、放擺設、調日夜，看到的＝玩家會看到的。
 
-> 狀態：2026-11-15 定案；第 1～4 步（骨架、角色、動作、擺設）完成，5～6 步未做（計畫見最後）。
+> 狀態：2026-11-15 定案；第 1～5 步（骨架、角色、動作、擺設、特效）完成，第 6 步未做（計畫見最後）。
 
 ## 架構
 
@@ -12,9 +12,9 @@
   - `GameScene` 的 constructor 收 key（預設 `'GameScene'`），`Sandbox` 用 `'Sandbox'`。
   - `map.js`：`scene.sandbox` 時不建 `type:npc` 物件、跳過 `@群組` 圖層（不碰存檔）。
 - 分頁的 HTML 面板用 postMessage 操作 iframe 裡的 sandbox（同無頭測試走 `window.__dbg` 的精神）。訊息都帶 `sb` 欄位：
-  - 分頁 → sandbox：`load {scene}`（底圖不同就 `scene.restart` 帶著 scene 重開，同一張直接套用）、`grid {on}`、`home`（整張地圖放進畫面）、`select {key}`（選取框）、`hide {keys}`（👁）、`arm {act}`（指定目標，null＝取消）、`do {act}`、`replay`、`reset`、`hit`／`die`／`revive {key}`。
+  - 分頁 → sandbox：`load {scene}`（底圖不同就 `scene.restart` 帶著 scene 重開，同一張直接套用）、`grid {on}`、`home`（整張地圖放進畫面）、`select {key}`（選取框）、`hide {keys}`（👁）、`arm {act}`（指定目標，null＝取消）、`do {act}`、`replay`、`reset`、`hit`／`die`／`revive {key}`、`fxTick {key, id}`。
   - `act`＝`{key（誰做）, kind:'attack'|'ability'|'walk', id（技能）, tx, ty（目標格子）, tkey（點到的角色）}`。
-  - sandbox → 分頁：`ready`（剛開好、還沒有場景，分頁收到就送 `load`）、`loaded {map, w, h}`（套用完；w/h＝地圖格數，「＋」放在中間用）、`error {msg}`（地圖載入失敗、角色 id 不存在，顯示在狀態列）、`select {key}`（左鍵點到的角色，空白處＝null）、`move {key, tx, ty}`（角色拖曳放開）、`moveProp {key, x, y}`（擺設拖曳放開）、`ctx {tx, ty, wx, wy, key, cx, cy}`（右鍵，wx/wy 世界座標，cx/cy 是 iframe 裡的 client 座標）、`key {key, ctrl, shift, alt}`（iframe 有焦點時的鍵盤，分頁照自己的快捷鍵處理）、`disarm`（指定中按右鍵）。
+  - sandbox → 分頁：`ready`（剛開好、還沒有場景，分頁收到就送 `load`）、`loaded {map, w, h}`（套用完；w/h＝地圖格數，「＋」放在中間用）、`error {msg}`（地圖載入失敗、角色 id 不存在，顯示在狀態列）、`select {key}`（左鍵點到的角色，空白處＝null）、`move {key, tx, ty}`（角色拖曳放開）、`moveProp {key, x, y}`（擺設拖曳放開）、`moveEmitter {key, x, y}`（粒子發射點拖曳放開，跟著角色時是相對位置）、`ctx {tx, ty, wx, wy, key, cx, cy}`（右鍵，wx/wy 世界座標，cx/cy 是 iframe 裡的 client 座標）、`key {key, ctrl, shift, alt}`（iframe 有焦點時的鍵盤，分頁照自己的快捷鍵處理）、`disarm`（指定中按右鍵）。
 - 角色、物品、部位等遊戲資料（`role.json`、`item.json`、`part.json`、`anim.json`、`fx.json`、`particle.json`、`ability.json`、`local.json`、`textures.json`）在別的分頁存檔時，sandbox 的 DB 就舊了：分頁收到廣播就整個重開 iframe（工具列「重開」同）。
 - **sandbox 絕不寫遊戲存檔**：`Record.noSave = true`（`saveGame()` 直接 return），`Record.game` 是 sandbox 自己的一份。
 - 鏡頭：滾輪以游標為中心縮放（0.25～8）、中鍵拖曳平移；每張底圖的鏡頭記在 sandbox 的記憶體，換場景回同一張圖接著看；第一次看＝整張放進畫面（工具列「置中」同）。開發版掛 `window.__sb`（Sandbox 場景）給測試。
@@ -23,7 +23,8 @@
 
 手寫來源檔（工具寫），進 git，`{<場景名>: {...}}` 可多組；遊戲不讀。存：底圖、時間（＋自訂環境色）、角色實例、擺設、粒子發射點、角色身上的狀態特效。
 
-- 一筆＝`{map, roles?, props?}`（之後的步驟再加欄位）；角色 key 是 `r<n>`、擺設是 `p<n>`，選取／👁／Del 共用同一套 key：
+- 一筆＝`{map, roles?, props?, particles?}`（之後的步驟再加欄位）；角色 key 是 `r<n>`、擺設是 `p<n>`、粒子發射點是 `e<n>`，選取／👁／Del 共用同一套 key：
+  - `particles`：見「特效」；角色另有 `fx: [fx.json id]`。
   - `props`：`[{key, img, x, y, scale?, flip?, angle?, ox?, oy?, depth?, light?}]`，見「擺設」。
   - `map`：相對 `maps/`、不含 `.json`，新增預設 `sandbox`。
   - `roles`：`[{key, id, tx, ty, face?, equip?}]`；`key`＝場景裡的編號（`r1`、`r2`…取最小空號），`id`＝role.json，`tx/ty`＝格子，`face`＝`l`/`r`（沒寫＝角色預設面向），`equip`＝裝備覆寫 `{CAT_WEAPON: 'sword-1', CAT_HELMET: ''}`（有寫的格子換掉、`''`＝空著，沒寫的照 role.json 的 `inv.equips`）；沒有角色時整個欄位拿掉。
@@ -58,8 +59,9 @@
 
 ## 特效
 
-- 狀態特效：選角色加 fx.json 的效果，常駐到移除，可「tick 一下」「解除」，**存檔**。
-- 粒子：particle.json 常駐發射點（stream 持續、burst 照間隔重噴），可拖、可跟隨角色，**存檔**。
+- 狀態特效：角色右欄「狀態特效」下拉加 fx.json 的 id（存在角色的 `fx` 陣列），常駐到「解除」（從陣列拿掉）；「tick」播一次 tick（表演，`fxTick`）。sandbox 走 `com_disp` 的 `fxOn`／`fxOff`／`fxTick`（同遊戲）；角色資料比對不含 `fx`（`Sandbox._sig()`），加減狀態不重建角色，新的 `fxOn`、拿掉的 `fxOff`（播 end）。倒著的角色不動它的狀態。
+- 粒子發射點：`particles: [{key:'e<n>', id, x, y, follow?, every?}]`（particle.json 的 id；stream 持續噴、burst 每 `every` ms（預設 1000）重噴一次）；`follow`＝角色 key，x/y 變成相對那個角色（`playParticle` 的 `target`＋`ox/oy`），右欄換跟隨對象時位置自動換算、畫面上不動；角色重建（換裝、移格子）後發射點跟著重建。
+- 畫面上每個發射點畫一個橘色菱形（選中變綠，只在 sandbox 裡）：點選優先於角色／擺設、拖曳（同擺設，Shift 吸 16px）、方向鍵、Del、👁（藏粒子＋記號、點不到）。右鍵「在這裡放粒子…」、左欄「＋」（地圖中間；挑粒子對話框預設上次挑的 `tools.scene.lastParticle`）。
 - 區域（火牆等）走技能施放。
 
 ## 擺設
@@ -99,5 +101,5 @@
 2. ✅ 角色：放置／拖曳／刪除、裝備覆寫、面向、木偶化
 3. ✅ 動作：普攻／技能／走路／被打／倒地／重播／重置、自動補血
 4. ✅ 擺設：選圖、全部屬性、吸附、方向鍵、發光
-5. 特效：狀態特效、粒子發射點
+5. ✅ 特效：狀態特效、粒子發射點
 6. 日夜＋底圖：時鐘滑桿／播放／自訂色、切現有地圖（濾掉角色）
