@@ -557,6 +557,22 @@ run('map-tool', async t => {
             mt.setTime(12 * 60, true);
             await until(() => S.sel === F1 && cv()?.st.data && centered());
             out.fSwitch = [S.sel === F1, centered(), fSel().value];
+            // 路線：此刻那筆（12:00 停在 1F）＝從 2F 下來那段，藍線＋標籤；點「從 … 進來」＝同點門（← 返回）、鏡頭到那段在 2F 的端點
+            {
+                const s = cv().st, lb = s.route?.labels.find(l => l.go);
+                out.fRoute = [s.route?.lines.length > 0, (s.route?.labels ?? []).map(l => `${l.text}${l.go ? `>${l.go}` : ''}`).join('|'), !!lb, s.hits?.length > 0];
+                if (lb)
+                {
+                    const b = cv().getBoundingClientRect(), hb = s.hits.find(x => x.go === lb.go);
+                    const at = (x, y) => ({clientX: b.left + s.pz.o.x + (x - s.data.W / 2) * s.pz.K, clientY: b.top + s.pz.o.y + (y - s.data.H / 2) * s.pz.K});
+                    cv().dispatchEvent(new MouseEvent('click', {bubbles: true, ...at(hb.x + hb.w / 2, hb.y + hb.h / 2)}));
+                    await until(() => S.sel === lb.go && cv()?.st.data);
+                    const s2 = cv().st, n = mt.MV.spotOf(s2.data, hb.land);
+                    out.fLabel = [S.sel === lb.go, S.back.at(-1) === F1, !!n && Math.abs(s2.pz.view.ox + (n.cen.x - s2.data.W / 2) * s2.pz.K) < 0.5, !!s2.flash];
+                    document.querySelector('#view .back').click();
+                    await until(() => S.sel === F1 && cv()?.st.data);
+                }
+            }
             // 拖滑桿：拖到一半換圖也不斷
             const rng = () => document.querySelector('#view [data-k=timeR]'), rc = rng().getBoundingClientRect();
             const xOf = (m) => rc.left + 1 + (m / 1439) * (rc.width - 2), cy = rc.top + rc.height / 2;
@@ -588,7 +604,7 @@ run('map-tool', async t => {
             await settle();
             mt.setTime(12 * 60, true);
             await sleep(30);
-            out.fNone = [S.follow, localStorage.getItem('tools.map.follow'), S.sel === F2, document.querySelectorAll('#view .timebar .tseg').length];
+            out.fNone = [S.follow, localStorage.getItem('tools.map.follow'), S.sel === F2, document.querySelectorAll('#view .timebar .tseg').length, cv().st.route ?? null, cv().st.hits?.length ?? 0];
             mt.setTime(12 * 60, false);
         }
 
@@ -620,6 +636,19 @@ run('map-tool', async t => {
             // 從終點出發：zp 回 @1,1 的路從 @9,1 走（8 分），07:56 在 @5,1
             mt.setTime(7 * 60 + 56, true);
             out.posBack = tileOf('zp');
+            // 📍 跟著的路線：zw 11:56 走路中＝那段藍線、出發／抵達標籤；zp 09:02 巡邏中＝走去入口那段＋綠色巡邏線；🕒 關＝都不畫
+            {
+                const f0 = S.follow, rt = () => {const s = cv().st; return [s.route?.lines.length ?? 0, (s.route?.labels ?? []).map(l => l.text).join('|'), (s.patrol?.lines ?? []).map(l => l.kind).join()];};
+                S.follow = 'zw';
+                mt.setTime(11 * 60 + 56, true);
+                out.rWalk = rt();
+                S.follow = 'zp';
+                mt.setTime(9 * 60 + 2, true);
+                out.rPatrol = rt();
+                mt.setTime(9 * 60 + 2, false);
+                out.rOff = rt();
+                S.follow = f0;
+            }
             // 滾輪不調時間
             const rng = document.querySelector('#view [data-k=timeR]');
             const t0 = S.t;
@@ -964,6 +993,9 @@ run('map-tool', async t => {
     t.eq('時間游標：巡邏畫在路線上（@5,1 → @9,1 走了一半）', JSON.stringify(r.posPatrol), JSON.stringify([7, 1, 'stay']));
     t.eq('時間游標：單向巡邏跑完畫在終點', JSON.stringify(r.posDone), JSON.stringify([9, 1, 'stay']));
     t.eq('時間游標：下一筆從巡邏終點出發', JSON.stringify(r.posBack), JSON.stringify([5, 1, 'walk']));
+    t.eq('📍 跟著路線：走路中＝那筆的藍線＋出發／抵達標籤', JSON.stringify(r.rWalk), JSON.stringify([1, '11:52 出發|12:00 抵達', '']));
+    t.eq('📍 跟著路線：巡邏中＝走去入口的藍線＋綠色巡邏線', JSON.stringify(r.rPatrol), JSON.stringify([1, '08:56 出發|09:00 抵達', 'fwd']));
+    t.eq('📍 跟著路線：🕒 關＝不畫', JSON.stringify(r.rOff), JSON.stringify([0, '', '']));
     t.check('時間軸滾輪不調時間', r.wheelOff);
     t.eq('↑↓ 整頁調時間：畫布上 ↑ 從 23:59 繞回 00:00 並勾起、Shift 沒作用、↓ −1、Ctrl 不理、HH:MM 欄／滑桿有焦點也行', JSON.stringify(r.keys),
         JSON.stringify([[0, true], 1, 0, 0, [1439, '23:59'], 0]));
@@ -978,7 +1010,9 @@ run('map-tool', async t => {
     t.eq('📍 跟著：他在別張圖＝自動切過去、置中、下拉還在', JSON.stringify(r.fSwitch), JSON.stringify([true, true, 'trump']));
     t.eq('📍 跟著：拖滑桿拖到一半換圖也不斷、放開後不再動', JSON.stringify(r.fDrag), JSON.stringify([1420, 1420, '23:40', true, true, 1420]));
     t.eq('📍 跟著：總覽留在總覽、鏡頭移到房子所屬的世界格', JSON.stringify(r.fWorld), JSON.stringify([null, true, true]));
-    t.eq('📍 跟著：（不跟）＝清記錄、不換圖、時間軸不標範圍', JSON.stringify(r.fNone), JSON.stringify([null, null, true, 0]));
+    t.check('📍 跟著路線：12:00 停在 1F＝從 2F 下來那段（藍線＋「從 … 進來」可點）', r.fRoute?.[0] && /從 trump-inn-f2 進來>m_04x05\/trump-inn-f2/.test(r.fRoute[1]) && r.fRoute[2] && r.fRoute[3], JSON.stringify(r.fRoute));
+    t.eq('📍 跟著路線：點標籤＝換圖、記 ← 返回、鏡頭到端點、閃', JSON.stringify(r.fLabel), JSON.stringify([true, true, true, true]));
+    t.eq('📍 跟著：（不跟）＝清記錄、不換圖、時間軸不標範圍、不畫路線', JSON.stringify(r.fNone), JSON.stringify([null, null, true, 0, null, 0]));
     t.check('時間軸：底下標跟著的人此刻那筆（走路淺、停留深、跨午夜兩塊）', r.fRange[0] === r.fRange[1] && r.fRange[0].includes('stay'), JSON.stringify(r.fRange));
 
     // ---- 門 ----

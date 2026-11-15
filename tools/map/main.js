@@ -20,6 +20,7 @@ import '../common/combo.js';
 import {checkStory} from '../../src/data/storycheck.js';
 import {resolveObject, joinPath} from '../../src/data/navgrid.js';
 import * as TP from '../common/schedpos.js';
+import * as RT from '../common/schedroute.js';
 import {spotsOn, clashOf, occupyEl} from '../role/occupy.js';
 import {isRoleObj, roleObjs, placeOf, spriteOf, forgetSprites, SPRITE_HALF} from './roles.js';
 import {roleIssues, checkMapRoles, isPortObj, portIssue} from '../../src/data/mapcheck.js';
@@ -203,7 +204,19 @@ function setFollow(id)
     S.follow = id || null;
     try {S.follow ? localStorage.setItem(FOLLOW_KEY, S.follow) : localStorage.removeItem(FOLLOW_KEY);} catch {}
     if (S.follow) setTime(S.t, true);
-    else mapSt()?.updateTime?.();
+    else {mapSt()?.updateTime?.(); mapSt()?.redraw?.();}
+}
+
+// 跟著的人此刻那筆作息的路線（藍＋時間標籤）、那筆是巡邏且在這張圖＝綠色巡邏圈；🕒 沒勾／不跟＝沒有；同一個人同一筆、同一張圖就不重算
+function followRoute(st)
+{
+    const p = S.timeOn && S.follow && S.plans?.[S.follow], i = p ? posOf(p, S.t)?.at.i : null;
+    const key = i == null ? null : `${S.follow}|${i}`;
+    if (st.rt && st.rt.key === key && st.rt.p === p && st.rt.data === st.data) return;
+    st.rt = {key, p, data: st.data};
+    const s = key && p.sch[i];
+    st.route = key ? RT.routeOn(st.data, RT.legsOf(p.plan[i], S.nav?.edges ?? {}), st.name) : null;
+    st.patrol = s?.do === 'patrol' && s.map === st.name ? RT.patrolOn(st.data, s) : null;
 }
 
 // 下拉：排得出時刻表的 NPC，照 grp 分組
@@ -733,6 +746,10 @@ function draw(cv, st)
     // 門：橘框（壞的紅／黃）＋🚪，滑過實線；落腳點閃一下
     if (show.doors) DR.drawDoors(g, st.ports, K, st.hover?.door);
     DR.drawFlash(g, st, K);
+    // 📍 跟著的人此刻那筆的路線（畫在角色下面，時間標籤畫在最上面）
+    followRoute(st);
+    RT.drawRoute(g, st, K);
+    RT.drawPatrol(g, st, K);
     // 角色：照 root 的 y 排（下面的蓋上面）；拖著的那隻變淡
     for (const it of st.roles)
     {
@@ -804,13 +821,24 @@ function draw(cv, st)
             g.fillText(n.name, n.cen.x, y);
         }
     }
+    RT.drawLabels(g, st, K);
     cv.dataset.drawn = st.roles.length;
 }
 
-// 點門進來：倍率不動（沒記過＝置中的），落腳點放到畫布正中央、閃一下；找不到就照原本的視角
+// 點門／路線標籤進來：倍率不動（沒記過＝置中的），落腳點（具名物件或 @x,y）放到畫布正中央、閃一下；找不到就照原本的視角
 function landAt(st, view, port)
 {
-    if (!DR.landAt(st, view, port)) status(`⚠ ${st.name} 找不到落腳點「${port}」，照原本的視角打開`);
+    const n = MV.spotOf(st.data, port);
+    if (n) DR.flashAt(st, view, n.rect);
+    else status(`⚠ ${st.name} 找不到落腳點「${port}」，照原本的視角打開`);
+}
+
+// 點路線上的「→ 地圖／從 地圖 進來」標籤：同點門（記 ← 返回），鏡頭移到那段路在那張圖的端點
+function enterLabel(from, hit)
+{
+    S.back.push(from);
+    S.land = {map: hit.go, port: hit.land};
+    openMap(hit.go);
 }
 
 function hitAt(st, p, K)
@@ -976,7 +1004,8 @@ function mapEl(name)
         const keyOf = (x) => (x ? (x.role ?? (x.npc ? `n:${x.npc}` : x.door ? `d:${x.door.o.id}` : `p:${x.point}`)) : null);
         const key = keyOf(hit), was = keyOf(st.hover);
         st.hover = hit;
-        cv.style.cursor = hit?.role || hit?.n?.type === 'point' ? 'grab' : hit ? 'pointer' : '';
+        const onLabel = st.hits?.some(b => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h);
+        cv.style.cursor = onLabel ? 'pointer' : hit?.role || hit?.n?.type === 'point' ? 'grab' : hit ? 'pointer' : '';
         say(e);
         if (key !== was) redraw();
     });
@@ -990,6 +1019,8 @@ function mapEl(name)
             if (inMap(st.data, t)) act(placeRole(name, S.place, t, e.shiftKey));
             return;
         }
+        const lb = st.hits?.find(b => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h);
+        if (lb) {enterLabel(name, lb); return;}
         const hit = hitAt(st, p, st.pz.K);
         if (hit?.npc) {SH.gotoTab('role', [hit.npc]); return;}
         if (hit?.door)
