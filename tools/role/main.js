@@ -638,7 +638,7 @@ function openSch(id, i)
     try {localStorage.setItem('tools.role.rtab', 'sched');} catch {}
     S.secOpen['作息'] = true;
     S.open.schedule = true;
-    SM.focusSch(S.data[id].schedule[i]);
+    jumpSch(id, i);
     render();
     document.querySelector(`#view .card[data-sch="${i}"]`)?.scrollIntoView({block: 'nearest'});
 }
@@ -654,7 +654,7 @@ const schMulti = (id) => {const x = multiSel(id); return x?.length >= 2 ? x : nu
 function pickSch(id, i, shift)
 {
     const a = schSel(id), n = S.data[id].schedule?.length ?? 0;
-    if (!shift || a < 0 || a === i || n < 2) return selectSch(id, i);
+    if (!shift || a < 0 || a === i || n < 2) return selectSch(id, i, true);
     S.schMulti = {id, n, a, ...SE.pickRange(n, a, i)};
     SB.markSel(document.getElementById('view'), schMulti(id));
     document.querySelector('#view .schslot')?.replaceChildren(schSlot(id));
@@ -669,16 +669,32 @@ function ganttMulti(id, i)
     render();
 }
 
-function selectSch(id, i)
+// jump＝左鍵點段：跳出發點＋出發時間（jumpSch），選中的那段再點也重跳（只重畫右欄）；右鍵順手選取＝對準目的地
+function selectSch(id, i, jump = false)
 {
-    if (S.schSel?.id === id && S.schSel.i === i && !S.schMulti) return;
-    S.schSel = {id, i};
-    S.schMulti = null;
-    if (S.routeEdit && !editingRoute(id, i)) {S.routeEdit = null; for (const b of document.querySelectorAll('#view .routebtn.on')) {b.classList.remove('on'); b.textContent = '✎ 編輯路線';}}
-    SM.focusSch(S.data[id].schedule[i]);
-    SB.markSel(document.getElementById('view'), i);
-    document.querySelector('#view .schslot')?.replaceChildren(schSlot(id));
+    const same = S.schSel?.id === id && S.schSel.i === i && !S.schMulti;
+    if (same && !jump) return;
+    if (jump) jumpSch(id, i); else SM.focusSch(S.data[id].schedule[i]);
+    if (!same)
+    {
+        S.schSel = {id, i};
+        S.schMulti = null;
+        if (S.routeEdit && !editingRoute(id, i)) {S.routeEdit = null; for (const b of document.querySelectorAll('#view .routebtn.on')) {b.classList.remove('on'); b.textContent = '✎ 編輯路線';}}
+        SB.markSel(document.getElementById('view'), i);
+        document.querySelector('#view .schslot')?.replaceChildren(schSlot(id));
+    }
     renderRight();
+}
+
+// 鏡頭對準出發點（plan[i].from＝上一筆的終點）、時間游標設出發時間並勾起來；時刻表排不出退回對準目的地
+function jumpSch(id, i)
+{
+    const p = planOf(id).plan?.[i];
+    if (!p?.from) {SM.focusSch(S.data[id].schedule[i]); status('時刻表排不出，對準目的地'); return;}
+    const k = p.from.indexOf(':');
+    SM.focusKey(p.from.slice(0, k), p.from.slice(k + 1));
+    GT.setT(p.dep);
+    GT.setOn(true);
 }
 // ---------- 作息地圖右鍵：新增目的地／改目的地（dest＝{go: 物件名稱} 或 {at: [tx, ty]}） ----------
 // 換目的地：go／at 互換時新的 key 放在舊的位置，key 順序不亂
@@ -1572,6 +1588,6 @@ async function loadRefs()
 })();
 
 // 給無頭測試用
-window.__re = {S, SM, PZ, SP, SE, ME, SB, GT, openSch, updateNav, checkStale, renamePoint, deletePoint, toggleRouteEdit, setAssets: D.setAssets, reload: D.reload, save: D.save, commit, set, undo: D.undo, redo: D.redo, add, askNew, dup: D.dup,
+window.__re = {S, SM, PZ, SP, SE, ME, SB, GT, openSch, planOf,updateNav, checkStale, renamePoint, deletePoint, toggleRouteEdit, setAssets: D.setAssets, reload: D.reload, save: D.save, commit, set, undo: D.undo, redo: D.redo, add, askNew, dup: D.dup,
                rename: D.rename, remove: D.remove, addSch, scanRefs: D.scanRefs, validate, validateAll, render, IC, JE, SC,
                pickPart, renamePart, deletePart, genPortrait, loadRefs, grpsOf, newGrp, renameGrp, removeGrp, dropRole, setGrp, setKind, ALL};

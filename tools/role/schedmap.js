@@ -421,9 +421,14 @@ export function setMap(m)
 // 換選中的作息：切到目的地那張圖，下次畫時鏡頭對準目的地（倍率不動）、閃一下
 export function focusSch(s)
 {
-    if (!s?.map) return;
-    setMap(s.map);
-    M.focus = {map: s.map, key: destOf(s)};
+    if (s?.map) focusKey(s.map, destOf(s));
+}
+
+// 切到 map、下次畫時鏡頭對準 key（具名物件或 @x,y）、閃一下
+export function focusKey(map, key)
+{
+    setMap(map);
+    M.focus = {map, key};
 }
 
 // 點門：記住從哪來、打開那張圖（路網外的也能看）、鏡頭移到落腳點
