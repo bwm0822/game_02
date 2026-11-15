@@ -1109,7 +1109,7 @@ function stepTime(e)
     return true;
 }
 
-// 🕒 時間游標：勾了才畫具名 NPC；時間可打 HH:MM、拖滑桿（10 分一格）或整頁按方向鍵（stepTime()），記住（schedpos.js 的 timeBarEl，角色分頁作息地圖共用）
+// 🕒 時間游標：勾了才畫具名 NPC；時間可打 HH:MM、拖滑桿（1 分）或整頁按方向鍵（stepTime()），記住（schedpos.js 的 timeBarEl，角色分頁作息地圖共用）
 function timeBar(st)
 {
     const el = TP.timeBarEl(() => ({t: S.t, on: S.timeOn}), setTime,

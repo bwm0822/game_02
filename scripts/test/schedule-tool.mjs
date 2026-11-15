@@ -1168,7 +1168,7 @@ run('schedule-tool', async t => {
                 const rng = () => right().querySelector('[data-k=schedTimeR]'), rc = rng().getBoundingClientRect();
                 const xOf = (m) => rc.left + 1 + (m / 1439) * (rc.width - 2), cy = rc.top + rc.height / 2;
                 const ev = (el, type, m) => el.dispatchEvent(new PointerEvent(type, {bubbles: true, cancelable: true, button: 0, pointerId: 1, clientX: xOf(m), clientY: cy}));
-                const tA = Math.round(re.SP.mod(tr[0].arr + 30) / 10) * 10, tB = Math.round(re.SP.mod(tr[j].arr + 20) / 10) * 10, tC = re.SP.mod(tB + 10);
+                const tA = Math.round(re.SP.mod(tr[0].arr + 30) / 10) * 10, tB = Math.round(re.SP.mod(tr[j].arr + 20) / 10) * 10, tC = re.SP.mod(tB + 13);
                 ev(rng(), 'pointerdown', tA);
                 const d1 = [G.t === tA, cv().st.name === s0.map];
                 ev(window, 'pointermove', tB);
@@ -1455,7 +1455,7 @@ run('schedule-tool', async t => {
     t.eq('📍 跟著：同一張圖動時間＝拉回置中、倍率不動', JSON.stringify(r.fSame), JSON.stringify([true, true, true]));
     t.eq('📍 跟著：他在別張圖＝自動切過去、置中、沒有 → 按鈕', JSON.stringify(r.fSwitch), JSON.stringify([true, true, true, true]));
     t.check('📍 跟著：方向鍵也跟著切圖', r.fKey);
-    t.eq('📍 跟著：拖滑桿拖到一半換圖也不斷（時間、新滑桿、HH:MM 跟著；放開後不再動）', JSON.stringify(r.fDrag), JSON.stringify([true, true, true, true, true, true, true]));
+    t.eq('📍 跟著：拖滑桿拖到一半換圖也不斷（時間、新滑桿、HH:MM 跟著、1 分不吸附；放開後不再動）', JSON.stringify(r.fDrag), JSON.stringify([true, true, true, true, true, true, true]));
     t.eq('📍 跟著：不勾＝不切圖、沒有 → 按鈕、記住、不換選取', JSON.stringify(r.fOff), JSON.stringify([false, '0', true, true, true]));
     t.eq('📍 跟著：時刻落在第 2 筆＝自動選它（卡片、地圖路線、時序條反白）', JSON.stringify(r.fNow), JSON.stringify([1, '1', 1, '1']));
     t.eq('📍 跟著：出發前一分鐘＝停在上一筆、表單不整個重畫', JSON.stringify(r.fNowPrev), JSON.stringify([0, '0', 0, '0', true]));

@@ -580,10 +580,10 @@ run('map-tool', async t => {
             ev(rng(), 'pointerdown', 12 * 60);
             ev(window, 'pointermove', 23 * 60 + 30);
             await until(() => S.sel === F2 && cv()?.st.data);
-            ev(window, 'pointermove', 23 * 60 + 40);
+            ev(window, 'pointermove', 23 * 60 + 43);
             await sleep(30);
             out.fDrag = [S.t, +rng().value, document.querySelector('#view [data-k=timeT]').value, S.sel === F2, centered()];
-            ev(window, 'pointerup', 23 * 60 + 40);
+            ev(window, 'pointerup', 23 * 60 + 43);
             ev(window, 'pointermove', 12 * 60);
             out.fDrag.push(S.t);
             // 時間軸底下標跟著的人此刻那筆（23:40 trump 停在 2F 床＝那筆的停留跨午夜＝兩塊深色；走路那段淺色）
@@ -1008,7 +1008,7 @@ run('map-tool', async t => {
     t.eq('📍 跟著：預設（不跟）、下拉有 trump', JSON.stringify(r.fDef), JSON.stringify(['', null, true]));
     t.eq('📍 跟著：挑 trump＝記住、勾 🕒、在這張圖就置中', JSON.stringify(r.fPick), JSON.stringify(['trump', 'trump', true, true, true]));
     t.eq('📍 跟著：他在別張圖＝自動切過去、置中、下拉還在', JSON.stringify(r.fSwitch), JSON.stringify([true, true, 'trump']));
-    t.eq('📍 跟著：拖滑桿拖到一半換圖也不斷、放開後不再動', JSON.stringify(r.fDrag), JSON.stringify([1420, 1420, '23:40', true, true, 1420]));
+    t.eq('📍 跟著：拖滑桿拖到一半換圖也不斷、1 分不吸附、放開後不再動', JSON.stringify(r.fDrag), JSON.stringify([1423, 1423, '23:43', true, true, 1423]));
     t.eq('📍 跟著：總覽留在總覽、鏡頭移到房子所屬的世界格', JSON.stringify(r.fWorld), JSON.stringify([null, true, true]));
     t.check('📍 跟著路線：12:00 停在 1F＝從 2F 下來那段（藍線＋「從 … 進來」可點）', r.fRoute?.[0] && /從 trump-inn-f2 進來>m_04x05\/trump-inn-f2/.test(r.fRoute[1]) && r.fRoute[2] && r.fRoute[3], JSON.stringify(r.fRoute));
     t.eq('📍 跟著路線：點標籤＝換圖、記 ← 返回、鏡頭到端點、閃', JSON.stringify(r.fLabel), JSON.stringify([true, true, true, true]));
