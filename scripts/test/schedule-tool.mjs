@@ -1126,6 +1126,23 @@ run('schedule-tool', async t => {
                 typeT(re.SP.mod(tr[j].arr + 5));
                 await until(() => cv()?.st.name === mj && cv().st.data && centered());
                 out.fSwitch = [cv().st.name === mj, centered(), right().querySelector('[data-k=schedAway]').hidden, fChk().checked];
+                // 自動選當下那筆：時序條反白、卡片、地圖的路線都換成第 j 筆；跨過出發時間前後各算一筆
+                const nS = S.data.trump.schedule.length, pj = (j - 1 + nS) % nS;
+                const selNow = () => [S.schSel.i, cards().map(c => c.dataset.sch).join(), cv().st.sel, document.querySelector('#view .daybar .seg.stay.sel')?.dataset.i ?? document.querySelector('#view .daybar .seg.sel')?.dataset.i];
+                out.fNow = selNow();
+                const bar0 = document.querySelector('#view .daybar');
+                typeT(re.SP.mod(tr[j].dep - 1));
+                await until(() => cv()?.st.data && S.schSel.i === pj && cv().st.sel === pj);
+                out.fNowPrev = [...selNow(), bar0.isConnected];
+                typeT(re.SP.mod(tr[j].dep + 1));
+                await until(() => cv()?.st.data && S.schSel.i === j && cv().st.sel === j);
+                out.fNowWalk = [...selNow(), !!cv().st.route];
+                // 在地圖上挑目的地中：不換選取
+                S.pick = {id: 'trump', text: '挑', fn: null};
+                typeT(re.SP.mod(tr[j].dep - 1));
+                await sleep(50);
+                out.fNowPick = S.schSel.i;
+                S.pick = null;
                 // 方向鍵也跟：回到 s0 那張圖的時刻再按 ↑
                 re.GT.setT(re.SP.mod(tr[0].arr + 5)); re.render();
                 await until(() => cv()?.st.data);
@@ -1153,7 +1170,7 @@ run('schedule-tool', async t => {
                 fChk().click();
                 typeT(re.SP.mod(tr[0].arr + 5));
                 await sleep(30);
-                out.fOff = [re.SM.F.on, localStorage.getItem('tools.role.sched.follow'), cv().st.name === mj, right().querySelector('[data-k=schedAway]').hidden];
+                out.fOff = [re.SM.F.on, localStorage.getItem('tools.role.sched.follow'), cv().st.name === mj, right().querySelector('[data-k=schedAway]').hidden, S.schSel.i === j];
             }
             re.SM.F.on = true;
             localStorage.removeItem('tools.role.sched.follow');
@@ -1420,5 +1437,9 @@ run('schedule-tool', async t => {
     t.eq('📍 跟著：他在別張圖＝自動切過去、置中、沒有 → 按鈕', JSON.stringify(r.fSwitch), JSON.stringify([true, true, true, true]));
     t.check('📍 跟著：方向鍵也跟著切圖', r.fKey);
     t.eq('📍 跟著：拖滑桿拖到一半換圖也不斷（時間、新滑桿、HH:MM 跟著；放開後不再動）', JSON.stringify(r.fDrag), JSON.stringify([true, true, true, true, true, true, true]));
-    t.eq('📍 跟著：不勾＝不切圖、出現 → 按鈕、記住', JSON.stringify(r.fOff), JSON.stringify([false, '0', true, false]));
+    t.eq('📍 跟著：不勾＝不切圖、出現 → 按鈕、記住、不換選取', JSON.stringify(r.fOff), JSON.stringify([false, '0', true, false, true]));
+    t.eq('📍 跟著：時刻落在第 2 筆＝自動選它（卡片、地圖路線、時序條反白）', JSON.stringify(r.fNow), JSON.stringify([1, '1', 1, '1']));
+    t.eq('📍 跟著：出發前一分鐘＝停在上一筆、表單不整個重畫', JSON.stringify(r.fNowPrev), JSON.stringify([0, '0', 0, '0', true]));
+    t.eq('📍 跟著：出發後一分鐘＝正走去的那筆、有路線', JSON.stringify(r.fNowWalk), JSON.stringify([1, '1', 1, '1', true]));
+    t.eq('📍 跟著：在地圖上挑目的地中不換選取', r.fNowPick, 1);
 });

@@ -435,10 +435,11 @@ async function portsFor(d)
 // 挑目的地：opt.pick＝提示文字（有＝挑選模式，左鍵點物件／空地＝onPick(map, {name?, tile})，門照樣能進去）
 // 時間游標：opt.time＝{get() → {t, on}, set(t, on)}（甘特圖的「此刻」）、opt.plans()＝全部角色 {id: {plan, sch, segs}}（勾「其他角色（時間游標）」才用）、
 //   opt.refs＝{roles, items, parts}（合成角色圖、錨點）；這個角色橘色，不在這張圖時時間軸旁出現「→ 地圖」；canvas.st.stepTime(e)＝方向鍵調時間
+//   opt.onNow(i)＝📍 跟著動時間時，時刻落在第 i 筆（要換選中那筆就換掉 sel 並回 true，右欄由這裡重建）
 export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {}, others = [], id = null, occ = () => [],
     onNew = null, onMove = null, onMenu = null, stale = null, atStale = 0, onUpdate = null, navMsg = '',
     patrol = null, editRoute = false, onRouteAdd = null, onRouteDel = null, routeMark = null, onRouteMark = null, pick = null, onPick = null,
-    time = null, plans = () => ({}), refs = null} = {})
+    time = null, plans = () => ({}), refs = null, onNow = null} = {})
 {
     const free = M.map && M.free === M.map;
     const name = M.map && (maps.includes(M.map) || free) ? M.map : (r.schedule?.find(s => maps.includes(s.map))?.map ?? maps[0]);
@@ -609,11 +610,14 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
         const need = refs ? st.npcs.filter(x => !st.sprites.has(x.id)) : [];
         if (need.length) Promise.all(need.map(async x => st.sprites.set(x.id, await spriteOf(x.id, refs)))).then(redraw);
     };
-    // 跟著：他在別張圖＝切過去（讀完再置中）；在這張＝倍率不動、把他放到畫布正中央
+    // 跟著：先問 onNow(i) 要不要換選中那筆（時序條的段：走路中＝走去的那筆、停留中＝停的那筆；換了＝右欄整個重建）
+    // 他在別張圖＝切過去（讀完再置中）；在這張＝倍率不動、把他放到畫布正中央（要重建就讀完再置中）
     const followMe = () => {
         const {t} = time.get(), pos = mine && TP.posOf(mine, t, edges);
+        const moved = !!pos && !!onNow?.(pos.at.i);
         if (!pos) return false;
         if (pos.map !== name) {M.follow = pos.map; go(pos.map); return true;}
+        if (moved) {M.follow = name; refresh(); return true;}
         const c = st.data && TP.followCen(st, st.data, name, mine, id, t, edges, st.roles);
         if (c) TP.centerAt(view, st.data, c);
         else if (!st.data) M.follow = name;

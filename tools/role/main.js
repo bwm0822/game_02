@@ -686,6 +686,18 @@ function selectSch(id, i, jump = false)
     renderRight();
 }
 
+// 📍 跟著動時間：選時刻落在的那筆（右欄由作息地圖重建）；編輯路線／在地圖上挑目的地／多選中、已經是那筆＝不換
+function nowSch(id, i)
+{
+    if (i == null || S.routeEdit || S.pick || schMulti(id) || schSel(id) === i) return false;
+    S.schSel = {id, i};
+    S.schMulti = null;
+    SB.markSel(document.getElementById('view'), i);
+    document.querySelector('#view .schslot')?.replaceChildren(schSlot(id));
+    document.querySelector(`#view .card[data-sch="${i}"]`)?.scrollIntoView({block: 'nearest'});
+    return true;
+}
+
 // 鏡頭對準出發點（plan[i].from＝上一筆的終點）、時間游標設出發時間並勾起來；時刻表排不出退回對準目的地
 function jumpSch(id, i)
 {
@@ -1420,7 +1432,7 @@ function renderRight()
             id, occ: occAll,
             others: Object.entries(S.data).filter(([o]) => o !== id).flatMap(([o, x]) => (Array.isArray(x.schedule) ? x.schedule.map((s, i) => ({id: o, i, s})) : [])),
             time: {get: () => ({t: GT.G.t, on: GT.G.on}), set: (t, on) => {GT.setT(t); GT.setOn(on);}},
-            plans: allPlans, refs: {roles: S.data, items: S.ext.items, parts: S.ext.parts}})
+            plans: allPlans, refs: {roles: S.data, items: S.ext.items, parts: S.ext.parts}, onNow: (i) => nowSch(id, i)})
         : previewEl(r, S.ext.items, S.ext.parts));
 }
 
