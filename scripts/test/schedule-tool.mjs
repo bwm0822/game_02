@@ -1049,6 +1049,8 @@ run('schedule-tool', async t => {
         {
             const G = re.GT.G, t0 = G.t, on0 = G.on, npcs0 = re.SM.show.npcs;
             const tr = re.SP.buildPlan(S.data.trump.schedule, S.ext.nav.edges, S.ext.nav.nodes).plan, s0 = S.data.trump.schedule[0];
+            out.fDefault = [re.SM.F.on, localStorage.getItem('tools.role.sched.follow')];
+            re.SM.F.on = false;
             S.schSel = {id: 'trump', i: 0};
             re.SM.setMap(s0.map); re.render();
             await until(() => cv()?.st.data);
@@ -1090,6 +1092,71 @@ run('schedule-tool', async t => {
             right().dispatchEvent(new PointerEvent('pointerleave'));
             kd('ArrowUp'); const k3 = G.t;
             out.tKeys = [k1, ...k2, k3];
+
+            // ---- 📍 跟著 ----
+            const TP = await import('/tools/common/schedpos.js');
+            const fChk = () => right().querySelector('[data-k=schedFollow]');
+            const typeT = (m) => {tIn().value = re.SP.hhmm(m); tIn().dispatchEvent(new Event('change'));};
+            // trump 在 st 這張圖上的框中心有沒有在畫布正中央
+            const centered = () => {
+                const s = cv().st, x = s.npcs.find(n => n.id === 'trump'), c = x && TP.npcCen(x, s.roles);
+                return !!c && Math.abs(s.pz.view.ox + (c.x - s.data.W / 2) * s.pz.K) < 0.5 && Math.abs(s.pz.view.oy + (c.y - s.data.H / 2) * s.pz.K) < 0.5;
+            };
+            re.SM.show.npcs = false;
+            re.SM.setMap(s0.map); re.render();
+            await until(() => cv()?.st.data);
+            out.fUnchecked = [fChk().checked, fChk().disabled];
+            // 勾起來：馬上跟一次（在這張圖＝置中）、記住
+            typeT(re.SP.mod(tr[0].arr + 5));
+            await sleep(30);
+            cv().st.pz.view.ox += 40;
+            fChk().click();
+            await until(() => cv()?.st.data && centered());
+            out.fCheck = [re.SM.F.on, localStorage.getItem('tools.role.sched.follow'), centered(), cv().st.name === s0.map];
+            // 同一張圖動時間：鏡頭拉回來、倍率不動
+            const z0 = cv().st.pz.view.zoom;
+            cv().st.pz.view.ox += 40;
+            typeT(re.SP.mod(tr[0].arr + 6));
+            await sleep(30);
+            out.fSame = [centered(), cv().st.pz.view.zoom === z0, cv().st.name === s0.map];
+            if (j >= 0)
+            {
+                const mj = S.data.trump.schedule[j].map;
+                // 他在別張圖：自動切過去、讀完置中、不出現 → 按鈕
+                typeT(re.SP.mod(tr[j].arr + 5));
+                await until(() => cv()?.st.name === mj && cv().st.data && centered());
+                out.fSwitch = [cv().st.name === mj, centered(), right().querySelector('[data-k=schedAway]').hidden, fChk().checked];
+                // 方向鍵也跟：回到 s0 那張圖的時刻再按 ↑
+                re.GT.setT(re.SP.mod(tr[0].arr + 5)); re.render();
+                await until(() => cv()?.st.data);
+                right().dispatchEvent(new PointerEvent('pointerenter'));
+                kd('ArrowUp');
+                await until(() => cv()?.st.name === s0.map && cv().st.data && centered());
+                right().dispatchEvent(new PointerEvent('pointerleave'));
+                out.fKey = cv().st.name === s0.map;
+                // 拖滑桿：拖到一半換圖也不斷（拖曳自己聽 window）
+                const rng = () => right().querySelector('[data-k=schedTimeR]'), rc = rng().getBoundingClientRect();
+                const xOf = (m) => rc.left + 8 + (m / 1430) * (rc.width - 16), cy = rc.top + rc.height / 2;
+                const ev = (el, type, m) => el.dispatchEvent(new PointerEvent(type, {bubbles: true, cancelable: true, button: 0, pointerId: 1, clientX: xOf(m), clientY: cy}));
+                const tA = Math.round(re.SP.mod(tr[0].arr + 30) / 10) * 10, tB = Math.round(re.SP.mod(tr[j].arr + 20) / 10) * 10, tC = re.SP.mod(tB + 10);
+                ev(rng(), 'pointerdown', tA);
+                const d1 = [G.t === tA, cv().st.name === s0.map];
+                ev(window, 'pointermove', tB);
+                await until(() => cv()?.st.name === mj && cv().st.data);
+                ev(window, 'pointermove', tC);
+                await sleep(30);
+                const d2 = [G.t === tC, +rng().value === tC, tIn().value === re.SP.hhmm(tC), cv().st.name === mj];
+                ev(window, 'pointerup', tC);
+                ev(window, 'pointermove', tA);
+                out.fDrag = [...d1, ...d2, G.t === tC];
+                // 不勾：回到 → 按鈕、不切圖
+                fChk().click();
+                typeT(re.SP.mod(tr[0].arr + 5));
+                await sleep(30);
+                out.fOff = [re.SM.F.on, localStorage.getItem('tools.role.sched.follow'), cv().st.name === mj, right().querySelector('[data-k=schedAway]').hidden];
+            }
+            re.SM.F.on = true;
+            localStorage.removeItem('tools.role.sched.follow');
             re.GT.setT(t0); re.GT.setOn(on0); re.render();
         }
 
@@ -1346,4 +1413,12 @@ run('schedule-tool', async t => {
     if (r.tAway) t.eq('不在這張圖：→ 地圖按鈕、這張圖沒人；點了切過去、按鈕藏、畫在那張圖', JSON.stringify(r.tAway), JSON.stringify([false, r.tAwayWant, 0, true, true, true]));
     t.eq('勾其他角色（時間游標）：人不會變少、trump 還在、橘色的是 trump', JSON.stringify(r.tOthers), JSON.stringify([true, true, 'trump']));
     t.eq('方向鍵（滑鼠在右欄）：↑ +1、→ 下一個整 10 分、HH:MM 跟著；離開右欄不理', JSON.stringify(r.tKeys), JSON.stringify([477, 480, '08:00', 480]));
+    t.eq('📍 跟著：預設勾、沒記錄', JSON.stringify(r.fDefault), JSON.stringify([true, null]));
+    t.eq('📍 跟著：不勾時可勾', JSON.stringify(r.fUnchecked), JSON.stringify([false, false]));
+    t.eq('📍 跟著：勾起來馬上置中、記住', JSON.stringify(r.fCheck), JSON.stringify([true, '1', true, true]));
+    t.eq('📍 跟著：同一張圖動時間＝拉回置中、倍率不動', JSON.stringify(r.fSame), JSON.stringify([true, true, true]));
+    t.eq('📍 跟著：他在別張圖＝自動切過去、置中、沒有 → 按鈕', JSON.stringify(r.fSwitch), JSON.stringify([true, true, true, true]));
+    t.check('📍 跟著：方向鍵也跟著切圖', r.fKey);
+    t.eq('📍 跟著：拖滑桿拖到一半換圖也不斷（時間、新滑桿、HH:MM 跟著；放開後不再動）', JSON.stringify(r.fDrag), JSON.stringify([true, true, true, true, true, true, true]));
+    t.eq('📍 跟著：不勾＝不切圖、出現 → 按鈕、記住', JSON.stringify(r.fOff), JSON.stringify([false, '0', true, false]));
 });

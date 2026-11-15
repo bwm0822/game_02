@@ -98,6 +98,8 @@
 - 讀 role.json 時順便照 `navgraph.json`（存 `S.nav`）給每個有作息的角色排時刻表（`src/data/schedplan.js` 的 `buildPlan()`，同遊戲 `ScheduleManager`），再用角色分頁 `schedbar.js` 的 `whereAt()` 查這個時刻在哪一筆，`posOf()` 算**實際位置**（算位置、畫角色、時間軸、方向鍵都在 `tools/common/schedpos.js`，角色分頁作息地圖共用）：走路中照那筆的路線 `from → path…` 每段 `edgeCost()` 分，算出在哪兩個點之間走了幾分（穿過 port 那一分鐘算還在前一張圖；正走在別張圖就畫在那張）；巡邏中照 `patrolAt()`（遊戲 `_initPatrol()` 同一支：入口往 p1 的路上／停在路點／兩點之間，一次／單向跑完在終點）；其他＝目的地。選了地圖：兩點之間用 A*（`bestPath()`，同作息地圖畫路線）照比例取那一格（`walkCen()`，每張圖快取 `st.walks`），走不到就直線內插；總覽：兩點直線內插。
 - 畫法：角色 0.8 不透明＋藍框（走路中虛線框、名字寫 `id → 目的地點名`）。同一點（或同一格）好幾個人往右排開 24px。下面藍底名字。
 - 滑過＝名字、時間、在／正走去哪個點、第幾筆；點了跳角色分頁。只是看的，點不到也拖不動（地圖上放的角色優先）。時間軸不寫人數。
+- **📍 跟著**（時間軸最後的下拉 `[data-k=timeFollow]`，`followSel()`：排得出時刻表的 NPC 照 `grp` 分組，記 `tools.map.follow`，預設「（不跟）」；挑了人＝`setTime(S.t, true)` 馬上跟一次＋勾 🕒）：時間一動（`setTime()` 且 🕒 開著：打時間、滑桿、方向鍵、勾 🕒）就跟——選了地圖：他此刻在別張圖＝`openMap()` 切過去（同點左樹，「← 返回」不清），`S.followPend` 讓那張圖讀完 `followMap()` 置中；在這張＝倍率不動把他的框中心（`TP.followCen()`＝`npcsOn()`＋`npcCen()`）放到畫布正中（`TP.centerAt()`）。總覽：留在總覽，`followWorld()` 把世界鏡頭移到他的青點（在室內＝房子所屬那格的中心，`TP.centerView()`）。時間沒動就不跟，停下來可以自由拖鏡頭／換圖。在地圖上點 NPC 照舊跳角色分頁。
+- **滑桿拖曳**自己處理（`timeBarEl()`：pointerdown 擋掉原生、聽 window 的 pointermove，照 pointerdown 那時的滑桿位置算時間，10 分一格）：跟著換圖時整個畫面重建、滑桿換新的也不會斷，之後的時間交給畫面上同 `data-k` 的新時間軸（`el.setT`）。
 
 ## 同步
 

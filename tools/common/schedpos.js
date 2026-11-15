@@ -1,5 +1,6 @@
 // 作息時間游標：具名 NPC 某個時刻實際在哪、畫在地圖上（地圖分頁、角色分頁作息地圖共用）
 import {h} from './dom.js';
+import * as PZ from './panzoom.js';
 import {edgeCost, mod, hhmm, patrolAt} from '../../src/data/schedplan.js';
 import {bestPath} from '../../src/data/navgrid.js';
 import {whereAt} from '../role/schedbar.js';
@@ -97,7 +98,23 @@ export function npcAt(npcs, p, roles)
     return null;
 }
 
-const BLUE = {line: '#4fc3f7', tag: 'rgba(20,60,90,0.9)'}, ORANGE = {line: '#ff9f43', tag: 'rgba(120,60,10,0.92)'};
+// 📍 跟著：p（{plan, sch, segs}）此刻在地圖 d（名稱 name）上的框中心（地圖座標）；不在這張圖＝null
+export function followCen(cache, d, name, p, id, t, edges, roles)
+{
+    const x = npcsOn(cache, d, name, {[id]: p}, t, edges)[0];
+    return x ? npcCen(x, roles) : null;
+}
+
+// 倍率不動，(x, y)（相對畫布原點＝整張的中心）放到畫布正中央；centerAt＝地圖座標（左上 0,0）
+export function centerView(view, x, y)
+{
+    view.ox = -x * view.zoom;
+    view.oy = -y * view.zoom;
+    PZ.setZoom(view.zoom, 0, 0, view);
+}
+export const centerAt = (view, d, p) => centerView(view, p.x - d.W / 2, p.y - d.H / 2);
+
+const BLUE ={line: '#4fc3f7', tag: 'rgba(20,60,90,0.9)'}, ORANGE = {line: '#ff9f43', tag: 'rgba(120,60,10,0.92)'};
 
 // 畫：角色圖 0.8 不透明＋框（走路中虛線、標籤「id → 目的地」），下面名字；opt.sprites＝Map id → canvas、opt.hover＝滑過的 id、opt.mine＝橘色的 id
 export function drawNpcs(g, K, npcs, roles, {sprites = new Map(), hover = null, mine = null} = {})
@@ -128,7 +145,9 @@ export function drawNpcs(g, K, npcs, roles, {sprites = new Map(), hover = null, 
 }
 
 // 時間軸 `[☐ 🕒 作息] [HH:MM] [══滑桿══]`（.timebar）：get()＝{t, on}、set(t, on)；k＝data-k 前綴（地圖分頁 'time'）；el.update()＝照 get() 重畫
+// 滑桿拖曳自己處理（pointerdown 擋掉原生、聽 window）：拖到一半畫面重建（📍 跟著換圖）也不斷，之後的時間交給畫面上同 k 的新時間軸（el.setT）
 const toMin = (s) => {const m = /^(\d{1,2}):(\d{2})$/.exec(s.trim()); return m && +m[1] < 24 && +m[2] < 60 ? +m[1] * 60 + +m[2] : null;};
+const RMAX = 1430, THUMB = 16;
 export function timeBarEl(get, set, {k = 'time', title = '', extra = null} = {})
 {
     const chk = h('input', {type: 'checkbox', dataset: {k: `${k}On`}, checked: get().on, onchange: e => set(get().t, e.target.checked)});
@@ -136,7 +155,20 @@ export function timeBarEl(get, set, {k = 'time', title = '', extra = null} = {})
         onchange: e => {const v = toMin(e.target.value); v === null ? (e.target.value = hhmm(get().t)) : set(v, true);}});
     const rng = h('input', {type: 'range', class: 'trange', min: 0, max: 1430, step: 10, value: get().t, dataset: {k: `${k}R`}, title: '拖＝10 分一格、←→＝上／下一個整 10 分、↑↓＝±1 分',
         oninput: e => set(+e.target.value, true)});
-    const el = h('span', {class: 'timebar', title}, h('label', null, chk, '🕒 作息'), inp, rng, extra);
+    rng.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        const rc = rng.getBoundingClientRect();
+        const live = () => (el.isConnected ? set : document.querySelector(`.timebar[data-k="${k}"]`)?.setT ?? set);
+        const at = (ev) => live()(Math.round(Math.max(0, Math.min(1, (ev.clientX - rc.left - THUMB / 2) / (rc.width - THUMB))) * RMAX / 10) * 10, true);
+        const up = () => {removeEventListener('pointermove', at); removeEventListener('pointerup', up); removeEventListener('pointercancel', up);};
+        at(e);
+        addEventListener('pointermove', at);
+        addEventListener('pointerup', up);
+        addEventListener('pointercancel', up);
+    });
+    const el = h('span', {class: 'timebar', title, dataset: {k}}, h('label', null, chk, '🕒 作息'), inp, rng, extra);
+    el.setT = set;
     el.update = () => {
         const {t, on} = get();
         chk.checked = on;

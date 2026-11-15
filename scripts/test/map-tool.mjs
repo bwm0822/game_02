@@ -540,6 +540,52 @@ run('map-tool', async t => {
         // 關掉
         document.querySelector('#view [data-k=timeOn]').click();
         out.offAgain = [cv().st.npcs.length, localStorage.getItem('tools.map.time')];
+        // 📍 跟著：下拉挑 trump
+        {
+            const TP = await import('/tools/common/schedpos.js');
+            const fSel = () => document.querySelector('#view [data-k=timeFollow]');
+            const centered = () => {
+                const s = cv().st, x = s.npcs.find(n => n.id === 'trump'), c = x && TP.npcCen(x, S.roles);
+                return !!c && Math.abs(s.pz.view.ox + (c.x - s.data.W / 2) * s.pz.K) < 0.5 && Math.abs(s.pz.view.oy + (c.y - s.data.H / 2) * s.pz.K) < 0.5;
+            };
+            out.fDef = [fSel()?.value, S.follow, [...fSel().querySelectorAll('option')].some(o => o.value === 'trump')];
+            cv().st.pz.view.ox += 40;
+            fSel().value = 'trump'; fSel().dispatchEvent(new Event('change'));
+            await sleep(50);
+            out.fPick = [S.follow, localStorage.getItem('tools.map.follow'), S.timeOn, S.sel === F2, centered()];
+            // 12:00 他在 1F：自動切過去、讀完置中
+            mt.setTime(12 * 60, true);
+            await until(() => S.sel === F1 && cv()?.st.data && centered());
+            out.fSwitch = [S.sel === F1, centered(), fSel().value];
+            // 拖滑桿：拖到一半換圖也不斷
+            const rng = () => document.querySelector('#view [data-k=timeR]'), rc = rng().getBoundingClientRect();
+            const xOf = (m) => rc.left + 8 + (m / 1430) * (rc.width - 16), cy = rc.top + rc.height / 2;
+            const ev = (el, type, m) => el.dispatchEvent(new PointerEvent(type, {bubbles: true, cancelable: true, button: 0, pointerId: 1, clientX: xOf(m), clientY: cy}));
+            ev(rng(), 'pointerdown', 12 * 60);
+            ev(window, 'pointermove', 23 * 60 + 30);
+            await until(() => S.sel === F2 && cv()?.st.data);
+            ev(window, 'pointermove', 23 * 60 + 40);
+            await sleep(30);
+            out.fDrag = [S.t, +rng().value, document.querySelector('#view [data-k=timeT]').value, S.sel === F2, centered()];
+            ev(window, 'pointerup', 23 * 60 + 40);
+            ev(window, 'pointermove', 12 * 60);
+            out.fDrag.push(S.t);
+            // 總覽：留在總覽、鏡頭移到他所在的世界圖格子（在室內＝房子所屬的那格中心）
+            mt.selectMap(F2);
+            await until(() => !S.sel && cv()?.st.world);
+            mt.setTime(12 * 60, true);
+            await sleep(30);
+            const ws = cv().st, wn = ws.npcs.find(n => n.id === 'trump'), wc = wn && ws.geo.cells.find(c => c.w.name === wn.room);
+            out.fWorld = [S.sel, !!wc, !!wc && Math.abs(ws.pz.view.ox + (wc.x + wc.cw / 2) * ws.pz.K) < 0.5 && Math.abs(ws.pz.view.oy + (wc.y + wc.ch / 2) * ws.pz.K) < 0.5];
+            // （不跟）：清掉記錄、動時間不換圖
+            fSel().value = ''; fSel().dispatchEvent(new Event('change'));
+            mt.selectMap(F2);
+            await settle();
+            mt.setTime(12 * 60, true);
+            await sleep(30);
+            out.fNone = [S.follow, localStorage.getItem('tools.map.follow'), S.sel === F2];
+            mt.setTime(12 * 60, false);
+        }
 
         // ================= 作息點：at 格子、撞了、巡邏經過、占用時間圖、時刻線、點了選一筆 =================
         // 假作息（不靠真的 role.json）：za 08:00～20:00 在 @8,2、20:00～08:00 在 @3,6 巡邏 @8,2／@10,10；zb 10:00～12:00 在 @8,2 → @8,2 撞 10:00～12:00
@@ -922,6 +968,12 @@ run('map-tool', async t => {
     t.check('滑過作息 NPC：浮動框時間、點名、第幾筆', /trump.*（作息）/.test(r.ttip ?? '') && /12:00 在 trump-p1（第 \d+ 筆）/.test(r.ttip ?? ''), r.ttip);
     t.check('03:00：1F 沒有 trump、2F 床上有', !r.t3f1 && r.t3f2 === 'stay:bed', `${r.t3f1} ${r.t3f2}`);
     t.check('關掉：不畫、記住', r.offAgain[0] === 0 && r.offAgain[1] === '0', r.offAgain.join());
+    t.eq('📍 跟著：預設（不跟）、下拉有 trump', JSON.stringify(r.fDef), JSON.stringify(['', null, true]));
+    t.eq('📍 跟著：挑 trump＝記住、勾 🕒、在這張圖就置中', JSON.stringify(r.fPick), JSON.stringify(['trump', 'trump', true, true, true]));
+    t.eq('📍 跟著：他在別張圖＝自動切過去、置中、下拉還在', JSON.stringify(r.fSwitch), JSON.stringify([true, true, 'trump']));
+    t.eq('📍 跟著：拖滑桿拖到一半換圖也不斷、放開後不再動', JSON.stringify(r.fDrag), JSON.stringify([1420, 1420, '23:40', true, true, 1420]));
+    t.eq('📍 跟著：總覽留在總覽、鏡頭移到房子所屬的世界格', JSON.stringify(r.fWorld), JSON.stringify([null, true, true]));
+    t.eq('📍 跟著：（不跟）＝清記錄、不換圖', JSON.stringify(r.fNone), JSON.stringify([null, null, true]));
 
     // ---- 門 ----
     t.check('顯示 ▾「門」預設勾', r.doorShow[0] === true, r.doorShow.join());

@@ -24,6 +24,11 @@ const KEY = 'tools.role.sched';
 export const M = {map: null, back: [], land: null, free: null, focus: null, shown: null};       // map＝目前顯示的地圖（null＝跟著作息第一筆）；back＝點門進來之前那幾張（← 返回）、land＝要落腳的 {map, port}、free＝點門進的路網外地圖、focus＝下次畫要對準的 {map, key}（一次性）、shown＝上次對準的結果 {map, rect, msg, t0}
 try {M.map = localStorage.getItem(`${KEY}.map`);} catch {}
 const remember = () => {try {M.map ? localStorage.setItem(`${KEY}.map`, M.map) : localStorage.removeItem(`${KEY}.map`);} catch {}};
+// 📍 跟著（時間軸那行，預設勾）：動時間時切到這個角色此刻在的那張圖、鏡頭把他置中；M.follow＝換圖後讀完要置中的那張（一次性）
+const FOLLOW_KEY = 'tools.role.sched.follow';
+export const F = {on: true};
+try {F.on = localStorage.getItem(FOLLOW_KEY) !== '0';} catch {}
+M.follow = null;
 
 const mapOf = (key) => key.slice(0, key.indexOf(':'));
 const nameOf = (key) => key.slice(key.indexOf(':') + 1);
@@ -647,8 +652,28 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
         const need = refs ? st.npcs.filter(x => !st.sprites.has(x.id)) : [];
         if (need.length) Promise.all(need.map(async x => st.sprites.set(x.id, await spriteOf(x.id, refs)))).then(redraw);
     };
-    const setT = (t, on) => {time.set(mod(Math.round(t)), on); calcNpcs(); bar.update(); redraw();};
-    const bar = time && TP.timeBarEl(time.get, setT, {k: 'schedTime', extra: away,
+    // 跟著：他在別張圖＝切過去（讀完再置中）；在這張＝倍率不動、把他放到畫布正中央
+    const followMe = () => {
+        const {t} = time.get(), pos = mine && TP.posOf(mine, t, edges);
+        if (!pos) return false;
+        if (pos.map !== name) {M.follow = pos.map; go(pos.map); return true;}
+        const c = st.data && TP.followCen(st, st.data, name, mine, id, t, edges, st.roles);
+        if (c) TP.centerAt(view, st.data, c);
+        else if (!st.data) M.follow = name;
+        return false;
+    };
+    const setT = (t, on) => {
+        time.set(mod(Math.round(t)), on);
+        if (F.on && on && followMe()) return;
+        calcNpcs(); bar.update(); redraw();
+    };
+    const followChk = h('label', {title: mine ? '動時間時切到這個角色此刻在的那張圖、鏡頭把他置中（倍率不動）；不勾＝角色不在這張圖時旁邊出現「→ 地圖」' : '這個角色排不出時刻表'},
+        h('input', {type: 'checkbox', dataset: {k: 'schedFollow'}, checked: F.on, disabled: !mine, onchange: e => {
+            F.on = e.target.checked;
+            try {localStorage.setItem(FOLLOW_KEY, F.on ? '1' : '0');} catch {}
+            if (F.on) setT(time.get().t, true);
+        }}), '📍 跟著');
+    const bar = time && TP.timeBarEl(time.get, setT, {k: 'schedTime', extra: [followChk, away],
         title: `照作息算 ${id ?? '這個角色'} 這個時刻實際在哪（橘；走路中＝路上那格、巡邏＝路線上；「顯示 ▾」勾其他角色（時間游標）＝其他人藍色）；時間跟總覽甘特圖的「此刻」共用；滑鼠在右欄時方向鍵也能調`});
     st.stepTime = (e) => {
         const t = time && TP.stepKey(e, time.get().t);
@@ -661,6 +686,7 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
     const land = M.land?.map === name ? M.land : null;
     if (land) M.land = null;
     if (M.focus && M.focus.map !== name) M.focus = null;
+    if (M.follow && M.follow !== name) M.follow = null;
     mapData(name).then(async d => {
         st.data = d;
         if (!d) {msg.textContent = `讀不到地圖 ${name}`; msg.hidden = false;}
@@ -682,6 +708,12 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
         }
         else if (d && M.shown?.map === name && performance.now() - M.shown.t0 < DR.FLASH_MS && M.shown.rect) DR.flash(st, M.shown.rect, M.shown.t0);
         if (d && M.shown?.map === name && M.shown.msg && performance.now() - M.shown.t0 < DR.FLASH_MS) {msg.textContent = M.shown.msg; msg.hidden = false;}
+        if (d && M.follow === name)
+        {
+            M.follow = null;
+            const c = mine && TP.followCen(st, d, name, mine, id, time.get().t, edges, st.roles);
+            if (c) TP.centerAt(view, d, c);
+        }
         redraw();
         // 門要讀它指到的地圖才知道壞不壞，讀完再畫
         if (d) {st.ports = await portsFor(d); redraw();}

@@ -114,6 +114,11 @@ const TIME_KEY = 'tools.map.time', T_KEY = 'tools.map.t';
 S.timeOn = false;
 S.t = 8 * 60;
 try {S.timeOn = localStorage.getItem(TIME_KEY) === '1'; S.t = mod(+(localStorage.getItem(T_KEY) ?? 480) || 0);} catch {}
+// 📍 跟著（時間軸旁下拉，id 或 null）：動時間時切到他此刻在的那張圖、鏡頭把他置中；總覽只移鏡頭；S.followPend＝換圖後讀完要置中的那張（一次性）
+const FOLLOW_KEY = 'tools.map.follow';
+S.follow = null;
+S.followPend = null;
+try {S.follow = localStorage.getItem(FOLLOW_KEY) || null;} catch {}
 
 // 時刻 t 實際在哪、此刻在這張圖的人（tools/common/schedpos.js，角色分頁作息地圖共用）
 const posOf = (p, t) => TP.posOf(p, t, S.nav?.edges ?? {});
@@ -156,13 +161,53 @@ function setTime(t, on = S.timeOn)
     S.t = mod(Math.round(t));
     S.timeOn = on;
     try {localStorage.setItem(T_KEY, String(S.t)); localStorage.setItem(TIME_KEY, on ? '1' : '0');} catch {}
+    if (on && S.follow && S.plans?.[S.follow] && S.sel)
+    {
+        const pos = posOf(S.plans[S.follow], S.t);
+        if (pos && pos.map !== S.sel) {S.followPend = pos.map; openMap(pos.map); return;}
+    }
     const st = mapSt();
     if (!st) return;
-    if (st.world) {st.npcs = worldNpcs(st.geo); st.updateTime?.(); st.redraw(); return;}
+    if (st.world) {st.npcs = worldNpcs(st.geo); if (on) followWorld(st); st.updateTime?.(); st.redraw(); return;}
+    if (on) followMap(st);
     st.npcs = npcsAt(st);
     Promise.all(st.npcs.filter(x => !st.sprites.has(x.id)).map(async x => st.sprites.set(x.id, await spriteOf(x.id, refs())))).then(() => st.redraw());
     st.updateTime?.();
     st.redraw();
+}
+
+// 跟著：開著地圖＝他在這張圖就倍率不動把他置中；總覽＝鏡頭移到他那格（在室內＝那間房子所屬的世界圖格子中心）
+function followMap(st)
+{
+    const p = S.follow && S.plans?.[S.follow];
+    const c = p && st.data && TP.followCen(st, st.data, st.name, p, S.follow, S.t, S.nav?.edges ?? {}, S.roles);
+    if (c) TP.centerAt(viewOf(st.name), st.data, c);
+}
+
+function followWorld(st)
+{
+    const n = S.follow && st.npcs.find(x => x.id === S.follow);
+    const c = n && (n.x != null ? n : st.geo.cells.find(c => c.w.name === n.room));
+    if (c) TP.centerView(WORLD_VIEW, c.cw ? c.x + c.cw / 2 : c.x, c.cw ? c.y + c.ch / 2 : c.y);
+}
+
+function setFollow(id)
+{
+    S.follow = id || null;
+    try {S.follow ? localStorage.setItem(FOLLOW_KEY, S.follow) : localStorage.removeItem(FOLLOW_KEY);} catch {}
+    if (S.follow) setTime(S.t, true);
+}
+
+// 下拉：排得出時刻表的 NPC，照 grp 分組
+function followSel()
+{
+    const ids = Object.keys(S.plans ?? {}), grps = new Map();
+    for (const id of ids) {const g = S.roles[id]?.grp || '（沒分組）'; (grps.get(g) ?? grps.set(g, []).get(g)).push(id);}
+    return h('label', {title: '動時間時切到這個角色此刻在的那張圖、鏡頭把他置中（倍率不動）；總覽只移鏡頭'}, '📍 跟著 ',
+        h('select', {dataset: {k: 'timeFollow'}, onchange: e => setFollow(e.target.value)},
+            h('option', {value: '', selected: !S.follow}, '（不跟）'),
+            S.follow && !ids.includes(S.follow) && h('option', {value: S.follow, selected: true}, `${S.follow}（排不出時刻表）`),
+            [...grps].map(([g, list]) => h('optgroup', {label: g}, list.map(id => h('option', {value: id, selected: id === S.follow}, `${id}${S.roles[id]?.lab ? ` ${S.roles[id].lab}` : ''}`))))));
 }
 
 // story.json 的 spawns＋條件檢查（同任務分頁的 checkStory）＋條件自動完成的 dl-cond
@@ -973,10 +1018,13 @@ function mapEl(name)
     });
     const land = S.land?.map === name ? S.land : null;
     if (land) S.land = null;
+    const pend = S.followPend === name;
+    S.followPend = null;
     loadMapState(st).then(() => {
         if (!st.data) {msg.textContent = `讀不到地圖 ${name}`; msg.hidden = false;}
         else if (!view.set) PZ.center(view);
         if (st.data && land) landAt(st, view, land.port);
+        if (st.data && pend) followMap(st);
         st.updateTime?.();
         redraw();
         renderRight();
@@ -1026,7 +1074,7 @@ function stepTime(e)
 function timeBar(st)
 {
     const el = TP.timeBarEl(() => ({t: S.t, on: S.timeOn}), setTime,
-        {title: '照 role.json 的作息（同遊戲 ScheduleManager）算具名 NPC 這個時刻實際在哪（走路中＝路上那格、巡邏＝路線上）；虛線框＝走路中'});
+        {title: '照 role.json 的作息（同遊戲 ScheduleManager）算具名 NPC 這個時刻實際在哪（走路中＝路上那格、巡邏＝路線上）；虛線框＝走路中', extra: followSel()});
     st.updateTime = el.update;
     return el;
 }
