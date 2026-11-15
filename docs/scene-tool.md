@@ -2,7 +2,7 @@
 
 模擬場景的整合驗收台：在遊戲本身裡擺角色、播動作、掛特效、放擺設、調日夜，看到的＝玩家會看到的。
 
-> 狀態：2026-11-15 定案；第 1 步（骨架）完成，2～6 步未做（計畫見最後）。
+> 狀態：2026-11-15 定案；第 1 步（骨架）、第 2 步（角色）完成，3～6 步未做（計畫見最後）。
 
 ## 架構
 
@@ -12,8 +12,9 @@
   - `GameScene` 的 constructor 收 key（預設 `'GameScene'`），`Sandbox` 用 `'Sandbox'`。
   - `map.js`：`scene.sandbox` 時不建 `type:npc` 物件、跳過 `@群組` 圖層（不碰存檔）。
 - 分頁的 HTML 面板用 postMessage 操作 iframe 裡的 sandbox（同無頭測試走 `window.__dbg` 的精神）。訊息都帶 `sb` 欄位：
-  - 分頁 → sandbox：`load {scene}`（底圖不同就 `scene.restart` 帶著 scene 重開，同一張直接套用）、`grid {on}`、`home`（整張地圖放進畫面）。
-  - sandbox → 分頁：`ready`（剛開好、還沒有場景，分頁收到就送 `load`）、`loaded {map}`（套用完）、`error {msg}`（地圖載入失敗，顯示在狀態列）。
+  - 分頁 → sandbox：`load {scene}`（底圖不同就 `scene.restart` 帶著 scene 重開，同一張直接套用）、`grid {on}`、`home`（整張地圖放進畫面）、`select {key}`（選取框）、`hide {keys}`（👁）。
+  - sandbox → 分頁：`ready`（剛開好、還沒有場景，分頁收到就送 `load`）、`loaded {map, w, h}`（套用完；w/h＝地圖格數，「＋」放在中間用）、`error {msg}`（地圖載入失敗、角色 id 不存在，顯示在狀態列）、`select {key}`（左鍵點到的角色，空白處＝null）、`move {key, tx, ty}`（拖曳放開）、`ctx {tx, ty, key, cx, cy}`（右鍵，cx/cy 是 iframe 裡的 client 座標）、`key {key, ctrl, shift, alt}`（iframe 有焦點時的鍵盤，分頁照自己的快捷鍵處理）。
+- 角色、物品、部位等遊戲資料（`role.json`、`item.json`、`part.json`、`anim.json`、`fx.json`、`particle.json`、`ability.json`、`local.json`、`textures.json`）在別的分頁存檔時，sandbox 的 DB 就舊了：分頁收到廣播就整個重開 iframe（工具列「重開」同）。
 - **sandbox 絕不寫遊戲存檔**：`Record.noSave = true`（`saveGame()` 直接 return），`Record.game` 是 sandbox 自己的一份。
 - 鏡頭：滾輪以游標為中心縮放（0.25～8）、中鍵拖曳平移；每張底圖的鏡頭記在 sandbox 的記憶體，換場景回同一張圖接著看；第一次看＝整張放進畫面（工具列「置中」同）。開發版掛 `window.__sb`（Sandbox 場景）給測試。
 
@@ -21,7 +22,9 @@
 
 手寫來源檔（工具寫），進 git，`{<場景名>: {...}}` 可多組；遊戲不讀。存：底圖、時間（＋自訂環境色）、角色實例、擺設、粒子發射點、角色身上的狀態特效。
 
-- 目前（第 1 步）一筆只有 `{map}`（相對 `maps/`、不含 `.json`，新增預設 `sandbox`），之後的步驟再加欄位。
+- 一筆＝`{map, roles?}`（之後的步驟再加欄位）：
+  - `map`：相對 `maps/`、不含 `.json`，新增預設 `sandbox`。
+  - `roles`：`[{key, id, tx, ty, face?, equip?}]`；`key`＝場景裡的編號（`r1`、`r2`…取最小空號），`id`＝role.json，`tx/ty`＝格子，`face`＝`l`/`r`（沒寫＝角色預設面向），`equip`＝裝備覆寫 `{CAT_WEAPON: 'sword-1', CAT_HELMET: ''}`（有寫的格子換掉、`''`＝空著，沒寫的照 role.json 的 `inv.equips`）；沒有角色時整個欄位拿掉。
 - 讀寫在 `tools/scene/store.js`：每次改都現讀硬碟 → 改 → 寫回（2 格縮排＋換行），回傳前後全文給 undo；undo／redo 要硬碟現在等於預期的全文才寫（別處改過就擋、提示、步驟留著），同地圖分頁。寫完廣播 `scenes.json`，別的分頁收到重讀。
 - 沒有檔＝空的、不建檔，第一次新增才建 `tools/scenes.json`。
 
@@ -36,7 +39,9 @@
 - 從 role.json 挑 id（照 kind／grp 分組），同 id 可多隻。
 - 實例可覆寫：裝備五格（武器／頭盔／護甲／手套／靴子，空＝用 role.json 的）、面向、位置；不寫回 role.json。
 - 位置永遠在格子中心（遊戲的走路／擊退靠它）。
-- 木偶：不掛 AI／作息／感知、不進回合。
+- 木偶：`src/roles/puppet.js`（`Puppet`，照 `Dummy` 木樁的組法）掛 `RoleView`＋`COM_Inventory`＋`COM_Anim`＋`COM_Stats`＋`COM_Disp`，不掛 AI／作息／感知、不進回合、不讀寫存檔、`bb.interactive=false`（點選是 sandbox 自己判斷：身體方塊包住游標的最上面那個，沒有就看站在那格的）；`bb.meta` 是 role.json 那筆的淺拷貝、`inv.equips` 換成套完覆寫的（`Puppet.equipsOf()`）。只在 Sandbox 用到，正式版一起被 tree-shake 掉。
+- sandbox 套場景時照 `key` 比對：那筆資料（JSON）沒變的角色留著，變了（換角色、格子、面向、裝備）或不見的就 `dismiss()` 重建（重新登記路網權重）。
+- 操作：畫面上左鍵點選（綠框）＋拖曳（跟著格子跳、放開才寫檔）、右鍵「在這裡放角色…」（挑角色對話框：照 kind／grp 分組、搜尋、雙擊確定、預設上次挑的 `tools.scene.lastRole`）／「刪除」；左欄角色清單（👁 暫藏只在這次開著時、不寫檔、藏著點不到；右鍵刪除；「＋」放在地圖中間）；右欄 角色（換 id）、格子、面向、裝備五格（下拉＝（原本：…）／（空）／那一類有 `equip` 的道具，限定性別不符的不列）、刪除；Del 刪選中的（分頁或 sandbox 有焦點都行）。
 
 ## 動作（表演，不進 undo、不改場景檔）
 
@@ -84,7 +89,7 @@
 ## 實作順序（每步 commit＋`scripts/test/scene-tool.mjs`＋更新本文件）
 
 1. ✅ 骨架：`?sandbox=1` 路由＋`Sandbox` 場景（不存檔）＋`sandbox.json`；分頁殼、iframe、postMessage 協定、場景清單、scenes.json 讀寫＋undo、鏡頭、格線
-2. 角色：放置／拖曳／刪除、裝備覆寫、面向、木偶化
+2. ✅ 角色：放置／拖曳／刪除、裝備覆寫、面向、木偶化
 3. 動作：普攻／技能／走路／被打／倒地／重播／重置、自動補血
 4. 擺設：選圖、全部屬性、吸附、方向鍵、發光
 5. 特效：狀態特效、粒子發射點

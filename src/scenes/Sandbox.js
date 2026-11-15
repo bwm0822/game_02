@@ -6,6 +6,7 @@ import TimeSystem from '../systems/time.js'
 import Utility from '../core/utility.js'
 import {GameObject} from '../core/gameobject.js'
 import {GM, GS} from '../core/setting.js'
+import Puppet from '../roles/puppet.js'
 
 // 開發版的 gym 場景：工具殼「場景」分頁的 iframe 跑 /?sandbox，用 postMessage 操作（訊息帶 sb 欄位，見 docs/scene-tool.md）
 // 繼承 GameScene 拿真的地圖／路網／Light2D，但沒有玩家、UI、回合、作息、劇情；地圖只建地形＋靜態物件，不寫存檔
@@ -29,7 +30,7 @@ export class Sandbox extends GameScene
         super.init({...data, map:data?.map ?? 'sandbox'});
     }
 
-    update() {}
+    update() {this._drawSel();}
 
     async create()
     {
@@ -60,7 +61,10 @@ export class Sandbox extends GameScene
 
         this._initCam();
         this._grid = this.add.graphics().setDepth(GRID_DEPTH);
+        this._selG = this.add.graphics().setDepth(GRID_DEPTH+1);
         this._gridOn = this._data.grid ?? true;
+        this._sel = this._data.sel ?? null;
+        this._hidden = new Set(this._data.hidden);
         this._drawGrid();
         this._initInput();
         if(import.meta.env.DEV) {window.__sb = this;}
@@ -69,10 +73,54 @@ export class Sandbox extends GameScene
     }
 
     // 場景分頁送來的場景（tools/scenes.json 的一筆）；換底圖要整個重開
-    _apply(scene)
+    // 角色照 key 比對：資料一樣的留著（表演到一半不打斷），不一樣或 force（重置）就重建
+    _apply(scene, {force=false}={})
     {
         this._scene = scene;
-        this._send({sb:'loaded', map:this.mapName});
+        const want = Object.fromEntries((scene.roles ?? []).map(r=>[r.key, r]));
+        for(const p of [...this.roles])
+        {
+            if(force || !want[p.key] || JSON.stringify(want[p.key])!==p._sig) {p.dismiss();}
+        }
+        const bad = [];
+        for(const r of scene.roles ?? [])
+        {
+            if(!this.roles.some(p=>p.key===r.key) && !this._spawn(r)) {bad.push(r.id);}
+        }
+        if(bad.length) {this._send({sb:'error', msg:`role.json 沒有：${[...new Set(bad)].join('、')}`});}
+        this._send({sb:'loaded', map:this.mapName, w:this.map.map.width, h:this.map.map.height});
+    }
+
+    _spawn(r)
+    {
+        const pt = this.map.tileToWorld(r.tx, r.ty);
+        const p = new Puppet(this, pt.x, pt.y);
+        if(!p.init_runtime(r)) {p.destroy(); return null;}
+        p._sig = JSON.stringify(r);
+        p.setVisible(!this._hidden.has(r.key));
+        return p;
+    }
+
+    _puppet(key) {return this.roles.find(p=>p.key===key);}
+
+    // 點到的角色：身體方塊包住游標的、最上面那個；都沒有就看站在那格的
+    _roleAt(wx, wy)
+    {
+        const hits = this.roles.filter(p=>p.visible && p.getShapeRect?.().contains(wx, wy));
+        if(hits.length) {return hits.reduce((a, b)=>(b.depth>a.depth ? b : a));}
+        const [tx, ty] = this.map.worldToTile(wx, wy);
+        return this.roles.find(p=>p.visible && this.map.worldToTile(p.x, p.y).every((v, i)=>v===[tx, ty][i]));
+    }
+
+    _drawSel()
+    {
+        const g = this._selG;
+        if(!g) {return;}
+        g.clear();
+        const p = this._puppet(this._sel);
+        if(!p?.visible || !p.getShapeRect) {return;}
+        const r = p.getShapeRect();
+        g.lineStyle(2/this.cameras.main.zoom, 0x7ddc5a, 1).strokeRect(r.x, r.y, r.width, r.height);
     }
 
     _send(msg) {window.parent.postMessage(msg, '*');}
@@ -82,11 +130,16 @@ export class Sandbox extends GameScene
         switch(m.sb)
         {
             case 'load':
-                if((m.scene.map ?? 'sandbox') !== this.mapName) {this._saveCam(); this.scene.restart({map:m.scene.map, scene:m.scene, grid:this._gridOn});}
+                if((m.scene.map ?? 'sandbox') !== this.mapName) {this._saveCam(); this.scene.restart({map:m.scene.map, scene:m.scene, grid:this._gridOn, sel:this._sel, hidden:[...this._hidden]});}
                 else {this._apply(m.scene);}
                 break;
             case 'grid': this._gridOn = !!m.on; this._drawGrid(); break;
             case 'home': this._home(); break;
+            case 'select': this._sel = m.key ?? null; break;
+            case 'hide':
+                this._hidden = new Set(m.keys);
+                this.roles.forEach(p=>p.setVisible(!this._hidden.has(p.key)));
+                break;
         }
     }
 
@@ -135,15 +188,49 @@ export class Sandbox extends GameScene
             this._drawGrid();
         });
         this.input.on('pointerdown', (p)=>{
-            if(p.middleButtonDown()) {this._pan = {x:p.x, y:p.y, sx:cam.scrollX, sy:cam.scrollY};}
+            if(p.middleButtonDown()) {this._pan = {x:p.x, y:p.y, sx:cam.scrollX, sy:cam.scrollY}; return;}
+            const role = this._roleAt(p.worldX, p.worldY);
+            const [tx, ty] = this.map.worldToTile(p.worldX, p.worldY);
+            if(p.rightButtonDown())
+            {
+                this._send({sb:'ctx', tx, ty, key:role?.key ?? null, cx:p.event.clientX, cy:p.event.clientY});
+                return;
+            }
+            this._sel = role?.key ?? null;
+            this._send({sb:'select', key:this._sel});
+            if(role) {this._drag = {role, from:this.map.worldToTile(role.x, role.y), to:null};}
         });
         this.input.on('pointermove', (p)=>{
-            if(!this._pan) {return;}
-            if(!p.middleButtonDown()) {this._pan = null; return;}
-            cam.scrollX = this._pan.sx - (p.x-this._pan.x)/cam.zoom;
-            cam.scrollY = this._pan.sy - (p.y-this._pan.y)/cam.zoom;
+            if(this._pan)
+            {
+                if(!p.middleButtonDown()) {this._pan = null; return;}
+                cam.scrollX = this._pan.sx - (p.x-this._pan.x)/cam.zoom;
+                cam.scrollY = this._pan.sy - (p.y-this._pan.y)/cam.zoom;
+            }
+            else if(this._drag?.role.active)
+            {
+                if(!p.leftButtonDown()) {this._endDrag(); return;}
+                const [tx, ty] = this.map.worldToTile(p.worldX, p.worldY);
+                if(!this.map.isInside(tx, ty)) {return;}
+                const pt = this.map.tileToWorld(tx, ty);
+                this._drag.to = [tx, ty];
+                this._drag.role.setPosition(pt.x, pt.y).updateDepth();
+            }
         });
-        this.input.on('pointerup', ()=>{this._pan = null;});
+        this.input.on('pointerup', ()=>{this._pan = null; this._endDrag();});
+        // iframe 有焦點時鍵盤在這裡：交給場景分頁（Del、Ctrl+Z…）
+        const onKey = (e)=>this._send({sb:'key', key:e.key, ctrl:e.ctrlKey || e.metaKey, shift:e.shiftKey, alt:e.altKey});
+        addEventListener('keydown', onKey);
+        this.events.once('shutdown', ()=>removeEventListener('keydown', onKey));
+    }
+
+    // 角色永遠站格子中心；放開才回報，場景分頁寫檔後送回來的資料一變就重建（重新登記路網權重）
+    _endDrag()
+    {
+        const d = this._drag;
+        this._drag = null;
+        if(!d?.to || (d.to[0]===d.from[0] && d.to[1]===d.from[1])) {return;}
+        this._send({sb:'move', key:d.role.key, tx:d.to[0], ty:d.to[1]});
     }
 
     //------------------------------------------------------

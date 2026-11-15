@@ -9,7 +9,20 @@
     #left { width: 240px; }
     #left .row2 { display: flex; gap: 4px; align-items: center; font-size: 14px; }
     #left .sec { color: #aaa; font-weight: bold; font-size: 14px; }
-    #list { flex: 1; overflow: auto; }
+    #list { flex: none; max-height: 35%; overflow: auto; }
+    #tree { flex: 1; overflow: auto; border-top: 1px solid #333; padding-top: 6px; }
+    #tree .item .eye { padding: 0 3px; font-size: 12px; line-height: 1.3; }
+    #tree .item.hid .id, #tree .item.hid .lab { opacity: .45; }
+    #right .sec { color: #aaa; font-weight: bold; margin: 10px 0 4px; }
+    #right .sec:first-child { margin-top: 0; }
+    #right .sec .dim { font-weight: normal; font-size: 12px; }
+    #right table.props { border-collapse: collapse; }
+    #right table.props td { padding: 2px 8px 2px 0; }
+    #right td.k { color: #888; white-space: nowrap; }
+    #right input.n { width: 56px; }
+    #right select { max-width: 200px; }
+    #right .acts { margin-top: 10px; }
+    .warn { color: #f88; }
     #left #status { font-size: 14px; word-break: break-all; }
     #view { flex: 1; display: flex; flex-direction: column; min-width: 0; }
     #bar { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 5px 8px; background: #25272b; border-bottom: 1px solid #111; font-size: 14px; }
@@ -28,6 +41,7 @@
     <aside id="left">
         <div class="row2"><span class="sec grow">場景</span><button id="btnNew" title="新增場景">＋</button></div>
         <div id="list"></div>
+        <div id="tree" hidden></div>
         <div class="row2"><span class="grow"></span><button id="btnUndo" title="復原（Ctrl+Z，直接寫回 scenes.json）">↶</button><button id="btnRedo" title="重做（Ctrl+Y）">↷</button></div>
         <span id="status" class="dim"></span>
     </aside>
@@ -36,12 +50,13 @@
             <span class="name" id="sceneName"></span>
             <label title="32×32 格線"><input type="checkbox" id="chkGrid"> 格線</label>
             <button id="btnHome" title="整張地圖放進畫面">置中</button>
+            <button id="btnReload" title="重開 sandbox（role.json 等遊戲資料在別的分頁存檔時會自動重開）">重開</button>
             <span class="grow"></span>
-            <span class="dim">滾輪縮放、中鍵拖曳平移</span>
+            <span class="dim">左鍵選取／拖曳、右鍵放東西、滾輪縮放、中鍵平移</span>
         </div>
         <div id="gamebox"><iframe id="game" title="sandbox"></iframe></div>
     </section>
-    <aside id="right"><span class="dim">選物件後在這裡改屬性</span></aside>
+    <aside id="right"></aside>
 </main>
 
 <dialog id="dlgAsk">
