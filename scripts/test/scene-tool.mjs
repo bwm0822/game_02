@@ -95,6 +95,9 @@ run('scene-tool', async t => {
         // ---------- 第 2 步：角色 ----------
         const json = await proj.getDirectoryHandle('public').then(d => d.getDirectoryHandle('assets')).then(d => d.getDirectoryHandle('json'));
         for (const f of ['role.json', 'item.json', 'ability.json', 'fx.json', 'particle.json']) await write(json, f, await (await fetch(`/assets/json/${f}`)).text());
+        const maps = await dir(proj, 'public', 'assets', 'maps');
+        for (const f of ['sandbox.json', '_m_00x00.json']) await write(maps, f, '{}');
+        await write(await dir(maps, 'm'), 'm_04x05.json', '{}');
         await T.setProject(proj);
         await until(() => Object.keys(sc.S.refs.roles).length && JSON.stringify(Object.keys(sc.S.data)) === '["x"]');
         await sc.select('x');
@@ -279,6 +282,37 @@ run('scene-tool', async t => {
         sc.pickRole('e1');
         sb()._send({sb: 'key', key: 'Delete'});
         out.delEm = await until(() => !em('e1')) && (await scDisk()).particles.map(e => e.key);
+
+        // ---------- 第 6 步：日夜＋底圖 ----------
+        const TS = game().__dbg.TimeSystem;
+        const amb = () => {const c = sb().lights.ambientColor; return [c.r, c.g, c.b].map(v => Math.round(v * 255));};
+        const rng = doc.getElementById('rngTime');
+        out.time0 = [doc.getElementById('lblTime').textContent, TS.time.h, amb()];
+        // 拖滑桿：即時預覽（不寫檔）、放開才寫
+        rng.value = 22 * 60 + 30; rng.dispatchEvent(new Event('input'));
+        out.timeLive = await until(() => TS.time.h === 22) && [TS.time.m, amb(), (await scDisk()).time];
+        rng.dispatchEvent(new Event('change'));
+        out.timeSave = await until(async () => (await scDisk()).time === '22:30') && [(await scDisk()).time, doc.getElementById('lblTime').textContent];
+        // 地圖的燈（com_lamp）照環境光算亮度：換到有燈的地圖晚上才有光（這裡只驗 sandbox 有收到時間）
+        // ▶ 播放：時間往前走、分頁跟著、不寫檔；暫停把那個時間寫進場景
+        doc.getElementById('selSpeed').value = '240';
+        await sc.setPlaying(true);
+        out.play = await until(() => sc.S.liveTime && sc.S.liveTime !== '22:30') && [(await scDisk()).time,TS.time.h * 60 + TS.time.m > 22 * 60 + 30 || TS.time.h < 22];
+        await sc.setPlaying(false);
+        const paused = Number(doc.getElementById('rngTime').value);
+        out.pause = [JSON.parse(await disk()).x.time === `${String(Math.floor(paused / 60)).padStart(2, '0')}:${String(paused % 60).padStart(2, '0')}`, sc.S.liveTime];
+        // 自訂環境色：蓋掉 LUT
+        await sc.setField('ambient', '#336699');
+        out.amb = await until(() => amb().join() === '51,102,153') && [(await scDisk()).ambient, doc.getElementById('chkAmb').checked];
+        await sc.setField('ambient', undefined);
+        await sc.setField('time', '12:00');
+        out.ambOff = await until(() => amb().join() === '255,255,255');
+
+        // 底圖：下拉列 maps/，換了 sandbox 重開那張圖、角色跟擺設照樣建
+        out.maps = [...doc.querySelectorAll('#selMap option')].map(o => o.value);
+        const sel = doc.getElementById('selMap');
+        sel.value = 'm/m_04x05'; sel.dispatchEvent(new Event('change'));
+        out.map = await until(() => sb()?.mapName === 'm/m_04x05' && sb().roles.length === 2, 1500) && [(await scDisk()).map, Object.keys(sb()._props).length, TS.time.h];
         return out;
     });
     t.eq('分頁：iframe 跑 /?sandbox、不寫存檔', JSON.stringify(r.boot), JSON.stringify(['sandbox', true]));
@@ -345,4 +379,14 @@ run('scene-tool', async t => {
     t.check('粒子：拖曳放開寫檔', r.moveEm);
     t.check('粒子：👁 藏起來、點不到', r.hideEm);
     t.eq('粒子：Del 刪', JSON.stringify(r.delEm), JSON.stringify(['e2']));
+
+    t.eq('日夜：沒寫時間＝08:00、白天全亮', JSON.stringify(r.time0), JSON.stringify(['08:00', 8, [255, 255, 255]]));
+    t.eq('拖時間滑桿：sandbox 時鐘跟著、環境光照 lutAmbient 變暗、還沒寫檔', JSON.stringify(r.timeLive), JSON.stringify([30, [102, 102, 102], undefined]));
+    t.eq('放開滑桿：寫進場景', JSON.stringify(r.timeSave), JSON.stringify(['22:30', '22:30']));
+    t.eq('▶ 播放：時間往前走、不寫檔', JSON.stringify(r.play), JSON.stringify(['22:30', true]));
+    t.eq('⏸ 暫停：停的時間寫進場景', JSON.stringify(r.pause), JSON.stringify([true, null]));
+    t.eq('自訂環境色：蓋掉 LUT、存檔、勾起來', JSON.stringify(r.amb), JSON.stringify(['#336699', true]));
+    t.check('取消自訂：回到照時間（12:00 全亮）', r.ambOff);
+    t.eq('底圖下拉：sandbox 排第一、列出 maps/（含子資料夾）', JSON.stringify(r.maps), JSON.stringify(['sandbox', '_m_00x00', 'm/m_04x05']));
+    t.check('換底圖：sandbox 重開那張圖、角色擺設照建、時間照場景', r.map && r.map[0] === 'm/m_04x05' && r.map[1] === 1 && r.map[2] === 12, JSON.stringify(r.map));
 });

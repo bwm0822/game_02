@@ -14,6 +14,7 @@ import {playParticle} from '../core/particle.js'
 // 繼承 GameScene 拿真的地圖／路網／Light2D，但沒有玩家、UI、回合、作息、劇情；地圖只建地形＋靜態物件，不寫存檔
 const ZOOM = [0.25, 8];
 const GRID_DEPTH = 1e7;
+const DEFAULT_TIME = '08:00';   // 同 Record.game_def 的開局時間
 
 let dataLoaded = false;
 const cams = {};    // 地圖 → 鏡頭 {x, y, zoom}，重載同一張圖時接著看
@@ -48,8 +49,11 @@ export class Sandbox extends GameScene
         this.named = {};
         GameObject.gid = 0;
         TimeSystem.load();
+        TimeSystem.register(()=>this._ambient());   // 排第一個：燈（com_lamp／com_light）照環境光算亮度，要先換好
         this.lights.enable();
-        this.lights.setAmbientColor(0xffffff);
+        this._sceneTime = null;
+        this._amb = null;
+        this._ambient();
         this.cameras.main.setBackgroundColor('#202226');
 
         this._onMsg = (e)=>{if(e.source===window.parent && e.data?.sb) {this._recv(e.data);}};
@@ -96,6 +100,11 @@ export class Sandbox extends GameScene
         }
         if(bad.length) {this._send({sb:'error', msg:`role.json 沒有：${[...new Set(bad)].join('、')}`});}
         this._applyEmitters(scene.particles ?? [], force);
+        this._amb = scene.ambient ?? null;
+        // 時間只在場景檔的值變了才跳過去（▶ 播放中編輯別的東西不會被拉回去）
+        const t = scene.time ?? DEFAULT_TIME;
+        if(force || t!==this._sceneTime) {this._sceneTime = t; this._setTime(t);}
+        else {this._ambient();}
         await this._applyProps(scene.props ?? []);
         if(this._scene!==scene) {return;}   // 載外部圖的期間又來了新的場景
         this._send({sb:'loaded', map:this.mapName, w:this.map.map.width, h:this.map.map.height});
@@ -186,6 +195,43 @@ export class Sandbox extends GameScene
     }
 
     _puppet(key) {return this.roles.find(p=>p.key===key);}
+
+    //------------------------------------------------------
+    //  日夜：時鐘是真的 TimeSystem（環境光照 GameScene 的 lutAmbient、燈的亮度跟著），scene.ambient（'#rrggbb'）蓋掉 LUT
+    //------------------------------------------------------
+    _setTime(t)
+    {
+        const [h, m] = t.split(':').map(Number);
+        TimeSystem.time = {d:0, h, m};
+        TimeSystem.ticks = TimeSystem.time2Ticks(TimeSystem.time);
+        TimeSystem.emit(0);
+    }
+
+    _ambient()
+    {
+        const c = this._amb ? Phaser.Display.Color.HexStringToColor(this._amb).color : this.getAmbientColor(TimeSystem.time);
+        this.lights.setAmbientColor(c);
+    }
+
+    static _hhmm({h, m}) {return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;}
+
+    // ▶：speed＝每秒走幾分鐘遊戲時間（0＝停），每 100ms 推一次、回報給分頁
+    _play(speed)
+    {
+        this._clock?.remove();
+        this._clock = null;
+        if(!speed) {return;}
+        let acc = 0;
+        this._clock = this.time.addEvent({delay:100, loop:true, callback:()=>{
+            acc += speed/10;
+            const n = Math.floor(acc);
+            if(!n) {return;}
+            acc -= n;
+            const total = (TimeSystem.time.h*60 + TimeSystem.time.m + n) % 1440;
+            this._setTime(Sandbox._hhmm({h:Math.floor(total/60), m:total%60}));
+            this._send({sb:'time', t:Sandbox._hhmm(TimeSystem.time)});
+        }});
+    }
 
     // 角色資料的比對不含 fx（狀態特效另外加減，不用重建角色）
     static _sig({fx, ...r}) {return JSON.stringify(r);}
@@ -402,6 +448,9 @@ export class Sandbox extends GameScene
             case 'reset': this._apply(this._scene, {force:true}); break;
             case 'hit': this._puppet(m.key)?.anim_hit?.(null); break;
             case 'fxTick': this._puppet(m.key)?.fxTick?.(m.id); break;
+            case 'time': this._setTime(m.t); break;       // 拖滑桿預覽（還沒寫檔）
+            case 'ambient': this._amb = m.color ?? null; this._ambient(); break;
+            case 'play': this._play(m.speed); break;
             case 'die': this._puppet(m.key)?.die(); break;
             case 'revive': this._puppet(m.key)?.revive(); break;
             case 'hide':

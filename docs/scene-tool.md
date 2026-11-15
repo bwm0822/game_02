@@ -2,7 +2,7 @@
 
 模擬場景的整合驗收台：在遊戲本身裡擺角色、播動作、掛特效、放擺設、調日夜，看到的＝玩家會看到的。
 
-> 狀態：2026-11-15 定案；第 1～5 步（骨架、角色、動作、擺設、特效）完成，第 6 步未做（計畫見最後）。
+> 狀態：2026-11-15 定案，同日 6 步全部完成（計畫見最後），剩實用調整。
 
 ## 架構
 
@@ -12,9 +12,9 @@
   - `GameScene` 的 constructor 收 key（預設 `'GameScene'`），`Sandbox` 用 `'Sandbox'`。
   - `map.js`：`scene.sandbox` 時不建 `type:npc` 物件、跳過 `@群組` 圖層（不碰存檔）。
 - 分頁的 HTML 面板用 postMessage 操作 iframe 裡的 sandbox（同無頭測試走 `window.__dbg` 的精神）。訊息都帶 `sb` 欄位：
-  - 分頁 → sandbox：`load {scene}`（底圖不同就 `scene.restart` 帶著 scene 重開，同一張直接套用）、`grid {on}`、`home`（整張地圖放進畫面）、`select {key}`（選取框）、`hide {keys}`（👁）、`arm {act}`（指定目標，null＝取消）、`do {act}`、`replay`、`reset`、`hit`／`die`／`revive {key}`、`fxTick {key, id}`。
+  - 分頁 → sandbox：`load {scene}`（底圖不同就 `scene.restart` 帶著 scene 重開，同一張直接套用）、`grid {on}`、`home`（整張地圖放進畫面）、`select {key}`（選取框）、`hide {keys}`（👁）、`arm {act}`（指定目標，null＝取消）、`do {act}`、`replay`、`reset`、`hit`／`die`／`revive {key}`、`fxTick {key, id}`、`time {t}`（預覽時間）、`ambient {color}`（預覽環境色）、`play {speed}`（0＝停）。
   - `act`＝`{key（誰做）, kind:'attack'|'ability'|'walk', id（技能）, tx, ty（目標格子）, tkey（點到的角色）}`。
-  - sandbox → 分頁：`ready`（剛開好、還沒有場景，分頁收到就送 `load`）、`loaded {map, w, h}`（套用完；w/h＝地圖格數，「＋」放在中間用）、`error {msg}`（地圖載入失敗、角色 id 不存在，顯示在狀態列）、`select {key}`（左鍵點到的角色，空白處＝null）、`move {key, tx, ty}`（角色拖曳放開）、`moveProp {key, x, y}`（擺設拖曳放開）、`moveEmitter {key, x, y}`（粒子發射點拖曳放開，跟著角色時是相對位置）、`ctx {tx, ty, wx, wy, key, cx, cy}`（右鍵，wx/wy 世界座標，cx/cy 是 iframe 裡的 client 座標）、`key {key, ctrl, shift, alt}`（iframe 有焦點時的鍵盤，分頁照自己的快捷鍵處理）、`disarm`（指定中按右鍵）。
+  - sandbox → 分頁：`ready`（剛開好、還沒有場景，分頁收到就送 `load`）、`loaded {map, w, h}`（套用完；w/h＝地圖格數，「＋」放在中間用）、`error {msg}`（地圖載入失敗、角色 id 不存在，顯示在狀態列）、`select {key}`（左鍵點到的角色，空白處＝null）、`move {key, tx, ty}`（角色拖曳放開）、`moveProp {key, x, y}`（擺設拖曳放開）、`moveEmitter {key, x, y}`（粒子發射點拖曳放開，跟著角色時是相對位置）、`ctx {tx, ty, wx, wy, key, cx, cy}`（右鍵，wx/wy 世界座標，cx/cy 是 iframe 裡的 client 座標）、`key {key, ctrl, shift, alt}`（iframe 有焦點時的鍵盤，分頁照自己的快捷鍵處理）、`disarm`（指定中按右鍵）、`time {t}`（▶ 播放中的時鐘）。
 - 角色、物品、部位等遊戲資料（`role.json`、`item.json`、`part.json`、`anim.json`、`fx.json`、`particle.json`、`ability.json`、`local.json`、`textures.json`）在別的分頁存檔時，sandbox 的 DB 就舊了：分頁收到廣播就整個重開 iframe（工具列「重開」同）。
 - **sandbox 絕不寫遊戲存檔**：`Record.noSave = true`（`saveGame()` 直接 return），`Record.game` 是 sandbox 自己的一份。
 - 鏡頭：滾輪以游標為中心縮放（0.25～8）、中鍵拖曳平移；每張底圖的鏡頭記在 sandbox 的記憶體，換場景回同一張圖接著看；第一次看＝整張放進畫面（工具列「置中」同）。開發版掛 `window.__sb`（Sandbox 場景）給測試。
@@ -23,7 +23,7 @@
 
 手寫來源檔（工具寫），進 git，`{<場景名>: {...}}` 可多組；遊戲不讀。存：底圖、時間（＋自訂環境色）、角色實例、擺設、粒子發射點、角色身上的狀態特效。
 
-- 一筆＝`{map, roles?, props?, particles?}`（之後的步驟再加欄位）；角色 key 是 `r<n>`、擺設是 `p<n>`、粒子發射點是 `e<n>`，選取／👁／Del 共用同一套 key：
+- 一筆＝`{map, time?, ambient?, roles?, props?, particles?}`（`time`／`ambient` 見「日夜」）；角色 key 是 `r<n>`、擺設是 `p<n>`、粒子發射點是 `e<n>`，選取／👁／Del 共用同一套 key：
   - `particles`：見「特效」；角色另有 `fx: [fx.json id]`。
   - `props`：`[{key, img, x, y, scale?, flip?, angle?, ox?, oy?, depth?, light?}]`，見「擺設」。
   - `map`：相對 `maps/`、不含 `.json`，新增預設 `sandbox`。
@@ -34,7 +34,7 @@
 ## 底圖
 
 - 預設 `public/assets/maps/sandbox.json`（24×16 格草地，`terrain_tiles_v2` 的 52 號、一個空的 `objects` 物件層；不進 `main.world`、不進總覽地圖；地圖分頁的「其他」組看得到它）。
-- 可切任一現有地圖；sandbox 只建地形＋靜態物件（門、床、燈、井…，燈照常、門點了不切換），不建 NPC／怪物／動物／作息角色、不跑 `@群組`。
+- 工具列「底圖」下拉（`maps/` 底下所有 .json，含子資料夾，`sandbox` 排第一；寫場景的 `map`，sandbox 帶著場景 `scene.restart`）可切任一現有地圖；角色、擺設、粒子照場景檔的座標建（不會因為換圖搬位置）；sandbox 只建地形＋靜態物件（門、床、燈、井…，燈照常、門點了不切換），不建 NPC／怪物／動物／作息角色、不跑 `@群組`。
 - 沒有預設玩家；鏡頭自由（滾輪以游標為中心縮放、中鍵拖曳平移）。
 
 ## 角色
@@ -81,9 +81,11 @@
 
 ## 日夜
 
-- 時間滑桿 00:00～23:59 設 sandbox 的真 `TimeSystem` 時鐘（`lutAmbient`、燈亮度都跟遊戲一樣），▶ 播放＋倍速。
-- 「自訂環境色」勾選＋色票／亮度，勾了蓋掉 LUT。
-- 時間存檔。
+- 工具列第二排：🕒 時間滑桿 00:00～23:59（1 分）、▶／⏸、倍速（每秒走 10／60／240 分鐘遊戲時間）、「自訂環境色」勾選＋色票。
+- 時間是 sandbox 的真 `TimeSystem` 時鐘：設 `TimeSystem.time` 再 `emit(0)`；sandbox 在 `TimeSystem.load()` 後第一個註冊自己的環境光（`GameScene.getAmbientColor()`＝`lutAmbient[小時]`，整點換，同遊戲），所以後面註冊的燈（`com_lamp`／`com_light` 照 `GM.LIGHT − 環境光.r` 算亮度）拿到的是新的環境光。木偶不註冊時間（不會扣裝備耐久）。
+- 拖滑桿＝即時預覽（`time {t}`，不寫檔），放開才寫場景的 `time`（`'HH:MM'`，等於 `08:00`＝`Record.game_def` 的開局時間就拿掉欄位）。
+- ▶ 播放：sandbox 每 100ms 推時鐘、回報 `time {t}` 給分頁（滑桿跟著動），不寫檔；⏸ 把停下來的時間寫進場景。播放中編輯別的東西不會把時間拉回去（sandbox 只在場景檔的 `time` 變了才跳）。sandbox 重開（換底圖、重開鈕）後分頁會再送一次播放狀態。
+- 自訂環境色：場景的 `ambient`（`'#rrggbb'`）蓋掉 LUT，時間照走（燈照樣算）；調色票時即時預覽（`ambient {color}`），放開寫檔；取消勾選拿掉欄位。
 
 ## 編輯
 
@@ -92,7 +94,7 @@
 ## 版面（三欄，排在「粒子」後面）
 
 - 左：場景清單（＋ 新增；右鍵 改名／複製／刪除，雙擊改名；點選中的再點一次＝取消選取＝空白 sandbox；選取記 `tools.scene.sel`）＋目前場景物件樹（角色／擺設／粒子，👁 暫藏、Del 刪；第 2 步起）；下方 ↶／↷（Ctrl+Z／Ctrl+Y）。
-- 中：iframe＋工具列（格線、置中、重置、重開；之後加底圖、時間／▶／倍速／自訂色）；左鍵選取拖曳、右鍵選單放東西。
+- 中：iframe＋工具列（底圖、格線、置中、重置、重開）＋第二排（時間／▶／倍速／自訂環境色）；左鍵選取拖曳、右鍵選單放東西。
 - 右：選中物件的屬性；角色下方是動作區。
 
 ## 實作順序（每步 commit＋`scripts/test/scene-tool.mjs`＋更新本文件）
@@ -102,4 +104,4 @@
 3. ✅ 動作：普攻／技能／走路／被打／倒地／重播／重置、自動補血
 4. ✅ 擺設：選圖、全部屬性、吸附、方向鍵、發光
 5. ✅ 特效：狀態特效、粒子發射點
-6. 日夜＋底圖：時鐘滑桿／播放／自訂色、切現有地圖（濾掉角色）
+6. ✅ 日夜＋底圖：時鐘滑桿／播放／自訂色、切現有地圖（濾掉角色）

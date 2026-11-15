@@ -31,6 +31,9 @@ const S = {
     refs: {roles: {}, items: {}, abilities: {}, fx: {}, particles: {}},
     act: 'attack',                  // 動作下拉：attack／walk／ab:<技能 id>
     arm: null,                      // 指定目標中 {key, kind, id}
+    maps: ['sandbox'],              // 底圖下拉
+    playing: false,                 // ▶ 時間在走
+    liveTime: null,                 // 拖滑桿／播放中的時間（還沒寫檔）
     q: Promise.resolve(),
 };
 
@@ -566,14 +569,67 @@ function refresh()
     $('sceneName').textContent = S.sel ?? '（沒選場景：空白 sandbox）';
     $('btnUndo').disabled = !S.undo.length;
     $('btnRedo').disabled = !S.redo.length;
+    renderBar();
     syncGame();
 }
 
 const cur = () => scene() ?? ST.newScene();
 
+// ---------- 底圖、日夜 ----------
+const DEFAULT_TIME = '08:00';
+const hhmm = (n) => `${String(Math.floor(n / 60)).padStart(2, '0')}:${String(n % 60).padStart(2, '0')}`;
+const mins = (t) => {const [h, m] = t.split(':').map(Number); return h * 60 + m;};
+
+// 場景最上層的欄位：v undefined＝拿掉
+const setField = (k, v) => editScene(sc => {if (v === undefined) delete sc[k]; else sc[k] = v;});
+
+function renderBar()
+{
+    const sc = scene(), off = !sc;
+    const sel = $('selMap');
+    const map = cur().map;
+    sel.replaceChildren(...S.maps.map(m => h('option', {value: m}, m)));
+    if (!S.maps.includes(map)) sel.append(h('option', {value: map}, `⚠ ${map}`));
+    sel.value = map;
+    sel.disabled = off;
+    const t = S.liveTime ?? sc?.time ?? DEFAULT_TIME;
+    $('rngTime').value = mins(t);
+    $('lblTime').textContent = t;
+    $('btnPlay').textContent = S.playing ? '⏸' : '▶';
+    $('chkAmb').checked = !!sc?.ambient;
+    if (sc?.ambient) $('clrAmb').value = sc.ambient;
+    for (const id of ['rngTime', 'btnPlay', 'chkAmb', 'clrAmb']) $(id).disabled = off;
+}
+
+const playMsg = () => ({sb: 'play', speed: S.playing ? +$('selSpeed').value : 0});
+
+async function setPlaying(on)
+{
+    if (on === S.playing) return;
+    S.playing = on;
+    toGame(playMsg());
+    if (!on && S.liveTime) {const t = S.liveTime; S.liveTime = null; await setField('time', t === DEFAULT_TIME ? undefined : t);}
+    renderBar();
+}
+
+// 底圖清單：maps/ 底下所有 .json（相對 maps/、不含 .json）
+async function scanMaps(assets)
+{
+    const out = [];
+    const walk = async (dir, pre) => {
+        const {dirs, files} = await FS.listDir(dir);
+        for (const f of files) if (f.name.endsWith('.json')) out.push(pre + f.name.slice(0, -5));
+        for (const d of dirs) await walk(d, `${pre}${d.name}/`);
+    };
+    const dir = assets && await FS.tryDir(assets, 'maps');
+    if (dir) await walk(dir, '');
+    return out.sort((a, b) => (a === 'sandbox' ? -1 : b === 'sandbox' ? 1 : a.localeCompare(b)));
+}
+
 function syncGame()
 {
     toGame({sb: 'grid', on: S.grid});
+    toGame(playMsg());
     toGame({sb: 'select', key: S.pick});
     toGame({sb: 'hide', keys: [...S.hidden]});
     toGame({sb: 'load', scene: cur()});
@@ -604,6 +660,7 @@ addEventListener('message', (e) => {
     else if (m.sb === 'error') status(m.msg);
     else if (m.sb === 'select') pickRole(m.key);
     else if (m.sb === 'disarm') {S.arm = null; renderRight();}
+    else if (m.sb === 'time' && S.playing) {S.liveTime = m.t; renderBar();}
     else if (m.sb === 'move') setRole(m.key, {tx: m.tx, ty: m.ty}).then(syncGame);
     else if (m.sb === 'moveProp') setProp(m.key, {x: m.x, y: m.y}).then(syncGame);
     else if (m.sb === 'moveEmitter') setEmitter(m.key, {x: m.x, y: m.y}).then(syncGame);
@@ -633,6 +690,23 @@ $('chkGrid').onchange = () => {S.grid = $('chkGrid').checked; ls.set(LS.grid, S.
 $('btnHome').onclick = () => toGame({sb: 'home'});
 $('btnReload').onclick = reloadGame;
 $('btnReset').onclick = () => toGame({sb: 'reset'});
+$('selMap').onchange = () => setField('map', $('selMap').value);
+$('rngTime').oninput = () => {
+    S.liveTime = hhmm(+$('rngTime').value);
+    $('lblTime').textContent = S.liveTime;
+    toGame({sb: 'time', t: S.liveTime});
+};
+$('rngTime').onchange = async () => {
+    const t = hhmm(+$('rngTime').value);
+    if (S.playing) {S.liveTime = t; return;}
+    S.liveTime = null;
+    await setField('time', t === DEFAULT_TIME ? undefined : t);
+};
+$('btnPlay').onclick = () => setPlaying(!S.playing);
+$('selSpeed').onchange = () => toGame(playMsg());
+$('chkAmb').onchange = () => setField('ambient', $('chkAmb').checked ? $('clrAmb').value : undefined);
+$('clrAmb').oninput = () => $('chkAmb').checked && toGame({sb: 'ambient', color: $('clrAmb').value});
+$('clrAmb').onchange = () => $('chkAmb').checked && setField('ambient', $('clrAmb').value);
 addEventListener('keydown', (e) => {
     if (e.target.closest('input, textarea, select, dialog')) return;
     if (onKey({key: e.key, ctrl: e.ctrlKey || e.metaKey, shift: e.shiftKey, alt: e.altKey})) e.preventDefault();
@@ -644,6 +718,7 @@ async function loadRefs()
     const read = async (name) => {const fh = json && await FS.tryFile(json, name); return fh ? JSON.parse(await (await fh.getFile()).text()) : {};};
     S.refs = {roles: await read('role.json'), items: await read('item.json'), abilities: await read('ability.json'),
               fx: await read('fx.json'), particles: await read('particle.json')};
+    S.maps = await scanMaps(await FS.tryDir(await FS.tryDir(S.root, 'public'), 'assets'));
 }
 
 async function setProject(root)
@@ -672,5 +747,5 @@ frame.src = '/?sandbox=1';
 refresh();
 
 // 給無頭測試用
-window.__sc = {S, setProject, addScene, dupScene, renameScene, deleteScene, select, undo, redo, addRole, setRole, setEquip, deleteRole, pickRole, toggleHide, arm, toGame, addProp, setProp, deleteObj, nudge, addEmitter, setEmitter,
+window.__sc = {S, setProject, addScene, dupScene, renameScene, deleteScene, select, undo, redo, addRole, setRole, setEquip, deleteRole, pickRole, toggleHide, arm, toGame, addProp, setProp, deleteObj, nudge, addEmitter, setEmitter, setField, setPlaying,
                flush: () => S.q};
