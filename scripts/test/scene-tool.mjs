@@ -199,6 +199,44 @@ run('scene-tool', async t => {
         sc.arm(true);
         sb()._send({sb: 'key', key: 'Escape'});
         out.esc = await until(() => sc.S.arm === null && sb()._arm === null);
+
+        // ---------- 第 4 步：擺設 ----------
+        const tex = await (await fetch('/assets/json/textures.json')).json();
+        const [tkey, turl] = Object.entries(tex.image)[0];
+        const prop = (k) => sb()._props[k];
+        await sc.addProp(tkey, 200, 200);
+        out.prop = await until(() => prop('p1')) && [(await scDisk()).props, sc.S.pick, prop('p1').sp.texture.key, [prop('p1').sp.x, prop('p1').sp.y, prop('p1').sp.depth],
+                                                     [prop('p1').sp.originX, prop('p1').sp.originY], prop('p1').sp.pipeline?.name, doc.querySelector('#right .sec').textContent];
+        // 外部 png（還沒放進 textures/ 也行）：file:<相對專案路徑>
+        await sc.addProp(`file:public/assets/${turl}`, 300, 200);
+        out.file = await until(() => prop('p2')) && [prop('p2').sp.texture.key, prop('p2').sp.width > 0];
+        await sc.addProp('no-such-tex', 0, 0);
+        out.badTex = await until(() => doc.getElementById('status').textContent.includes('載不到圖')) && !prop('p3');
+        await sc.deleteObj('p3');
+
+        // 屬性
+        await sc.setProp('p1', {scale: 2, flip: true, angle: 30, ox: 0, oy: 0.5, depth: 5});
+        out.attrs = await until(() => prop('p1')?.sp.scaleX === 2) && [prop('p1').sp.flipX, prop('p1').sp.angle, prop('p1').sp.originX, prop('p1').sp.originY, prop('p1').sp.depth];
+        const nl = () => sb().lights.lights.length;
+        const l0 = nl();
+        await sc.setProp('p1', {light: {r: 150, color: '#ff0000', i: 2, y: -10}});
+        out.light = await until(() => nl() === l0 + 1) && (() => {const l = sb().lights.lights.at(-1); return [l.radius, l.intensity, l.y, Math.round(l.color.r * 255)];})();
+        await sc.setProp('p1', {light: undefined});
+        out.unlight = await until(() => nl() === l0);
+
+        // 拖曳放開／方向鍵（Shift＝一格）
+        sb()._send({sb: 'moveProp', key: 'p1', x: 208, y: 224});
+        out.moveProp = await until(async () => (await scDisk()).props[0].x === 208) && [prop('p1')?.sp.x, prop('p1')?.sp.y];
+        sc.pickRole('p1');
+        sb()._send({sb: 'key', key: 'ArrowRight'});
+        await until(async () => (await scDisk()).props[0].x === 209);
+        sb()._send({sb: 'key', key: 'ArrowDown', shift: true});
+        out.nudge = await until(async () => (await scDisk()).props[0].y === 256) && [(await scDisk()).props[0].x, (await scDisk()).props[0].y];
+        // 點選：擺設也點得到
+        out.pickProp = await until(() => prop('p1')?.sp.y === 256) && sb()._pickAt(prop('p1').sp.getBounds().centerX, prop('p1').sp.getBounds().centerY)?.key;
+        out.tree2 = [...doc.querySelectorAll('#tree .item')].map(e => e.dataset.key);
+        sb()._send({sb: 'key', key: 'Delete'});
+        out.delProp = await until(() => !prop('p1')) && (await scDisk()).props.map(p => p.key);
         return out;
     });
     t.eq('分頁：iframe 跑 /?sandbox、不寫存檔', JSON.stringify(r.boot), JSON.stringify(['sandbox', true]));
@@ -225,7 +263,7 @@ run('scene-tool', async t => {
     t.eq('面向左／右', JSON.stringify(r.face), JSON.stringify([true, true]));
     t.eq('sandbox 點選：左欄跟著選', r.pick, 'r2');
     t.check('sandbox 拖曳放開：寫檔、重建在新格子', r.move);
-    t.eq('sandbox 右鍵：放角色＋刪除', JSON.stringify(r.ctx), JSON.stringify(['在這裡放角色…（3, 3）', '刪除 mary']));
+    t.eq('sandbox 右鍵：放角色／擺設＋刪除', JSON.stringify(r.ctx), JSON.stringify(['在這裡放角色…（3, 3）', '在這裡放擺設…', '刪除 mary']));
     t.eq('👁 暫藏：不寫檔、點不到', JSON.stringify(r.hide), JSON.stringify([true, true]));
     t.eq('sandbox 裡按 Del：刪選中的', JSON.stringify(r.delRole), JSON.stringify([null, 'r1']));
     t.eq('sandbox 裡按 Ctrl+Z：復原、選回去', JSON.stringify(r.undoDel), JSON.stringify([['r1', 'r2'], 'r2']));
@@ -241,4 +279,17 @@ run('scene-tool', async t => {
     t.eq('倒地／復活', JSON.stringify(r.die), JSON.stringify([true, true]));
     t.check('sandbox 右鍵取消指定', r.disarm);
     t.check('Esc 取消指定（分頁跟 sandbox 都清掉）', r.esc);
+
+    const p0 = r.prop;
+    t.check('放擺設：寫檔、選起來、sandbox 用那張圖、錨點底部中間、深度＝y、受光', p0 && p0[0]?.[0]?.key === 'p1' && p0[1] === 'p1' && p0[3].join() === '200,200,200' && p0[4].join() === '0.5,1' && p0[5] === 'Light2D' && p0[6] === '擺設 p1', JSON.stringify(p0));
+    t.check('外部 png：用網址載入', r.file?.[0]?.startsWith('file:') && r.file[1], JSON.stringify(r.file));
+    t.check('載不到的圖：提示、不建', r.badTex);
+    t.eq('屬性：翻轉、角度、錨點、深度＝y＋偏移', JSON.stringify(r.attrs), JSON.stringify([true, 30, 0, 0.5, 205]));
+    t.eq('發光：加一盞燈（半徑、強度、位移、顏色）', JSON.stringify(r.light), JSON.stringify([150, 2, 190, 255]));
+    t.check('取消發光：燈拿掉', r.unlight);
+    t.eq('拖曳放開：寫檔、sandbox 跟著', JSON.stringify(r.moveProp), JSON.stringify([208, 224]));
+    t.eq('方向鍵 1px、Shift＋方向鍵一格', JSON.stringify(r.nudge), JSON.stringify([209, 256]));
+    t.eq('擺設點得到', r.pickProp, 'p1');
+    t.eq('左欄：角色跟擺設都列', JSON.stringify(r.tree2), JSON.stringify(['r1', 'r2', 'p1', 'p2']));
+    t.eq('Del 刪擺設', JSON.stringify(r.delProp), JSON.stringify(['p2']));
 });

@@ -66,6 +66,7 @@ export class Sandbox extends GameScene
         this._gridOn = this._data.grid ?? true;
         this._sel = this._data.sel ?? null;
         this._hidden = new Set(this._data.hidden);
+        this._props = {};
         this._drawGrid();
         this._initInput();
         if(import.meta.env.DEV) {window.__sb = this;}
@@ -75,7 +76,7 @@ export class Sandbox extends GameScene
 
     // 場景分頁送來的場景（tools/scenes.json 的一筆）；換底圖要整個重開
     // 角色照 key 比對：資料一樣的留著（表演到一半不打斷），不一樣或 force（重置）就重建
-    _apply(scene, {force=false}={})
+    async _apply(scene, {force=false}={})
     {
         this._scene = scene;
         // 重置：表演生出來的東西（火牆區域、屍體…）一起清掉；地圖本身的物件 uid 不是 -1
@@ -91,7 +92,82 @@ export class Sandbox extends GameScene
             if(!this.roles.some(p=>p.key===r.key) && !this._spawn(r)) {bad.push(r.id);}
         }
         if(bad.length) {this._send({sb:'error', msg:`role.json 沒有：${[...new Set(bad)].join('、')}`});}
+        await this._applyProps(scene.props ?? []);
+        if(this._scene!==scene) {return;}   // 載外部圖的期間又來了新的場景
         this._send({sb:'loaded', map:this.mapName, w:this.map.map.width, h:this.map.map.height});
+    }
+
+    //------------------------------------------------------
+    //  擺設：{key, img, x, y（錨點的世界座標）, scale, flip, angle, ox, oy, depth（加在 y 上）, light:{r, color, i, x, y}}
+    //  img＝textures 的 key（可帶 :frame）或 file:<相對專案的路徑>（還沒放進 textures/ 的圖，vite 直接給）
+    //------------------------------------------------------
+    async _applyProps(list)
+    {
+        const want = Object.fromEntries(list.map(p=>[p.key, p]));
+        for(const [k, o] of Object.entries(this._props))
+        {
+            if(JSON.stringify(want[k])!==o.sig) {this._dropProp(k);}
+        }
+        const bad = [];
+        for(const p of list)
+        {
+            if(this._props[p.key]) {continue;}
+            const tex = await this._tex(p.img);
+            if(!tex) {bad.push(p.img); continue;}
+            if(this._props[p.key] || JSON.stringify(want[p.key])!==JSON.stringify(p)) {continue;}
+            this._props[p.key] = this._makeProp(p, tex);
+        }
+        if(bad.length) {this._send({sb:'error', msg:`載不到圖：${[...new Set(bad)].join('、')}`});}
+    }
+
+    // 回傳 [key, frame]；外部圖第一次用到才載
+    async _tex(img)
+    {
+        if(!img) {return null;}
+        if(!img.startsWith('file:'))
+        {
+            const [key, frame] = img.split(':');
+            return this.textures.exists(key) ? [key, frame] : null;
+        }
+        if(!this.textures.exists(img))
+        {
+            await new Promise((res)=>{
+                // vite：public/ 底下的檔在網址根目錄，其他照專案路徑；要完整網址，不然 loader 會接在 setPath('assets') 後面
+                this.load.image(img, `${location.origin}/${img.slice(5).replace(/^public\//, '').split('/').map(encodeURIComponent).join('/')}`);
+                this.load.once('complete', res);
+                this.load.start();
+            });
+        }
+        return this.textures.exists(img) ? [img] : null;
+    }
+
+    _makeProp(p, [key, frame])
+    {
+        const sp = this.add.image(p.x, p.y, key, frame)
+            .setOrigin(p.ox ?? 0.5, p.oy ?? 1).setScale(p.scale ?? 1).setFlipX(!!p.flip).setAngle(p.angle ?? 0)
+            .setDepth(p.y + (p.depth ?? 0)).setPipeline('Light2D').setVisible(!this._hidden.has(p.key));
+        const o = {sp, data:p, sig:JSON.stringify(p)};
+        if(p.light)
+        {
+            const l = p.light;
+            o.light = this.lights.addLight(p.x + (l.x ?? 0), p.y + (l.y ?? 0), l.r ?? 100, Phaser.Display.Color.HexStringToColor(l.color ?? '#ffcc88').color, l.i ?? 1);
+        }
+        return o;
+    }
+
+    _dropProp(k)
+    {
+        const o = this._props[k];
+        o.sp.destroy();
+        if(o.light) {this.lights.removeLight(o.light);}
+        delete this._props[k];
+    }
+
+    // 拖曳中：圖跟光一起動，深度照新的 y
+    _placeProp(o, x, y)
+    {
+        o.sp.setPosition(x, y).setDepth(y + (o.data.depth ?? 0));
+        if(o.light) {o.light.setPosition(x + (o.data.light.x ?? 0), y + (o.data.light.y ?? 0));}
     }
 
     _spawn(r)
@@ -167,6 +243,18 @@ export class Sandbox extends GameScene
         return this.roles.find(p=>p.visible && this.map.worldToTile(p.x, p.y).every((v, i)=>v===[tx, ty][i]));
     }
 
+    // 點到的東西（角色或擺設，最上面那個）：{key, role?, prop?}
+    _pickAt(wx, wy)
+    {
+        const hits = [
+            ...this.roles.filter(p=>p.visible && p.getShapeRect?.().contains(wx, wy)).map(role=>({key:role.key, role, depth:role.depth})),
+            ...Object.entries(this._props).filter(([, o])=>o.sp.visible && o.sp.getBounds().contains(wx, wy)).map(([key, prop])=>({key, prop, depth:prop.sp.depth})),
+        ];
+        if(hits.length) {return hits.reduce((a, b)=>(b.depth>a.depth ? b : a));}
+        const role = this._roleAt(wx, wy);
+        return role ? {key:role.key, role} : null;
+    }
+
     _drawSel()
     {
         const g = this._selG;
@@ -179,10 +267,11 @@ export class Sandbox extends GameScene
             const [tx, ty] = this.map.worldToTile(ptr.worldX, ptr.worldY);
             if(this.map.isInside(tx, ty)) {g.lineStyle(2/z, 0xff9933, 1).strokeRect(tx*GM.TILE_W, ty*GM.TILE_H, GM.TILE_W, GM.TILE_H);}
         }
-        const p = this._puppet(this._sel);
-        if(!p?.visible || !p.getShapeRect) {return;}
-        const r = p.getShapeRect();
+        const p = this._puppet(this._sel), o = this._props?.[this._sel];
+        const r = p?.visible && p.getShapeRect ? p.getShapeRect() : o?.sp.visible ? o.sp.getBounds() : null;
+        if(!r) {return;}
         g.lineStyle(2/z, 0x7ddc5a, 1).strokeRect(r.x, r.y, r.width, r.height);
+        if(o) {g.fillStyle(0x7ddc5a, 1).fillCircle(o.sp.x, o.sp.y, 3/z);}   // 錨點
     }
 
     _send(msg) {window.parent.postMessage(msg, '*');}
@@ -208,6 +297,7 @@ export class Sandbox extends GameScene
             case 'hide':
                 this._hidden = new Set(m.keys);
                 this.roles.forEach(p=>p.setVisible(!this._hidden.has(p.key)));
+                Object.entries(this._props).forEach(([k, o])=>o.sp.setVisible(!this._hidden.has(k)));
                 break;
         }
     }
@@ -258,19 +348,24 @@ export class Sandbox extends GameScene
         });
         this.input.on('pointerdown', (p)=>{
             if(p.middleButtonDown()) {this._pan = {x:p.x, y:p.y, sx:cam.scrollX, sy:cam.scrollY}; return;}
-            const role = this._roleAt(p.worldX, p.worldY);
             const [tx, ty] = this.map.worldToTile(p.worldX, p.worldY);
-            if(p.rightButtonDown())
+            if(this._arm && p.leftButtonDown())
             {
-                if(this._arm) {this._arm = null; this._send({sb:'disarm'}); return;}
-                this._send({sb:'ctx', tx, ty, key:role?.key ?? null, cx:p.event.clientX, cy:p.event.clientY});
+                // 指定目標中：左鍵＝對那格／那個角色做動作（右鍵或 Esc 取消）
+                this._do({...this._arm, tx, ty, tkey:this._roleAt(p.worldX, p.worldY)?.key ?? null});
                 return;
             }
-            // 指定目標中：左鍵＝對那格／那個角色做動作（右鍵或 Esc 取消）
-            if(this._arm) {this._do({...this._arm, tx, ty, tkey:role?.key ?? null}); return;}
-            this._sel = role?.key ?? null;
+            if(p.rightButtonDown() && this._arm) {this._arm = null; this._send({sb:'disarm'}); return;}
+            const hit = this._pickAt(p.worldX, p.worldY);
+            if(p.rightButtonDown())
+            {
+                this._send({sb:'ctx', tx, ty, wx:Math.round(p.worldX), wy:Math.round(p.worldY), key:hit?.key ?? null, cx:p.event.clientX, cy:p.event.clientY});
+                return;
+            }
+            this._sel = hit?.key ?? null;
             this._send({sb:'select', key:this._sel});
-            if(role) {this._drag = {role, from:this.map.worldToTile(role.x, role.y), to:null};}
+            if(hit?.role) {this._drag = {role:hit.role, from:this.map.worldToTile(hit.role.x, hit.role.y), to:null};}
+            else if(hit?.prop) {this._drag = {prop:hit.prop, key:hit.key, dx:hit.prop.sp.x-p.worldX, dy:hit.prop.sp.y-p.worldY, moved:false};}
         });
         this.input.on('pointermove', (p)=>{
             if(this._pan)
@@ -279,7 +374,17 @@ export class Sandbox extends GameScene
                 cam.scrollX = this._pan.sx - (p.x-this._pan.x)/cam.zoom;
                 cam.scrollY = this._pan.sy - (p.y-this._pan.y)/cam.zoom;
             }
-            else if(this._drag?.role.active)
+            else if(this._drag?.prop)
+            {
+                if(!p.leftButtonDown()) {this._endDrag(); return;}
+                // 自由拖；按住 Shift 錨點吸到 16px（格子交點＋格子中心）
+                let x = p.worldX + this._drag.dx, y = p.worldY + this._drag.dy;
+                if(p.event.shiftKey) {[x, y] = [x, y].map(v=>Math.round(v/16)*16);}
+                else {[x, y] = [x, y].map(Math.round);}
+                this._drag.moved = true;
+                this._placeProp(this._drag.prop, x, y);
+            }
+            else if(this._drag?.role?.active)
             {
                 if(!p.leftButtonDown()) {this._endDrag(); return;}
                 const [tx, ty] = this.map.worldToTile(p.worldX, p.worldY);
@@ -301,6 +406,12 @@ export class Sandbox extends GameScene
     {
         const d = this._drag;
         this._drag = null;
+        if(d?.prop)
+        {
+            const {x, y} = d.prop.sp;
+            if(d.moved && (x!==d.prop.data.x || y!==d.prop.data.y)) {this._send({sb:'moveProp', key:d.key, x, y});}
+            return;
+        }
         if(!d?.to || (d.to[0]===d.from[0] && d.to[1]===d.from[1])) {return;}
         this._send({sb:'move', key:d.role.key, tx:d.to[0], ty:d.to[1]});
     }

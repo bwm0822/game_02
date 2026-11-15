@@ -5,6 +5,7 @@ import '../common/splitter.js';
 import {$, h, status, ask} from '../common/dom.js';
 import * as SH from '../common/shell.js';
 import * as FS from '../common/fs.js';
+import * as IC from '../common/icons.js';
 import {KINDS, KIND_NAMES} from '../role/schema.js';
 import * as ST from './store.js';
 
@@ -177,14 +178,118 @@ function setEquip(key, cat, v)
     });
 }
 
-function deleteRole(key)
+const deleteRole = (key) => deleteObj(key);
+
+// ---------- 擺設 ----------
+const props = () => scene()?.props ?? [];
+const propOf = (key) => props().find(p => p.key === key);
+const propKey = () => {let i = 1; while (propOf(`p${i}`)) i++; return `p${i}`;};
+const isProp = (key) => /^p\d+$/.test(key ?? '');
+const FILE = 'file:';
+const LIGHT = {r: 120, color: '#ffcc88', i: 1, y: -16};
+
+function addProp(img, x, y)
+{
+    const key = propKey();
+    return editScene(sc => {(sc.props ??= []).push({key, img, x, y});}, key);
+}
+
+// patch 的值 undefined＝拿掉那個欄位
+function setProp(key, patch)
 {
     return editScene(sc => {
-        const i = sc.roles?.findIndex(x => x.key === key) ?? -1;
+        const p = sc.props?.find(x => x.key === key);
+        if (!p) throw new Error(`場景裡沒有 ${key}`);
+        for (const [k, v] of Object.entries(patch)) {if (v === undefined) delete p[k]; else p[k] = v;}
+    });
+}
+
+function deleteObj(key)
+{
+    const list = isProp(key) ? 'props' : 'roles';
+    return editScene(sc => {
+        const i = sc[list]?.findIndex(x => x.key === key) ?? -1;
         if (i < 0) return false;
-        sc.roles.splice(i, 1);
-        if (!sc.roles.length) delete sc.roles;
+        sc[list].splice(i, 1);
+        if (!sc[list].length) delete sc[list];
     }, S.pick === key ? null : S.pick);
+}
+
+// 外部 png：專案裡的直接記路徑；專案外的先複製到 images/scene/
+async function pickFile()
+{
+    if (!S.root) {status('先在上方選擇專案資料夾'); return null;}
+    let fh;
+    try {[fh] = await showOpenFilePicker({types: [{description: 'PNG', accept: {'image/png': ['.png']}}]});}
+    catch {return null;}
+    const path = await S.root.resolve(fh);
+    if (path) return FILE + path.join('/');
+    const dir = await FS.resolveDir(S.root, 'images/scene').catch(() => null)
+        ?? await (await S.root.getDirectoryHandle('images', {create: true})).getDirectoryHandle('scene', {create: true});
+    let name = fh.name;
+    for (let i = 2; await FS.tryFile(dir, name); i++) name = fh.name.replace(/\.png$/i, `-${i}.png`);
+    await FS.writeFile(dir, name, await fh.getFile());
+    status(`複製到 images/scene/${name}`);
+    return `${FILE}images/scene/${name}`;
+}
+
+async function askImg(cur)
+{
+    const v = await ask('擺設的圖', h('div', {class: 'hint'}, 'textures 的圖（遊戲已經有的）或專案裡任一張 png（還沒放進 textures/ 也行；專案外的會複製到 images/scene/）'),
+        [['tex', 'textures 圖…'], ['file', '外部 png…'], ['cancel', '取消']]);
+    if (v === 'tex') return IC.pickIcon(cur?.startsWith(FILE) ? '' : cur);
+    if (v === 'file') return pickFile();
+    return null;
+}
+
+async function placeProp(x, y)
+{
+    if (S.sel === null) return status('先選或新增一個場景');
+    const img = await askImg();
+    if (img) await addProp(img, x, y);
+}
+
+function imgEl(img, size)
+{
+    if (img?.startsWith(FILE)) return h('img', {src: `/${img.slice(FILE.length).replace(/^public\//, '')}`, style: `max-width:${size}px; max-height:${size}px`});
+    return IC.iconEl(img, size);
+}
+
+function propPanel(p)
+{
+    const put = (k, conv = Number) => (e) => {
+        const v = e.target.type === 'checkbox' ? e.target.checked || undefined : e.target.value === '' ? undefined : conv(e.target.value);
+        return setProp(p.key, {[k]: v});
+    };
+    const n = (k, step, ph) => h('input', {type: 'number', step, value: p[k] ?? '', placeholder: ph, class: 'n', dataset: {k}, onchange: put(k)});
+    const l = p.light;
+    const putL = (k, conv = Number) => (e) => setProp(p.key, {light: {...l, [k]: e.target.value === '' ? undefined : conv(e.target.value)}});
+    const ln = (k, step, ph) => h('input', {type: 'number', step, value: l?.[k] ?? '', placeholder: ph, class: 'n', dataset: {k: `light.${k}`}, onchange: putL(k)});
+    const row = (k, ...v) => h('tr', null, h('td', {class: 'k'}, k), h('td', null, ...v));
+    return [
+        h('div', {class: 'sec'}, `擺設 ${p.key}`),
+        h('div', {class: 'row2'}, imgEl(p.img, 64), h('span', {class: 'dim', style: 'word-break: break-all'}, p.img),
+            h('button', {onclick: async () => {const v = await askImg(p.img); if (v) setProp(p.key, {img: v});}}, '換圖…')),
+        h('table', {class: 'props'},
+            row('位置', n('x', 1), ' ', n('y', 1)),
+            row('scale', n('scale', 0.05, '1')),
+            row('翻轉', h('input', {type: 'checkbox', checked: !!p.flip, dataset: {k: 'flip'}, onchange: put('flip')})),
+            row('角度', n('angle', 1, '0')),
+            row('錨點', n('ox', 0.05, '0.5'), ' ', n('oy', 0.05, '1')),
+            row('深度', n('depth', 1, '0'), h('span', {class: 'dim'}, ' 加在 y 上')),
+            row('發光', h('input', {type: 'checkbox', checked: !!l, dataset: {k: 'light'}, onchange: (e) => setProp(p.key, {light: e.target.checked ? {...LIGHT} : undefined})})),
+            l && row('半徑／強度', ln('r', 10, '100'), ' ', ln('i', 0.1, '1')),
+            l && row('顏色', h('input', {type: 'color', value: l.color ?? '#ffcc88', dataset: {k: 'light.color'}, onchange: putL('color', String)})),
+            l && row('光的位移', ln('x', 1, '0'), ' ', ln('y', 1, '0'))),
+        h('div', {class: 'hint dim'}, '拖曳移動、按住 Shift 錨點吸 16px；方向鍵 1px、Shift＋方向鍵一格'),
+        h('div', {class: 'acts'}, h('button', {onclick: () => deleteObj(p.key)}, '刪除（Del）')),
+    ];
+}
+
+function nudge(dx, dy)
+{
+    const p = propOf(S.pick);
+    if (p) setProp(p.key, {x: p.x + dx, y: p.y + dy});
 }
 
 function pickRole(key)
@@ -278,6 +383,14 @@ function renderTree()
             oncontextmenu: (e) => menu(e, [['刪除', () => deleteRole(r.key)]]),
         }, h('button', {class: 'eye', title: '暫時藏起來（不存檔）', onclick: (e) => {e.stopPropagation(); toggleHide(r.key);}}, S.hidden.has(r.key) ? '◌' : '👁'),
            h('span', {class: 'id'}, r.id), h('span', {class: 'lab'}, roleLab(r.id)), h('span', {class: 'mark dim'}, `${r.tx},${r.ty}`))),
+        h('div', {class: 'row2'}, h('span', {class: 'sec grow'}, `擺設（${props().length}）`),
+            h('button', {title: '放擺設（放在地圖中間；也可以在畫面上右鍵）', onclick: () => placeProp(S.center[0] * 32 + 16, S.center[1] * 32 + 32)}, '＋')),
+        ...props().map(p => h('div', {
+            class: `item${p.key === S.pick ? ' sel' : ''}${S.hidden.has(p.key) ? ' hid' : ''}`, dataset: {key: p.key},
+            onclick: () => pickRole(p.key === S.pick ? null : p.key),
+            oncontextmenu: (e) => menu(e, [['刪除', () => deleteObj(p.key)]]),
+        }, h('button', {class: 'eye', title: '暫時藏起來（不存檔）', onclick: (e) => {e.stopPropagation(); toggleHide(p.key);}}, S.hidden.has(p.key) ? '◌' : '👁'),
+           imgEl(p.img, 20), h('span', {class: 'id'}, p.img.startsWith(FILE) ? p.img.split('/').pop() : p.img), h('span', {class: 'mark dim'}, `${p.x},${p.y}`))),
     );
 }
 
@@ -300,6 +413,7 @@ function equipSelect(r, cat)
 function renderRight()
 {
     const r = roleOf(S.pick), box = $('right');
+    if (propOf(S.pick)) return box.replaceChildren(...propPanel(propOf(S.pick)));
     if (!r) return box.replaceChildren(h('span', {class: 'dim'}, S.sel === null ? '' : '點畫面上的角色、或左邊清單選一個；右鍵畫面放角色'));
     const idSel = roleSelect(r.id);
     idSel.onchange = () => setRole(r.key, {id: idSel.value});
@@ -349,7 +463,7 @@ function actPanel(r)
 function refresh()
 {
     if (S.sel !== null && !(S.sel in S.data)) select(null, false);
-    if (S.pick && !roleOf(S.pick)) S.pick = null;
+    if (S.pick && !roleOf(S.pick) && !propOf(S.pick)) S.pick = null;
     renderList();
     renderTree();
     renderRight();
@@ -374,7 +488,12 @@ function onKey(k)
 {
     if (k.ctrl && k.key.toLowerCase() === 'z' && !k.shift) undo();
     else if (k.ctrl && (k.key.toLowerCase() === 'y' || (k.key.toLowerCase() === 'z' && k.shift))) redo();
-    else if (k.key === 'Delete' && S.pick) deleteRole(S.pick);
+    else if (k.key === 'Delete' && S.pick) deleteObj(S.pick);
+    else if (k.key.startsWith('Arrow') && propOf(S.pick))
+    {
+        const d = k.shift ? 32 : 1;
+        nudge({ArrowLeft: -d, ArrowRight: d}[k.key] ?? 0, {ArrowUp: -d, ArrowDown: d}[k.key] ?? 0);
+    }
     else if (k.key === ' ') toGame({sb: 'replay'});
     else if (k.key === 'Escape' && S.arm) arm(false);
     else return false;
@@ -390,12 +509,13 @@ addEventListener('message', (e) => {
     else if (m.sb === 'select') pickRole(m.key);
     else if (m.sb === 'disarm') {S.arm = null; renderRight();}
     else if (m.sb === 'move') setRole(m.key, {tx: m.tx, ty: m.ty}).then(syncGame);
+    else if (m.sb === 'moveProp') setProp(m.key, {x: m.x, y: m.y}).then(syncGame);
     else if (m.sb === 'key') onKey(m);
     else if (m.sb === 'ctx')
     {
         const b = frame.getBoundingClientRect(), at = {clientX: b.left + m.cx, clientY: b.top + m.cy};
-        const items = [[`在這裡放角色…（${m.tx}, ${m.ty}）`, () => placeAt(m.tx, m.ty)]];
-        if (m.key) items.push([`刪除 ${roleOf(m.key)?.id ?? m.key}`, () => deleteRole(m.key)]);
+        const items = [[`在這裡放角色…（${m.tx}, ${m.ty}）`, () => placeAt(m.tx, m.ty)], ['在這裡放擺設…', () => placeProp(m.wx, m.wy)]];
+        if (m.key) items.push([`刪除 ${roleOf(m.key)?.id ?? m.key}`, () => deleteObj(m.key)]);
         if (S.sel === null) return status('先選或新增一個場景');
         menu(at, items);
     }
@@ -454,5 +574,5 @@ frame.src = '/?sandbox=1';
 refresh();
 
 // 給無頭測試用
-window.__sc = {S, setProject, addScene, dupScene, renameScene, deleteScene, select, undo, redo, addRole, setRole, setEquip, deleteRole, pickRole, toggleHide, arm, toGame,
+window.__sc = {S, setProject, addScene, dupScene, renameScene, deleteScene, select, undo, redo, addRole, setRole, setEquip, deleteRole, pickRole, toggleHide, arm, toGame, addProp, setProp, deleteObj, nudge,
                flush: () => S.q};
