@@ -96,7 +96,7 @@ run('schedule-tool', async t => {
         out.hoverOcc = occLabs();
         out.hoverBold = [!!tip().querySelector('.occ .mine .oseg.sel'), !!tip().querySelector('.occ .oaxis'), !tip().querySelector('.occ .onow')];
         out.noInfo = [!right().querySelector('.smap .info'), !cv().hasAttribute('title'), !!right().querySelector('.smap .help[title]')];
-        // 選中那張的編號反白：膠囊裡數字左邊是白底（橘點畫在藍線上面）
+        // 作息點不畫時間膠囊：選中那筆的目的地上方沒有白底
         const dpr = devicePixelRatio || 1, px0 = cv().getContext('2d').getImageData(Math.round((o.x + (p.x - d.W / 2) * K) * dpr), Math.round((o.y + (p.y - d.H / 2) * K - 7) * dpr), 1, 1).data;
         out.selWhite = [...px0.slice(0, 3)].every(v => v > 230);
         cv().dispatchEvent(new PointerEvent('pointerleave', {bubbles: true}));
@@ -820,7 +820,7 @@ run('schedule-tool', async t => {
         await until(() => cv()?.st.name === F1);
         out.backed = [cv().st.name, right().querySelector('[data-k=schedBack]').disabled];
 
-        // 顯示 ▾：預設只勾「這個角色其他行程」；勾「物件名稱」記住
+        // 顯示 ▾：預設只勾座標；勾「物件名稱」記住
         right().querySelector('.smap .showbtn').click();
         const pop = document.querySelector('.showpop');
         out.showDefault = [...pop.querySelectorAll('input[data-show]')].map(i => `${i.dataset.show}:${i.checked}`);
@@ -1176,7 +1176,7 @@ run('schedule-tool', async t => {
     t.check('占用時間圖：這個角色排第一列（橘）、別人在後面', r.hoverOcc[0] === 'trump 1*' && r.hoverOcc.slice(1).every(x => !x.endsWith('*')), JSON.stringify(r.hoverOcc));
     t.eq('占用時間圖：選中那筆加白框、有刻度、沒時刻線；離開就藏', JSON.stringify([...r.hoverBold, r.tipGone]), JSON.stringify([true, true, true, true]));
     t.eq('沒有下方資訊列、canvas 沒 title、說明在 ?', JSON.stringify(r.noInfo), JSON.stringify([true, true, true]));
-    t.check('選中那張的編號反白（白底，蓋在路線上面）', r.selWhite);
+    t.check('作息點不畫時間膠囊（選中那筆的目的地沒有白底）', !r.selWhite);
     t.eq('地圖的倍率自己一組', JSON.stringify(r.zoomSep), JSON.stringify([1.5, true]));
     t.eq('換地圖記住', r.mapMem, 'm/m_04x05');
     t.check('大地圖 100×100 格、有 musk-p1／trump-inn', JSON.stringify(r.big) === JSON.stringify([3200, 3200, true, true]), JSON.stringify(r.big));
@@ -1358,9 +1358,9 @@ run('schedule-tool', async t => {
     t.check('點門：進到目的地圖、← 返回 能按、作息沒動', r.entered[0] === r.doorTo && r.entered[1] === false && r.entered[2] === 2, JSON.stringify([r.doorTo, r.entered]));
     t.eq('← 返回 回到點門前那張', JSON.stringify(r.backed), JSON.stringify(['m_04x05/trump-inn-f1', true]));
     t.check('座標沒勾：空地沒浮動框、方框照畫', r.noCoord.every(Boolean), r.noCoord.join());
-    t.eq('顯示 ▾ 預設勾本角色其他行程、座標', JSON.stringify(r.showDefault), JSON.stringify(['mine:true', 'others:false', 'npcs:false', 'names:false', 'grid:false', 'coord:true']));
+    t.eq('顯示 ▾ 預設只勾座標（沒有「這個角色其他行程」）', JSON.stringify(r.showDefault), JSON.stringify(['others:false', 'npcs:false', 'names:false', 'grid:false', 'coord:true']));
     t.eq('作息地圖也有名稱過濾框：sit-* 只中 sit-1、記自己的 key、自動勾物件名稱', JSON.stringify(r.schFilter), JSON.stringify([true, true, false, 'sit-*', true]));
-    t.eq('勾格子可走：記住、按鈕數字', JSON.stringify(r.showSaved), JSON.stringify(['{"mine":true,"coord":true,"grid":true}', '顯示（3）▾', true]));
+    t.eq('勾格子可走：記住、按鈕數字', JSON.stringify(r.showSaved), JSON.stringify(['{"coord":true,"grid":true}', '顯示（2）▾', true]));
     t.check('格子權重有算出牆', r.wall);
     t.eq('地圖沒比 navgraph.json 新：沒有過期提示', JSON.stringify(r.notStale), JSON.stringify(['[]', true]));
     t.eq('左鍵點空地：沒問、沒寫地圖', JSON.stringify(r.leftEmpty), JSON.stringify([false, true]));

@@ -13,9 +13,9 @@ import * as TP from '../common/schedpos.js';
 import {spriteOf, forgetSprites} from '../map/roles.js';
 export {setReader, forget, mapData, spotOf, gridOf} from '../common/mapview.js';
 
-const SHOW = createShowMenu('tools.role.sched.show', [['mine', '這個角色其他行程', '#e8743b'], ['others', '其他角色的點', '#9ccc65'],
+const SHOW = createShowMenu('tools.role.sched.show', [['others', '其他角色的點', '#9ccc65'],
     ['npcs', '其他角色（時間游標）', '#4fc3f7'],
-    ['names', '物件名稱', '#dddddd', {filter: true}], ['grid', '格子可走（紅＝擋住、黃＝慢）', '#ff7777'], ['coord', '座標（滑過空地的浮動框）', '#aaccff']], {mine: true, coord: true});
+    ['names', '物件名稱', '#dddddd', {filter: true}], ['grid', '格子可走（紅＝擋住、黃＝慢）', '#ff7777'], ['coord', '座標（滑過空地的浮動框）', '#aaccff']], {coord: true});
 export const show = SHOW.show;
 export const nameOk = SHOW.nameOk;
 
@@ -129,15 +129,6 @@ const COLOR = {point: '#ffd24a', port: '#5cd0ff', door: '#5cd0ff', bed: '#c88cff
 const push = (m, k, v) => (m.get(k) ?? m.set(k, []).get(k)).push(v);
 
 // 這個角色在這張圖的作息點：名稱（格子＝"@x,y"）→ [{i（第幾筆，0 起）, text（抵達時間）}]
-function stopsOn(schedule, mapName, plan)
-{
-    const out = new Map();
-    (schedule ?? []).forEach((s, i) => {
-        if (s.map === mapName && destOf(s)) push(out, destOf(s), {i, text: plan?.[i] ? hhmm(plan[i].arr) : (s.t ?? '?').replace(/^@/, '')});
-    });
-    return out;
-}
-
 // 其他角色在這張圖的作息點：名稱 → [{id, i, t}]
 function othersOn(others, mapName)
 {
@@ -158,9 +149,6 @@ function draw(cv, st)
     g.translate(-d.W / 2, -d.H / 2);
     g.drawImage(d.bake, 0, 0);
     if (show.grid) drawGrid(g, d);
-    // 只顯示選中那筆時，其他筆的編號不畫
-    const stops = stopsOn(st.schedule, st.name, st.plan);
-    if (!show.mine) for (const [name, nums] of stops) {const keep = nums.filter(n => n.i === st.sel); keep.length ? stops.set(name, keep) : stops.delete(name);}
     g.lineWidth = 1 / K;
     const doorNames = new Set((st.ports ?? []).map(p => p.o.name).filter(Boolean));
     for (const n of d.named.values())
@@ -189,41 +177,10 @@ function draw(cv, st)
     drawCursor(g, st, K);
     drawRoute(g, st, K);
     drawPatrol(g, st, K);
-    // 作息點：膠囊一格一個卡片編號，選中那張反白（大小固定在螢幕 px）；畫在路線上面
+    // 其他角色用到的點：綠字列在點下面（id 編號）
     const r = 9 / K;
-    g.font = `bold ${11 / K}px sans-serif`;
     g.textAlign = 'center';
     g.textBaseline = 'middle';
-    for (const [name, nums] of stops)
-    {
-        const n = spotOf(d, name);
-        if (!n) continue;
-        const ws = nums.map(v => g.measureText(v.text).width + 8 / K);
-        if (ws.length === 1) ws[0] = Math.max(r * 2, ws[0]);
-        const w = ws.reduce((a, b) => a + b, 0), x0 = n.cen.x - w / 2, y0 = n.cen.y - r;
-        g.beginPath();
-        g.roundRect(x0, y0, w, r * 2, r);
-        g.fillStyle = '#e8743b';
-        g.fill();
-        g.save();
-        g.clip();
-        let x = x0;
-        nums.forEach((v, i) => {
-            const on = v.i === st.sel;
-            if (on) {g.fillStyle = '#fff'; g.fillRect(x, y0, ws[i], r * 2);}
-            if (i) {g.fillStyle = '#000'; g.fillRect(x - 0.5 / K, y0, 1 / K, r * 2);}
-            g.fillStyle = on ? '#e8743b' : '#fff';
-            g.fillText(v.text, x + ws[i] / 2, n.cen.y + 0.5 / K);
-            x += ws[i];
-        });
-        g.restore();
-        g.strokeStyle = '#000';
-        g.lineWidth = 1.5 / K;
-        g.beginPath();
-        g.roundRect(x0, y0, w, r * 2, r);
-        g.stroke();
-    }
-    // 其他角色用到的點：綠字列在下面（id 編號）
     if (show.others)
     {
         g.font = `${14 / K}px sans-serif`;
