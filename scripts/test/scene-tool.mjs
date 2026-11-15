@@ -94,7 +94,7 @@ run('scene-tool', async t => {
 
         // ---------- 第 2 步：角色 ----------
         const json = await proj.getDirectoryHandle('public').then(d => d.getDirectoryHandle('assets')).then(d => d.getDirectoryHandle('json'));
-        for (const f of ['role.json', 'item.json']) await write(json, f, await (await fetch(`/assets/json/${f}`)).text());
+        for (const f of ['role.json', 'item.json', 'ability.json']) await write(json, f, await (await fetch(`/assets/json/${f}`)).text());
         await T.setProject(proj);
         await until(() => Object.keys(sc.S.refs.roles).length && JSON.stringify(Object.keys(sc.S.data)) === '["x"]');
         await sc.select('x');
@@ -149,6 +149,56 @@ run('scene-tool', async t => {
         out.delRole = await until(async () => (await scDisk()).roles.length === 1) && await until(() => sb().roles.length === 1) && [sc.S.pick, sb().roles[0].key];
         sb()._send({sb: 'key', key: 'z', ctrl: true});
         out.undoDel = await until(() => sb().roles.length === 2) && [(await scDisk()).roles.map(r => r.key), sc.S.pick];
+
+        // ---------- 第 3 步：動作 ----------
+        const G = game().__dbg.GM;
+        const hits = [];
+        const spy = (k) => {const p = pup(k), take = p.takeDamage; p.takeDamage = (d, a) => {hits.push([k, d.type ?? 'dmg', d.amount]); take(d, a);};};
+        const hp = (k) => [pup(k).total.states[G.HP], pup(k).total[G.HPMAX], pup(k).isAlive];
+        spy('r2');
+        // 指定目標：分頁按 🎯 → sandbox 進指定模式；點角色＝普攻（遠了就原地揮，照樣命中）
+        sc.pickRole('r1');
+        sc.S.act = 'attack';
+        sc.arm(true);
+        out.arm = await until(() => sb()._arm?.kind === 'attack') && [sb()._arm.key, doc.querySelector('[data-k="arm"]').textContent];
+        const tr2 = tileOf(pup('r2'));
+        await sb()._do({...sb()._arm, tx: tr2[0], ty: tr2[1], tkey: 'r2'});
+        out.attack = [hits.length, hp('r2')];
+        // 致命一擊也不會死：扣完剛好滿血
+        pup('r2').takeDamage({amount: -99999}, pup('r1'));
+        out.lethal = hp('r2');
+        // 空白鍵重播上一個
+        const n0 = hits.length;
+        sc.toGame({sb: 'replay'});
+        out.replay = await until(() => hits.length > n0 && !pup('r1')._busy);
+
+        // 技能（忽略射程）：fireball 打 r2；firewall 放在空格生出區域
+        hits.length = 0;
+        await sb()._do({key: 'r1', kind: 'ability', id: 'fireball', tx: tr2[0], ty: tr2[1], tkey: 'r2'});
+        out.fireball = [hits.length > 0, hp('r2')[2], doc.getElementById('status').textContent.includes('放不出來')];
+        await sb()._do({key: 'r1', kind: 'ability', id: 'firewall', tx: 3, ty: 10});
+        out.firewall = Object.values(sb().gos).some(g => g.constructor.name === 'HazardZone');
+
+        // 走路：真的沿路徑走過去、不寫檔；重置回場景檔的位置
+        const before3 = await disk();
+        await sb()._do({key: 'r1', kind: 'walk', tx: 5, ty: 8});
+        out.walk = [tileOf(pup('r1')), await disk() === before3];
+        sc.toGame({sb: 'reset'});
+        await until(() => pup('r1') && tileOf(pup('r1')).join() === '5,4');
+        out.reset = [tileOf(pup('r1')), Object.values(sb().gos).some(g => g.constructor.name === 'HazardZone' && g.active)];
+
+        // 倒地／復活
+        sc.toGame({sb: 'die', key: 'r2'});
+        const dead = await until(() => pup('r2').isAlive === false);
+        sc.toGame({sb: 'revive', key: 'r2'});
+        out.die = [dead, await until(() => pup('r2').isAlive === true)];
+
+        // sandbox 右鍵取消、Esc 取消
+        sb()._send({sb: 'disarm'});
+        out.disarm = await until(() => sc.S.arm === null);
+        sc.arm(true);
+        sb()._send({sb: 'key', key: 'Escape'});
+        out.esc = await until(() => sc.S.arm === null && sb()._arm === null);
         return out;
     });
     t.eq('分頁：iframe 跑 /?sandbox、不寫存檔', JSON.stringify(r.boot), JSON.stringify(['sandbox', true]));
@@ -179,4 +229,16 @@ run('scene-tool', async t => {
     t.eq('👁 暫藏：不寫檔、點不到', JSON.stringify(r.hide), JSON.stringify([true, true]));
     t.eq('sandbox 裡按 Del：刪選中的', JSON.stringify(r.delRole), JSON.stringify([null, 'r1']));
     t.eq('sandbox 裡按 Ctrl+Z：復原、選回去', JSON.stringify(r.undoDel), JSON.stringify([['r1', 'r2'], 'r2']));
+
+    t.eq('🎯 指定目標：sandbox 進指定模式、按鈕變取消', JSON.stringify(r.arm), JSON.stringify(['r1', '🎯 取消']));
+    t.check('普攻：走真的傷害、打完滿血', r.attack[0] === 1 && r.attack[1][0] === r.attack[1][1] && r.attack[1][2], JSON.stringify(r.attack));
+    t.check('致命一擊不會死、滿血', r.lethal[0] === r.lethal[1] && r.lethal[2], JSON.stringify(r.lethal));
+    t.check('空白鍵重播上一個動作', r.replay);
+    t.eq('技能（忽略射程）：fireball 命中、目標沒死、沒報錯', JSON.stringify(r.fireball), JSON.stringify([true, true, false]));
+    t.check('技能：firewall 在空格生出區域', r.firewall);
+    t.eq('走路：沿路徑走到那格、不寫檔', JSON.stringify(r.walk), JSON.stringify([[5, 8], true]));
+    t.eq('重置：回到場景檔的位置、火牆清掉', JSON.stringify(r.reset), JSON.stringify([[5, 4], false]));
+    t.eq('倒地／復活', JSON.stringify(r.die), JSON.stringify([true, true]));
+    t.check('sandbox 右鍵取消指定', r.disarm);
+    t.check('Esc 取消指定（分頁跟 sandbox 都清掉）', r.esc);
 });

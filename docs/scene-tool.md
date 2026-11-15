@@ -2,7 +2,7 @@
 
 模擬場景的整合驗收台：在遊戲本身裡擺角色、播動作、掛特效、放擺設、調日夜，看到的＝玩家會看到的。
 
-> 狀態：2026-11-15 定案；第 1 步（骨架）、第 2 步（角色）完成，3～6 步未做（計畫見最後）。
+> 狀態：2026-11-15 定案；第 1～3 步（骨架、角色、動作）完成，4～6 步未做（計畫見最後）。
 
 ## 架構
 
@@ -12,8 +12,9 @@
   - `GameScene` 的 constructor 收 key（預設 `'GameScene'`），`Sandbox` 用 `'Sandbox'`。
   - `map.js`：`scene.sandbox` 時不建 `type:npc` 物件、跳過 `@群組` 圖層（不碰存檔）。
 - 分頁的 HTML 面板用 postMessage 操作 iframe 裡的 sandbox（同無頭測試走 `window.__dbg` 的精神）。訊息都帶 `sb` 欄位：
-  - 分頁 → sandbox：`load {scene}`（底圖不同就 `scene.restart` 帶著 scene 重開，同一張直接套用）、`grid {on}`、`home`（整張地圖放進畫面）、`select {key}`（選取框）、`hide {keys}`（👁）。
-  - sandbox → 分頁：`ready`（剛開好、還沒有場景，分頁收到就送 `load`）、`loaded {map, w, h}`（套用完；w/h＝地圖格數，「＋」放在中間用）、`error {msg}`（地圖載入失敗、角色 id 不存在，顯示在狀態列）、`select {key}`（左鍵點到的角色，空白處＝null）、`move {key, tx, ty}`（拖曳放開）、`ctx {tx, ty, key, cx, cy}`（右鍵，cx/cy 是 iframe 裡的 client 座標）、`key {key, ctrl, shift, alt}`（iframe 有焦點時的鍵盤，分頁照自己的快捷鍵處理）。
+  - 分頁 → sandbox：`load {scene}`（底圖不同就 `scene.restart` 帶著 scene 重開，同一張直接套用）、`grid {on}`、`home`（整張地圖放進畫面）、`select {key}`（選取框）、`hide {keys}`（👁）、`arm {act}`（指定目標，null＝取消）、`do {act}`、`replay`、`reset`、`hit`／`die`／`revive {key}`。
+  - `act`＝`{key（誰做）, kind:'attack'|'ability'|'walk', id（技能）, tx, ty（目標格子）, tkey（點到的角色）}`。
+  - sandbox → 分頁：`ready`（剛開好、還沒有場景，分頁收到就送 `load`）、`loaded {map, w, h}`（套用完；w/h＝地圖格數，「＋」放在中間用）、`error {msg}`（地圖載入失敗、角色 id 不存在，顯示在狀態列）、`select {key}`（左鍵點到的角色，空白處＝null）、`move {key, tx, ty}`（拖曳放開）、`ctx {tx, ty, key, cx, cy}`（右鍵，cx/cy 是 iframe 裡的 client 座標）、`key {key, ctrl, shift, alt}`（iframe 有焦點時的鍵盤，分頁照自己的快捷鍵處理）、`disarm`（指定中按右鍵）。
 - 角色、物品、部位等遊戲資料（`role.json`、`item.json`、`part.json`、`anim.json`、`fx.json`、`particle.json`、`ability.json`、`local.json`、`textures.json`）在別的分頁存檔時，sandbox 的 DB 就舊了：分頁收到廣播就整個重開 iframe（工具列「重開」同）。
 - **sandbox 絕不寫遊戲存檔**：`Record.noSave = true`（`saveGame()` 直接 return），`Record.game` 是 sandbox 自己的一份。
 - 鏡頭：滾輪以游標為中心縮放（0.25～8）、中鍵拖曳平移；每張底圖的鏡頭記在 sandbox 的記憶體，換場景回同一張圖接著看；第一次看＝整張放進畫面（工具列「置中」同）。開發版掛 `window.__sb`（Sandbox 場景）給測試。
@@ -39,17 +40,20 @@
 - 從 role.json 挑 id（照 kind／grp 分組），同 id 可多隻。
 - 實例可覆寫：裝備五格（武器／頭盔／護甲／手套／靴子，空＝用 role.json 的）、面向、位置；不寫回 role.json。
 - 位置永遠在格子中心（遊戲的走路／擊退靠它）。
-- 木偶：`src/roles/puppet.js`（`Puppet`，照 `Dummy` 木樁的組法）掛 `RoleView`＋`COM_Inventory`＋`COM_Anim`＋`COM_Stats`＋`COM_Disp`，不掛 AI／作息／感知、不進回合、不讀寫存檔、`bb.interactive=false`（點選是 sandbox 自己判斷：身體方塊包住游標的最上面那個，沒有就看站在那格的）；`bb.meta` 是 role.json 那筆的淺拷貝、`inv.equips` 換成套完覆寫的（`Puppet.equipsOf()`）。只在 Sandbox 用到，正式版一起被 tree-shake 掉。
+- 木偶：`src/roles/puppet.js`（`Puppet`，照 `Dummy` 木樁的組法）掛 `RoleView`＋`COM_Inventory`＋`COM_Anim`＋`COM_Action`＋`COM_Nav`＋`COM_Stats`＋`COM_Disp`＋`COM_Ability`，不掛 AI／作息／感知、不進回合、不讀寫存檔、`bb.interactive=false`（點選是 sandbox 自己判斷：身體方塊包住游標的最上面那個，沒有就看站在那格的）；`bb.meta` 是 role.json 那筆的淺拷貝、`inv.equips` 換成套完覆寫的（`Puppet.equipsOf()`）。只在 Sandbox 用到，正式版一起被 tree-shake 掉。
 - sandbox 套場景時照 `key` 比對：那筆資料（JSON）沒變的角色留著，變了（換角色、格子、面向、裝備）或不見的就 `dismiss()` 重建（重新登記路網權重）。
 - 操作：畫面上左鍵點選（綠框）＋拖曳（跟著格子跳、放開才寫檔）、右鍵「在這裡放角色…」（挑角色對話框：照 kind／grp 分組、搜尋、雙擊確定、預設上次挑的 `tools.scene.lastRole`）／「刪除」；左欄角色清單（👁 暫藏只在這次開著時、不寫檔、藏著點不到；右鍵刪除；「＋」放在地圖中間）；右欄 角色（換 id）、格子、面向、裝備五格（下拉＝（原本：…）／（空）／那一類有 `equip` 的道具，限定性別不符的不列）、刪除；Del 刪選中的（分頁或 sandbox 有焦點都行）。
 
 ## 動作（表演，不進 undo、不改場景檔）
 
-- 選施放者 → 普攻（照武器近戰／遠程）或 ability.json 任一技能（不管學沒學）→ 點目標（角色或空格，區域技能照遊戲範圍）。
-- 忽略 MP、冷卻、射程；近戰射程外原地揮，不自動走過去。
-- 走真的 com_action 編排與**真的傷害路徑**（數字、MISS／閃避、擊退換格子），sandbox 角色打完自動補滿、不會死。
-- 另有：走路（點格子，沿路徑走）、被打、倒地／復活。
-- 空白鍵重播上一個動作；「重置」回到場景檔的狀態。
+- 選施放者 → 右欄「動作」下拉：普攻（照武器近戰／遠程）、走路、ability.json 任一技能（不管學沒學）→ 按「🎯 指定目標」→ 點畫面上的角色或格子（橘框跟著游標）；指定中每點一下做一次，右鍵／Esc 取消，換選別的角色也取消；指定中左鍵不選取、不拖曳。
+- 普攻：點到別的角色＝`root.attack([目標])`（真的命中），點空格／自己＝`anim_melee` 只揮不打。遠的照樣原地揮、照樣命中，不自動走過去。
+- 技能：`useAb(目標, id, 點的格子, {...技能, range: 地圖長邊})`（`com_ability._use()` 的第 4 個參數＝用這份資料代替 `DB.ability(id)`，sandbox 拿來忽略射程；遮擋照算），治療沒點到角色＝自己；冷卻會記但不擋、MP 不檢查；要特定武器（`reqClass`）的沒拿就提示；放不出來（單體沒點到角色等）提示在狀態列。
+- 走路：`findPath` → 一直 `move()` 到抵達（真的佔格子、走路晃動）；走不到提示。
+- 同一個角色動作還沒做完再叫它做＝提示「還在動」。
+- 走真的 com_action 編排與**真的傷害路徑**（數字、MISS／閃避、擊退換格子）：`Puppet` 包住 `takeDamage`，扣血前把 HP 墊到「滿血＋這次傷害」，打完剛好滿血、不會死（致命一擊照樣不死）；`bb.noCombat` 不切戰鬥模式。
+- 被打（`anim_hit`，只閃白）、倒地（HP 歸 0、`ONDEAD`）／復活（補滿、`ONREVIVE`，有 `corpse` 的角色不支援）。
+- 空白鍵重播上一個動作（sandbox 記著，分頁或 sandbox 有焦點都行）；工具列「重置」＝`reset`：所有角色照場景檔重建（回原位、站起來）、表演生出來的 `uid===-1` 物件（火牆區域、屍體…）清掉。
 
 ## 特效
 
@@ -83,14 +87,14 @@
 ## 版面（三欄，排在「粒子」後面）
 
 - 左：場景清單（＋ 新增；右鍵 改名／複製／刪除，雙擊改名；點選中的再點一次＝取消選取＝空白 sandbox；選取記 `tools.scene.sel`）＋目前場景物件樹（角色／擺設／粒子，👁 暫藏、Del 刪；第 2 步起）；下方 ↶／↷（Ctrl+Z／Ctrl+Y）。
-- 中：iframe＋工具列（底圖、格線、時間／▶／倍速／自訂色、重置、全部停止）；左鍵選取拖曳、右鍵選單放東西。
+- 中：iframe＋工具列（格線、置中、重置、重開；之後加底圖、時間／▶／倍速／自訂色）；左鍵選取拖曳、右鍵選單放東西。
 - 右：選中物件的屬性；角色下方是動作區。
 
 ## 實作順序（每步 commit＋`scripts/test/scene-tool.mjs`＋更新本文件）
 
 1. ✅ 骨架：`?sandbox=1` 路由＋`Sandbox` 場景（不存檔）＋`sandbox.json`；分頁殼、iframe、postMessage 協定、場景清單、scenes.json 讀寫＋undo、鏡頭、格線
 2. ✅ 角色：放置／拖曳／刪除、裝備覆寫、面向、木偶化
-3. 動作：普攻／技能／走路／被打／倒地／重播／重置、自動補血
+3. ✅ 動作：普攻／技能／走路／被打／倒地／重播／重置、自動補血
 4. 擺設：選圖、全部屬性、吸附、方向鍵、發光
 5. 特效：狀態特效、粒子發射點
 6. 日夜＋底圖：時鐘滑桿／播放／自訂色、切現有地圖（濾掉角色）

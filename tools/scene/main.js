@@ -27,7 +27,9 @@ const S = {
     redo: [],
     ready: false,                   // sandbox 開好了
     grid: ls.get(LS.grid) !== '0',
-    refs: {roles: {}, items: {}},
+    refs: {roles: {}, items: {}, abilities: {}},
+    act: 'attack',                  // 動作下拉：attack／walk／ab:<技能 id>
+    arm: null,                      // 指定目標中 {key, kind, id}
     q: Promise.resolve(),
 };
 
@@ -187,6 +189,7 @@ function deleteRole(key)
 
 function pickRole(key)
 {
+    if (S.arm && S.arm.key !== key) {S.arm = null; toGame({sb: 'arm', act: null});}
     S.pick = key;
     toGame({sb: 'select', key});
     renderTree();
@@ -313,6 +316,33 @@ function renderRight()
         h('div', {class: 'sec'}, '裝備', h('span', {class: 'dim'}, '（只改這個場景，不寫回 role.json）')),
         h('table', {class: 'props'}, SLOTS.map(([cat, name]) => h('tr', null, h('td', {class: 'k'}, name), h('td', null, equipSelect(r, cat))))),
         h('div', {class: 'acts'}, h('button', {onclick: () => deleteRole(r.key)}, '刪除（Del）')),
+        actPanel(r),
+    );
+}
+
+// ---------- 動作（表演：不寫檔、不進 undo；「重置」回到場景檔的樣子） ----------
+const actOf = (v, key) => v === 'attack' || v === 'walk' ? {key, kind: v} : {key, kind: 'ability', id: v.slice(3)};
+
+function arm(on)
+{
+    S.arm = on ? actOf(S.act, S.pick) : null;
+    toGame({sb: 'arm', act: S.arm});
+    renderRight();
+}
+
+function actPanel(r)
+{
+    const sel = h('select', {dataset: {k: 'act'}, onchange: () => {S.act = sel.value; if (S.arm) arm(true);}},
+        h('option', {value: 'attack'}, '普攻（照武器）'), h('option', {value: 'walk'}, '走路'),
+        h('optgroup', {label: '技能（不管學沒學、忽略 MP／冷卻／射程）'}, Object.keys(S.refs.abilities).map(id => h('option', {value: `ab:${id}`}, id))));
+    sel.value = S.act;
+    const armed = S.arm?.key === r.key;
+    const send = (sb) => () => toGame({sb, key: r.key});
+    return h('div', null,
+        h('div', {class: 'sec'}, '動作', h('span', {class: 'dim'}, '（表演，不存檔；工具列「重置」回原樣）')),
+        h('div', {class: 'row2'}, sel, h('button', {class: armed ? 'on' : '', dataset: {k: 'arm'}, title: '按下後點畫面上的角色或格子當目標（右鍵／Esc 取消）', onclick: () => arm(!armed)}, armed ? '🎯 取消' : '🎯 指定目標')),
+        armed && h('div', {class: 'hint'}, '點畫面上的角色或格子；右鍵／Esc 取消；空白鍵重播上一個動作'),
+        h('div', {class: 'row2 acts'}, h('button', {onclick: send('hit')}, '被打'), h('button', {onclick: send('die')}, '倒地'), h('button', {onclick: send('revive')}, '復活')),
     );
 }
 
@@ -345,6 +375,8 @@ function onKey(k)
     if (k.ctrl && k.key.toLowerCase() === 'z' && !k.shift) undo();
     else if (k.ctrl && (k.key.toLowerCase() === 'y' || (k.key.toLowerCase() === 'z' && k.shift))) redo();
     else if (k.key === 'Delete' && S.pick) deleteRole(S.pick);
+    else if (k.key === ' ') toGame({sb: 'replay'});
+    else if (k.key === 'Escape' && S.arm) arm(false);
     else return false;
     return true;
 }
@@ -355,7 +387,8 @@ addEventListener('message', (e) => {
     if (m.sb === 'ready') {S.ready = true; syncGame();}
     else if (m.sb === 'loaded') S.center = [Math.floor(m.w / 2), Math.floor(m.h / 2)];
     else if (m.sb === 'error') status(m.msg);
-    else if (m.sb === 'select') {S.pick = m.key; renderTree(); renderRight();}
+    else if (m.sb === 'select') pickRole(m.key);
+    else if (m.sb === 'disarm') {S.arm = null; renderRight();}
     else if (m.sb === 'move') setRole(m.key, {tx: m.tx, ty: m.ty}).then(syncGame);
     else if (m.sb === 'key') onKey(m);
     else if (m.sb === 'ctx')
@@ -382,6 +415,7 @@ $('chkGrid').checked = S.grid;
 $('chkGrid').onchange = () => {S.grid = $('chkGrid').checked; ls.set(LS.grid, S.grid ? '1' : '0'); toGame({sb: 'grid', on: S.grid});};
 $('btnHome').onclick = () => toGame({sb: 'home'});
 $('btnReload').onclick = reloadGame;
+$('btnReset').onclick = () => toGame({sb: 'reset'});
 addEventListener('keydown', (e) => {
     if (e.target.closest('input, textarea, select, dialog')) return;
     if (onKey({key: e.key, ctrl: e.ctrlKey || e.metaKey, shift: e.shiftKey, alt: e.altKey})) e.preventDefault();
@@ -391,7 +425,7 @@ async function loadRefs()
 {
     const json = await FS.tryDir(await FS.tryDir(await FS.tryDir(S.root, 'public'), 'assets'), 'json');
     const read = async (name) => {const fh = json && await FS.tryFile(json, name); return fh ? JSON.parse(await (await fh.getFile()).text()) : {};};
-    S.refs = {roles: await read('role.json'), items: await read('item.json')};
+    S.refs = {roles: await read('role.json'), items: await read('item.json'), abilities: await read('ability.json')};
 }
 
 async function setProject(root)
@@ -411,7 +445,7 @@ SH.onSaved((file) => {
     if (file === ST.FILE) queue(async () => {S.data = await ST.read(); refresh();});
     else if (GAME_FILES.includes(file))
     {
-        if (['role.json', 'item.json'].includes(file)) queue(async () => {await loadRefs(); refresh();});
+        if (['role.json', 'item.json', 'ability.json'].includes(file)) queue(async () => {await loadRefs(); refresh();});
         reloadGame();
     }
 });
@@ -420,5 +454,5 @@ frame.src = '/?sandbox=1';
 refresh();
 
 // 給無頭測試用
-window.__sc = {S, setProject, addScene, dupScene, renameScene, deleteScene, select, undo, redo, addRole, setRole, setEquip, deleteRole, pickRole, toggleHide,
+window.__sc = {S, setProject, addScene, dupScene, renameScene, deleteScene, select, undo, redo, addRole, setRole, setEquip, deleteRole, pickRole, toggleHide, arm, toGame,
                flush: () => S.q};

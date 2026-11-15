@@ -7,6 +7,7 @@ import Utility from '../core/utility.js'
 import {GameObject} from '../core/gameobject.js'
 import {GM, GS} from '../core/setting.js'
 import Puppet from '../roles/puppet.js'
+import DB from '../data/db.js'
 
 // 開發版的 gym 場景：工具殼「場景」分頁的 iframe 跑 /?sandbox，用 postMessage 操作（訊息帶 sb 欄位，見 docs/scene-tool.md）
 // 繼承 GameScene 拿真的地圖／路網／Light2D，但沒有玩家、UI、回合、作息、劇情；地圖只建地形＋靜態物件，不寫存檔
@@ -77,6 +78,8 @@ export class Sandbox extends GameScene
     _apply(scene, {force=false}={})
     {
         this._scene = scene;
+        // 重置：表演生出來的東西（火牆區域、屍體…）一起清掉；地圖本身的物件 uid 不是 -1
+        if(force) {Object.values(this.gos).filter(g=>g.uid===-1 && g.active).forEach(g=>g._remove());}
         const want = Object.fromEntries((scene.roles ?? []).map(r=>[r.key, r]));
         for(const p of [...this.roles])
         {
@@ -103,6 +106,58 @@ export class Sandbox extends GameScene
 
     _puppet(key) {return this.roles.find(p=>p.key===key);}
 
+    //------------------------------------------------------
+    //  表演（不改場景檔，「重置」回到場景檔的樣子）
+    //  act = {key（誰做）, kind:'attack'|'ability'|'walk', id（技能）, tx, ty（目標格子）, tkey?（點到的角色）}
+    //------------------------------------------------------
+    async _do(act)
+    {
+        const p = this._puppet(act?.key);
+        if(!p?.active || !p.isAlive) {return;}
+        if(p._busy) {this._send({sb:'error', msg:`${p.id} 還在動`}); return;}
+        this._last = act;
+        const pt = this.map.tileToWorld(act.tx, act.ty);
+        const t = this._puppet(act.tkey);
+        const target = t?.active && t!==p && t.isAlive ? t : null;
+        p._busy = true;
+        try
+        {
+            if(act.kind==='walk') {await this._walk(p, pt);}
+            else if(act.kind==='attack')
+            {
+                if(target) {await p.attack([target], null);}
+                else {await p.anim_melee({pos:pt});}
+            }
+            else
+            {
+                // 忽略射程：range 放大到整張地圖（遮擋照算）
+                const ab = DB.ability(act.id);
+                if(!ab) {this._send({sb:'error', msg:`ability.json 沒有 ${act.id}`}); return;}
+                if(!p.canUseAb(act.id)) {this._send({sb:'error', msg:`${act.id} 要拿 ${ab.reqClass} 類的武器`}); return;}
+                const range = Math.max(this.map.map.width, this.map.map.height);
+                const ok = await p.useAb(target ?? (ab.tag===GM.HEAL ? p : null), act.id, pt, {...ab, range});
+                if(!ok) {this._send({sb:'error', msg:`${act.id} 放不出來（目標無效？單體技能要點角色）`});}
+            }
+        }
+        finally
+        {
+            p._busy = false;
+            if(p.active) {p.updateDepth();}
+        }
+    }
+
+    async _walk(p, pt)
+    {
+        p.findPath({ep:pt});
+        if(!(p.bb.path?.state>GM.PATH_NONE)) {this._send({sb:'error', msg:'走不到那裡'}); p.clearPath?.(); return;}
+        for(let i=0; i<999 && p.active && p.bb.path; i++)
+        {
+            await p.move();
+            if(p.bb.cACT.st!=='moving') {break;}
+        }
+        p.clearPath?.();
+    }
+
     // 點到的角色：身體方塊包住游標的、最上面那個；都沒有就看站在那格的
     _roleAt(wx, wy)
     {
@@ -117,10 +172,17 @@ export class Sandbox extends GameScene
         const g = this._selG;
         if(!g) {return;}
         g.clear();
+        const z = this.cameras.main.zoom;
+        if(this._arm)
+        {
+            const ptr = this.input.activePointer;
+            const [tx, ty] = this.map.worldToTile(ptr.worldX, ptr.worldY);
+            if(this.map.isInside(tx, ty)) {g.lineStyle(2/z, 0xff9933, 1).strokeRect(tx*GM.TILE_W, ty*GM.TILE_H, GM.TILE_W, GM.TILE_H);}
+        }
         const p = this._puppet(this._sel);
         if(!p?.visible || !p.getShapeRect) {return;}
         const r = p.getShapeRect();
-        g.lineStyle(2/this.cameras.main.zoom, 0x7ddc5a, 1).strokeRect(r.x, r.y, r.width, r.height);
+        g.lineStyle(2/z, 0x7ddc5a, 1).strokeRect(r.x, r.y, r.width, r.height);
     }
 
     _send(msg) {window.parent.postMessage(msg, '*');}
@@ -136,6 +198,13 @@ export class Sandbox extends GameScene
             case 'grid': this._gridOn = !!m.on; this._drawGrid(); break;
             case 'home': this._home(); break;
             case 'select': this._sel = m.key ?? null; break;
+            case 'arm': this._arm = m.act ?? null; this._drawSel(); break;
+            case 'do': this._do(m.act); break;
+            case 'replay': if(this._last) {this._do(this._last);} break;
+            case 'reset': this._apply(this._scene, {force:true}); break;
+            case 'hit': this._puppet(m.key)?.anim_hit?.(null); break;
+            case 'die': this._puppet(m.key)?.die(); break;
+            case 'revive': this._puppet(m.key)?.revive(); break;
             case 'hide':
                 this._hidden = new Set(m.keys);
                 this.roles.forEach(p=>p.setVisible(!this._hidden.has(p.key)));
@@ -193,9 +262,12 @@ export class Sandbox extends GameScene
             const [tx, ty] = this.map.worldToTile(p.worldX, p.worldY);
             if(p.rightButtonDown())
             {
+                if(this._arm) {this._arm = null; this._send({sb:'disarm'}); return;}
                 this._send({sb:'ctx', tx, ty, key:role?.key ?? null, cx:p.event.clientX, cy:p.event.clientY});
                 return;
             }
+            // 指定目標中：左鍵＝對那格／那個角色做動作（右鍵或 Esc 取消）
+            if(this._arm) {this._do({...this._arm, tx, ty, tkey:role?.key ?? null}); return;}
             this._sel = role?.key ?? null;
             this._send({sb:'select', key:this._sel});
             if(role) {this._drag = {role, from:this.map.worldToTile(role.x, role.y), to:null};}

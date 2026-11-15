@@ -464,11 +464,12 @@ export class COM_Ability extends Com
 
     _find(id) {return this._abilities[id];}
 
-    async _use(target, id, pt)
+    // ability：用這份資料代替 DB.ability(id)（開發版 sandbox 放大 range 來忽略射程）
+    async _use(target, id, pt, ability)
     {
         const {root} = this.ctx;
 
-        if(id) {this._ability = DB.ability(id);}
+        if(id) {this._ability = ability ?? DB.ability(id); this._rangeGrid = null;}
         else {id = this._id;}
         if(!this._canUse(id)) {this._unselect(); return false;}   // 選取後才換掉武器，順便解除選取狀態
 

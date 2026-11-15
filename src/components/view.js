@@ -515,6 +515,7 @@ class View extends Phaser.GameObjects.Container
 
     _interact(on)
     {
+        if(!this._zone) {return;}   // interactive=false 的物件沒有 zone
         if(on) { this._zone.setInteractive();}
         else {
             this._zone.disableInteractive();
