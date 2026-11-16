@@ -1,6 +1,6 @@
 .item.ghost { opacity: .5; }
 .pv .stage canvas { display: block; image-rendering: pixelated; }
-.pv .opts { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; margin-top: 6px; font-size: 14px; max-width: 320px; }
+.pv .opts { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; margin-top: 6px; font-size: 14px; }
 .pv .opts label { display: inline-flex; align-items: center; gap: 3px; }
 .refs { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-bottom: 8px; color: #aaa; }
 .refs a.go { color: #8bd; cursor: pointer; }

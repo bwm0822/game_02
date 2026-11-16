@@ -26,6 +26,28 @@ export async function roleCanvas(r, items, pdb)
     return cv;
 }
 
+// 預覽欄寬 w → 畫布（遊戲單位）尺寸：照 W:H 比例，放大 zoom 倍後塞得進欄位內寬；高度不超過 maxH（螢幕 px），超過以高為準
+export function stageSize(panel, w, W, H, zoom, maxH)
+{
+    const cs = getComputedStyle(panel);
+    const inner = w - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - parseFloat(cs.borderLeftWidth) - parseFloat(cs.borderRightWidth);
+    let gw = Math.max(40, Math.floor(inner / zoom));
+    if (gw * H / W * zoom > maxH) gw = Math.max(40, Math.floor(maxH / zoom * W / H));
+    return [gw, Math.round(gw * H / W)];
+}
+
+// 換畫布大小（不重建）：鏡頭跟著改大小；世界座標不動，呼叫端自己把鏡頭對回中心
+export function resizeStage(game, gw, gh)
+{
+    if (!game || (game.scale.width === gw && game.scale.height === gh)) return false;
+    game.scale.resize(gw, gh);
+    for (const cam of game.scene.scenes[0]?.cameras.cameras ?? []) cam.setSize(gw, gh);
+    return true;
+}
+
+// 預設欄寬：畫布放大後＋欄位的 padding／border
+export const panelWidth = (W, zoom) => W * zoom + 2 * 8 + 2;
+
 // root 在 (x, y)＝角色腳底；灰線是地面（寬 ground）、灰框是 view（w×h）；view 帶 shape／max／Min／Max（fxcell 的 attachCell、bodyTween 要用）
 export function addRole(scene, r, texKey, x, y, ground)
 {

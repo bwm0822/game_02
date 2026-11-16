@@ -8,7 +8,8 @@ import {playParticle, BUILTIN} from '../../src/core/particle.js';
 import {GM} from '../../src/core/setting.js';
 import * as IC from '../common/icons.js';
 import {h} from '../common/dom.js';
-import {roleCanvas, addRole, imgTexture} from '../common/pvstage.js';
+import {roleCanvas, addRole, imgTexture, stageSize, resizeStage, panelWidth} from '../common/pvstage.js';
+import {resizeRight} from '../common/splitter.js';
 
 const W = 160, H = 140, ZOOM = 2;
 const P = {role: null, auto: true, speed: 1};
@@ -38,13 +39,23 @@ function createGame()
     st.ready = new Promise(res => {done = res;});
     const box = h('div', {class: 'stage'});
     // AUTO（WebGL）：粒子的 tint／ADD 跟遊戲一樣
-    new Phaser.Game({
+    st.game = new Phaser.Game({
         type: Phaser.AUTO, width: W, height: H, zoom: ZOOM, pixelArt: true, parent: box,
         backgroundColor: '#1b1c1f', banner: false, audio: {noAudio: true},
         plugins: {global: [{key: 'rexBBCodeTextPlugin', plugin: BBCodeTextPlugin, start: true}]},
-        scene: {create() {st.scene = this; done();}},
+        scene: {create() {st.scene = this; fit(); done();}},
     });
     return box;
+}
+
+// 欄寬（st.pw）→ 畫布尺寸：世界座標不動（角色／區域還是在 W/2 附近），畫布變大＝看到更多；高度留給下面的控制列
+function fit()
+{
+    if (!st.scene || !st.el || !st.pw) return;
+    const view = st.el.isConnected && document.getElementById('view');
+    const maxH = view ? view.clientHeight - (st.el.offsetHeight - st.game.scale.height * ZOOM) - 40 : Infinity;
+    const [gw, gh] = stageSize(st.el, st.pw, W, H, ZOOM, maxH);
+    if (resizeStage(st.game, gw, gh)) layout();
 }
 
 async function buildRole()
@@ -60,7 +71,7 @@ async function buildRole()
     if (seq !== st.buildSeq) return;
     const key = `role-${P.role}-${seq}`;
     scene.textures.addCanvas(key, cv);
-    Object.assign(st, addRole(scene, r, key, W / 2, H - 24, W), {roleKey: P.role});
+    Object.assign(st, addRole(scene, r, key, W / 2, H - 24, 4000), {roleKey: P.role});
 }
 
 // 圖（不是 emoji）切成一張貼圖給 Pic 用
@@ -140,7 +151,7 @@ function layout()
 {
     const cam = st.scene.cameras.main, z = st.zone;
     st.root?.setVisible(!z);
-    cam.setZoom(z ? Math.min(1, (W - 8) / (z.w * GM.TILE_W), (H - 8) / (z.h * GM.TILE_H)) : 1).centerOn(W / 2, H / 2);
+    cam.setZoom(z ? Math.min(1, (cam.width - 8) / (z.w * GM.TILE_W), (cam.height - 8) / (z.h * GM.TILE_H)) : 1).centerOn(W / 2, H / 2);
     if (st.sel) st.sel.disabled = !!z;
 }
 
@@ -274,7 +285,12 @@ export function previewEl(id, fx, ext, zone = null)
 {
     st.ext = ext;
     if (!P.role || !ext.roles[P.role]) P.role = Object.keys(ext.roles).find(k => ext.roles[k].kind === 'monster') ?? Object.keys(ext.roles)[0] ?? null;
-    if (!st.el) st.el = h('div', {class: 'pv'}, createGame(), controls(ext.roles), h('div', {class: 'zinfo dim'}));
+    if (!st.el)
+    {
+        st.el = h('div', {class: 'pv'}, createGame(), controls(ext.roles), h('div', {class: 'zinfo dim'}));
+        resizeRight(st.el, panelWidth(W, ZOOM), w => {st.pw = w; fit();});
+    }
+    requestAnimationFrame(fit);
     st.el.querySelector('.zinfo').textContent = zone ? `區域 ${zone.w}×${zone.h}（照 ${zone.by} 的 zoneW×zoneH）` : '';
     const key = JSON.stringify([id, fx, zone, fx && [ext.particles?.[fx.particle], ext.particles?.[fx.tickParticle]]]);
     if (key !== st.key)

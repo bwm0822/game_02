@@ -16,6 +16,7 @@
   - 標題列「JSON」：整筆 JSON 模式（`form.js` 共用）。
 - 版面（`.split`／`.form`／`.split > .pv`）在 `tools/common/style.css`，特效分頁共用：預覽固定寬、表單在自己那欄裡折行（標題列、`.iconField`、`.prop`、input 縮到 100%），真的塞不下才在表單那欄出橫捲軸，永遠不蓋到預覽；測試 `t.formFits()` 量 1024／1400 兩種寬度。
 - 右：Phaser 預覽（`preview.js`，`Phaser.AUTO`＝WebGL，tint／ADD 跟遊戲一樣；直接呼叫 `src/core/particle.js` 的 `playParticle`）。
+  - 欄寬：左邊框可拖（`splitter.js` 的 `resizeRight()`，200px～60vw，記 `tools.right.particle`，雙擊回預設＝240×180 畫布×2）。畫布跟著變：放大倍率維持 2、照 4:3（`pvstage.js` 的 `stageSize()`），高度超過 `#view` 扣掉控制列就以高為準；`game.scale.resize()` 不重建畫布，世界座標不動（發射點還在 W/2,H/2），變大＝看到更多。拖尾的飛行距離跟著畫布寬。
   - zone 框：emitZone 綠實線、deathZone 紅虛線（「☑ zone 框」可關）。點框選取（疊在一起挑面積小的），選中的出白色把手：矩形 8 個（對邊固定）、圓 1 個（改 r）、線段兩端；拖本體移動。拖曳吸整數、Shift 吸 4px，放開才寫回（`PV.onZone`，一步 undo）。原地／角色身上可拖，拖尾只畫，區域情境不畫 emitZone（被 `area` 蓋掉）、deathZone 照樣可拖。
   - 鏡頭：滾輪以游標為中心縮放（0.1～20）、中鍵拖曳平移，記在 `P.view`（換條目不動）；「置中」、換情境、改區域格數回預設（區域情境＝自動放得下格子）。
   - 情境：原地／拖尾（白點沿弧線來回飛，emitter 跟著它）／角色身上（下拉選角色，預設第一個玩家角色，照 `partsOf()` 合成，`tools/common/pvstage.js` 跟特效分頁共用）／區域（寬×高格，`area` 選項，quantity 乘格數）。

@@ -5,7 +5,8 @@ import {playParticle, BUILTIN} from '../../src/core/particle.js';
 import {GM} from '../../src/core/setting.js';
 import {h} from '../common/dom.js';
 import * as IC from '../common/icons.js';
-import {roleCanvas, addRole, imgTexture} from '../common/pvstage.js';
+import {roleCanvas, addRole, imgTexture, stageSize, resizeStage, panelWidth} from '../common/pvstage.js';
+import {resizeRight} from '../common/splitter.js';
 import * as SC from './schema.js';
 
 const W = 240, H = 180, ZOOM = 2, ZMIN = 0.1, ZMAX = 20;
@@ -41,7 +42,7 @@ function createGame()
     const box = h('div', {class: 'stage'});
     box.addEventListener('wheel', onWheel, {passive: false});
     box.addEventListener('mousedown', e => {if (e.button === 1) e.preventDefault();});
-    new Phaser.Game({
+    st.game = new Phaser.Game({
         type: Phaser.AUTO, width: W, height: H, zoom: ZOOM, parent: box,
         backgroundColor: P.bg, banner: false, audio: {noAudio: true},
         scene: {create() {
@@ -53,6 +54,7 @@ function createGame()
             this.input.on('pointermove', onMove);
             this.input.on('pointerup', onUp);
             this.input.on('pointerupoutside', onUp);
+            fit();
             applyView();
             done();
         }},
@@ -60,11 +62,22 @@ function createGame()
     return box;
 }
 
+// 欄寬（st.pw）→ 畫布尺寸：世界座標不動（發射點還是 W/2,H/2），畫布變大＝看到更多；高度留給下面的控制列
+function fit()
+{
+    if (!st.scene || !st.el || !st.pw) return;
+    const view = st.el.isConnected && document.getElementById('view');
+    const maxH = view ? view.clientHeight - (st.el.offsetHeight - st.game.scale.height * ZOOM) - 40 : Infinity;
+    const [gw, gh] = stageSize(st.el, st.pw, W, H, ZOOM, maxH);
+    if (resizeStage(st.game, gw, gh)) applyView();
+}
+
 // ---------- 鏡頭：P.view＝{zoom, cx, cy}（畫面中心的世界座標），null＝預設（區域情境自動放得下格子）----------
 function defaultView()
 {
     if (P.scene !== 'zone') return {zoom: 1, cx: W / 2, cy: H / 2};
-    return {zoom: Math.min(1, (W - 8) / (P.zw * GM.TILE_W), (H - 8) / (P.zh * GM.TILE_H)), cx: W / 2, cy: H / 2};
+    const cam = st.scene.cameras.main;
+    return {zoom: Math.min(1, (cam.width - 8) / (P.zw * GM.TILE_W), (cam.height - 8) / (P.zh * GM.TILE_H)), cx: W / 2, cy: H / 2};
 }
 
 function applyView()
@@ -76,7 +89,7 @@ function applyView()
 function saveView()
 {
     const cam = st.scene.cameras.main;
-    P.view = {zoom: cam.zoom, cx: cam.scrollX + W / 2, cy: cam.scrollY + H / 2};
+    P.view = {zoom: cam.zoom, cx: cam.scrollX + cam.width / 2, cy: cam.scrollY + cam.height / 2};
     keep();
 }
 
@@ -87,16 +100,17 @@ function resetView()
     keep();
 }
 
-// 以游標為中心縮放（鏡頭繞畫面中心縮：世界＝scroll＋W/2＋(螢幕－W/2)/zoom）
+// 以游標為中心縮放（鏡頭繞畫面中心縮：世界＝scroll＋半寬＋(螢幕－半寬)/zoom）
 function onWheel(e)
 {
     if (!st.scene) return;
     e.preventDefault();
     const cam = st.scene.cameras.main, r = e.currentTarget.querySelector('canvas').getBoundingClientRect();
-    const gx = (e.clientX - r.left) * W / r.width, gy = (e.clientY - r.top) * H / r.height;
-    const wx = cam.scrollX + W / 2 + (gx - W / 2) / cam.zoom, wy = cam.scrollY + H / 2 + (gy - H / 2) / cam.zoom;
+    const hw = cam.width / 2, hh = cam.height / 2;
+    const gx = (e.clientX - r.left) * cam.width / r.width, gy = (e.clientY - r.top) * cam.height / r.height;
+    const wx = cam.scrollX + hw + (gx - hw) / cam.zoom, wy = cam.scrollY + hh + (gy - hh) / cam.zoom;
     const z = Math.max(ZMIN, Math.min(ZMAX, cam.zoom * (e.deltaY < 0 ? 1.15 : 1 / 1.15)));
-    cam.setZoom(z).setScroll(wx - W / 2 - (gx - W / 2) / z, wy - H / 2 - (gy - H / 2) / z);
+    cam.setZoom(z).setScroll(wx - hw - (gx - hw) / z, wy - hh - (gy - hh) / z);
     saveView();
 }
 
@@ -235,7 +249,7 @@ async function buildRole()
     if (seq !== st.buildSeq) return;
     const key = `prole-${P.role}-${seq}`;
     scene.textures.addCanvas(key, cv);
-    st.role = addRole(scene, r, key, W / 2, H - 30, W);
+    st.role = addRole(scene, r, key, W / 2, H - 30, 4000);
 }
 
 function setStage()
@@ -255,7 +269,7 @@ function setStage()
         const m = st.mover = s.add.circle(30, H / 2, 3, 0xffffff).setDepth(10);
         const c = {t: 0};
         st.moverTw = s.tweens.add({targets: c, t: 1, duration: 1400, repeat: -1, repeatDelay: 300, timeScale: P.speed,
-            onUpdate: () => {m.x = 30 + (W - 60) * c.t; m.y = H / 2 + 20 - 50 * Math.sin(c.t * Math.PI);}});
+            onUpdate: () => {const half = s.cameras.main.width / 2 - 30; m.x = W / 2 - half + 2 * half * c.t; m.y = H / 2 + 20 - 50 * Math.sin(c.t * Math.PI);}});
     }
     if (P.scene === 'zone')
     {
@@ -349,7 +363,12 @@ export function previewEl(id, def, ext)
 {
     st.ext = ext;
     if (!P.role || !ext.roles[P.role]) P.role = Object.keys(ext.roles).find(k => ext.roles[k].kind === 'player') ?? Object.keys(ext.roles)[0] ?? null;
-    if (!st.el) st.el = h('div', {class: 'pv'}, createGame(), ...controls(ext.roles));
+    if (!st.el)
+    {
+        st.el = h('div', {class: 'pv'}, createGame(), ...controls(ext.roles));
+        resizeRight(st.el, panelWidth(W, ZOOM), w => {st.pw = w; fit();});
+    }
+    requestAnimationFrame(fit);
     const key = JSON.stringify([id, def]);
     if (key !== st.key)
     {

@@ -64,6 +64,36 @@ class Tester
     check(msg, cond, detail='') {cond ? this.ok(msg) : this.fail(`${msg}${detail ? `（${detail}）` : ''}`);}
     eq(msg, actual, expect) {this.check(msg, actual === expect, `實際 ${JSON.stringify(actual)}，預期 ${JSON.stringify(expect)}`);}
 
+    // 預覽欄（.split > .pv）左邊的把手：往左拖 200 變寬、畫布照 W:H 跟著變大、記 localStorage、雙擊回預設
+    async rightResize(glob, tool, W, H)
+    {
+        const r = await this.page.evaluate(async (glob, tool, W, H) => {
+            const PV = window[glob].PV, game = PV.st.game;
+            const frame = () => new Promise(res => requestAnimationFrame(() => requestAnimationFrame(res)));
+            const pv = document.querySelector('#view .split > .pv'), grip = pv?.querySelector('.right-grip');
+            if (!grip) return {err: '沒有把手'};
+            const ev = (type, x) => grip.dispatchEvent(new PointerEvent(type, {button: 0, clientX: x, bubbles: true}));
+            await frame();
+            const w0 = pv.getBoundingClientRect().width, s0 = [game.scale.width, game.scale.height];
+            ev('pointerdown', 500); ev('pointermove', 400); ev('pointermove', 300); ev('pointerup', 300);
+            await frame();
+            const w1 = pv.getBoundingClientRect().width, s1 = [game.scale.width, game.scale.height];
+            const saved = localStorage.getItem(`tools.right.${tool}`);
+            const canvas = pv.querySelector('canvas').getBoundingClientRect();
+            grip.dispatchEvent(new MouseEvent('dblclick', {bubbles: true}));
+            await frame();
+            const w2 = pv.getBoundingClientRect().width, s2 = [game.scale.width, game.scale.height];
+            return {w0, w1, w2, s0, s1, s2, saved, max: Math.round(innerWidth * 0.6), fits: canvas.right <= pv.getBoundingClientRect().right + 0.5,
+                ratio: Math.abs(s1[1] - s1[0] * H / W) <= 1, cam: PV.st.scene.cameras.main.width === s1[0] || PV.st.scene.cameras.main.width === s2[0]};
+        }, glob, tool, W, H);
+        if (r.err) return this.fail(`預覽欄拖寬：${r.err}`);
+        this.check('預覽欄：預設畫布是原本大小', r.s0[0] === W && r.s0[1] === H, JSON.stringify(r.s0));
+        this.check('預覽欄往左拖 200：變寬（最多視窗 60%）、畫布照比例變大、塞得進欄位', Math.round(r.w1) === Math.min(Math.round(r.w0 + 200), r.max) && r.s1[0] > W && r.ratio && r.fits,
+            `${r.w0}→${r.w1} ${JSON.stringify(r.s1)}`);
+        this.eq('預覽欄寬記在 localStorage', r.saved, String(Math.round(r.w1)));
+        this.check('雙擊把手回預設', r.w2 === r.w0 && r.s2[0] === W && r.s2[1] === H, `${r.w2} ${JSON.stringify(r.s2)}`);
+    }
+
     // 表單＋右邊預覽（.split）的工具頁：每筆都不能蓋到預覽；寬的視窗連捲軸都不能有，窄的允許表單那欄自己捲
     async formFits(glob)
     {

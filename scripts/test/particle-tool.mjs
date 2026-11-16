@@ -268,6 +268,7 @@ run('particle-tool', async t => {
     t.eq('拖曳一步 undo', zd.undone, JSON.stringify({x: -8, y: -2, w: 16, h: 4}));
     t.check('滾輪放大記在 P.view、置中回預設', zd.zoomed > 1 && zd.reset, `${zd.zoomed} ${zd.reset}`);
 
+    await t.rightResize('__pt', 'particle', 240, 180);
     await t.formFits('__pt');
 
     // 殼：有粒子分頁，排在特效後面；↗ 跳到特效分頁

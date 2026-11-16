@@ -27,7 +27,7 @@
   - 圖（選圖器同道具分頁）、格子（`cell`，依種類只顯示有用的欄位，其他 key 在「其他」JSON）。
   - 每個階段一個框，可「建立」「移除」。內容是半結構化表單：時間參數（時長、曲線（下拉 Phaser ease）、延遲、來回、重複 `-1`＝無限；idle 多隨機延遲、區域的 spawn 多逐格間隔／從哪開始）＋屬性列（`scale`／`scaleX`／`scaleY`／`alpha`／`x`／`y`／`angle`，值可以是數值、相對 `+=`／`-=`、從→到；換屬性名位置不變）；表單沒列到的 key 在「其他（JSON）」。框標題的「JSON」整段切成 JSON 框改。
 - 版面（`.split`／`.form`／`.split > .pv`）跟粒子分頁共用 `tools/common/style.css`：表單在自己那欄折行、不蓋到預覽（見 [particle-tool.md](particle-tool.md)）。
-- 右：預覽（Phaser，`preview.js`，`Phaser.AUTO`＝WebGL，粒子的 tint／ADD 跟遊戲一樣）。粒子一起播（上身開、tick 噴、解除停、重播／停止全清），particle.json 存檔後重讀。
+- 右：預覽（Phaser，`preview.js`，`Phaser.AUTO`＝WebGL，粒子的 tint／ADD 跟遊戲一樣）。左邊框可拖改寬（同粒子分頁：`resizeRight()`，記 `tools.right.fx`，雙擊回 160×140 畫布×2；畫布照 8:7 跟著變大、看到更多，區域特效的自動縮放照新尺寸算）。粒子一起播（上身開、tick 噴、解除停、重播／停止全清），particle.json 存檔後重讀。
   - 效果特效套在角色上：下拉選 role.json 的角色（預設第一個怪物，記在 `localStorage` 的 `tools.fx.role`），照角色編輯器的 `partsOf()` 合成一張貼圖當 `view.shape`（部位查 `part.json`），root／view／shape 的關係跟 `RoleView` 一樣，所以 `align`、`body` 的支點跟遊戲一致。灰線是地面（角色位置）、灰框是 view（w×h）。
   - 區域特效不放角色，照第一個引用它的技能的 `zoneW×zoneH` 排格子（鏡頭縮到放得下），施法者當作站在區域左邊兩格（`from: near` 用），tick 隨機挑一格。
   - 上身（spawn→idle；閃一下的是 spawn→tick→end）、tick、解除（end）、重播；「自動循環」＝上身→每秒 tick 共 3 次→解除→停一秒再來（按上身／tick／解除會關掉自動循環）；速度 1×／0.5×／0.25×（tween 的 timeScale，循環的間隔一起變）。改了任何欄位就重播，畫布不重建。
