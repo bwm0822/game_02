@@ -98,6 +98,7 @@
 - 32×32 格線（`GM.TILE_W/H`），可開關（localStorage）。
 - 角色一律吸格子中心。
 - 擺設／粒子自由拖，按住 Shift 錨點吸 16px（格子交點＋中心）。
+- 游標（`Sandbox._cursor()`，pointermove／down／up、`arm` 時重算）：🎯 指定中＝`crosshair`；拉大小／半徑中照把手；拖曳（角色／擺設／粒子／光源）或中鍵平移中＝`grabbing`；hover 擺設大小把手＝對應雙箭頭、光源半徑把手＝`ew-resize`；hover `_pickAt()` 點得到的（記號藏著、👁 藏著的不算）＝`grab`；其他預設。
 - 方向鍵 1px（固定，沒接設定分頁的步進），Shift＋方向鍵一格。
 
 ## 日夜

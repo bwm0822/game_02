@@ -642,7 +642,7 @@ export class Sandbox extends GameScene
             case 'icons': this._icons = {light:!!m.light, particle:!!m.particle}; break;
             case 'home': this._home(); break;
             case 'select': this._sel = m.key ?? null; this._size = {lock:m.lock ?? 'pct', ratio:m.ratio ?? true}; break;
-            case 'arm': this._arm = m.act ?? null; this._drawSel(); break;
+            case 'arm': this._arm = m.act ?? null; this._drawSel(); this._cursor(); break;
             case 'do': this._do(m.act); break;
             case 'replay': if(this._last) {this._do(this._last);} break;
             case 'reset': this._apply(this._scene, {force:true}); break;
@@ -708,7 +708,7 @@ export class Sandbox extends GameScene
             this._drawGrid();
         });
         this.input.on('pointerdown', (p)=>{
-            if(p.middleButtonDown()) {this._pan = {x:p.x, y:p.y, sx:cam.scrollX, sy:cam.scrollY}; return;}
+            if(p.middleButtonDown()) {this._pan = {x:p.x, y:p.y, sx:cam.scrollX, sy:cam.scrollY}; this._cursor(p); return;}
             const [tx, ty] = this.map.worldToTile(p.worldX, p.worldY);
             if(this._arm && p.leftButtonDown())
             {
@@ -716,7 +716,7 @@ export class Sandbox extends GameScene
                 this._do({...this._arm, tx, ty, tkey:this._roleAt(p.worldX, p.worldY)?.key ?? null});
                 return;
             }
-            if(p.rightButtonDown() && this._arm) {this._arm = null; this._send({sb:'disarm'}); return;}
+            if(p.rightButtonDown() && this._arm) {this._arm = null; this._send({sb:'disarm'}); this._cursor(p); return;}
             const hd = p.leftButtonDown() && this._handleAt(p.worldX, p.worldY);
             if(hd) {this._startResize(hd); return;}
             const rh = p.leftButtonDown() && this._radiusAt(p.worldX, p.worldY);
@@ -741,6 +741,7 @@ export class Sandbox extends GameScene
                 const e = this._lightPos(hit.light);
                 this._drag = {light:hit.light, key:hit.key, dx:e.x-p.worldX, dy:e.y-p.worldY, moved:false};
             }
+            this._cursor(p);
         });
         this.input.on('pointermove', (p)=>{
             if(this._pan)
@@ -780,19 +781,30 @@ export class Sandbox extends GameScene
                 this._drag.to = [tx, ty];
                 this._drag.role.setPosition(pt.x, pt.y).updateDepth();
             }
-            if(!this._drag?.resize && !this._drag?.radius)
-            {
-                const free = !this._drag && !this._pan;
-                const hd = free && this._handleAt(p.worldX, p.worldY);
-                this.game.canvas.style.cursor = hd ? (!hd.hy ? 'ew-resize' : !hd.hx ? 'ns-resize' : hd.hx*hd.hy>0 ? 'nwse-resize' : 'nesw-resize')
-                    : free && this._radiusAt(p.worldX, p.worldY) ? 'ew-resize' : '';
-            }
+            this._cursor(p);
         });
-        this.input.on('pointerup', ()=>{this._pan = null; this._endDrag();});
+        this.input.on('pointerup', (p)=>{this._pan = null; this._endDrag(); this._cursor(p);});
         // iframe 有焦點時鍵盤在這裡：交給場景分頁（Del、Ctrl+Z…）
         const onKey = (e)=>this._send({sb:'key', key:e.key, ctrl:e.ctrlKey || e.metaKey, shift:e.shiftKey, alt:e.altKey});
         addEventListener('keydown', onKey);
         this.events.once('shutdown', ()=>removeEventListener('keydown', onKey));
+    }
+
+    // 指定中＝準星；拉大小／半徑中照把手；拖曳／平移中＝握拳；hover 把手＝雙箭頭、點得到的東西＝張開的手
+    _cursor(p = this.input.activePointer)
+    {
+        const d = this._drag;
+        if(d?.resize || d?.radius || !this._props) {return;}
+        let c = '';
+        if(this._arm) {c = 'crosshair';}
+        else if(d || this._pan) {c = 'grabbing';}
+        else
+        {
+            const hd = this._handleAt(p.worldX, p.worldY);
+            c = hd ? (!hd.hy ? 'ew-resize' : !hd.hx ? 'ns-resize' : hd.hx*hd.hy>0 ? 'nwse-resize' : 'nesw-resize')
+                : this._radiusAt(p.worldX, p.worldY) ? 'ew-resize' : this._pickAt(p.worldX, p.worldY) ? 'grab' : '';
+        }
+        this.game.canvas.style.cursor = c;
     }
 
     // 角色永遠站格子中心；放開才回報，場景分頁寫檔後送回來的資料一變就重建（重新登記路網權重）

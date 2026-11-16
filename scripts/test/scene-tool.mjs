@@ -164,6 +164,9 @@ run('scene-tool', async t => {
         sc.S.act = 'attack';
         sc.arm(true);
         out.arm = await until(() => sb()._arm?.kind === 'attack') && [sb()._arm.key, doc.querySelector('[data-k="arm"]').textContent];
+        const cur = () => sb().game.canvas.style.cursor;
+        sb()._cursor({worldX: pup('r2').x, worldY: pup('r2').y - 8});
+        out.armCursor = cur();
         const tr2 = tileOf(pup('r2'));
         await sb()._do({...sb()._arm, tx: tr2[0], ty: tr2[1], tkey: 'r2'});
         out.attack = [hits.length, hp('r2')];
@@ -427,6 +430,13 @@ run('scene-tool', async t => {
         const em = (k) => sb()._emitters?.[k];
         await sc.addEmitter(sid, 100, 100);
         out.emit = await until(() => em('e1')?.fx?.emitter?.active) && [(await scDisk()).particles, sc.S.pick, doc.querySelector('#right .sec').textContent, sb()._pickAt(100, 100)?.key];
+        // 游標：點得到的＝✋、空地＝預設、拖曳中＝✊
+        const cursorAt = (x, y) => {sb()._cursor({worldX: x, worldY: y}); return sb().game.canvas.style.cursor;};
+        const rr = sb()._pickAt(pup('r1').x, pup('r1').y - 8)?.key;
+        out.cursor = [cursorAt(100, 100), rr, cursorAt(pup('r1').x, pup('r1').y - 8), cursorAt(-200, -200)];
+        sb()._drag = {emitter: em('e1'), key: 'e1', dx: 0, dy: 0, moved: false};
+        out.cursorDrag = cursorAt(100, 100);
+        sb()._drag = null;
         if (bid)
         {
             await sc.addEmitter(bid, 150, 100);
@@ -522,6 +532,7 @@ run('scene-tool', async t => {
     t.eq('sandbox 裡按 Ctrl+Z：復原、選回去', JSON.stringify(r.undoDel), JSON.stringify([['r1', 'r2'], 'r2']));
 
     t.eq('🎯 指定目標：sandbox 進指定模式、按鈕變取消', JSON.stringify(r.arm), JSON.stringify(['r1', '🎯 取消']));
+    t.eq('游標：指定中＝準星（角色上也是）', r.armCursor, 'crosshair');
     t.check('普攻：走真的傷害、打完滿血', r.attack[0] === 1 && r.attack[1][0] === r.attack[1][1] && r.attack[1][2], JSON.stringify(r.attack));
     t.check('致命一擊不會死、滿血', r.lethal[0] === r.lethal[1] && r.lethal[2], JSON.stringify(r.lethal));
     t.check('空白鍵重播上一個動作', r.replay);
@@ -592,6 +603,8 @@ run('scene-tool', async t => {
     t.check('狀態特效：右欄一列（tick／解除）', r.fxRow);
     t.eq('狀態特效：解除＝fxOff、欄位拿掉、角色沒重建', JSON.stringify(r.fxOff), JSON.stringify([undefined, true]));
     t.check('粒子：放了存檔、選起來、sandbox 噴、發射點點得到', r.emit && r.emit[0]?.[0]?.key === 'e1' && r.emit[1] === 'e1' && r.emit[2] === '粒子 e1' && r.emit[3] === 'e1', JSON.stringify(r.emit));
+    t.eq('游標：粒子／角色上＝grab、空地＝預設', JSON.stringify(r.cursor), JSON.stringify(['grab', 'r1', 'grab', '']));
+    t.eq('游標：拖曳中＝grabbing', r.cursorDrag, 'grabbing');
     t.check('粒子：burst 照 every 定時再噴', r.burst);
     t.eq('粒子：跟著角色（位置相對角色）', JSON.stringify(r.follow), JSON.stringify([true, true]));
     t.check('粒子：角色重建後照樣跟上', r.followMove);
