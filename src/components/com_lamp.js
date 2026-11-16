@@ -1,5 +1,6 @@
 import Com from './com.js'
 import {GM} from '../core/setting.js'
+import {setSpot} from '../core/spotlight.js'
 // import TimeSystem from '../systems/time.js'
 const _tag = 'lamp';
 
@@ -13,6 +14,7 @@ const _tag = 'lamp';
 //   color    : number  光源顏色，預設 0xffaa00
 //   radius   : number  光源半徑，預設 200
 //   lit      : bool    初始狀態是否點亮，預設 false
+//   dir/arc/soft : 聚光燈（見 core/spotlight.js），沒寫 arc＝點光源
 //--------------------------------------------------
 export class COM_Lamp extends Com
 {
@@ -31,7 +33,7 @@ export class COM_Lamp extends Com
         const color = bb.color ?? 0xffaa00;
         const radius = bb.radius ?? 200;
         const pos = root.pos;
-        this._light = this.scene.lights.addLight(pos.x, pos.y, radius, color, this._calcIntensity());
+        this._light = setSpot(this.scene.lights.addLight(pos.x, pos.y, radius, color, this._calcIntensity()), bb);
         root.regTS();
         if (bb.lamp_on) {root.setTexture?.(bb.lamp_on);}
     }

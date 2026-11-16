@@ -25,6 +25,7 @@ import Local from './infra/local.js';
 import Ui from './ui/uicommon.js';
 import {GM, UI as UI_DEF} from './core/setting.js';
 import { Sandbox } from './scenes/Sandbox';
+import {installSpotLight} from './core/spotlight.js';
 
 // 開發版 /?sandbox：工具殼「場景」分頁的 iframe，Preloader 完直接進 Sandbox（不經主選單、不寫存檔），畫布跟著 iframe 大小
 const SANDBOX = import.meta.env.DEV && new URLSearchParams(location.search).has('sandbox');
@@ -95,6 +96,7 @@ const config = {
     dom: {
         createContainer: true
     },
+    callbacks: {postBoot: installSpotLight},
     scene: [
         Boot,
         Preloader,
