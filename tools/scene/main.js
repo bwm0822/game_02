@@ -191,7 +191,6 @@ const propOf = (key) => props().find(p => p.key === key);
 const propKey = () => {let i = 1; while (propOf(`p${i}`)) i++; return `p${i}`;};
 const isProp = (key) => /^p\d+$/.test(key ?? '');
 const FILE = 'file:';
-const LIGHT = {r: 120, color: '#ffcc88', i: 1, y: -16};
 
 function addProp(img, x, y)
 {
@@ -214,7 +213,79 @@ const emitters = () => scene()?.particles ?? [];
 const emOf = (key) => emitters().find(e => e.key === key);
 const isEm = (key) => /^e\d+$/.test(key ?? '');
 const emKey = () => {let i = 1; while (emOf(`e${i}`)) i++; return `e${i}`;};
-const listOf = (key) => (isProp(key) ? 'props' : isEm(key) ? 'particles' : 'roles');
+const listOf = (key) => (isProp(key) ? 'props' : isEm(key) ? 'particles' : isLight(key) ? 'lights' : 'roles');
+
+// ---------- 光源 ----------
+const lights = () => scene()?.lights ?? [];
+const lightOf = (key) => lights().find(l => l.key === key);
+const isLight = (key) => /^l\d+$/.test(key ?? '');
+const lightKey = () => {let i = 1; while (lightOf(`l${i}`)) i++; return `l${i}`;};
+const LIGHT = {r: 120, color: '#ffcc88'};
+
+function addLight(x, y)
+{
+    if (S.sel === null) {status('先選或新增一個場景'); return Promise.resolve();}
+    const key = lightKey();
+    return editScene(sc => {(sc.lights ??= []).push({key, x, y, ...LIGHT});}, key);
+}
+
+function setLight(key, patch)
+{
+    return editScene(sc => {
+        const l = sc.lights?.find(x => x.key === key);
+        if (!l) throw new Error(`場景裡沒有 ${key}`);
+        for (const [k, v] of Object.entries(patch)) {if (v === undefined) delete l[k]; else l[k] = v;}
+    });
+}
+
+// ---------- follow（粒子、光源）：角色＝格子中心、擺設＝錨點 ----------
+function followBase(sc, key)
+{
+    const r = sc?.roles?.find(x => x.key === key);
+    if (r) return {x: r.tx * 32 + 16, y: r.ty * 32 + 16};
+    const p = sc?.props?.find(x => x.key === key);
+    return p ? {x: p.x, y: p.y} : null;
+}
+
+// 換跟隨對象：位置換算成相對新對象／絕對，畫面上不動
+function refollow(o, to)
+{
+    const from = followBase(scene(), o.follow), b = followBase(scene(), to);
+    const x = (from?.x ?? 0) + o.x, y = (from?.y ?? 0) + o.y;
+    return {follow: to || undefined, x: x - (b?.x ?? 0), y: y - (b?.y ?? 0)};
+}
+
+const propName = (p) => (p.img.startsWith(FILE) ? p.img.split('/').pop() : p.img);
+const followName = (key) => roleOf(key)?.id ?? (propOf(key) && propName(propOf(key))) ?? key;
+
+function followSelect(o, set)
+{
+    const sel = h('select', {dataset: {k: 'follow'}, onchange: () => set(refollow(o, sel.value))},
+        h('option', {value: ''}, '（不跟）'),
+        roles().length && h('optgroup', {label: '角色'}, roles().map(r => h('option', {value: r.key}, `${r.key}　${r.id}`))),
+        props().length && h('optgroup', {label: '擺設'}, props().map(p => h('option', {value: p.key}, `${p.key}　${propName(p)}`))));
+    if (o.follow && !followBase(scene(), o.follow)) sel.append(h('option', {value: o.follow}, `⚠ ${o.follow}`));
+    sel.value = o.follow ?? '';
+    return sel;
+}
+
+function lightPanel(l)
+{
+    const n = (k, step, ph) => h('input', {type: 'number', step, value: l[k] ?? '', placeholder: ph, class: 'n', dataset: {k},
+        onchange: (e) => setLight(l.key, {[k]: e.target.value === '' ? undefined : +e.target.value})});
+    const row = (k, ...v) => h('tr', null, h('td', {class: 'k'}, k), h('td', null, ...v));
+    return [
+        h('div', {class: 'sec'}, `光源 ${l.key}`),
+        h('table', {class: 'props'},
+            row(l.follow ? `位置（相對 ${followName(l.follow)}）` : '位置', n('x', 1), ' ', n('y', 1)),
+            row('半徑', n('r', 10, '120')),
+            row('顏色', h('input', {type: 'color', value: l.color ?? '#ffcc88', dataset: {k: 'color'}, onchange: (e) => setLight(l.key, {color: e.target.value})})),
+            row('強度', n('i', 0.1, '自動'), ' ', h('span', {class: 'dim', id: 'autoI'}, l.i === undefined ? `自動（目前 ${S.autoI ?? '?'}）` : '')),
+            row('跟著', followSelect(l, (patch) => setLight(l.key, patch)))),
+        h('div', {class: 'hint dim'}, '強度空白＝照遊戲（GM.LIGHT－環境光，天越黑越亮）；拖圓點移動、拖虛線圈上的把手改半徑（Shift 吸 16px）；方向鍵 1px、Shift＋方向鍵一格'),
+        h('div', {class: 'acts'}, h('button', {onclick: () => deleteObj(l.key)}, '刪除（Del）')),
+    ];
+}
 
 function addEmitter(id, x, y)
 {
@@ -255,14 +326,7 @@ function emPanel(e)
     const idSel = h('select', {dataset: {k: 'id'}, onchange: () => setEmitter(e.key, {id: idSel.value})}, Object.keys(S.refs.particles).map(id => h('option', {value: id}, id)));
     if (!S.refs.particles[e.id]) idSel.append(h('option', {value: e.id}, `⚠ ${e.id}`));
     idSel.value = e.id;
-    // 換跟隨對象：位置換算成相對／絕對，畫面上不動
-    const fol = h('select', {dataset: {k: 'follow'}, onchange: () => {
-        const from = roleOf(e.follow), to = roleOf(fol.value);
-        const abs = from ? {x: from.tx * 32 + 16 + e.x, y: from.ty * 32 + 16 + e.y} : {x: e.x, y: e.y};
-        const rel = to ? {x: abs.x - (to.tx * 32 + 16), y: abs.y - (to.ty * 32 + 16)} : abs;
-        setEmitter(e.key, {follow: fol.value || undefined, ...rel});
-    }}, h('option', {value: ''}, '（不跟）'), roles().map(r => h('option', {value: r.key}, `${r.key}　${r.id}`)));
-    fol.value = e.follow ?? '';
+    const fol = followSelect(e, (patch) => setEmitter(e.key, patch));
     const n = (k, step, ph) => h('input', {type: 'number', step, value: e[k] ?? '', placeholder: ph, class: 'n', dataset: {k},
         onchange: (ev) => setEmitter(e.key, {[k]: ev.target.value === '' ? undefined : +ev.target.value})});
     const burst = S.refs.particles[e.id]?.mode === 'burst';
@@ -271,7 +335,7 @@ function emPanel(e)
         h('div', {class: 'sec'}, `粒子 ${e.key}`),
         h('table', {class: 'props'},
             row('粒子', idSel),
-            row(e.follow ? '位置（相對角色）' : '位置', n('x', 1), ' ', n('y', 1)),
+            row(e.follow ? `位置（相對 ${followName(e.follow)}）` : '位置', n('x', 1), ' ', n('y', 1)),
             row('跟著', fol),
             burst && row('每幾 ms 噴', n('every', 100, '1000'))),
         h('div', {class: 'hint dim'}, '畫面上的橘色菱形＝發射點：拖曳移動、Shift 吸 16px；方向鍵 1px、Shift＋方向鍵一格'),
@@ -300,6 +364,14 @@ function deleteObj(key)
     return editScene(sc => {
         const i = sc[list]?.findIndex(x => x.key === key) ?? -1;
         if (i < 0) return false;
+        // 跟著它的粒子／光源改成不跟、位置換成絕對（同一筆 undo）
+        const b = followBase(sc, key);
+        for (const o of [...(sc.particles ?? []), ...(sc.lights ?? [])].filter(o => o.follow === key))
+        {
+            o.x += b?.x ?? 0;
+            o.y += b?.y ?? 0;
+            delete o.follow;
+        }
         sc[list].splice(i, 1);
         if (!sc[list].length) delete sc[list];
     }, S.pick === key ? null : S.pick);
@@ -553,9 +625,6 @@ function propPanel(p)
         return setProp(p.key, {[k]: v});
     };
     const n = (k, step, ph) => h('input', {type: 'number', step, value: p[k] ?? '', placeholder: ph, class: 'n', dataset: {k}, onchange: put(k)});
-    const l = p.light;
-    const putL = (k, conv = Number) => (e) => setProp(p.key, {light: {...l, [k]: e.target.value === '' ? undefined : conv(e.target.value)}});
-    const ln = (k, step, ph) => h('input', {type: 'number', step, value: l?.[k] ?? '', placeholder: ph, class: 'n', dataset: {k: `light.${k}`}, onchange: putL(k)});
     const row = (k, ...v) => h('tr', null, h('td', {class: 'k'}, k), h('td', null, ...v));
     return [
         h('div', {class: 'sec'}, `擺設 ${p.key}`),
@@ -568,11 +637,7 @@ function propPanel(p)
             row('翻轉', h('input', {type: 'checkbox', checked: !!p.flip, dataset: {k: 'flip'}, onchange: put('flip')})),
             row('角度', n('angle', 1, '0')),
             row('錨點', n('ox', 0.05, '0.5'), ' ', n('oy', 0.05, '1')),
-            row('深度', n('depth', 1, '0'), h('span', {class: 'dim'}, ' 加在 y 上')),
-            row('發光', h('input', {type: 'checkbox', checked: !!l, dataset: {k: 'light'}, onchange: (e) => setProp(p.key, {light: e.target.checked ? {...LIGHT} : undefined})})),
-            l && row('半徑／強度', ln('r', 10, '100'), ' ', ln('i', 0.1, '1')),
-            l && row('顏色', h('input', {type: 'color', value: l.color ?? '#ffcc88', dataset: {k: 'light.color'}, onchange: putL('color', String)})),
-            l && row('光的位移', ln('x', 1, '0'), ' ', ln('y', 1, '0'))),
+            row('深度', n('depth', 1, '0'), h('span', {class: 'dim'}, ' 加在 y 上'))),
         h('div', {class: 'hint dim'}, '拖曳移動、按住 Shift 錨點吸 16px；方向鍵 1px、Shift＋方向鍵一格'),
         h('div', {class: 'acts'}, h('button', {onclick: () => deleteObj(p.key)}, '刪除（Del）')),
     ];
@@ -580,9 +645,10 @@ function propPanel(p)
 
 function nudge(dx, dy)
 {
-    const p = propOf(S.pick), e = emOf(S.pick);
+    const p = propOf(S.pick), e = emOf(S.pick), l = lightOf(S.pick);
     if (p) setProp(p.key, {x: p.x + dx, y: p.y + dy});
     else if (e) setEmitter(e.key, {x: e.x + dx, y: e.y + dy});
+    else if (l) setLight(l.key, {x: l.x + dx, y: l.y + dy});
 }
 
 // 選取＋畫面上拉擺設大小要的面板狀態（鎖、等比）
@@ -698,7 +764,16 @@ function renderTree()
             onclick: () => pickRole(e.key === S.pick ? null : e.key),
             oncontextmenu: (ev) => menu(ev, [['刪除', () => deleteObj(e.key)]]),
         }, h('button', {class: 'eye', title: '暫時藏起來（不存檔）', onclick: (ev) => {ev.stopPropagation(); toggleHide(e.key);}}, S.hidden.has(e.key) ? '◌' : '👁'),
-           h('span', {class: S.refs.particles[e.id] ? 'id' : 'id warn'}, e.id), e.follow && h('span', {class: 'lab'}, `→ ${roleOf(e.follow)?.id ?? e.follow}`), h('span', {class: 'mark dim'}, `${e.x},${e.y}`))),
+           h('span', {class: S.refs.particles[e.id] ? 'id' : 'id warn'}, e.id), e.follow && h('span', {class: 'lab'}, `→ ${followName(e.follow)}`), h('span', {class: 'mark dim'}, `${e.x},${e.y}`))),
+        h('div', {class: 'row2'}, h('span', {class: 'sec grow'}, `光源（${lights().length}）`),
+            h('button', {title: '放光源（放在地圖中間；也可以在畫面上右鍵）', onclick: () => addLight(S.center[0] * 32 + 16, S.center[1] * 32 + 16)}, '＋')),
+        ...lights().map(l => h('div', {
+            class: `item${l.key === S.pick ? ' sel' : ''}${S.hidden.has(l.key) ? ' hid' : ''}`, dataset: {key: l.key},
+            onclick: () => pickRole(l.key === S.pick ? null : l.key),
+            oncontextmenu: (ev) => menu(ev, [['刪除', () => deleteObj(l.key)]]),
+        }, h('button', {class: 'eye', title: '暫時藏起來（不存檔）', onclick: (ev) => {ev.stopPropagation(); toggleHide(l.key);}}, S.hidden.has(l.key) ? '◌' : '👁'),
+           h('span', {class: 'swatch', style: `background:${l.color ?? '#ffcc88'}`}), h('span', {class: 'id'}, l.key),
+           l.follow && h('span', {class: 'lab'}, `→ ${followName(l.follow)}`), h('span', {class: 'mark dim'}, `${l.x},${l.y}`))),
     );
 }
 
@@ -723,6 +798,7 @@ function renderRight()
     const r = roleOf(S.pick), box = $('right');
     if (propOf(S.pick)) return box.replaceChildren(...propPanel(propOf(S.pick)));
     if (emOf(S.pick)) return box.replaceChildren(...emPanel(emOf(S.pick)));
+    if (lightOf(S.pick)) return box.replaceChildren(...lightPanel(lightOf(S.pick)));
     if (!r) return box.replaceChildren(h('span', {class: 'dim'}, S.sel === null ? '' : '點畫面上的角色、或左邊清單選一個；右鍵畫面放角色'));
     const idSel = roleSelect(r.id);
     idSel.onchange = () => setRole(r.key, {id: idSel.value});
@@ -773,7 +849,7 @@ function actPanel(r)
 function refresh()
 {
     if (S.sel !== null && !(S.sel in S.data)) select(null, false);
-    if (S.pick && !roleOf(S.pick) && !propOf(S.pick) && !emOf(S.pick)) S.pick = null;
+    if (S.pick && !roleOf(S.pick) && !propOf(S.pick) && !emOf(S.pick) && !lightOf(S.pick)) S.pick = null;
     renderList();
     renderTree();
     renderRight();
@@ -853,7 +929,7 @@ function onKey(k)
     if (k.ctrl && k.key.toLowerCase() === 'z' && !k.shift) undo();
     else if (k.ctrl && (k.key.toLowerCase() === 'y' || (k.key.toLowerCase() === 'z' && k.shift))) redo();
     else if (k.key === 'Delete' && S.pick) deleteObj(S.pick);
-    else if (k.key.startsWith('Arrow') && (propOf(S.pick) || emOf(S.pick)))
+    else if (k.key.startsWith('Arrow') && (propOf(S.pick) || emOf(S.pick) || lightOf(S.pick)))
     {
         const d = k.shift ? 32 : 1;
         nudge({ArrowLeft: -d, ArrowRight: d}[k.key] ?? 0, {ArrowUp: -d, ArrowDown: d}[k.key] ?? 0);
@@ -881,11 +957,19 @@ addEventListener('message', (e) => {
         setProp(m.key, {x, y, ...('pct' in m.patch ? {pct: pct === 100 ? undefined : pct} : {sx: one(sx), sy: one(sy)})}).then(syncGame);
     }
     else if (m.sb === 'moveEmitter') setEmitter(m.key, {x: m.x, y: m.y}).then(syncGame);
+    else if (m.sb === 'moveLight') setLight(m.key, {x: m.x, y: m.y}).then(syncGame);
+    else if (m.sb === 'radiusLight') setLight(m.key, {r: m.r}).then(syncGame);
+    else if (m.sb === 'autoI')
+    {
+        S.autoI = m.v;
+        const el = $('autoI');
+        if (el && lightOf(S.pick)?.i === undefined) el.textContent = `自動（目前 ${m.v}）`;
+    }
     else if (m.sb === 'key') onKey(m);
     else if (m.sb === 'ctx')
     {
         const b = frame.getBoundingClientRect(), at = {clientX: b.left + m.cx, clientY: b.top + m.cy};
-        const items = [[`在這裡放角色…（${m.tx}, ${m.ty}）`, () => placeAt(m.tx, m.ty)], ['在這裡放擺設…', () => placeProp(m.wx, m.wy)], ['在這裡放粒子…', () => placeEmitter(m.wx, m.wy)]];
+        const items = [[`在這裡放角色…（${m.tx}, ${m.ty}）`, () => placeAt(m.tx, m.ty)], ['在這裡放擺設…', () => placeProp(m.wx, m.wy)], ['在這裡放粒子…', () => placeEmitter(m.wx, m.wy)], ['在這裡放光源', () => addLight(m.wx, m.wy)]];
         if (m.key) items.push([`刪除 ${roleOf(m.key)?.id ?? m.key}`, () => deleteObj(m.key)]);
         if (S.sel === null) return status('先選或新增一個場景');
         menu(at, items);
@@ -966,5 +1050,5 @@ frame.src = '/?sandbox=1';
 refresh();
 
 // 給無頭測試用
-window.__sc = {S, setProject, addScene, dupScene, renameScene, deleteScene, select, undo, redo, addRole, setRole, setEquip, deleteRole, pickRole, toggleHide, arm, toGame, addProp, setProp, deleteObj, nudge, bakeProp, srcSize, addEmitter, setEmitter, setField, setPlaying,
+window.__sc = {S, setProject, addScene, dupScene, renameScene, deleteScene, select, undo, redo, addRole, setRole, setEquip, deleteRole, pickRole, toggleHide, arm, toGame, addProp, setProp, deleteObj, nudge, bakeProp, srcSize, addLight, setLight, addEmitter, setEmitter, setField, setPlaying,
                flush: () => S.q};

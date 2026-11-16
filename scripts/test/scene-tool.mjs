@@ -319,12 +319,8 @@ run('scene-tool', async t => {
         out.rgrip = [grip.previousElementSibling?.id, rw0, right.getBoundingClientRect().width, win.localStorage.getItem('tools.right.scene')];
         grip.dispatchEvent(new win.MouseEvent('dblclick', {bubbles: true}));
         out.rgripReset = [right.getBoundingClientRect().width, win.localStorage.getItem('tools.right.scene')];
-        const nl = () => sb().lights.lights.length;
-        const l0 = nl();
-        await sc.setProp('p1', {light: {r: 150, color: '#ff0000', i: 2, y: -10}});
-        out.light = await until(() => nl() === l0 + 1) && (() => {const l = sb().lights.lights.at(-1); return [l.radius, l.intensity, l.y, Math.round(l.color.r * 255)];})();
-        await sc.setProp('p1', {light: undefined});
-        out.unlight = await until(() => nl() === l0);
+        // 擺設不再有發光
+        out.noPropLight = !doc.querySelector('#right [data-k="light"]');
 
         // 拖曳放開／方向鍵（Shift＝一格）
         sb()._send({sb: 'moveProp', key: 'p1', x: 208, y: 224});
@@ -339,6 +335,67 @@ run('scene-tool', async t => {
         out.tree2 = [...doc.querySelectorAll('#tree .item')].map(e => e.dataset.key);
         sb()._send({sb: 'key', key: 'Delete'});
         out.delProp = await until(() => !prop('p1')) && (await scDisk()).props.map(p => p.key);
+
+        // ---------- 光源 ----------
+        const lo = (k) => sb()._lights?.[k];
+        const nLights = () => sb().lights.lights.length;
+        const nl0 = nLights();
+        await sc.addLight(400, 300);
+        out.lightAdd = await until(() => lo('l1')) && [(await scDisk()).lights, sc.S.pick, doc.querySelector('#right .sec').textContent, sb()._pickAt(400, 300)?.key,
+                                                      lo('l1').light.radius, lo('l1').light.intensity === sb()._autoI(), !!doc.querySelector('#tree [data-key="l1"]'), nLights() === nl0 + 1];
+        out.autoText = await until(() => doc.getElementById('autoI')?.textContent.startsWith('自動（目前 ') && !doc.getElementById('autoI').textContent.includes('?')) && doc.getElementById('autoI').textContent;
+        await sc.setLight('l1', {i: 2, color: '#ff0000'});
+        out.lightFixed = await until(() => lo('l1')?.light.intensity === 2) && [Math.round(lo('l1').light.color.r * 255), Math.round(lo('l1').light.color.g * 255)];
+        await sc.setLight('l1', {i: undefined});
+        // 自動：環境光一變就重算
+        const ia = await until(() => lo('l1')?.light.intensity !== 2) && lo('l1').light.intensity;
+        await sc.setField('ambient', '#101010');
+        out.lightAuto = await until(() => lo('l1')?.light.intensity !== ia) && [lo('l1').light.intensity > ia, lo('l1').light.intensity === sb()._autoI()];
+        await sc.setField('ambient', undefined);
+        // 跟著擺設：下拉換對象位置換算、畫面不動；擺設搬了光跟著
+        sc.pickRole('l1');
+        const folSel = await until(() => doc.querySelector('#right [data-k="follow"]'));
+        out.folOpts = [...folSel.options].map(o => o.value);
+        folSel.value = 'p2'; folSel.dispatchEvent(new Event('change'));
+        out.lightFollow = await until(async () => (await scDisk()).lights[0].follow === 'p2') && await until(() => lo('l1')?.target === prop('p2')?.sp) &&
+            [(await scDisk()).lights[0].x, (await scDisk()).lights[0].y, sb()._lightPos(lo('l1'))];
+        await sc.setProp('p2', {x: 320});
+        out.lightFollowMove = await until(() => lo('l1')?.target === prop('p2')?.sp && prop('p2')?.sp.x === 320) && sb()._lightPos(lo('l1')).x;
+        // 半徑把手（Shift 吸 16）、拖曳、方向鍵、👁
+        await until(() => sb()._sel === 'l1' && sb()._radiusHandle());
+        const rh = sb()._radiusHandle();
+        out.rHandle = [rh.x - sb()._lightPos(lo('l1')).x, !!sb()._radiusAt(rh.x, rh.y)];
+        sb()._drag = {radius: rh.o, key: 'l1'};
+        sb()._radiusTo(sb()._drag, rh.x + 50, rh.y, true);
+        sb()._endDrag();
+        out.radius = await until(async () => (await scDisk()).lights[0].r === 176) && await until(() => lo('l1')?.light.radius === 176);
+        sb()._send({sb: 'moveLight', key: 'l1', x: 10, y: 20});
+        await until(async () => (await scDisk()).lights[0].x === 10);
+        sb()._send({sb: 'key', key: 'ArrowRight'});
+        out.lightMove = await until(async () => (await scDisk()).lights[0].x === 11) && [(await scDisk()).lights[0].x, (await scDisk()).lights[0].y];
+        // 白天自動強度本來就是 0：先固定 i 才看得出藏起來
+        await sc.setLight('l1', {i: 1});
+        await until(() => lo('l1')?.light.intensity === 1);
+        sc.toggleHide('l1');
+        out.lightHide = await until(() => sb()._hidden.has('l1')) && lo('l1').light.intensity === 0 && !sb()._lightAt(sb()._lightPos(lo('l1')).x, sb()._lightPos(lo('l1')).y);
+        sc.toggleHide('l1');
+        out.lightUnhide = await until(() => lo('l1')?.light.intensity === 1);
+        await sc.setLight('l1', {i: undefined});
+        // 粒子也能跟擺設
+        const sid0 = Object.entries(sc.S.refs.particles).find(([, d]) => d.mode !== 'burst')[0];
+        await sc.addEmitter(sid0, 0, 0);
+        await sc.setEmitter('e1', {follow: 'p2', x: 0, y: -10});
+        out.emProp = await until(() => sb()._emitters?.e1?.target === prop('p2')?.sp) && [sb()._emitPos(sb()._emitters.e1).x === prop('p2').sp.x, sb()._emitPos(sb()._emitters.e1).y === prop('p2').sp.y - 10];
+        // 刪掉被跟的擺設：光源、粒子改成不跟、位置換成絕對；undo 回來
+        const absL = sb()._lightPos(lo('l1')), absE = sb()._emitPos(sb()._emitters.e1);
+        await sc.deleteObj('p2');
+        out.detach = await until(async () => !(await scDisk()).props) && (async () => {const d = await scDisk(); return [d.lights[0].follow, d.lights[0].x === absL.x, d.lights[0].y === absL.y, d.particles[0].follow, d.particles[0].x === absE.x, d.particles[0].y === absE.y];})();
+        out.detach = await out.detach;
+        await sc.undo();
+        out.detachUndo = await until(async () => (await scDisk()).props?.[0]?.key === 'p2') && [(await scDisk()).lights[0].follow, (await scDisk()).particles[0].follow];
+        await sc.deleteObj('e1');
+        await sc.deleteObj('l1');
+        out.lightDel = await until(() => !lo('l1')) && [(await scDisk()).lights, nLights() === nl0];
 
         // ---------- 第 5 步：特效 ----------
         // 狀態特效：加＝fxOn（不重建角色）、tick、解除＝fxOff；存在角色的 fx
@@ -438,7 +495,7 @@ run('scene-tool', async t => {
     t.eq('面向左／右', JSON.stringify(r.face), JSON.stringify([true, true]));
     t.eq('sandbox 點選：左欄跟著選', r.pick, 'r2');
     t.check('sandbox 拖曳放開：寫檔、重建在新格子', r.move);
-    t.eq('sandbox 右鍵：放角色／擺設／粒子＋刪除', JSON.stringify(r.ctx), JSON.stringify(['在這裡放角色…（3, 3）', '在這裡放擺設…', '在這裡放粒子…', '刪除 mary']));
+    t.eq('sandbox 右鍵：放角色／擺設／粒子／光源＋刪除', JSON.stringify(r.ctx), JSON.stringify(['在這裡放角色…（3, 3）', '在這裡放擺設…', '在這裡放粒子…', '在這裡放光源', '刪除 mary']));
     t.eq('👁 暫藏：不寫檔、點不到', JSON.stringify(r.hide), JSON.stringify([true, true]));
     t.eq('sandbox 裡按 Del：刪選中的', JSON.stringify(r.delRole), JSON.stringify([null, 'r1']));
     t.eq('sandbox 裡按 Ctrl+Z：復原、選回去', JSON.stringify(r.undoDel), JSON.stringify([['r1', 'r2'], 'r2']));
@@ -483,8 +540,24 @@ run('scene-tool', async t => {
     t.eq('有角度：不出把手', r.noHandle, 0);
     t.check('右欄把手：在右欄左邊、往左拉變寬、記 tools.right.scene', r.rgrip[0] === 'view' && r.rgrip[2] === r.rgrip[1] + 100 && r.rgrip[3] === String(r.rgrip[2]), JSON.stringify(r.rgrip));
     t.check('右欄把手：雙擊回預設', r.rgripReset[0] === r.rgrip[1] && r.rgripReset[1] === null, JSON.stringify(r.rgripReset));
-    t.eq('發光：加一盞燈（半徑、強度、位移、顏色）', JSON.stringify(r.light), JSON.stringify([150, 2, 190, 255]));
-    t.check('取消發光：燈拿掉', r.unlight);
+    t.check('擺設面板沒有發光', r.noPropLight);
+    t.check('光源：放了存檔（預設 r120、沒寫 i）、選起來、點得到、左欄列、強度＝自動',
+        r.lightAdd && JSON.stringify(r.lightAdd[0]) === JSON.stringify([{key: 'l1', x: 400, y: 300, r: 120, color: '#ffcc88'}]) && r.lightAdd[1] === 'l1' && r.lightAdd[2] === '光源 l1' && r.lightAdd[3] === 'l1' && r.lightAdd[4] === 120 && r.lightAdd[5] && r.lightAdd[6] && r.lightAdd[7], JSON.stringify(r.lightAdd));
+    t.check('光源：右欄顯示目前的自動強度', !!r.autoText, r.autoText);
+    t.eq('光源：填了 i＝固定、顏色', JSON.stringify(r.lightFixed), JSON.stringify([255, 0]));
+    t.eq('光源：自動強度跟著環境光（變暗→變亮）', JSON.stringify(r.lightAuto), JSON.stringify([true, true]));
+    t.check('跟著下拉：不跟／角色／擺設', r.folOpts.join() === ',r1,r2,p2', JSON.stringify(r.folOpts));
+    t.check('光源跟擺設：位置換成相對、畫面不動', r.lightFollow && r.lightFollow[0] === 100 && r.lightFollow[1] === 100 && r.lightFollow[2].x === 400 && r.lightFollow[2].y === 300, JSON.stringify(r.lightFollow));
+    t.eq('光源跟擺設：擺設搬了光跟著', r.lightFollowMove, 420);
+    t.eq('半徑把手：在圈的右邊、抓得到', JSON.stringify(r.rHandle), JSON.stringify([120, true]));
+    t.check('拖半徑＋Shift：吸 16 的倍數、寫檔', r.radius);
+    t.eq('光源：拖曳放開寫檔、方向鍵', JSON.stringify(r.lightMove), JSON.stringify([11, 20]));
+    t.check('光源：👁 藏＝強度 0、點不到', r.lightHide);
+    t.check('光源：取消藏＝回到原本強度', r.lightUnhide);
+    t.eq('粒子也能跟擺設', JSON.stringify(r.emProp), JSON.stringify([true, true]));
+    t.eq('刪被跟的擺設：光源、粒子改成不跟、位置換成絕對', JSON.stringify(r.detach), JSON.stringify([null, true, true, null, true, true].map(v => v ?? undefined)));
+    t.eq('刪被跟的擺設：undo 回來', JSON.stringify(r.detachUndo), JSON.stringify(['p2', 'p2']));
+    t.check('光源：刪除', r.lightDel && r.lightDel[0] == null && r.lightDel[1], JSON.stringify(r.lightDel));
     t.eq('拖曳放開：寫檔、sandbox 跟著', JSON.stringify(r.moveProp), JSON.stringify([208, 224]));
     t.eq('方向鍵 1px、Shift＋方向鍵一格', JSON.stringify(r.nudge), JSON.stringify([209, 256]));
     t.eq('擺設點得到', r.pickProp, 'p1');

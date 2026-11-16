@@ -34,7 +34,7 @@ export class Sandbox extends GameScene
         super.init({...data, map:data?.map ?? 'sandbox'});
     }
 
-    update() {this._drawSel();}
+    update() {this._syncLights(); this._drawSel();}
 
     async create()
     {
@@ -100,7 +100,6 @@ export class Sandbox extends GameScene
             this._syncFx(p, r.fx ?? []);
         }
         if(bad.length) {this._send({sb:'error', msg:`role.json 沒有：${[...new Set(bad)].join('、')}`});}
-        this._applyEmitters(scene.particles ?? [], force);
         this._amb = scene.ambient ?? null;
         // 時間只在場景檔的值變了才跳過去（▶ 播放中編輯別的東西不會被拉回去）
         const t = scene.time ?? DEFAULT_TIME;
@@ -108,11 +107,14 @@ export class Sandbox extends GameScene
         else {this._ambient();}
         await this._applyProps(scene.props ?? []);
         if(this._scene!==scene) {return;}   // 載外部圖的期間又來了新的場景
+        // 粒子、光源可以跟著擺設：擺設建好（sprite 換新）才套
+        this._applyEmitters(scene.particles ?? [], force);
+        this._applyLights(scene.lights ?? [], force);
         this._send({sb:'loaded', map:this.mapName, w:this.map.map.width, h:this.map.map.height});
     }
 
     //------------------------------------------------------
-    //  擺設：{key, img, x, y（錨點的世界座標）, sx, sy, pct, flip, angle, ox, oy, depth（加在 y 上）, light:{r, color, i, x, y}}
+    //  擺設：{key, img, x, y（錨點的世界座標）, sx, sy, pct, flip, angle, ox, oy, depth（加在 y 上）}
     //  img＝textures 的 key（可帶 :frame）或 file:<相對專案的路徑>（還沒放進 textures/ 的圖，vite 直接給）
     //  pct＝file: 圖要烤成原圖的幾 %（工具「存檔…」用），這裡直接乘進 scale 模擬，不真的縮圖
     //------------------------------------------------------
@@ -162,29 +164,23 @@ export class Sandbox extends GameScene
         const sp = this.add.image(p.x, p.y, key, frame)
             .setOrigin(p.ox ?? 0.5, p.oy ?? 1).setScale(k * (p.sx ?? 1), k * (p.sy ?? 1)).setFlipX(!!p.flip).setAngle(p.angle ?? 0)
             .setDepth(p.y + (p.depth ?? 0)).setPipeline('Light2D').setVisible(!this._hidden.has(p.key));
-        const o = {sp, data:p, sig:JSON.stringify(p)};
-        if(p.light)
-        {
-            const l = p.light;
-            o.light = this.lights.addLight(p.x + (l.x ?? 0), p.y + (l.y ?? 0), l.r ?? 100, Phaser.Display.Color.HexStringToColor(l.color ?? '#ffcc88').color, l.i ?? 1);
-        }
-        return o;
+        return {sp, data:p, sig:JSON.stringify(p)};
     }
 
     _dropProp(k)
     {
-        const o = this._props[k];
-        o.sp.destroy();
-        if(o.light) {this.lights.removeLight(o.light);}
+        this._props[k].sp.destroy();
         delete this._props[k];
     }
 
-    // 拖曳中：圖跟光一起動，深度照新的 y
+    // 拖曳中：深度照新的 y（跟著它的光源每幀在 update 跟上、粒子跟著 sprite）
     _placeProp(o, x, y)
     {
         o.sp.setPosition(x, y).setDepth(y + (o.data.depth ?? 0));
-        if(o.light) {o.light.setPosition(x + (o.data.light.x ?? 0), y + (o.data.light.y ?? 0));}
     }
+
+    // follow 的對象：角色（root＝站的點）或擺設（sprite＝錨點）
+    _target(key) {return key ? this._puppet(key) ?? this._props[key]?.sp ?? null : null;}
 
     _spawn(r)
     {
@@ -214,6 +210,9 @@ export class Sandbox extends GameScene
     {
         const c = this._amb ? Phaser.Display.Color.HexStringToColor(this._amb).color : this.getAmbientColor(TimeSystem.time);
         this.lights.setAmbientColor(c);
+        Object.values(this._lights ?? {}).forEach(o=>this._lightI(o));
+        const ai = Math.round(this._autoI()*100)/100;
+        if(ai!==this._lastAutoI) {this._lastAutoI = ai; this._send({sb:'autoI', v:ai});}
     }
 
     static _hhmm({h, m}) {return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;}
@@ -253,7 +252,7 @@ export class Sandbox extends GameScene
     }
 
     //------------------------------------------------------
-    //  粒子發射點：{key, id（particle.json）, x, y, follow?（角色 key：x/y 變成相對它）, every?（burst 幾 ms 噴一次）}
+    //  粒子發射點：{key, id（particle.json）, x, y, follow?（角色／擺設 key：x/y 變成相對它）, every?（burst 幾 ms 噴一次）}
     //  畫面上畫一個橘色菱形讓它點得到、拖得動（只在 sandbox 裡，不是遊戲的東西）
     //------------------------------------------------------
     _applyEmitters(list, force)
@@ -263,7 +262,7 @@ export class Sandbox extends GameScene
         for(const [k, o] of Object.entries(this._emitters))
         {
             const e = want[k];
-            if(force || JSON.stringify(e)!==o.sig || (e.follow && this._puppet(e.follow)!==o.target)) {this._dropEmitter(k);}
+            if(force || JSON.stringify(e)!==o.sig || (e.follow && this._target(e.follow)!==o.target)) {this._dropEmitter(k);}
         }
         const bad = [];
         for(const e of list)
@@ -271,7 +270,7 @@ export class Sandbox extends GameScene
             if(this._emitters[e.key]) {continue;}
             const def = DB.particle(e.id);
             if(!def) {bad.push(e.id);}
-            this._emitters[e.key] = {data:e, sig:JSON.stringify(e), def, target:e.follow ? this._puppet(e.follow) : null};
+            this._emitters[e.key] = {data:e, sig:JSON.stringify(e), def, target:this._target(e.follow)};
             this._emit(this._emitters[e.key]);
         }
         if(bad.length) {this._send({sb:'error', msg:`particle.json 沒有：${[...new Set(bad)].join('、')}`});}
@@ -328,6 +327,99 @@ export class Sandbox extends GameScene
         {
             if(t) {em.followOffset?.set(o.data.x, o.data.y);}
             else {em.setPosition(x, y);}
+        }
+    }
+
+    //------------------------------------------------------
+    //  光源：{key, x, y, r, color（'#rrggbb'）, i?（沒寫＝照遊戲 GM.LIGHT－環境光，同 com_lamp）, follow?（角色／擺設 key：x/y 變成相對它）}
+    //  畫面上畫一個光色圓點讓它點得到、拖得動；選中時虛線圈＝半徑、圈上的把手拖 r
+    //------------------------------------------------------
+    _applyLights(list, force)
+    {
+        this._lights ??= {};
+        const want = Object.fromEntries(list.map(l=>[l.key, l]));
+        for(const [k, o] of Object.entries(this._lights))
+        {
+            const l = want[k];
+            if(force || JSON.stringify(l)!==o.sig || (l.follow && this._target(l.follow)!==o.target)) {this._dropLight(k);}
+        }
+        for(const l of list)
+        {
+            if(this._lights[l.key]) {continue;}
+            const o = {data:l, sig:JSON.stringify(l), target:this._target(l.follow), hex:Phaser.Display.Color.HexStringToColor(l.color ?? '#ffcc88').color};
+            const {x, y} = this._lightPos(o);
+            o.light = this.lights.addLight(x, y, l.r ?? 120, o.hex, 0);
+            this._lights[l.key] = o;
+            this._lightI(o);
+        }
+    }
+
+    _lightPos(o)
+    {
+        const t = o.target?.active ? o.target : null;
+        return {x:(t?.x ?? 0) + o.data.x, y:(t?.y ?? 0) + o.data.y};
+    }
+
+    // 亮度：藏著＝0、有寫 i 用它、沒寫照遊戲公式（環境光一換就重算）
+    _lightI(o)
+    {
+        o.light.intensity = this._hidden.has(o.data.key) ? 0 : o.data.i ?? this._autoI();
+    }
+
+    _autoI() {return Math.max(0, GM.LIGHT - this.lights.ambientColor.r);}
+
+    _dropLight(k)
+    {
+        this.lights.removeLight(this._lights[k].light);
+        delete this._lights[k];
+    }
+
+    _lightAt(wx, wy)
+    {
+        const r = 8/this.cameras.main.zoom;
+        return Object.entries(this._lights ?? {}).find(([k, o])=>{
+            if(this._hidden.has(k)) {return false;}
+            const p = this._lightPos(o);
+            return Math.abs(p.x-wx)<=r && Math.abs(p.y-wy)<=r;
+        });
+    }
+
+    _placeLight(o, x, y)
+    {
+        const t = o.target?.active ? o.target : null;
+        o.data = {...o.data, x:x-(t?.x ?? 0), y:y-(t?.y ?? 0)};
+        o.light.setPosition(x, y);
+    }
+
+    // 選中光源的半徑把手（圈的右邊）
+    _radiusHandle()
+    {
+        const o = this._lights?.[this._sel];
+        if(!o || this._hidden.has(this._sel)) {return null;}
+        const p = this._lightPos(o);
+        return {o, x:p.x + o.light.radius, y:p.y};
+    }
+
+    _radiusAt(wx, wy)
+    {
+        const rh = this._radiusHandle(), s = (HANDLE/2 + 2)/this.cameras.main.zoom;
+        return rh && Math.abs(rh.x-wx)<=s && Math.abs(rh.y-wy)<=s ? rh : null;
+    }
+
+    // 拖半徑把手：r＝游標到圓心的距離（整數、最少 1；Shift 吸 16 的倍數）
+    _radiusTo(d, wx, wy, snap)
+    {
+        const c = this._lightPos(d.radius), dist = Math.hypot(wx-c.x, wy-c.y);
+        d.r = Math.max(1, snap ? Math.round(dist/16)*16 : Math.round(dist));
+        d.radius.light.setRadius(d.r);
+    }
+
+    // 跟著東西的光每幀跟上
+    _syncLights()
+    {
+        for(const o of Object.values(this._lights ?? {}))
+        {
+            if(o.target) {const p = this._lightPos(o); o.light.setPosition(p.x, p.y);}
         }
     }
 
@@ -395,8 +487,10 @@ export class Sandbox extends GameScene
     // 點到的東西（角色或擺設，最上面那個）：{key, role?, prop?}
     _pickAt(wx, wy)
     {
-        const em = this._emitterAt(wx, wy);   // 發射點的記號畫在最上面
+        const em = this._emitterAt(wx, wy);   // 發射點、光源的記號畫在最上面
         if(em) {return {key:em[0], emitter:em[1]};}
+        const li = this._lightAt(wx, wy);
+        if(li) {return {key:li[0], light:li[1]};}
         const hits = [
             ...this.roles.filter(p=>p.visible && p.getShapeRect?.().contains(wx, wy)).map(role=>({key:role.key, role, depth:role.depth})),
             ...Object.entries(this._props).filter(([, o])=>o.sp.visible && o.sp.getBounds().contains(wx, wy)).map(([key, prop])=>({key, prop, depth:prop.sp.depth})),
@@ -425,6 +519,22 @@ export class Sandbox extends GameScene
             g.lineStyle(2/z, k===this._sel ? 0x7ddc5a : 0xff9933, 1).fillStyle(0x000000, 0.4)
                 .fillPoints([{x, y:y-s}, {x:x+s, y}, {x, y:y+s}, {x:x-s, y}], true).strokePoints([{x, y:y-s}, {x:x+s, y}, {x, y:y+s}, {x:x-s, y}], true);
         }
+        for(const [k, o] of Object.entries(this._lights ?? {}))
+        {
+            if(this._hidden.has(k)) {continue;}
+            const {x, y} = this._lightPos(o), s = 6/z, sel = k===this._sel;
+            g.fillStyle(o.hex, 1).fillCircle(x, y, s)
+                .lineStyle((sel ? 2 : 1.5)/z, sel ? 0x7ddc5a : 0x000000, 1).strokeCircle(x, y, s);
+            if(sel)
+            {
+                // 虛線圈＝半徑
+                const R = o.light.radius, n = 64;
+                g.lineStyle(1.5/z, 0x7ddc5a, 0.9);
+                for(let i=0; i<n; i+=2) {g.beginPath().arc(x, y, R, i/n*Math.PI*2, (i+1)/n*Math.PI*2).strokePath();}
+            }
+        }
+        const rh = this._radiusHandle();
+        if(rh) {const s = HANDLE/z; g.fillStyle(0xffffff, 1).fillRect(rh.x-s/2, rh.y-s/2, s, s).lineStyle(1/z, 0x3a8a2a, 1).strokeRect(rh.x-s/2, rh.y-s/2, s, s);}
         const p = this._puppet(this._sel), o = this._props?.[this._sel];
         const r = p?.visible && p.getShapeRect ? p.getShapeRect() : o?.sp.visible ? o.sp.getBounds() : null;
         if(!r) {return;}
@@ -541,6 +651,7 @@ export class Sandbox extends GameScene
                 this.roles.forEach(p=>p.setVisible(!this._hidden.has(p.key)));
                 Object.entries(this._props).forEach(([k, o])=>o.sp.setVisible(!this._hidden.has(k)));
                 Object.entries(this._emitters ?? {}).forEach(([k, o])=>o.fx?.emitter?.setVisible(!this._hidden.has(k)));
+                Object.values(this._lights ?? {}).forEach(o=>this._lightI(o));
                 break;
         }
     }
@@ -601,6 +712,8 @@ export class Sandbox extends GameScene
             if(p.rightButtonDown() && this._arm) {this._arm = null; this._send({sb:'disarm'}); return;}
             const hd = p.leftButtonDown() && this._handleAt(p.worldX, p.worldY);
             if(hd) {this._startResize(hd); return;}
+            const rh = p.leftButtonDown() && this._radiusAt(p.worldX, p.worldY);
+            if(rh) {this._drag = {radius:rh.o, key:this._sel}; return;}
             const hit = this._pickAt(p.worldX, p.worldY);
             if(p.rightButtonDown())
             {
@@ -616,6 +729,11 @@ export class Sandbox extends GameScene
                 const e = this._emitPos(hit.emitter);
                 this._drag = {emitter:hit.emitter, key:hit.key, dx:e.x-p.worldX, dy:e.y-p.worldY, moved:false};
             }
+            else if(hit?.light)
+            {
+                const e = this._lightPos(hit.light);
+                this._drag = {light:hit.light, key:hit.key, dx:e.x-p.worldX, dy:e.y-p.worldY, moved:false};
+            }
         });
         this.input.on('pointermove', (p)=>{
             if(this._pan)
@@ -629,7 +747,12 @@ export class Sandbox extends GameScene
                 if(!p.leftButtonDown()) {this._endDrag(); return;}
                 this._resizeTo(this._drag, p.worldX, p.worldY, p.event.shiftKey);
             }
-            else if(this._drag?.prop || this._drag?.emitter)
+            else if(this._drag?.radius)
+            {
+                if(!p.leftButtonDown()) {this._endDrag(); return;}
+                this._radiusTo(this._drag, p.worldX, p.worldY, p.event.shiftKey);
+            }
+            else if(this._drag?.prop || this._drag?.emitter || this._drag?.light)
             {
                 if(!p.leftButtonDown()) {this._endDrag(); return;}
                 // 自由拖；按住 Shift 錨點吸到 16px（格子交點＋格子中心）
@@ -638,6 +761,7 @@ export class Sandbox extends GameScene
                 else {[x, y] = [x, y].map(Math.round);}
                 this._drag.moved = true;
                 if(this._drag.prop) {this._placeProp(this._drag.prop, x, y);}
+                else if(this._drag.light) {this._placeLight(this._drag.light, x, y);}
                 else {this._placeEmitter(this._drag.emitter, x, y);}
             }
             else if(this._drag?.role?.active)
@@ -649,10 +773,12 @@ export class Sandbox extends GameScene
                 this._drag.to = [tx, ty];
                 this._drag.role.setPosition(pt.x, pt.y).updateDepth();
             }
-            if(!this._drag?.resize)
+            if(!this._drag?.resize && !this._drag?.radius)
             {
-                const hd = !this._drag && !this._pan && this._handleAt(p.worldX, p.worldY);
-                this.game.canvas.style.cursor = !hd ? '' : !hd.hy ? 'ew-resize' : !hd.hx ? 'ns-resize' : hd.hx*hd.hy>0 ? 'nwse-resize' : 'nesw-resize';
+                const free = !this._drag && !this._pan;
+                const hd = free && this._handleAt(p.worldX, p.worldY);
+                this.game.canvas.style.cursor = hd ? (!hd.hy ? 'ew-resize' : !hd.hx ? 'ns-resize' : hd.hx*hd.hy>0 ? 'nwse-resize' : 'nesw-resize')
+                    : free && this._radiusAt(p.worldX, p.worldY) ? 'ew-resize' : '';
             }
         });
         this.input.on('pointerup', ()=>{this._pan = null; this._endDrag();});
@@ -670,6 +796,17 @@ export class Sandbox extends GameScene
         if(d?.resize)
         {
             if(d.patch) {this._send({sb:'resizeProp', key:d.key, patch:d.patch});}
+            return;
+        }
+        if(d?.radius)
+        {
+            if(d.r!==undefined && d.r!==d.radius.data.r) {this._send({sb:'radiusLight', key:d.key, r:d.r});}
+            return;
+        }
+        if(d?.light)
+        {
+            const {x, y} = d.light.data;
+            if(d.moved) {this._send({sb:'moveLight', key:d.key, x, y});}
             return;
         }
         if(d?.emitter)
