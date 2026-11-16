@@ -282,18 +282,23 @@ function followSelect(o, set)
 
 function lightPanel(l)
 {
-    const n = (k, step, ph) => h('input', {type: 'number', step, value: l[k] ?? '', placeholder: ph, class: 'n', dataset: {k},
+    const n = (k, step, ph, disabled = false) => h('input', {type: 'number', step, value: l[k] ?? '', placeholder: ph, class: 'n', dataset: {k}, disabled,
         onchange: (e) => setLight(l.key, {[k]: e.target.value === '' ? undefined : +e.target.value})});
     const row = (k, ...v) => h('tr', null, h('td', {class: 'k'}, k), h('td', null, ...v));
+    const point = !(l.arc > 0 && l.arc < 360);
     return [
         h('div', {class: 'sec'}, `光源 ${l.key}`),
         h('table', {class: 'props'},
             row(l.follow ? `位置（相對 ${followName(l.follow)}）` : '位置', n('x', 1), ' ', n('y', 1)),
             row('半徑', n('r', 10, '120')),
+            row('光錐', n('arc', 5, '點光源'), '°'),
+            row('方向', n('dir', 15, '0', point), '°'),
+            row('柔和', n('soft', 0.05, '0.2', point)),
             row('顏色', h('input', {type: 'color', value: l.color ?? '#ffcc88', dataset: {k: 'color'}, onchange: (e) => setLight(l.key, {color: e.target.value})})),
             row('強度', n('i', 0.1, '自動'), ' ', h('span', {class: 'dim', id: 'autoI'}, l.i === undefined ? `自動（目前 ${S.autoI ?? '?'}）` : '')),
             row('跟著', followSelect(l, (patch) => setLight(l.key, patch)))),
-        h('div', {class: 'hint dim'}, '強度空白＝照遊戲（GM.LIGHT－環境光，天越黑越亮）；拖圓點移動、拖虛線圈上的把手改半徑（Shift 吸 16px）；方向鍵 1px、Shift＋方向鍵一格'),
+        h('div', {class: 'hint dim'}, '強度空白＝照遊戲（GM.LIGHT－環境光，天越黑越亮）；光錐空白或 ≥360＝點光源，方向 0＝右、順時針，柔和＝錐邊淡出比例（0～1）；跟著角色時寫的是角色朝右的樣子，朝左自動鏡像；'
+            + '拖圓點移動、拖虛線上的把手改半徑（聚光燈：中線末端的把手連方向一起改、弧兩端的把手改光錐；Shift 吸 16px／15°）；方向鍵 1px、Shift＋方向鍵一格'),
         h('div', {class: 'acts'}, h('button', {onclick: () => deleteObj(l.key)}, '刪除（Del）')),
     ];
 }
@@ -1026,7 +1031,8 @@ addEventListener('message', (e) => {
         if (cur) setEmitter(m.key, {def: {...structuredClone(cur), [m.k]: m.z}}).then(syncGame);
     }
     else if (m.sb === 'moveLight') setLight(m.key, {x: m.x, y: m.y}).then(syncGame);
-    else if (m.sb === 'radiusLight') setLight(m.key, {r: m.r}).then(syncGame);
+    else if (m.sb === 'radiusLight') setLight(m.key, {r: m.r, ...(m.dir !== undefined && {dir: m.dir})}).then(syncGame);
+    else if (m.sb === 'arcLight') setLight(m.key, {arc: m.arc}).then(syncGame);
     else if (m.sb === 'autoI')
     {
         S.autoI = m.v;

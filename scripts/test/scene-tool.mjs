@@ -418,6 +418,37 @@ run('scene-tool', async t => {
         sc.pickRole('l1');
         await until(() => sb()._sel === 'l1');
         await sc.setLight('l1', {i: undefined});
+        // 聚光燈：光錐空白＝點光源、方向／柔和反灰；填了 arc 變扇形，中線末端把手改方向＋半徑、弧端把手改光錐
+        const kDis = (k) => doc.querySelector(`#right [data-k="${k}"]`)?.disabled;
+        out.spotOff = await until(() => doc.querySelector('#right [data-k="arc"]')) && [kDis('dir'), kDis('soft'), lo('l1').light.spot];
+        await sc.setLight('l1', {arc: 60, dir: 0});
+        out.spotOn = await until(() => lo('l1')?.light.spot) && await until(() => kDis('dir') === false) && [lo('l1').light.spot, kDis('soft')];
+        const sc0 = sb()._lightPos(lo('l1')), R0 = lo('l1').light.radius;
+        const rel = (h) => [Math.round(h.x - sc0.x), Math.round(h.y - sc0.y)];
+        out.spotHandles = [rel(sb()._radiusHandle()), sb()._arcHandles().map(rel)];
+        const rh2 = sb()._radiusHandle();
+        sb()._drag = {radius: rh2.o, key: 'l1', r0: R0, dir0: 0};
+        sb()._radiusTo(sb()._drag, sc0.x + 3, sc0.y + 100, true);
+        sb()._endDrag();
+        out.spotRadius = await until(async () => (await scDisk()).lights[0].dir === 90) && [(await scDisk()).lights[0].r, (await scDisk()).lights[0].dir];
+        const ah2 = await until(() => lo('l1')?.light.spot?.dir === 90 && sb()._arcHandles()[0]);
+        sb()._drag = {arc: ah2.o, key: 'l1', arc0: 60};
+        const a45 = (90 + 45) * Math.PI / 180;
+        sb()._arcTo(sb()._drag, sc0.x + 50 * Math.cos(a45), sc0.y + 50 * Math.sin(a45), true);
+        sb()._endDrag();
+        out.spotArc = await until(async () => (await scDisk()).lights[0].arc === 90) && await until(() => lo('l1')?.light.spot?.arc === 90);
+        // 跟著角色：角色朝左 x 偏移跟方向鏡像
+        const spr = sb()._puppet('r1');
+        const fake = {target: spr, data: {x: 5, y: 3, dir: 30, arc: 60}, light: sb().lights.addLight(0, 0, 10)};
+        spr.face({x: spr.x + 50});
+        sb()._lightSpot(fake);
+        const faceR = [spr.faceDir(), sb()._lightPos(fake).x - spr.x, fake.light.spot.dir];
+        spr.face({x: spr.x - 50});
+        sb()._lightSpot(fake);
+        out.spotMirror = [faceR, [spr.faceDir(), sb()._lightPos(fake).x - spr.x, fake.light.spot.dir]];
+        sb().lights.removeLight(fake.light);
+        await sc.setLight('l1', {arc: undefined, dir: undefined});
+        out.spotBack = await until(() => lo('l1') && !lo('l1').light.spot) && await until(() => kDis('dir') === true);
         // 粒子也能跟擺設
         const sid0 = Object.entries(sc.S.refs.particles).find(([, d]) => d.mode !== 'burst')[0];
         await sc.addEmitter(sid0, 0, 0);
@@ -694,6 +725,13 @@ run('scene-tool', async t => {
     t.eq('光源記號沒勾：選中的照樣點得到、記 localStorage', JSON.stringify(r.lightIconSel), JSON.stringify([true, '0']));
     t.eq('光源記號沒勾：沒選中的點不到、光照不變', JSON.stringify(r.lightIconOff), JSON.stringify([false, 1]));
     t.eq('光源記號勾回來', JSON.stringify(r.lightIconOn), JSON.stringify([true, '1']));
+    t.eq('聚光燈：光錐空白＝點光源、方向／柔和反灰', JSON.stringify(r.spotOff), JSON.stringify([true, true, null]));
+    t.eq('聚光燈：填 arc＝light.spot、方向／柔和可填', JSON.stringify(r.spotOn), JSON.stringify([{dir: 0, arc: 60, soft: 0.2}, false]));
+    t.eq('聚光燈：半徑把手在中線末端、弧端兩個把手', JSON.stringify(r.spotHandles), JSON.stringify([[176, 0], [[152, -88], [152, 88]]]));
+    t.eq('聚光燈：拖中線把手＋Shift＝半徑吸 16、方向吸 15°、寫檔', JSON.stringify(r.spotRadius), JSON.stringify([96, 90]));
+    t.check('聚光燈：拖弧端＝光錐（兩倍夾角）、寫檔', r.spotArc);
+    t.eq('聚光燈：跟著角色，朝左鏡像 x 跟方向', JSON.stringify(r.spotMirror), JSON.stringify([[1, 5, 30], [-1, -5, 150]]));
+    t.check('聚光燈：清掉 arc 回點光源', r.spotBack);
     t.eq('粒子也能跟擺設', JSON.stringify(r.emProp), JSON.stringify([true, true]));
     t.eq('刪被跟的擺設：光源、粒子改成不跟、位置換成絕對', JSON.stringify(r.detach), JSON.stringify([null, true, true, null, true, true].map(v => v ?? undefined)));
     t.eq('刪被跟的擺設：undo 回來', JSON.stringify(r.detachUndo), JSON.stringify(['p2', 'p2']));
