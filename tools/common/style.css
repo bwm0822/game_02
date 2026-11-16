@@ -138,13 +138,14 @@ main { flex: 1; display: flex; min-height: 0; }
 .split { display: flex; gap: 16px; align-items: flex-start; }
 .split > .form { flex: 1; min-width: 0; overflow-x: auto; }
 .split > .pv { position: sticky; top: 0; flex: none; background: #25272b; border: 1px solid #333; border-radius: 4px; padding: 8px; }
-.split > .form :is(.head, .iconField, .prop) { flex-wrap: wrap; }
-.split > .form .fields { grid-template-columns: 110px minmax(0, 1fr); }
-.split > .form .box .fields { grid-template-columns: 100px minmax(0, 1fr); }
-.split > .form :is(input, select, textarea) { max-width: 100%; }
-.split > .form .fields :is(input:not([type=checkbox]):not(.num), select) { min-width: min(250px, 100%); }
-.split > .form .box > .bar > * { min-width: 0; }
-.split > .form .box > .bar > .dim { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* .pform＝粒子條目表單（粒子分頁、場景分頁的右欄窄欄也用）：同樣在自己那欄折行 */
+:is(.split > .form, .pform) :is(.head, .iconField, .prop) { flex-wrap: wrap; }
+:is(.split > .form, .pform) .fields { grid-template-columns: 110px minmax(0, 1fr); }
+:is(.split > .form, .pform) .box .fields { grid-template-columns: 100px minmax(0, 1fr); }
+:is(.split > .form, .pform) :is(input, select, textarea) { max-width: 100%; }
+:is(.split > .form, .pform) .fields :is(input:not([type=checkbox]):not(.num), select) { min-width: min(250px, 100%); }
+:is(.split > .form, .pform) .box > .bar > * { min-width: 0; }
+:is(.split > .form, .pform) .box > .bar > .dim { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sub { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
 .sub label { display: inline-flex; align-items: center; gap: 4px; color: #aaa; }
 .card { background: #2b2d31; border: 1px solid #3a3d44; border-radius: 4px; padding: 6px 8px; margin-bottom: 6px; }

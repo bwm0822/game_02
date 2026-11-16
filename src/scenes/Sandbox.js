@@ -252,7 +252,7 @@ export class Sandbox extends GameScene
     }
 
     //------------------------------------------------------
-    //  粒子發射點：{key, id（particle.json）, x, y, follow?（角色／擺設 key：x/y 變成相對它）, every?（burst 幾 ms 噴一次）}
+    //  粒子發射點：{key, id（particle.json）, x, y, follow?（角色／擺設 key：x/y 變成相對它）, every?（burst 幾 ms 噴一次）, def?（發射點自己那份，有就不查 particle.json）}
     //  畫面上畫一個橘色菱形讓它點得到、拖得動（只在 sandbox 裡，不是遊戲的東西）
     //------------------------------------------------------
     _applyEmitters(list, force)
@@ -268,7 +268,7 @@ export class Sandbox extends GameScene
         for(const e of list)
         {
             if(this._emitters[e.key]) {continue;}
-            const def = DB.particle(e.id);
+            const def = e.def ?? DB.particle(e.id);
             if(!def) {bad.push(e.id);}
             this._emitters[e.key] = {data:e, sig:JSON.stringify(e), def, target:this._target(e.follow)};
             this._emit(this._emitters[e.key]);

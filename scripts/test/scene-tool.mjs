@@ -466,6 +466,42 @@ run('scene-tool', async t => {
         out.emIconOff = await until(() => sb()._sel === 'r1') && [eAt(), em('e1')?.fx?.emitter?.visible];
         chkP.checked = true; chkP.dispatchEvent(new Event('change'));
         out.emIconOn = await until(() => sb()._icons?.particle === true) && [eAt(), localStorage.getItem('tools.scene.particleIcon')];
+
+        // 發射點自己那份（def）：表單第一次改＝整筆複製、sandbox 用它、particle.json 不動；丟掉自訂；複製鈕；換粒子有自訂先問
+        const pjson = async () => (await (await json.getFileHandle('particle.json')).getFile()).text();
+        const pj0 = await pjson(), src0 = structuredClone(sc.S.refs.particles[sid]);
+        const rq = (k) => doc.querySelector(`#right [data-k="${k}"]`);
+        const fire = (el, v) => {el.value = v; el.dispatchEvent(new Event('change'));};
+        sc.pickRole('e1');
+        out.defForm = await until(() => rq('img') && rq('copyDef')) && [!!doc.querySelector('#right .pform .box'), rq('defState').textContent.includes('用 particle.json')];
+        fire(rq('img'), 'p-spark');
+        out.defEdit = await until(async () => (await scDisk()).particles[0].def) && await (async () => {
+            const d = (await scDisk()).particles[0].def;
+            return [d.img, JSON.stringify({...d, img: src0.img}) === JSON.stringify(src0), await pjson() === pj0, JSON.stringify(sc.S.refs.particles[sid]) === JSON.stringify(src0)];
+        })();
+        out.defSandbox = await until(() => em('e1')?.def?.img === 'p-spark') && [em('e1').def.img, !!em('e1').fx?.emitter?.active, rq('defState').textContent.includes('自訂'), !!rq('dropDef')];
+        out.defTree = doc.querySelector('#tree [data-key="e1"] .id').textContent;
+        rq('dropDef').click();
+        out.defDrop = await until(async () => !(await scDisk()).particles[0].def) && await until(() => em('e1')?.def?.img === src0.img);
+        await until(() => rq('copyDef'));
+        rq('copyDef').click();
+        out.defCopy = await until(async () => (await scDisk()).particles[0].def) && JSON.stringify((await scDisk()).particles[0].def) === JSON.stringify(src0);
+        // 自己那份跟來源一樣：換粒子不問；改過：先問，取消不換
+        const other = Object.keys(sc.S.refs.particles).find(id => id !== sid);
+        out.defOther = other; out.defSid = sid;
+        fire(rq('id'), other);
+        out.idNoAsk = await until(async () => (await scDisk()).particles[0].id === other) && [(await scDisk()).particles[0].def, doc.getElementById('dlgAsk').open];
+        await until(() => rq('img'));
+        fire(rq('img'), 'p-spark');
+        await until(async () => (await scDisk()).particles[0].def);
+        fire(rq('id'), sid);
+        out.idAsk = await until(() => doc.getElementById('dlgAsk').open);
+        doc.getElementById('dlgAsk').close('cancel');
+        await sleep(100);
+        out.idAskCancel = [(await scDisk()).particles[0].id, (await scDisk()).particles[0].def?.img, rq('id').value];
+        sc.undo(); sc.undo(); sc.undo(); await sc.flush();
+        out.defUndo = [(await scDisk()).particles[0].id, (await scDisk()).particles[0].def === undefined || JSON.stringify((await scDisk()).particles[0].def) === JSON.stringify(src0)];
+
         sc.pickRole('e1');
         sb()._send({sb: 'key', key: 'Delete'});
         out.delEm = await until(() => !em('e1')) && (await scDisk()).particles.map(e => e.key);
@@ -613,6 +649,16 @@ run('scene-tool', async t => {
     t.eq('粒子記號沒勾：選中的照樣點得到、記 localStorage', JSON.stringify(r.emIconSel), JSON.stringify([true, '0']));
     t.eq('粒子記號沒勾：沒選中的點不到、粒子照噴', JSON.stringify(r.emIconOff), JSON.stringify([false, true]));
     t.eq('粒子記號勾回來', JSON.stringify(r.emIconOn), JSON.stringify([true, '1']));
+    t.eq('粒子內容：右欄有粒子表單、標「用 particle.json」', JSON.stringify(r.defForm), JSON.stringify([true, true]));
+    t.eq('表單第一次改＝整筆複製到發射點、只差改的那格、particle.json 沒動', JSON.stringify(r.defEdit), JSON.stringify(['p-spark', true, true, true]));
+    t.eq('sandbox 用發射點自己那份播、標「自訂」、有丟掉鈕', JSON.stringify(r.defSandbox), JSON.stringify(['p-spark', true, true, true]));
+    t.check('物件樹標 ✎', r.defTree.includes('✎'), r.defTree);
+    t.check('丟掉自訂：回到用 particle.json', r.defDrop);
+    t.check('複製鈕：整筆拷進來', r.defCopy);
+    t.eq('跟來源一樣：換粒子不問、丟掉自己那份', JSON.stringify(r.idNoAsk), JSON.stringify([null, false]));
+    t.check('改過：換粒子先問', r.idAsk);
+    t.eq('取消：不換、保留自訂、下拉回原值', JSON.stringify(r.idAskCancel), JSON.stringify([r.defOther, 'p-spark', r.defOther]));
+    t.eq('undo 一路倒回複製完的樣子', JSON.stringify(r.defUndo), JSON.stringify([r.defSid, true]));
     t.eq('粒子：Del 刪', JSON.stringify(r.delEm), JSON.stringify(['e2']));
 
     t.eq('日夜：沒寫時間＝08:00、白天全亮', JSON.stringify(r.time0), JSON.stringify(['08:00', 8, [255, 255, 255]]));

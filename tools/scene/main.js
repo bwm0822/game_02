@@ -2,11 +2,17 @@
 // 跟 sandbox 的訊息都帶 sb 欄位：→ load {scene}／grid {on}／home／select {key}／hide {keys}／icons {light,particle}
 //                               ← ready（剛開好、還沒載場景）／loaded {map}／error {msg}／select {key}／move {key,tx,ty}／ctx {tx,ty,key,cx,cy}／key {key,ctrl,shift,alt}
 import '../common/splitter.js';
+import '../common/combo.js';
 import {$, h, status, ask} from '../common/dom.js';
 import * as SH from '../common/shell.js';
 import * as FS from '../common/fs.js';
 import * as IC from '../common/icons.js';
+import * as H from '../common/hist.js';
+import {str, setAt} from '../common/obj.js';
+import {createForm} from '../common/form.js';
+import {renderDatalists} from '../common/views.js';
 import {KINDS, KIND_NAMES} from '../role/schema.js';
+import {createPForm, easeNames} from '../particle/pform.js';
 import * as ST from './store.js';
 
 const LS = {sel: 'tools.scene.sel', grid: 'tools.scene.grid', role: 'tools.scene.lastRole', particle: 'tools.scene.lastParticle',
@@ -56,7 +62,10 @@ function commit(fn, sel, pick)
     return queue(async () => {
         const r = await ST.edit(fn);
         if (!r) return;
-        S.undo.push({before: r.before, after: r.after, sel: [S.sel, sel === undefined ? S.sel : sel], pick: [S.pick, pick === undefined ? S.pick : pick]});
+        // 數值欄連按 ↑↓ 併成一步（hist.js）
+        const last = S.undo.at(-1);
+        if (H.take() && last && last.after === r.before) last.after = r.after;
+        else S.undo.push({before: r.before, after: r.after, sel: [S.sel, sel === undefined ? S.sel : sel], pick: [S.pick, pick === undefined ? S.pick : pick]});
         S.redo = [];
         S.data = r.data;
         if (sel !== undefined) select(sel, false);
@@ -323,15 +332,46 @@ async function placeEmitter(x, y)
     await addEmitter(id, x, y);
 }
 
+// ---------- 發射點自己那份粒子（def）：沒有＝照 particle.json 的 id；表單第一次改或按「複製」才整筆拷進來，之後跟 particle.json 脫鉤 ----------
+const defOf = (e) => e?.def ?? S.refs.particles[e?.id];
+
+// 粒子表單（tools/particle/pform.js）的假 doc：data 只放選中那個發射點，commit 完寫回場景（立刻寫檔＋場景 undo）
+const PS = {data: {}, open: {}, json: false, drafts: {}, extra: {}, of: null};
+function pCommit(fn)
+{
+    const key = PS.of, e = emOf(key), cur = defOf(e);
+    if (!cur) return;
+    PS.data[key] = structuredClone(cur);
+    fn();
+    if (str(PS.data[key]) === str(cur)) return renderRight();
+    return setEmitter(key, {def: PS.data[key]});
+}
+const PFF = createForm({S: PS, render: () => renderRight(), commit: pCommit});
+const PF = createPForm({S: PS, F: PFF, set: (id, path, v) => pCommit(() => setAt(PS.data[id], path, v)), commit: pCommit, render: () => renderRight()});
+
+// 換粒子＝丟掉自己那份；自己那份改過（跟來源不一樣）先問
+async function changeEmitterId(e, id)
+{
+    if (id === e.id && !e.def) return;
+    if (e.def && str(e.def) !== str(S.refs.particles[e.id]))
+    {
+        const ok = await ask('換粒子', `${e.key} 有自己改過的粒子內容，換成 ${id} 會丟掉，確定？`, [['ok', '換'], ['cancel', '取消']]) === 'ok';
+        if (!ok) return renderRight();
+    }
+    await setEmitter(e.key, {id, def: undefined});
+}
+
 function emPanel(e)
 {
-    const idSel = h('select', {dataset: {k: 'id'}, onchange: () => setEmitter(e.key, {id: idSel.value})}, Object.keys(S.refs.particles).map(id => h('option', {value: id}, id)));
+    const idSel = h('select', {dataset: {k: 'id'}, onchange: () => changeEmitterId(e, idSel.value)}, Object.keys(S.refs.particles).map(id => h('option', {value: id}, id)));
     if (!S.refs.particles[e.id]) idSel.append(h('option', {value: e.id}, `⚠ ${e.id}`));
     idSel.value = e.id;
     const fol = followSelect(e, (patch) => setEmitter(e.key, patch));
     const n = (k, step, ph) => h('input', {type: 'number', step, value: e[k] ?? '', placeholder: ph, class: 'n', dataset: {k},
         onchange: (ev) => setEmitter(e.key, {[k]: ev.target.value === '' ? undefined : +ev.target.value})});
-    const burst = S.refs.particles[e.id]?.mode === 'burst';
+    const def = defOf(e), base = S.refs.particles[e.id];
+    if (PS.of !== e.key) {PS.of = e.key; PS.drafts = {};}
+    PS.data = {[e.key]: def};
     const row = (k, ...v) => h('tr', null, h('td', {class: 'k'}, k), h('td', null, ...v));
     return [
         h('div', {class: 'sec'}, `粒子 ${e.key}`),
@@ -339,9 +379,17 @@ function emPanel(e)
             row('粒子', idSel),
             row(e.follow ? `位置（相對 ${followName(e.follow)}）` : '位置', n('x', 1), ' ', n('y', 1)),
             row('跟著', fol),
-            burst && row('每幾 ms 噴', n('every', 100, '1000'))),
+            def?.mode === 'burst' && row('每幾 ms 噴', n('every', 100, '1000'))),
         h('div', {class: 'hint dim'}, '畫面上的橘色菱形＝發射點：拖曳移動、Shift 吸 16px；方向鍵 1px、Shift＋方向鍵一格'),
         h('div', {class: 'acts'}, h('button', {onclick: () => deleteObj(e.key)}, '刪除（Del）')),
+        h('div', {class: 'sec'}, '粒子內容',
+            h('span', {class: 'dim', dataset: {k: 'defState'}}, e.def ? `　自訂（從 ${e.id} 複製，只存在這個發射點）` : def ? '　用 particle.json（改了就複製一份到這個發射點）' : '')),
+        !def ? h('div', {class: 'warn'}, `particle.json 沒有 ${e.id}`) : h('div', null,
+            h('div', {class: 'row2'},
+                !e.def && h('button', {dataset: {k: 'copyDef'}, title: '把 particle.json 這筆整筆複製到這個發射點，之後跟 particle.json 脫鉤', onclick: () => setEmitter(e.key, {def: structuredClone(base)})}, '複製'),
+                e.def && h('button', {dataset: {k: 'dropDef'}, title: '丟掉這個發射點自己那份，回到用 particle.json 的 ' + e.id, onclick: () => setEmitter(e.key, {def: undefined})}, '丟掉自訂'),
+                h('span', {class: 'grow'}), PFF.modeBtn()),
+            h('div', {class: 'pform'}, PF.body(e.key, def))),
     ];
 }
 
@@ -766,7 +814,7 @@ function renderTree()
             onclick: () => pickRole(e.key === S.pick ? null : e.key),
             oncontextmenu: (ev) => menu(ev, [['刪除', () => deleteObj(e.key)]]),
         }, h('button', {class: 'eye', title: '暫時藏起來（不存檔）', onclick: (ev) => {ev.stopPropagation(); toggleHide(e.key);}}, S.hidden.has(e.key) ? '◌' : '👁'),
-           h('span', {class: S.refs.particles[e.id] ? 'id' : 'id warn'}, e.id), e.follow && h('span', {class: 'lab'}, `→ ${followName(e.follow)}`), h('span', {class: 'mark dim'}, `${e.x},${e.y}`))),
+           h('span', {class: defOf(e) ? 'id' : 'id warn', title: e.def ? '自訂（發射點自己那份）' : ''}, e.def ? `${e.id} ✎` : e.id), e.follow && h('span', {class: 'lab'}, `→ ${followName(e.follow)}`), h('span', {class: 'mark dim'}, `${e.x},${e.y}`))),
         h('div', {class: 'row2'}, h('span', {class: 'sec grow'}, `光源（${lights().length}）`),
             h('button', {title: '放光源（放在地圖中間；也可以在畫面上右鍵）', onclick: () => addLight(S.center[0] * 32 + 16, S.center[1] * 32 + 16)}, '＋')),
         ...lights().map(l => h('div', {
@@ -795,7 +843,16 @@ function equipSelect(r, cat)
     return sel;
 }
 
+// 重畫後把焦點還給同一個 data-k 的欄位（粒子表單連按 ↑↓ 才接得上）
 function renderRight()
+{
+    const box = $('right'), a = document.activeElement;
+    const focus = box.contains(a) ? a.dataset?.k : null;
+    drawRight();
+    if (focus) box.querySelector(`[data-k="${CSS.escape(focus)}"]`)?.focus();
+}
+
+function drawRight()
 {
     const r = roleOf(S.pick), box = $('right');
     if (propOf(S.pick)) return box.replaceChildren(...propPanel(propOf(S.pick)));
@@ -1057,6 +1114,7 @@ SH.onSaved((file) => {
     }
 });
 S.center = [12, 8];
+renderDatalists({eases: easeNames()});
 frame.src = '/?sandbox=1';
 refresh();
 

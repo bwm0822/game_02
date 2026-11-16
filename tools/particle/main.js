@@ -89,7 +89,7 @@ function renderForm()
                 h('button', {type: 'button', onclick: () => D.dup(id)}, '複製'),
                 h('button', {type: 'button', onclick: () => D.remove(id)}, '刪除…')),
             refsEl(id),
-            PF.body(id, p)),
+            h('div', {class: 'pform'}, PF.body(id, p))),
         previewEl(id, p, S.ext)));
 }
 

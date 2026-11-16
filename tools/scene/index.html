@@ -5,6 +5,7 @@
 <title>場景</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="../common/style.css">
+<link rel="stylesheet" href="../particle/pform.css">
 <style>
     #left { width: 240px; }
     #left .row2 { display: flex; gap: 4px; align-items: center; font-size: 14px; }
@@ -27,6 +28,9 @@
     #right .row2 { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
     #right button.on { background: #b5692f; color: #fff; }
     #right .hint { color: #fc8; font-size: 12px; margin-top: 4px; }
+    #right .pform { margin-top: 6px; }
+    #right .pform .prop > .k { min-width: 0; }
+    #right .pform select { max-width: 100%; }
     .warn { color: #f88; }
     #tree .swatch { flex: none; width: 12px; height: 12px; border-radius: 50%; border: 1px solid #000; }
     .treebox { width: 420px; height: 280px; overflow: auto; border: 1px solid #444; margin: 6px 0; }
@@ -90,6 +94,8 @@
     </section>
     <aside id="right" data-resize-right></aside>
 </main>
+
+<div id="datalists" hidden></div>
 
 <dialog id="dlgAsk">
     <form method="dialog">

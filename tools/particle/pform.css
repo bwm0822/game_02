@@ -1,0 +1,8 @@
+/* 粒子條目表單（pform.js）：粒子分頁、場景分頁共用，包在 .pform 底下（場景右欄自己也有 table.props） */
+.ico.builtin { background: #111; border-radius: 3px; }
+.pform .props { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin: 6px 0 4px; }
+.pform .prop { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.pform .prop > .k { min-width: 8.5em; color: #ccc; }
+.pform .prop button { padding: 0 6px; }
+.pform .prop .chip { display: inline-flex; align-items: center; gap: 2px; }
+.pform .prop input[type=color] { width: 2.4em; height: 1.6em; padding: 0; border: 0; background: none; }
