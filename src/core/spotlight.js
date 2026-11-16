@@ -2,7 +2,8 @@
 //   light.spot = {dir（度，0 右、順時針）, arc（光錐全寬，度；沒寫或 ≥360＝點光源）, soft（0～1，錐側邊淡出比例，預設 0.2）}
 //   不叫 angle：Tiled 自訂屬性撞到 Container 本身的 angle 會直接轉物件、進不了 bb
 // 距離衰減照 Phaser 原本的公式，錐的淡出跟它相乘
-// 環境光＋燈光每通道超過 kKnee 後柔性壓縮、永遠不到 1（疊燈看得出更亮但不爆白）
+// 環境光＋燈光每通道超過 kKnee 後柔性壓縮、不超過 1（疊燈看得出更亮但不爆白）；
+// 起壓點至少是環境光本身，環境光不會被壓暗（白天 0xffffff 照原樣）
 
 const FRAG = `
 #define SHADER_NAME SPOT_LIGHT_FS
@@ -85,8 +86,10 @@ void main ()
     }
 
     vec3 total = uAmbientLightColor + finalColor;
-    vec3 over = max(total - kKnee, 0.0);
-    total = min(total, vec3(kKnee)) + (1.0 - kKnee) * (1.0 - exp(-over / (1.0 - kKnee)));
+    vec3 knee = max(vec3(kKnee), min(uAmbientLightColor, vec3(1.0)));
+    vec3 room = max(1.0 - knee, vec3(0.0001));
+    vec3 over = max(total - knee, 0.0);
+    total = min(total, knee) + room * (1.0 - exp(-over / room));
     vec4 colorOutput = vec4(total, 1.0);
 
     gl_FragColor = color * vec4(colorOutput.rgb * colorOutput.a, colorOutput.a);
