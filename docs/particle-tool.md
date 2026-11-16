@@ -11,7 +11,7 @@
   - Phaser 欄位（`PROPS`）分四個框：發射（frequency／quantity／lifespan／maxParticles）、運動（speed／speedX/Y／angle／gravity／acceleration／maxVelocity／moveTo／radial）、外觀（scale／alpha／rotate／tint／color／blendMode）、範圍（emitZone／deathZone）。只列有值的，「＋ 加屬性」用預設值加。
     - 數值類可切 數值／範圍 `{min,max}`／漸變 `{start,end,ease}`／隨機挑 `[a,b]`（其他寫法顯示 JSON）；換寫法保留數字。數值欄是 `type=number`，↑↓ 步進寫在 `PROPS.<key>.step`（沒寫＝`any`），用 `form.js` 的 `numInput()`，同一格連按併成一步 undo。
     - `tint`：單色／漸變，用顏色選擇器寫 `#rrggbb`；`color`：顏色列（依壽命漸變），＋／− 增減。
-    - emitZone／deathZone（`kind:'zone'`，純函式在 `schema.js` 的 zone 段）：type 下拉（emit：random／edge；death：onEnter／onLeave）＋形狀下拉（矩形 `{x,y,w,h}`／圓 `{x,y,r}`／線段 `{x1,y1,x2,y2}`，deathZone 沒有線段＝Phaser 的 Line 沒有 `contains()`）＋數字欄（步進 1；矩形／圓的 x、y 可空，矩形空＝以發射點為中心、灰字顯示那個值）。換形狀保留中心跟大小（`convertShape()`），換成 edge 沒有 quantity／stepRate 補 `quantity:12`、edge 另列 quantity／yoyo／seamless（離開 edge 拿掉）。陣列或認不得的寫法（`zoneEditable()` 為假）退回 JSON 框。座標都相對發射點（含偏移 x／y）。
+    - emitZone／deathZone（`kind:'zone'`，幾何純函式在 `src/core/pzone.js`，`schema.js` 轉出口；場景分頁的 sandbox 拖 zone 也用）：type 下拉（emit：random／edge；death：onEnter／onLeave）＋形狀下拉（矩形 `{x,y,w,h}`／圓 `{x,y,r}`／線段 `{x1,y1,x2,y2}`，deathZone 沒有線段＝Phaser 的 Line 沒有 `contains()`）＋數字欄（步進 1；矩形／圓的 x、y 可空，矩形空＝以發射點為中心、灰字顯示那個值）。換形狀保留中心跟大小（`convertShape()`），換成 edge 沒有 quantity／stepRate 補 `quantity:12`、edge 另列 quantity／yoyo／seamless（離開 edge 拿掉）。陣列或認不得的寫法（`zoneEditable()` 為假）退回 JSON 框。座標都相對發射點（含偏移 x／y）。
   - 「其他 Phaser 欄位」：表單沒列的 key（JSON 框，原樣傳給 Phaser）。
   - 標題列「JSON」：整筆 JSON 模式（`form.js` 共用）。
 - 版面（`.split`／`.form`／`.split > .pv`）在 `tools/common/style.css`，特效分頁共用：預覽固定寬、表單在自己那欄裡折行（標題列、`.iconField`、`.prop`、input 縮到 100%），真的塞不下才在表單那欄出橫捲軸，永遠不蓋到預覽；測試 `t.formFits()` 量 1024／1400 兩種寬度。
@@ -39,8 +39,9 @@ img 在 textures.json 找不到（內建跟 emoji 不查）、mode／depth 不�
 
 | 檔案 | 內容 |
 |---|---|
-| `schema.js` | `OWN`、`PROPS`（group／kind／def／step／hint）、`GROUPS`、`BLENDS`、`valMode()`／`convertVal()`、`template()`；zone：`ZONES`、`shapeOf()`、`zoneEditable()`、`convertShape()`、`setZoneType()`、`handlesOf()`、`hitZone()`、`dragZone()` |
-| `main.js` | 引用、檢查、表單、清單、總覽（`window.__pt`） |
+| `schema.js` | `OWN`、`PROPS`（group／kind／def／step／hint）、`GROUPS`、`BLENDS`、`valMode()`／`convertVal()`、`template()`；轉出口 `src/core/pzone.js`（`ZONES`、`shapeOf()`、`zoneEditable()`、`convertShape()`、`setZoneType()`、`handlesOf()`、`hitZone()`、`dragZone()`、`ZONE_CURSOR`） |
+| `pform.js` | 一筆條目的表單（`createPForm({S, F, set, commit, render}).body(id, p)`：警告＋自己的欄位／四框／其他 Phaser 欄位，或整筆 JSON）、`validateDef()`、`pIcon()`；粒子分頁跟場景分頁（發射點自己那份 `def`）共用，樣式 `pform.css`（包在 `.pform` 底下） |
+| `main.js` | 引用、清單、總覽、標題列（`window.__pt`） |
 | `preview.js` | Phaser 預覽（`PV`） |
 | `tools/common/pvstage.js` | 角色合成（`roleCanvas`／`addRole`）、textures 圖切貼圖（`imgTexture`），特效分頁也用 |
 

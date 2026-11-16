@@ -9,6 +9,7 @@ import {GM, GS} from '../core/setting.js'
 import Puppet from '../roles/puppet.js'
 import DB from '../data/db.js'
 import {playParticle} from '../core/particle.js'
+import {shapeOf, zoneEditable, rectOf, handlesOf, hitZone, zoneArea, dragZone, ZONE_CURSOR} from '../core/pzone.js'
 
 // 開發版的 gym 場景：工具殼「場景」分頁的 iframe 跑 /?sandbox，用 postMessage 操作（訊息帶 sb 欄位，見 docs/scene-tool.md）
 // 繼承 GameScene 拿真的地圖／路網／Light2D，但沒有玩家、UI、回合、作息、劇情；地圖只建地形＋靜態物件，不寫存檔
@@ -391,6 +392,109 @@ export class Sandbox extends GameScene
         o.light.setPosition(x, y);
     }
 
+    //------------------------------------------------------
+    //  選中發射點的 emitZone（綠）／deathZone（紅虛線）：點選、拖本體／把手改，放開送 zone {key, k, z}（場景分頁寫進發射點自己那份 def）
+    //  座標相對發射位置＝發射點＋粒子自己的 x/y（同 playParticle）
+    //------------------------------------------------------
+    _zoneEm()
+    {
+        const o = this._emitters?.[this._sel];
+        return o?.def && !this._hidden.has(this._sel) ? o : null;
+    }
+
+    _zoneOrigin(o)
+    {
+        const p = this._emitPos(o);
+        return {x:p.x + (o.def.x ?? 0), y:p.y + (o.def.y ?? 0)};
+    }
+
+    // [{k, z, edit}]：拖曳中用草稿
+    _zones(o)
+    {
+        return ['emitZone', 'deathZone'].filter(k=>o.def[k]!==undefined).map(k=>{
+            const z = this._drag?.zone===k && this._drag.cur ? this._drag.cur : o.def[k];
+            return {k, z, edit:zoneEditable(k, z)};
+        });
+    }
+
+    // 游標底下的 zone 把手（只有選中的那個 zone）
+    _zoneHandleAt(wx, wy)
+    {
+        const o = this._zoneEm();
+        const sel = o && this._zsel?.key===this._sel && this._zones(o).find(z=>z.k===this._zsel.k && z.edit);
+        if(!sel) {return null;}
+        const c = this._zoneOrigin(o), tol = (HANDLE/2 + 2)/this.cameras.main.zoom;
+        const d = (q)=>Math.max(Math.abs(c.x + q.x - wx), Math.abs(c.y + q.y - wy));
+        const hd = handlesOf(shapeOf(sel.z.source), sel.z.source).filter(q=>d(q)<=tol).sort((a, b)=>d(a) - d(b))[0];
+        return hd ? {o, k:sel.k, z:sel.z, part:hd.id} : null;
+    }
+
+    // 游標底下的 zone 本體（疊在一起挑面積小的）
+    _zoneBodyAt(wx, wy)
+    {
+        const o = this._zoneEm();
+        if(!o) {return null;}
+        const c = this._zoneOrigin(o), tol = 4/this.cameras.main.zoom;
+        const hits = this._zones(o).filter(z=>z.edit && hitZone(shapeOf(z.z.source), z.z.source, wx - c.x, wy - c.y, tol))
+            .sort((a, b)=>zoneArea(shapeOf(a.z.source), a.z.source) - zoneArea(shapeOf(b.z.source), b.z.source));
+        return hits[0] ? {o, k:hits[0].k, z:hits[0].z, part:'move'} : null;
+    }
+
+    _startZone(hit, p)
+    {
+        const c = this._zoneOrigin(hit.o);
+        this._zsel = {key:this._sel, k:hit.k};
+        this._drag = {zone:hit.k, key:this._sel, o:hit.o, z0:structuredClone(hit.z), shape:shapeOf(hit.z.source), part:hit.part,
+            p0:{x:p.worldX - c.x, y:p.worldY - c.y}, cur:null};
+    }
+
+    _zoneTo(d, p)
+    {
+        const c = this._zoneOrigin(d.o);
+        d.cur = {...d.z0, source:dragZone(d.shape, d.z0.source, d.part, d.p0, {x:p.worldX - c.x, y:p.worldY - c.y}, p.event.shiftKey ? 4 : 1)};
+    }
+
+    _drawZones(g, z)
+    {
+        const o = this._zoneEm();
+        if(!o) {return;}
+        const c = this._zoneOrigin(o);
+        const dash = (x1, y1, x2, y2, d)=>{
+            const n = Math.max(1, Math.floor(Math.hypot(x2-x1, y2-y1)/d));
+            for(let i=0; i<n; i+=2) {g.lineBetween(x1+(x2-x1)*i/n, y1+(y2-y1)*i/n, x1+(x2-x1)*Math.min(n, i+1)/n, y1+(y2-y1)*Math.min(n, i+1)/n);}
+        };
+        for(const {k, z:zz, edit} of this._zones(o))
+        {
+            const death = k==='deathZone', sel = this._zsel?.key===this._sel && this._zsel.k===k, d = death ? 4/z : 0;
+            g.lineStyle(1.5/z, death ? 0xff5555 : 0x44dd66, sel ? 1 : 0.75);
+            for(const one of [zz].flat())
+            {
+                const s = one?.source, shape = shapeOf(s);
+                if(shape==='circle')
+                {
+                    const cx = c.x + (s.x ?? 0), cy = c.y + (s.y ?? 0);
+                    if(!d) {g.strokeCircle(cx, cy, s.r); continue;}
+                    const n = Math.max(12, Math.round(s.r*2*Math.PI/d) & ~1);
+                    for(let i=0; i<n; i+=2) {g.beginPath().arc(cx, cy, s.r, i/n*Math.PI*2, (i+1)/n*Math.PI*2).strokePath();}
+                }
+                else if(shape==='line') {d ? dash(c.x+s.x1, c.y+s.y1, c.x+s.x2, c.y+s.y2, d) : g.lineBetween(c.x+s.x1, c.y+s.y1, c.x+s.x2, c.y+s.y2);}
+                else if(shape==='rect')
+                {
+                    const r = rectOf(s), l = c.x + r.x, t = c.y + r.y;
+                    if(!d) {g.strokeRect(l, t, r.w, r.h); continue;}
+                    dash(l, t, l+r.w, t, d); dash(l+r.w, t, l+r.w, t+r.h, d); dash(l+r.w, t+r.h, l, t+r.h, d); dash(l, t+r.h, l, t, d);
+                }
+            }
+            if(!sel || !edit) {continue;}
+            const hs = HANDLE/z;
+            for(const q of handlesOf(shapeOf(zz.source), zz.source))
+            {
+                g.fillStyle(0xffffff, 1).fillRect(c.x+q.x-hs/2, c.y+q.y-hs/2, hs, hs)
+                    .lineStyle(1/z, death ? 0xff5555 : 0x44dd66, 1).strokeRect(c.x+q.x-hs/2, c.y+q.y-hs/2, hs, hs);
+            }
+        }
+    }
+
     // 記號畫不畫、點不點得到：👁 藏著＝不；工具列「光源記號／粒子記號」沒勾＝只有選中的那個
     _markOn(kind, k)
     {
@@ -525,6 +629,7 @@ export class Sandbox extends GameScene
             g.lineStyle(2/z, k===this._sel ? 0x7ddc5a : 0xff9933, 1).fillStyle(0x000000, 0.4)
                 .fillPoints([{x, y:y-s}, {x:x+s, y}, {x, y:y+s}, {x:x-s, y}], true).strokePoints([{x, y:y-s}, {x:x+s, y}, {x, y:y+s}, {x:x-s, y}], true);
         }
+        this._drawZones(g, z);
         for(const [k, o] of Object.entries(this._lights ?? {}))
         {
             if(!this._markOn('light', k)) {continue;}
@@ -721,12 +826,17 @@ export class Sandbox extends GameScene
             if(hd) {this._startResize(hd); return;}
             const rh = p.leftButtonDown() && this._radiusAt(p.worldX, p.worldY);
             if(rh) {this._drag = {radius:rh.o, key:this._sel}; return;}
+            const zh = p.leftButtonDown() && this._zoneHandleAt(p.worldX, p.worldY);
+            if(zh) {this._startZone(zh, p); return;}
             const hit = this._pickAt(p.worldX, p.worldY);
             if(p.rightButtonDown())
             {
                 this._send({sb:'ctx', tx, ty, wx:Math.round(p.worldX), wy:Math.round(p.worldY), key:hit?.key ?? null, cx:p.event.clientX, cy:p.event.clientY});
                 return;
             }
+            // 沒點到別的東西才輪到選中發射點的 zone 本體（大片的 zone 不擋底下的角色）
+            const zb = !hit && this._zoneBodyAt(p.worldX, p.worldY);
+            if(zb) {this._startZone(zb, p); this._cursor(p); return;}
             this._sel = hit?.key ?? null;
             this._send({sb:'select', key:this._sel});
             if(hit?.role) {this._drag = {role:hit.role, from:this.map.worldToTile(hit.role.x, hit.role.y), to:null};}
@@ -759,6 +869,11 @@ export class Sandbox extends GameScene
             {
                 if(!p.leftButtonDown()) {this._endDrag(); return;}
                 this._radiusTo(this._drag, p.worldX, p.worldY, p.event.shiftKey);
+            }
+            else if(this._drag?.zone)
+            {
+                if(!p.leftButtonDown()) {this._endDrag(); return;}
+                this._zoneTo(this._drag, p);
             }
             else if(this._drag?.prop || this._drag?.emitter || this._drag?.light)
             {
@@ -794,15 +909,17 @@ export class Sandbox extends GameScene
     _cursor(p = this.input.activePointer)
     {
         const d = this._drag;
-        if(d?.resize || d?.radius || !this._props) {return;}
+        if(d?.resize || d?.radius || (d?.zone && d.part!=='move') || !this._props) {return;}
         let c = '';
         if(this._arm) {c = 'crosshair';}
         else if(d || this._pan) {c = 'grabbing';}
         else
         {
-            const hd = this._handleAt(p.worldX, p.worldY);
+            const hd = this._handleAt(p.worldX, p.worldY), zh = !hd && this._zoneHandleAt(p.worldX, p.worldY);
             c = hd ? (!hd.hy ? 'ew-resize' : !hd.hx ? 'ns-resize' : hd.hx*hd.hy>0 ? 'nwse-resize' : 'nesw-resize')
-                : this._radiusAt(p.worldX, p.worldY) ? 'ew-resize' : this._pickAt(p.worldX, p.worldY) ? 'grab' : '';
+                : zh ? ZONE_CURSOR[zh.part]
+                : this._radiusAt(p.worldX, p.worldY) ? 'ew-resize' : this._pickAt(p.worldX, p.worldY) ? 'grab'
+                : this._zoneBodyAt(p.worldX, p.worldY) ? 'move' : '';
         }
         this.game.canvas.style.cursor = c;
     }
@@ -820,6 +937,11 @@ export class Sandbox extends GameScene
         if(d?.radius)
         {
             if(d.r!==undefined && d.r!==d.radius.data.r) {this._send({sb:'radiusLight', key:d.key, r:d.r});}
+            return;
+        }
+        if(d?.zone)
+        {
+            if(d.cur && JSON.stringify(d.cur)!==JSON.stringify(d.z0)) {this._send({sb:'zone', key:d.key, k:d.zone, z:d.cur});}
             return;
         }
         if(d?.light)

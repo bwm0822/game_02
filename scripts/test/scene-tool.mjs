@@ -502,6 +502,28 @@ run('scene-tool', async t => {
         sc.undo(); sc.undo(); sc.undo(); await sc.flush();
         out.defUndo = [(await scDisk()).particles[0].id, (await scDisk()).particles[0].def === undefined || JSON.stringify((await scDisk()).particles[0].def) === JSON.stringify(src0)];
 
+        // sandbox 拖 zone：選中的發射點畫框、點框內拖本體、放開寫回發射點自己那份
+        await sc.setEmitter('e1', {def: {...src0, emitZone: {type: 'random', source: {x: -8, y: -2, w: 16, h: 4}}}});
+        sc.pickRole('e1');
+        await until(() => sb()._sel === 'e1' && em('e1')?.def?.emitZone);
+        const zc = sb()._zoneOrigin(em('e1'));
+        const ptr = (x, y, shift = false) => ({worldX: x, worldY: y, event: {shiftKey: shift}});
+        const zb = sb()._zoneBodyAt(zc.x + 3, zc.y);
+        out.zoneHit = [zb?.k, zb?.part, !!sb()._zoneBodyAt(zc.x + 40, zc.y)];
+        sb()._startZone(zb, ptr(zc.x + 3, zc.y));
+        sb()._zoneTo(sb()._drag, ptr(zc.x + 13, zc.y + 6));
+        sb()._endDrag();
+        out.zoneMove = await until(async () => (await scDisk()).particles[0].def.emitZone.source.x === 2) && JSON.stringify((await scDisk()).particles[0].def.emitZone);
+        // 選中之後出把手：拖右下角改大小（Shift 吸 4）
+        await until(() => em('e1')?.def?.emitZone?.source?.x === 2);
+        const zc2 = sb()._zoneOrigin(em('e1'));
+        const hd = sb()._zoneHandleAt(zc2.x + 18, zc2.y + 8);
+        out.zoneHandle = hd?.part;
+        sb()._startZone(hd, ptr(zc2.x + 18, zc2.y + 8));
+        sb()._zoneTo(sb()._drag, ptr(zc2.x + 25, zc2.y + 15, true));
+        sb()._endDrag();
+        out.zoneResize = await until(async () => (await scDisk()).particles[0].def.emitZone.source.w !== 16) && JSON.stringify((await scDisk()).particles[0].def.emitZone.source);
+
         sc.pickRole('e1');
         sb()._send({sb: 'key', key: 'Delete'});
         out.delEm = await until(() => !em('e1')) && (await scDisk()).particles.map(e => e.key);
@@ -659,6 +681,10 @@ run('scene-tool', async t => {
     t.check('改過：換粒子先問', r.idAsk);
     t.eq('取消：不換、保留自訂、下拉回原值', JSON.stringify(r.idAskCancel), JSON.stringify([r.defOther, 'p-spark', r.defOther]));
     t.eq('undo 一路倒回複製完的樣子', JSON.stringify(r.defUndo), JSON.stringify([r.defSid, true]));
+    t.eq('sandbox zone：框內點得到本體、框外點不到', JSON.stringify(r.zoneHit), JSON.stringify(['emitZone', 'move', false]));
+    t.eq('sandbox zone：拖本體寫回發射點的 def', r.zoneMove, JSON.stringify({type: 'random', source: {x: 2, y: 4, w: 16, h: 4}}));
+    t.eq('sandbox zone：選中後右下角有把手', r.zoneHandle, 'se');
+    t.eq('sandbox zone：拖把手改大小（Shift 吸 4、左上固定）', r.zoneResize, JSON.stringify({x: 2, y: 4, w: 22, h: 12}));
     t.eq('粒子：Del 刪', JSON.stringify(r.delEm), JSON.stringify(['e2']));
 
     t.eq('日夜：沒寫時間＝08:00、白天全亮', JSON.stringify(r.time0), JSON.stringify(['08:00', 8, [255, 255, 255]]));

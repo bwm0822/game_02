@@ -380,7 +380,7 @@ function emPanel(e)
             row(e.follow ? `位置（相對 ${followName(e.follow)}）` : '位置', n('x', 1), ' ', n('y', 1)),
             row('跟著', fol),
             def?.mode === 'burst' && row('每幾 ms 噴', n('every', 100, '1000'))),
-        h('div', {class: 'hint dim'}, '畫面上的橘色菱形＝發射點：拖曳移動、Shift 吸 16px；方向鍵 1px、Shift＋方向鍵一格'),
+        h('div', {class: 'hint dim'}, '畫面上的橘色菱形＝發射點：拖曳移動、Shift 吸 16px；方向鍵 1px、Shift＋方向鍵一格；emitZone 綠框／deathZone 紅虛線：點框選取、拖本體或白色把手（Shift 吸 4px）'),
         h('div', {class: 'acts'}, h('button', {onclick: () => deleteObj(e.key)}, '刪除（Del）')),
         h('div', {class: 'sec'}, '粒子內容',
             h('span', {class: 'dim', dataset: {k: 'defState'}}, e.def ? `　自訂（從 ${e.id} 複製，只存在這個發射點）` : def ? '　用 particle.json（改了就複製一份到這個發射點）' : '')),
@@ -1019,6 +1019,12 @@ addEventListener('message', (e) => {
         setProp(m.key, {x, y, ...('pct' in m.patch ? {pct: pct === 100 ? undefined : pct} : {sx: one(sx), sy: one(sy)})}).then(syncGame);
     }
     else if (m.sb === 'moveEmitter') setEmitter(m.key, {x: m.x, y: m.y}).then(syncGame);
+    else if (m.sb === 'zone')
+    {
+        // 拖 zone＝改粒子內容：寫進發射點自己那份（還沒有就先整筆複製）
+        const cur = defOf(emOf(m.key));
+        if (cur) setEmitter(m.key, {def: {...structuredClone(cur), [m.k]: m.z}}).then(syncGame);
+    }
     else if (m.sb === 'moveLight') setLight(m.key, {x: m.x, y: m.y}).then(syncGame);
     else if (m.sb === 'radiusLight') setLight(m.key, {r: m.r}).then(syncGame);
     else if (m.sb === 'autoI')

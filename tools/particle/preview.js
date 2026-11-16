@@ -189,7 +189,8 @@ function hitAt(p)
     const sel = zs.find(z => z.k === st.zsel);
     if (sel)
     {
-        const hd = SC.handlesOf(SC.shapeOf(sel.z.source), sel.z.source).find(q => Math.abs(q.x - lx) <= tol && Math.abs(q.y - ly) <= tol);
+        const d = (q) => Math.max(Math.abs(q.x - lx), Math.abs(q.y - ly));
+        const hd = SC.handlesOf(SC.shapeOf(sel.z.source), sel.z.source).filter(q => d(q) <= tol).sort((a, b) => d(a) - d(b))[0];
         if (hd) return {k: sel.k, z: sel.z, part: hd.id, l: {x: lx, y: ly}};
     }
     const hits = zs.filter(({z}) => SC.hitZone(SC.shapeOf(z.source), z.source, lx, ly, tol))
@@ -197,7 +198,6 @@ function hitAt(p)
     return hits[0] ? {k: hits[0].k, z: hits[0].z, part: 'move', l: {x: lx, y: ly}} : {l: {x: lx, y: ly}};
 }
 
-const CURSOR = {move: 'move', r: 'ew-resize', p1: 'crosshair', p2: 'crosshair', n: 'ns-resize', s: 'ns-resize', e: 'ew-resize', w: 'ew-resize', nw: 'nwse-resize', se: 'nwse-resize', ne: 'nesw-resize', sw: 'nesw-resize'};
 const setCursor = (c) => {const cv = st.el?.querySelector('canvas'); if (cv) cv.style.cursor = c;};
 
 function onDown(p)
@@ -219,7 +219,7 @@ function onMove(p)
         return;
     }
     const d = st.drag;
-    if (!d) {const hit = hitAt(p); setCursor(hit.part ? CURSOR[hit.part] ?? 'move' : ''); return;}
+    if (!d) {const hit = hitAt(p); setCursor(hit.part ? SC.ZONE_CURSOR[hit.part] ?? 'move' : ''); return;}
     const o = origin(), l = {x: p.worldX - o.x, y: p.worldY - o.y};
     d.cur = {...d.z0, source: SC.dragZone(d.shape, d.z0.source, d.part, d.p0, l, p.event?.shiftKey ? 4 : 1)};
 }

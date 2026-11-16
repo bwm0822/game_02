@@ -12,7 +12,8 @@
   - `GameScene` 的 constructor 收 key（預設 `'GameScene'`），`Sandbox` 用 `'Sandbox'`。
   - `map.js`：`scene.sandbox` 時不建 `type:npc` 物件、跳過 `@群組` 圖層（不碰存檔）。
 - 分頁的 HTML 面板用 postMessage 操作 iframe 裡的 sandbox（同無頭測試走 `window.__dbg` 的精神）。訊息都帶 `sb` 欄位：
-  - 分頁 → sandbox：`load {scene}`（底圖不同就 `scene.restart` 帶著 scene 重開，同一張直接套用）、`grid {on}`、`anchor {on}`、`icons {light, particle}`（記號開關）、`home`（整張地圖放進畫面）、`select {key}`（選取框）、`hide {keys}`（👁）、`arm {act}`（指定目標，null＝取消）、`do {act}`、`replay`、`reset`、`hit`／`die`／`revive {key}`、`fxTick {key, id}`、`time {t}`（預覽時間）、`ambient {color}`（預覽環境色）、`play {speed}`（0＝停）。
+  - sandbox → 分頁另有 `zone {key, k, z}`（拖完發射點的 emitZone／deathZone）。
+- 分頁 → sandbox：`load {scene}`（底圖不同就 `scene.restart` 帶著 scene 重開，同一張直接套用）、`grid {on}`、`anchor {on}`、`icons {light, particle}`（記號開關）、`home`（整張地圖放進畫面）、`select {key}`（選取框）、`hide {keys}`（👁）、`arm {act}`（指定目標，null＝取消）、`do {act}`、`replay`、`reset`、`hit`／`die`／`revive {key}`、`fxTick {key, id}`、`time {t}`（預覽時間）、`ambient {color}`（預覽環境色）、`play {speed}`（0＝停）。
   - `act`＝`{key（誰做）, kind:'attack'|'ability'|'walk', id（技能）, tx, ty（目標格子）, tkey（點到的角色）}`。
   - sandbox → 分頁：`ready`（剛開好、還沒有場景，分頁收到就送 `load`）、`loaded {map, w, h}`（套用完；w/h＝地圖格數，「＋」放在中間用）、`error {msg}`（地圖載入失敗、角色 id 不存在，顯示在狀態列）、`select {key}`（左鍵點到的角色，空白處＝null）、`move {key, tx, ty}`（角色拖曳放開）、`moveProp {key, x, y}`（擺設拖曳放開）、`moveEmitter {key, x, y}`（粒子發射點拖曳放開，跟著角色／擺設時是相對位置）、`resizeProp {key, patch}`（擺設大小把手放開）、`moveLight {key, x, y}`／`radiusLight {key, r}`（光源拖曳／半徑把手放開）、`autoI {v}`（自動強度變了，右欄顯示）、`ctx {tx, ty, wx, wy, key, cx, cy}`（右鍵，wx/wy 世界座標，cx/cy 是 iframe 裡的 client 座標）、`key {key, ctrl, shift, alt}`（iframe 有焦點時的鍵盤，分頁照自己的快捷鍵處理）、`disarm`（指定中按右鍵）、`time {t}`（▶ 播放中的時鐘）。
 - 角色、物品、部位等遊戲資料（`role.json`、`item.json`、`part.json`、`anim.json`、`fx.json`、`particle.json`、`ability.json`、`local.json`、`textures.json`）在別的分頁存檔時，sandbox 的 DB 就舊了：分頁收到廣播就整個重開 iframe（工具列「重開」同）。
@@ -61,7 +62,9 @@
 ## 特效
 
 - 狀態特效：角色右欄「狀態特效」下拉加 fx.json 的 id（存在角色的 `fx` 陣列），常駐到「解除」（從陣列拿掉）；「tick」播一次 tick（表演，`fxTick`）。sandbox 走 `com_disp` 的 `fxOn`／`fxOff`／`fxTick`（同遊戲）；角色資料比對不含 `fx`（`Sandbox._sig()`），加減狀態不重建角色，新的 `fxOn`、拿掉的 `fxOff`（播 end）。倒著的角色不動它的狀態。
-- 粒子發射點：`particles: [{key:'e<n>', id, x, y, follow?, every?}]`（particle.json 的 id；stream 持續噴、burst 每 `every` ms（預設 1000）重噴一次）；`follow`＝角色或擺設 key（見「跟隨」），x/y 變成相對它（`playParticle` 的 `target`＋`ox/oy`）；角色／擺設重建（換裝、移格子、改擺設）後發射點跟著重建。
+- 粒子發射點：`particles: [{key:'e<n>', id, x, y, follow?, every?, def?}]`（particle.json 的 id；stream 持續噴、burst 每 `every` ms（預設 1000）重噴一次）；`follow`＝角色或擺設 key（見「跟隨」），x/y 變成相對它（`playParticle` 的 `target`＋`ox/oy`）；角色／擺設重建（換裝、移格子、改擺設）後發射點跟著重建。
+- 發射點自己那份粒子 `def`（整筆 particle.json 條目）：沒有＝照 particle.json 的 `id` 播（sandbox `e.def ?? DB.particle(e.id)`）；**不寫 particle.json**。右欄「粒子內容」是粒子分頁同一份表單（`tools/particle/pform.js` 的 `createPForm()`，假 doc `PS`：`data` 只放選中那個發射點，`pCommit()` 改完 `setEmitter(key, {def})` 立刻寫 scenes.json＋場景 undo；樣式 `tools/particle/pform.css` 的 `.pform`），含四框、其他 Phaser 欄位、整筆 JSON、檢查警告。表單第一次改、拖 zone、或按「複製」才把那筆整筆拷成 `def`，之後跟 particle.json 脫鉤（右欄標「自訂（從 X 複製）」、物件樹 id 後面 ✎）；「丟掉自訂」拿掉 `def`；「粒子」下拉換別筆＝丟掉 `def`，`def` 跟來源不一樣時先問（取消不換）。數值欄連按 ↑↓ 併成一步 undo（`commit()` 看 `hist.js` 的 `take()`、而且上一步的 after＝這次的 before 才併），右欄重畫後焦點還給同一個 `data-k`。
+- zone：選中的發射點（👁 藏著不畫）在 sandbox 畫 emitZone（綠）／deathZone（紅虛線），原點＝發射位置＋粒子自己的 x/y（`_zoneOrigin()`）。點選優先順序：選中 zone 的把手 → 角色／擺設／記號（`_pickAt()`）→ 都沒點到才算 zone 本體（大片 zone 不擋底下的東西，疊在一起挑面積小的）；拖本體移動、拖白色把手改大小／半徑／端點（把手挑最近的），Shift 吸 4px，放開送 `zone {key, k, z}`，分頁寫進 `def`（沒有就先整筆複製）。幾何純函式在 `src/core/pzone.js`（粒子分頁 schema.js 轉出口）。
 
 ## 光源
 
