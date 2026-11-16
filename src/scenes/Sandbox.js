@@ -61,6 +61,8 @@ export class Sandbox extends GameScene
         this._onMsg = (e)=>{if(e.source===window.parent && e.data?.sb) {this._recv(e.data);}};
         addEventListener('message', this._onMsg);
         this.events.once('shutdown', ()=>removeEventListener('message', this._onMsg));
+        this._frame = this._frameXY();
+        this._camWH = [this.scale.width, this.scale.height];
         this.scale.on('resize', this._onResize, this);
         this.events.once('shutdown', ()=>this.scale.off('resize', this._onResize, this));
 
@@ -768,11 +770,28 @@ export class Sandbox extends GameScene
         }
     }
 
+    // 拉左右欄／縮放視窗時場景裡的東西在螢幕上不動：舊的左上角那個世界點對到新的同一個螢幕位置（iframe 左上角移了就扣回去）
+    // CameraManager 自己也聽 resize、會先改好鏡頭大小，所以舊寬高自己記
     _onResize(size)
     {
         GM.w = size.width;
         GM.h = size.height;
-        this.cameras.main.setSize(size.width, size.height);
+        const cam = this.cameras.main, z = cam.zoom;
+        const f0 = this._frame, f1 = this._frame = this._frameXY();
+        const [w0, h0] = this._camWH ?? [cam.width, cam.height], {width:w1, height:h1} = size;
+        const dx = f0 && f1 ? f1.x - f0.x : 0, dy = f0 && f1 ? f1.y - f0.y : 0;
+        const left = cam.scrollX + w0/2 - w0/(2*z), top = cam.scrollY + h0/2 - h0/(2*z);
+        cam.setSize(w1, h1);
+        cam.scrollX = left + dx/z - w1/2 + w1/(2*z);
+        cam.scrollY = top + dy/z - h1/2 + h1/(2*z);
+        this._camWH = [w1, h1];
+        this._drawGrid();
+    }
+
+    _frameXY()
+    {
+        try {const r = window.frameElement?.getBoundingClientRect(); return r ? {x:r.left, y:r.top} : null;}
+        catch {return null;}
     }
 
     //------------------------------------------------------

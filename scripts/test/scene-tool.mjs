@@ -322,6 +322,29 @@ run('scene-tool', async t => {
         out.rgrip = [grip.previousElementSibling?.id, rw0, right.getBoundingClientRect().width, win.localStorage.getItem('tools.right.scene')];
         grip.dispatchEvent(new win.MouseEvent('dblclick', {bubbles: true}));
         out.rgripReset = [right.getBoundingClientRect().width, win.localStorage.getItem('tools.right.scene')];
+
+        // 拉右欄／左欄：場景裡的東西在螢幕上不動（zoom 不是 1 也一樣）
+        const cam = () => sb().cameras.main;
+        cam().setZoom(1.5);
+        await sleep(50);
+        const scr = () => {const c = cam(), f = doc.getElementById('game').getBoundingClientRect(); c.preRender();
+                           const p = c.matrix.transformPoint(300 - c.scrollX, 200 - c.scrollY); return [Math.round(f.left + p.x), Math.round(f.top + p.y)];};
+        const gripDrag = async (g, x0, x1) => {
+            const w0 = cam().width;
+            const p = (type, x) => g.dispatchEvent(new win.PointerEvent(type, {clientX: x, button: 0, bubbles: true}));
+            p('pointerdown', x0); p('pointermove', x1); p('pointerup', x1);
+            await until(() => cam().width !== w0);
+        };
+        const s0 = scr();
+        await gripDrag(grip, 500, 380);
+        const s1 = scr();
+        const lgrip = doc.querySelector('.left-grip');
+        await gripDrag(lgrip, 200, 290);
+        out.stay = [s0, s1, scr()];
+        await gripDrag(lgrip, 290, 200);
+        grip.dispatchEvent(new win.MouseEvent('dblclick', {bubbles: true}));
+        lgrip.dispatchEvent(new win.MouseEvent('dblclick', {bubbles: true}));
+        await sleep(50);
         // 擺設不再有發光
         out.noPropLight = !doc.querySelector('#right [data-k="light"]');
 
@@ -630,6 +653,7 @@ run('scene-tool', async t => {
     t.eq('有角度：不出把手', r.noHandle, 0);
     t.check('右欄把手：在右欄左邊、往左拉變寬、記 tools.right.scene', r.rgrip[0] === 'view' && r.rgrip[2] === r.rgrip[1] + 100 && r.rgrip[3] === String(r.rgrip[2]), JSON.stringify(r.rgrip));
     t.check('右欄把手：雙擊回預設', r.rgripReset[0] === r.rgrip[1] && r.rgripReset[1] === null, JSON.stringify(r.rgripReset));
+    t.check('拉右欄／左欄：場景在螢幕上不動（zoom 1.5）', r.stay && r.stay.every(s => Math.abs(s[0] - r.stay[0][0]) <= 1 && Math.abs(s[1] - r.stay[0][1]) <= 1), JSON.stringify(r.stay));
     t.check('擺設面板沒有發光', r.noPropLight);
     t.check('光源：放了存檔（預設 r120、沒寫 i）、選起來、點得到、左欄列、強度＝自動',
         r.lightAdd && JSON.stringify(r.lightAdd[0]) === JSON.stringify([{key: 'l1', x: 400, y: 300, r: 120, color: '#ffcc88'}]) && r.lightAdd[1] === 'l1' && r.lightAdd[2] === '光源 l1' && r.lightAdd[3] === 'l1' && r.lightAdd[4] === 120 && r.lightAdd[5] && r.lightAdd[6] && r.lightAdd[7], JSON.stringify(r.lightAdd));
