@@ -14,6 +14,7 @@ import {playParticle} from '../core/particle.js'
 // 繼承 GameScene 拿真的地圖／路網／Light2D，但沒有玩家、UI、回合、作息、劇情；地圖只建地形＋靜態物件，不寫存檔
 const ZOOM = [0.25, 8];
 const GRID_DEPTH = 1e7;
+const HANDLE = 6;   // 擺設大小把手（螢幕 px）
 const DEFAULT_TIME = '08:00';   // 同 Record.game_def 的開局時間
 
 let dataLoaded = false;
@@ -429,6 +430,68 @@ export class Sandbox extends GameScene
         if(!r) {return;}
         g.lineStyle(2/z, 0x7ddc5a, 1).strokeRect(r.x, r.y, r.width, r.height);
         if(o) {g.fillStyle(0x7ddc5a, 1).fillCircle(o.sp.x, o.sp.y, 3/z);}   // 錨點
+        const s = HANDLE/z;
+        for(const hd of this._handles()) {g.fillStyle(0xffffff, 1).fillRect(hd.x-s/2, hd.y-s/2, s, s).lineStyle(1/z, 0x3a8a2a, 1).strokeRect(hd.x-s/2, hd.y-s/2, s, s);}
+    }
+
+    //------------------------------------------------------
+    //  擺設大小把手：選中的擺設綠框上 4 角＋4 邊中點（有角度不出），對邊固定；
+    //  改 sx/sy 或 pct 照分頁的鎖（_size.lock，file 圖才有 pct），等比＝_size.ratio（pct 一定等比）
+    //------------------------------------------------------
+    _handles()
+    {
+        const o = this._props?.[this._sel];
+        if(!o?.sp.visible || (o.data.angle ?? 0)!==0) {return [];}
+        const r = o.sp.getBounds(), out = [];
+        for(const hy of [-1, 0, 1]) {for(const hx of [-1, 0, 1])
+        {
+            if(hx || hy) {out.push({hx, hy, x:r.x + (hx+1)/2*r.width, y:r.y + (hy+1)/2*r.height});}
+        }}
+        return out;
+    }
+
+    _handleAt(wx, wy)
+    {
+        const s = (HANDLE/2 + 2)/this.cameras.main.zoom;
+        return this._handles().find(hd=>Math.abs(hd.x-wx)<=s && Math.abs(hd.y-wy)<=s) ?? null;
+    }
+
+    _startResize(hd)
+    {
+        const o = this._props[this._sel];
+        this._drag = {resize:true, prop:o, key:this._sel, hx:hd.hx, hy:hd.hy, r0:o.sp.getBounds(),
+                      pct:this._size?.lock==='scale' && o.data.img.startsWith('file:'), ratio:this._size?.ratio ?? true, patch:null};
+    }
+
+    _resizeTo(d, wx, wy, snap)
+    {
+        const o = d.prop, r = d.r0, w0 = r.width, h0 = r.height;
+        const pctMode = d.pct;
+        const uni = pctMode || d.ratio;
+        const sn = (v)=>(snap ? Math.round(v/16)*16 : v);
+        let [x0, x1, y0, y1] = [r.left, r.right, r.top, r.bottom];
+        if(d.hx<0) {x0 = Math.min(sn(wx), x1-1);}
+        if(d.hx>0) {x1 = Math.max(sn(wx), x0+1);}
+        if(d.hy<0) {y0 = Math.min(sn(wy), y1-1);}
+        if(d.hy>0) {y1 = Math.max(sn(wy), y0+1);}
+        let fx = (x1-x0)/w0, fy = (y1-y0)/h0;
+        const {ox = 0.5, oy = 1} = o.data;
+        if(uni)
+        {
+            // 角＝照拖得多的那軸；邊＝那軸；另一軸照比例、拉角時對邊固定、拉邊時繞錨點
+            const f = d.hx && d.hy ? (Math.abs(fx-1)>=Math.abs(fy-1) ? fx : fy) : d.hx ? fx : fy;
+            fx = fy = f;
+            const w = w0*f, h = h0*f;
+            if(d.hx<0) {x0 = x1-w;} else if(d.hx>0) {x1 = x0+w;} else {x0 = r.left + (w0-w)*ox; x1 = x0+w;}
+            if(d.hy<0) {y0 = y1-h;} else if(d.hy>0) {y1 = y0+h;} else {y0 = r.top + (h0-h)*oy; y1 = y0+h;}
+        }
+        const rd = (v, n)=>Math.round(v*n)/n;
+        const x = rd(x0 + ox*(x1-x0), 100), y = rd(y0 + oy*(y1-y0), 100);
+        const {sx = 1, sy = 1, pct = 100} = o.data;
+        d.patch = pctMode ? {x, y, pct:rd(pct*fx, 10000)} : {x, y, sx:rd(sx*fx, 10000), sy:rd(sy*fy, 10000)};
+        const k = o.data.img.startsWith('file:') ? (d.patch.pct ?? pct)/100 : 1;
+        o.sp.setScale(k*(d.patch.sx ?? sx), k*(d.patch.sy ?? sy));
+        this._placeProp(o, x, y);
     }
 
     _send(msg) {window.parent.postMessage(msg, '*');}
@@ -443,7 +506,7 @@ export class Sandbox extends GameScene
                 break;
             case 'grid': this._gridOn = !!m.on; this._drawGrid(); break;
             case 'home': this._home(); break;
-            case 'select': this._sel = m.key ?? null; break;
+            case 'select': this._sel = m.key ?? null; this._size = {lock:m.lock ?? 'pct', ratio:m.ratio ?? true}; break;
             case 'arm': this._arm = m.act ?? null; this._drawSel(); break;
             case 'do': this._do(m.act); break;
             case 'replay': if(this._last) {this._do(this._last);} break;
@@ -518,6 +581,8 @@ export class Sandbox extends GameScene
                 return;
             }
             if(p.rightButtonDown() && this._arm) {this._arm = null; this._send({sb:'disarm'}); return;}
+            const hd = p.leftButtonDown() && this._handleAt(p.worldX, p.worldY);
+            if(hd) {this._startResize(hd); return;}
             const hit = this._pickAt(p.worldX, p.worldY);
             if(p.rightButtonDown())
             {
@@ -541,6 +606,11 @@ export class Sandbox extends GameScene
                 cam.scrollX = this._pan.sx - (p.x-this._pan.x)/cam.zoom;
                 cam.scrollY = this._pan.sy - (p.y-this._pan.y)/cam.zoom;
             }
+            else if(this._drag?.resize)
+            {
+                if(!p.leftButtonDown()) {this._endDrag(); return;}
+                this._resizeTo(this._drag, p.worldX, p.worldY, p.event.shiftKey);
+            }
             else if(this._drag?.prop || this._drag?.emitter)
             {
                 if(!p.leftButtonDown()) {this._endDrag(); return;}
@@ -561,6 +631,11 @@ export class Sandbox extends GameScene
                 this._drag.to = [tx, ty];
                 this._drag.role.setPosition(pt.x, pt.y).updateDepth();
             }
+            if(!this._drag?.resize)
+            {
+                const hd = !this._drag && !this._pan && this._handleAt(p.worldX, p.worldY);
+                this.game.canvas.style.cursor = !hd ? '' : !hd.hy ? 'ew-resize' : !hd.hx ? 'ns-resize' : hd.hx*hd.hy>0 ? 'nwse-resize' : 'nesw-resize';
+            }
         });
         this.input.on('pointerup', ()=>{this._pan = null; this._endDrag();});
         // iframe 有焦點時鍵盤在這裡：交給場景分頁（Del、Ctrl+Z…）
@@ -574,6 +649,11 @@ export class Sandbox extends GameScene
     {
         const d = this._drag;
         this._drag = null;
+        if(d?.resize)
+        {
+            if(d.patch) {this._send({sb:'resizeProp', key:d.key, patch:d.patch});}
+            return;
+        }
         if(d?.emitter)
         {
             const {x, y} = d.emitter.data;

@@ -235,15 +235,16 @@ run('scene-tool', async t => {
         const setIn = (k, v) => {const e = pick(k); e.value = v; e.dispatchEvent(new win.Event('change'));};
         const src = await until(() => sc.srcSize(prop('p2').data.img));
         sc.pickRole('p2');
-        out.wh0 = await until(() => pick('w')?.value === String(src.w)) && [pick('w').value, pick('h').value, !!pick('sy'), pick('ratio').checked, !!pick('pct'), !!pick('lock.scale')];
+        out.wh0 = await until(() => pick('w')?.value === String(src.w)) && [pick('w').value, pick('h').value, !!pick('sy'), pick('ratio').checked, !!pick('pct'), pick('lock')?.value];
+        out.dims = [pick('srcDim')?.textContent, pick('bakedDim')?.textContent, `原圖 ${src.w}×${src.h}`, `縮放後 ${Math.round(src.w / 2)}×${Math.round(src.h / 2)}`];
         setIn('w', src.w * 2);
         out.wLinked = await until(async () => (await p2()).sx === 4) && [(await p2()).sx, (await p2()).sy, (await p2()).pct];
         pick('ratio').click();
         out.unlinked = await until(() => pick('sy')) && !!pick('sy');
         setIn('h', src.h);
         out.hFree = await until(async () => (await p2()).sy === 2) && [(await p2()).sx, (await p2()).sy];
-        pick('lock.scale').click();
-        await until(() => pick('lock.scale')?.checked);
+        setIn('lock', 'scale');
+        await until(() => pick('lock')?.value === 'scale' && sb()._size?.lock === 'scale');
         setIn('w', src.w);
         out.wPct = await until(async () => (await p2()).pct === 25) && [(await p2()).pct, (await p2()).sx, (await p2()).sy];
         pick('ratio').click();
@@ -260,6 +261,49 @@ run('scene-tool', async t => {
         out.bakeDup = await sc.bakeProp('p2', 'images/scene', 'baked').then(() => '', e => e.message);
         await write(await dir(proj, 'public', 'assets', 'textures', 'sub'), 'Baked2.png', 'x');
         out.bakeKey = await sc.bakeProp('p2', 'public/assets/textures', 'baked2').then(() => '', e => e.message);
+
+        // 畫面上拉大小：8 個把手、對邊固定；鎖 % 改 sx/sy（等比照勾選）、鎖 scale 改 pct；Shift 吸 16px；有角度不出把手
+        win.localStorage.removeItem('tools.scene.sizeLock');
+        await sc.setProp('p2', {pct: undefined, sx: undefined, sy: undefined, x: 300, y: 200});
+        sc.pickRole('p2');
+        await until(() => prop('p2')?.sp.scaleX === 1 && sb()._sel === 'p2' && sb()._size?.lock === 'pct');
+        const r4t = (v) => Math.round(v * 10000) / 10000;
+        const bnd = () => {const b = prop('p2').sp.getBounds(); return {l: b.left, r: b.right, t: b.top, b: b.bottom, w: b.width, h: b.height};};
+        const drag = (hx, hy, wx, wy, shift = false) => {
+            const s = sb(), hd = s._handles().find(x => x.hx === hx && x.hy === hy);
+            if (!hd || s._handleAt(hd.x, hd.y)?.hx !== hx) return false;
+            s._startResize(hd);
+            s._resizeTo(s._drag, wx, wy, shift);
+            s._endDrag();
+            return true;
+        };
+        const b0 = bnd();
+        out.handles = sb()._handles().length;
+        out.dragR = drag(1, 0, b0.r + b0.w, b0.t) && await until(async () => (await p2()).sx === 2) && [(await p2()).sx, (await p2()).sy, (await p2()).x, (await p2()).y, b0.l + b0.w];
+        await until(() => prop('p2')?.sp.scaleX === 2);
+        pick('ratio').click();
+        await until(() => sb()._size?.ratio === false);
+        const b1 = bnd();
+        out.dragB = drag(0, 1, b1.l, b1.b + 10, true) && await until(async () => (await p2()).y === 208) && [(await p2()).sx, (await p2()).sy, r4t((2 * (208 - b1.t)) / b1.h)];
+        await until(() => prop('p2')?.data.y === 208);
+        setIn('lock', 'scale');
+        await until(() => sb()._size?.lock === 'scale');
+        const b2 = bnd();
+        out.dragTL = drag(-1, -1, b2.l - b2.w / 2, b2.t) && await until(async () => (await p2()).pct === 150) && await until(() => prop('p2')?.data.pct === 150) &&
+            (() => {const b = bnd(); return [Math.abs(b.r - b2.r) < 0.6, Math.abs(b.b - b2.b) < 0.6, prop('p2').data.sx, prop('p2').data.sy];})();
+        win.localStorage.removeItem('tools.scene.sizeLock');
+        await sc.setProp('p2', {angle: 30});
+        out.noHandle = await until(() => prop('p2')?.data.angle === 30) && sb()._handles().length;
+        await sc.setProp('p2', {angle: undefined, pct: undefined, sx: undefined, sy: undefined, x: 300, y: 200});
+
+        // 右欄把手：拖左邊框改寬、記 localStorage、雙擊回預設
+        const right = doc.getElementById('right'), grip = doc.querySelector('.right-grip');
+        const rw0 = right.getBoundingClientRect().width;
+        const pe = (type, x) => grip.dispatchEvent(new win.PointerEvent(type, {clientX: x, button: 0, bubbles: true}));
+        pe('pointerdown', 500); pe('pointermove', 400); pe('pointerup', 400);
+        out.rgrip = [grip.previousElementSibling?.id, rw0, right.getBoundingClientRect().width, win.localStorage.getItem('tools.right.scene')];
+        grip.dispatchEvent(new win.MouseEvent('dblclick', {bubbles: true}));
+        out.rgripReset = [right.getBoundingClientRect().width, win.localStorage.getItem('tools.right.scene')];
         const nl = () => sb().lights.lights.length;
         const l0 = nl();
         await sc.setProp('p1', {light: {r: 150, color: '#ff0000', i: 2, y: -10}});
@@ -403,7 +447,8 @@ run('scene-tool', async t => {
     t.eq('屬性：翻轉、角度、錨點、深度＝y＋偏移', JSON.stringify(r.attrs), JSON.stringify([true, 30, 0, 0.5, 205]));
     t.eq('大小：sx／sy 分開；textures 圖不吃 pct', JSON.stringify(r.sxy), JSON.stringify([2, 3]));
     t.eq('大小：file: 圖畫面＝pct% × sx/sy', r.pct, 1);
-    t.check('面板：寬高＝原圖 × pct × sx、等比勾著＝一格 scale、file 圖有 % 跟鎖', r.wh0 && r.wh0[2] === false && r.wh0[3] === true && r.wh0[4] && r.wh0[5], JSON.stringify(r.wh0));
+    t.check('面板：寬高＝原圖 × pct × sx、等比勾著＝一格 scale、file 圖有 % 跟鎖（下拉，預設 %）', r.wh0 && r.wh0[2] === false && r.wh0[3] === true && r.wh0[4] && r.wh0[5] === 'pct', JSON.stringify(r.wh0));
+    t.check('面板：% 右邊原圖長寬、scale 右邊縮放後（原圖×%）長寬', r.dims[0] === r.dims[2] && r.dims[1] === r.dims[3], JSON.stringify(r.dims));
     t.eq('鎖 %＋等比：改寬 → sx、sy 一起變', JSON.stringify(r.wLinked), JSON.stringify([4, 4, 50]));
     t.check('取消等比：scale 變兩格', r.unlinked);
     t.eq('鎖 %、不等比：改高只動 sy', JSON.stringify(r.hFree), JSON.stringify([4, 2]));
@@ -412,6 +457,13 @@ run('scene-tool', async t => {
     t.check('存檔：縮成 pct% 另存 PNG、場景不動', r.bake && r.bake[0] === 'images/scene/baked.png' && r.bake[1].join() === r.bake[3].join() && r.bake[2].join() === r.bake[3].join() && r.bake[4], JSON.stringify(r.bake));
     t.check('存檔：同名檔擋', r.bakeDup.includes('已經有了'), r.bakeDup);
     t.check('存檔：texture key 撞名擋（大小寫不分）', r.bakeKey.includes('texture key') && r.bakeKey.includes('sub/Baked2'), r.bakeKey);
+    t.eq('畫面把手：選中的擺設 8 個', r.handles, 8);
+    t.check('拉右邊（鎖 %＋等比）：sx/sy 一起變、左邊固定、底部（錨點）不動', r.dragR && r.dragR[0] === 2 && r.dragR[1] === 2 && r.dragR[2] === r.dragR[4] && r.dragR[3] === 200, JSON.stringify(r.dragR));
+    t.check('拉下邊＋Shift（不等比）：只改 sy、邊吸到 16px', r.dragB && r.dragB[0] === 2 && r.dragB[1] === r.dragB[2], JSON.stringify(r.dragB));
+    t.check('拉左上角（鎖 scale）：改 pct、對角固定、sx/sy 不動', r.dragTL && r.dragTL[0] && r.dragTL[1] && r.dragTL[2] === 2, JSON.stringify(r.dragTL));
+    t.eq('有角度：不出把手', r.noHandle, 0);
+    t.check('右欄把手：在右欄左邊、往左拉變寬、記 tools.right.scene', r.rgrip[0] === 'view' && r.rgrip[2] === r.rgrip[1] + 100 && r.rgrip[3] === String(r.rgrip[2]), JSON.stringify(r.rgrip));
+    t.check('右欄把手：雙擊回預設', r.rgripReset[0] === r.rgrip[1] && r.rgripReset[1] === null, JSON.stringify(r.rgripReset));
     t.eq('發光：加一盞燈（半徑、強度、位移、顏色）', JSON.stringify(r.light), JSON.stringify([150, 2, 190, 255]));
     t.check('取消發光：燈拿掉', r.unlight);
     t.eq('拖曳放開：寫檔、sandbox 跟著', JSON.stringify(r.moveProp), JSON.stringify([208, 224]));

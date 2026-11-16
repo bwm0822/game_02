@@ -45,7 +45,7 @@
     #bar2 input:disabled + .time, #bar2 #rngTime:disabled { opacity: .5; }
     #gamebox { flex: 1; min-height: 0; position: relative; background: #202226; }
     #game { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
-    #right { flex: none; width: 300px; overflow: auto; padding: 8px 10px; background: #25272b; border-left: 1px solid #111; font-size: 14px; }
+    #right { flex: none; width: 320px; box-sizing: border-box; overflow: auto; padding: 8px 10px; background: #25272b; border-left: 1px solid #111; font-size: 14px; }
     .ctxmenu { position: fixed; z-index: 20; display: flex; flex-direction: column; min-width: 140px; padding: 4px 0; background: #2b2d31; border: 1px solid #666; box-shadow: 0 4px 12px rgba(0,0,0,.5); }
     .ctxmenu button { border: 0; border-radius: 0; background: none; text-align: left; padding: 3px 12px; white-space: nowrap; }
     .ctxmenu button:hover:not(:disabled) { background: #2f6db5; }
@@ -84,7 +84,7 @@
         </div>
         <div id="gamebox"><iframe id="game" title="sandbox"></iframe></div>
     </section>
-    <aside id="right"></aside>
+    <aside id="right" data-resize-right></aside>
 </main>
 
 <dialog id="dlgAsk">

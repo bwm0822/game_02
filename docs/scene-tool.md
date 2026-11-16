@@ -69,10 +69,11 @@
 - 圖：「textures 圖…」（icon 選圖器 `IC.pickIcon`，支援 sheet／atlas frame）或「外部 png…」（`showOpenFilePicker`；在專案裡的直接記 `file:<相對專案路徑>`，專案外的先複製到 `images/scene/`，重名加 `-2`），不必先放進 textures/。拖檔進畫面沒做（iframe 會吃掉 drag 事件）。
 - sandbox 載外部圖：texture key 就是 `file:…` 字串，第一次用到才 `load.image`（完整網址 `location.origin/…`，不然 loader 會接在 Preloader 設的 `assets/` 後面；`public/` 底下的檔 vite 放在網址根目錄，要去掉 `public/`）；載不到提示「載不到圖」、不建。
 - 屬性：位置（錨點的世界座標 x／y，整數 px）、大小（見下）、左右翻轉、角度、錨點 ox／oy（預設 0.5／1）、深度偏移（depth＝y＋它）、一律 Light2D、可選發光（`light {r, color, i, x, y}`：半徑、顏色、強度、相對錨點的位移，勾起來預設 `{r:120, color:'#ffcc88', i:1, y:-16}`）。
-- 大小（同紙娃娃兩段）：`sx`／`sy`＝擺放（預設 1、等於 1 不存），`pct`＝只有 `file:` 圖有、「存檔…」烤成原圖的幾 %（100 不存；換圖成 textures 圖時拿掉）；畫面＝原圖像素 × pct% × sx／sy（sandbox `setScale(k·sx, k·sy)`，不真的縮圖），`%` 跟 scale 不互相換算。面板三列：`%`（一格）、`scale`（☐ 等比：勾著＝sx＝sy 只有一格，狀態從資料推，sx＝sy 時取消勾選記在記憶體 `freeRatio`；勾回去 sy＝sx）、`寬高`（畫面 px＝四捨五入，下面列原圖尺寸；file 圖多「鎖：% ｜ scale」記 `tools.scene.sizeLock`：鎖 %＝改寬→sx、改高→sy（等比勾著兩個一起），鎖 scale＝改寬或高→反算 pct、另一邊等比跟著變；textures 圖永遠是鎖 %）。原圖尺寸：file 圖載 `<img>`、textures 圖 `IC.frameOf()`（sheet／atlas 是格子大小），快取在 `sizes`。
+- 大小（同紙娃娃兩段）：`sx`／`sy`＝擺放（預設 1、等於 1 不存），`pct`＝只有 `file:` 圖有、「存檔…」烤成原圖的幾 %（100 不存；換圖成 textures 圖時拿掉）；畫面＝原圖像素 × pct% × sx／sy（sandbox `setScale(k·sx, k·sy)`，不真的縮圖），`%` 跟 scale 不互相換算。面板三列：`%`（一格，說明在 title，右邊灰字「原圖 W×H」）、`scale`（☐ 等比：勾著＝sx＝sy 只有一格，狀態從資料推，sx＝sy 時取消勾選記在記憶體 `freeRatio`；勾回去 sy＝sx；右邊灰字 file 圖＝「縮放後 W×H」＝原圖×%（烤完那張的大小，還沒乘 scale）、textures 圖＝「原圖 W×H」）、`寬高`（畫面 px＝四捨五入；file 圖多「鎖 [%｜scale ▾]」下拉記 `tools.scene.sizeLock`：鎖 %＝改寬→sx、改高→sy（等比勾著兩個一起），鎖 scale＝改寬或高→反算 pct、另一邊等比跟著變；textures 圖永遠是鎖 %）。原圖尺寸：file 圖載 `<img>`、textures 圖 `IC.frameOf()`（sheet／atlas 是格子大小），快取在 `sizes`。
 - 「存檔…」（只有 file: 圖）：把原圖縮成 pct%（Canvas `imageSmoothingQuality:'high'`，只等比、sx/sy 不烤）**另存一份 PNG，場景完全不動**（img／pct／sx／sy 不換、不寫 scenes.json、不進 undo），pct 100 也能存（＝原尺寸收編）。對話框切「存到 textures」（資料夾樹只列 `textures/`，不列 `.tbd`／`minimap`，預設上次選的 `tools.scene.exportDir`）／「存到原始路徑」（整個專案的資料夾樹，預設原圖的資料夾），模式記 `tools.scene.exportMode`；檔名預設 `<原檔名>-copy`。同資料夾有同名檔就擋；存進 textures/ 裡的還要檢查整個 textures/ texture key 撞名（大小寫不分）、寫完打 `POST /__tools/textures` 更新圖片清單＋廣播 `textures.json`。核心是 `bakeProp(key, 資料夾, 檔名)`（無頭測試直接呼叫）。
 - 深度照錨點 y 自動排，跟角色互相遮擋；不擋路。
 - 操作：右鍵「在這裡放擺設…」（錨點＝點的位置）、左欄「＋」（地圖中間）；左鍵點選（綠框＋錨點綠點；角色跟擺設重疊時點到深度高的）、自由拖（整數 px，按住 Shift 錨點吸 16px＝格子交點＋格子中心，圖跟光一起動，放開才寫檔）；方向鍵 1px、Shift＋方向鍵 32px（每按一下一筆 undo）；Del 刪。
+- 畫面上拉大小：選中的擺設綠框上 8 個白色把手（4 角＋4 邊中點，固定 6 螢幕 px，游標換 resize；`angle≠0` 不出把手，用面板調），把手優先於點選。拉邊改一軸、拉角兩軸，**對邊（對角）固定**、錨點 x/y 重算（取到 0.01）；改什麼照面板：鎖 %＝`sx`/`sy`（等比勾著兩軸等比：角照拖得多的那軸、邊的另一軸繞錨點長），鎖 scale（file 圖）＝`pct`（一定等比）。Shift＝被拉的邊吸 16px（½ 格），等比時另一軸照比例。最小 1px、拉過對邊不翻面；拖曳中 sandbox 直接改 sprite 預覽，放開送 `resizeProp {key, patch}`、分頁 `setProp` 一筆 undo（sx/sy＝1、pct＝100 拿掉）。鎖跟等比狀態由分頁在 `select {key, lock, ratio}` 帶給 sandbox（`selMsg()`），切換鎖／等比時重送。sandbox：`_handles()`／`_handleAt()`／`_startResize()`／`_resizeTo()`。
 
 ## 格線與吸附
 
@@ -97,7 +98,7 @@
 
 - 左：場景清單（＋ 新增；右鍵 改名／複製／刪除，雙擊改名；點選中的再點一次＝取消選取＝空白 sandbox；選取記 `tools.scene.sel`）＋目前場景物件樹（角色／擺設／粒子，👁 暫藏、Del 刪；第 2 步起）；下方 ↶／↷（Ctrl+Z／Ctrl+Y）。
 - 中：iframe＋工具列（底圖、格線、置中、重置、重開）＋第二排（時間／▶／倍速／自訂環境色）；左鍵選取拖曳、右鍵選單放東西。
-- 右：選中物件的屬性；角色下方是動作區。
+- 右：選中物件的屬性；角色下方是動作區。左邊框可拖拉改寬（`data-resize-right`，記 `tools.right.scene`，雙擊回預設 320px），遊戲畫面吃剩下的。
 
 ## 實作順序（每步 commit＋`scripts/test/scene-tool.mjs`＋更新本文件）
 

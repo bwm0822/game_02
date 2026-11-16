@@ -390,15 +390,19 @@ function sizeRows(p, row)
     const ratio = h('label', {title: '勾著＝sx 跟 sy 一樣，只有一格'}, h('input', {type: 'checkbox', checked: linked, dataset: {k: 'ratio'}, onchange: (e) => {
         if (e.target.checked) {freeRatio.delete(p.key); if (sx !== sy) return setS(sx, sx);}
         else freeRatio.add(p.key);
+        toGame(selMsg());
         renderRight();
     }}), ' 等比');
-    const lock = isFile(p.img) && h('span', {title: '改寬高時誰吃下變化'}, ' 鎖：', ...[['pct', '%'], ['scale', 'scale']].map(([v, t]) => h('label', null,
-        h('input', {type: 'radio', name: 'sizeLock', value: v, checked: sizeLock() === v, dataset: {k: `lock.${v}`}, onchange: () => {ls.set(LS.sizeLock, v); renderRight();}}), t)));
+    const lock = isFile(p.img) && h('select', {title: '改寬高（面板或畫面上拉）時誰吃下變化', dataset: {k: 'lock'}, onchange: (e) => {ls.set(LS.sizeLock, e.target.value); toGame(selMsg()); renderRight();}},
+        h('option', {value: 'pct'}, '%'), h('option', {value: 'scale'}, 'scale'));
+    if (lock) lock.value = sizeLock();
+    const dim = (k2, t) => h('span', {class: 'dim', dataset: {k: k2}}, t);
+    const wh = (a, b) => `${Math.max(1, Math.round(a))}×${Math.max(1, Math.round(b))}`;
     return [
-        isFile(p.img) && row('%', inp(p.pct, 1, 'pct', setPct, '100'), h('span', {class: 'dim'}, ' 存檔時烤成原圖的幾 %')),
-        row('scale', linked ? inp(p.sx, 0.05, 'sx', (n) => setS(n, n), '1') : [inp(p.sx, 0.05, 'sx', (n) => setS(n, sy), '1'), ' × ', inp(p.sy, 0.05, 'sy', (n) => setS(sx, n), '1')], ' ', ratio),
-        row('寬高', src ? [inp(Math.round(src.w * k * sx), 1, 'w', setW), ' × ', inp(Math.round(src.h * k * sy), 1, 'h', setH), ' px', lock] : h('span', {class: 'dim'}, src === null ? '讀不到圖的大小' : '…')),
-        src && row('', h('span', {class: 'dim'}, `原圖 ${src.w}×${src.h}`)),
+        isFile(p.img) && row('%', h('span', {title: '存檔時烤成原圖的幾 %'}, inp(p.pct, 1, 'pct', setPct, '100')), ' ', src && dim('srcDim', `原圖 ${src.w}×${src.h}`)),
+        row('scale', linked ? inp(p.sx, 0.05, 'sx', (n) => setS(n, n), '1') : [inp(p.sx, 0.05, 'sx', (n) => setS(n, sy), '1'), ' × ', inp(p.sy, 0.05, 'sy', (n) => setS(sx, n), '1')], ' ', ratio, ' ',
+            src && (isFile(p.img) ? dim('bakedDim', `縮放後 ${wh(src.w * k, src.h * k)}`) : dim('srcDim', `原圖 ${src.w}×${src.h}`))),
+        row('寬高', src ? [inp(Math.round(src.w * k * sx), 1, 'w', setW), ' × ', inp(Math.round(src.h * k * sy), 1, 'h', setH), ' px', lock && [' 鎖 ', lock]] : h('span', {class: 'dim'}, src === null ? '讀不到圖的大小' : '…')),
     ];
 }
 
@@ -580,11 +584,18 @@ function nudge(dx, dy)
     else if (e) setEmitter(e.key, {x: e.x + dx, y: e.y + dy});
 }
 
+// 選取＋畫面上拉擺設大小要的面板狀態（鎖、等比）
+function selMsg()
+{
+    const p = propOf(S.pick);
+    return {sb: 'select', key: S.pick, lock: sizeLock(), ratio: !p || ((p.sx ?? 1) === (p.sy ?? 1) && !freeRatio.has(p.key))};
+}
+
 function pickRole(key)
 {
     if (S.arm && S.arm.key !== key) {S.arm = null; toGame({sb: 'arm', act: null});}
     S.pick = key;
-    toGame({sb: 'select', key});
+    toGame(selMsg());
     renderTree();
     renderRight();
 }
@@ -829,7 +840,7 @@ function syncGame()
 {
     toGame({sb: 'grid', on: S.grid});
     toGame(playMsg());
-    toGame({sb: 'select', key: S.pick});
+    toGame(selMsg());
     toGame({sb: 'hide', keys: [...S.hidden]});
     toGame({sb: 'load', scene: cur()});
 }
@@ -862,6 +873,11 @@ addEventListener('message', (e) => {
     else if (m.sb === 'time' && S.playing) {S.liveTime = m.t; renderBar();}
     else if (m.sb === 'move') setRole(m.key, {tx: m.tx, ty: m.ty}).then(syncGame);
     else if (m.sb === 'moveProp') setProp(m.key, {x: m.x, y: m.y}).then(syncGame);
+    else if (m.sb === 'resizeProp')
+    {
+        const {x, y, sx, sy, pct} = m.patch;
+        setProp(m.key, {x, y, ...('pct' in m.patch ? {pct: pct === 100 ? undefined : pct} : {sx: one(sx), sy: one(sy)})}).then(syncGame);
+    }
     else if (m.sb === 'moveEmitter') setEmitter(m.key, {x: m.x, y: m.y}).then(syncGame);
     else if (m.sb === 'key') onKey(m);
     else if (m.sb === 'ctx')
