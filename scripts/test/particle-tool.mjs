@@ -268,6 +268,27 @@ run('particle-tool', async t => {
     t.eq('拖曳一步 undo', zd.undone, JSON.stringify({x: -8, y: -2, w: 16, h: 4}));
     t.check('滾輪放大記在 P.view、置中回預設', zd.zoomed > 1 && zd.reset, `${zd.zoomed} ${zd.reset}`);
 
+    // 捲到下面點數值欄的上三角：重畫還原焦點不能把畫面捲走
+    await t.page.setViewport({width: 1400, height: 500});
+    const sp = await t.page.evaluate(async () => {
+        const pt = window.__pt, S = pt.S;
+        S.view = 'form'; S.json = false; S.sel = 'rain'; pt.render();
+        const view = document.getElementById('view'), el = document.querySelector('[data-k="speedY.min"]');
+        el.scrollIntoView({block: 'center'});
+        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+        const b = el.getBoundingClientRect();
+        return {top: view.scrollTop, v: S.data.rain.speedY.min, x: b.right - 8, y: b.top + 4};
+    });
+    await t.page.mouse.click(sp.x, sp.y);
+    await new Promise(r => setTimeout(r, 200));
+    const sp2 = await t.page.evaluate(() => {
+        const pt = window.__pt, v = pt.S.data.rain.speedY.min, top = document.getElementById('view').scrollTop;
+        pt.D.undo();
+        return {top, v};
+    });
+    t.check('捲到下面點上三角：值加上去、畫面不跳', sp2.v > sp.v && sp2.top === sp.top, `${sp.v}→${sp2.v} scrollTop ${sp.top}→${sp2.top}`);
+    await t.page.setViewport({width: 1024, height: 768});
+
     await t.rightResize('__pt', 'particle', 240, 180);
     await t.formFits('__pt');
 

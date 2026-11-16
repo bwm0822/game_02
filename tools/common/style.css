@@ -102,7 +102,8 @@ header { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding:
 main { flex: 1; display: flex; min-height: 0; }
 #left { width: 310px; display: flex; flex-direction: column; gap: 6px; padding: 8px; background: #25272b; border-right: 1px solid #111; }
 #list { flex: 1; overflow: auto; }
-#view { flex: 1; overflow: auto; padding: 8px 16px 32px; min-width: 0; }
+/* 表單每次改值整片重畫：捲動錨定會優先抓焦點所在的輸入框，被換掉時反而把畫面捲走 */
+#view { flex: 1; overflow: auto; padding: 8px 16px 32px; min-width: 0; overflow-anchor: none; }
 
 .group { color: #888; font-size: 15px; margin: 8px 0 2px; }
 .group.fold { cursor: pointer; user-select: none; }
