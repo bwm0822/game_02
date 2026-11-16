@@ -72,7 +72,21 @@ export function hitZone(shape, s, px, py, tol)
     return Math.hypot(px - (s.x1 + t*dx), py - (s.y1 + t*dy)) <= tol;
 }
 
-export const zoneArea = (shape, s) => shape==='rect' ? s.w*s.h : shape==='circle' ? Math.PI*s.r*s.r : 0;
+// 游標離框線（矩形四邊／圓周／線段）tol 以內，框內外都算
+export function edgeZone(shape, s, px, py, tol)
+{
+    if(shape==='rect')
+    {
+        const {x, y, w, h} = rectOf(s);
+        const ox = Math.max(x - px, 0, px - x - w), oy = Math.max(y - py, 0, py - y - h);
+        const d = ox || oy ? Math.hypot(ox, oy) : Math.min(px - x, x + w - px, py - y, y + h - py);
+        return d <= tol;
+    }
+    if(shape==='circle') {return Math.abs(Math.hypot(px - (s.x ?? 0), py - (s.y ?? 0)) - s.r) <= tol;}
+    return hitZone(shape, s, px, py, tol);
+}
+
+export const zoneArea =(shape, s) => shape==='rect' ? s.w*s.h : shape==='circle' ? Math.PI*s.r*s.r : 0;
 
 // 拖曳：p0＝按下時、p＝現在的游標（zone 座標），step＝吸附格子；part＝'move' 或把手 id；回傳新的 source（其他 key 保留）
 export function dragZone(shape, s, part, p0, p, step=1)

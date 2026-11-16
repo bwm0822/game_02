@@ -9,7 +9,7 @@ import {GM, GS} from '../core/setting.js'
 import Puppet from '../roles/puppet.js'
 import DB from '../data/db.js'
 import {playParticle} from '../core/particle.js'
-import {shapeOf, zoneEditable, rectOf, handlesOf, hitZone, zoneArea, dragZone, ZONE_CURSOR} from '../core/pzone.js'
+import {shapeOf, zoneEditable, rectOf, handlesOf, hitZone, edgeZone, zoneArea, dragZone, ZONE_CURSOR} from '../core/pzone.js'
 
 // 開發版的 gym 場景：工具殼「場景」分頁的 iframe 跑 /?sandbox，用 postMessage 操作（訊息帶 sb 欄位，見 docs/scene-tool.md）
 // 繼承 GameScene 拿真的地圖／路網／Light2D，但沒有玩家、UI、回合、作息、劇情；地圖只建地形＋靜態物件，不寫存檔
@@ -431,13 +431,13 @@ export class Sandbox extends GameScene
         return hd ? {o, k:sel.k, z:sel.z, part:hd.id} : null;
     }
 
-    // 游標底下的 zone 本體（疊在一起挑面積小的）
-    _zoneBodyAt(wx, wy)
+    // 游標底下的 zone 本體（疊在一起挑面積小的）；edge＝只算框線內外 6px（蓋過角色／擺設）
+    _zoneBodyAt(wx, wy, edge = false)
     {
         const o = this._zoneEm();
         if(!o) {return null;}
-        const c = this._zoneOrigin(o), tol = 4/this.cameras.main.zoom;
-        const hits = this._zones(o).filter(z=>z.edit && hitZone(shapeOf(z.z.source), z.z.source, wx - c.x, wy - c.y, tol))
+        const c = this._zoneOrigin(o), tol = (edge ? 6 : 4)/this.cameras.main.zoom, f = edge ? edgeZone : hitZone;
+        const hits = this._zones(o).filter(z=>z.edit && f(shapeOf(z.z.source), z.z.source, wx - c.x, wy - c.y, tol))
             .sort((a, b)=>zoneArea(shapeOf(a.z.source), a.z.source) - zoneArea(shapeOf(b.z.source), b.z.source));
         return hits[0] ? {o, k:hits[0].k, z:hits[0].z, part:'move'} : null;
     }
@@ -853,8 +853,9 @@ export class Sandbox extends GameScene
                 this._send({sb:'ctx', tx, ty, wx:Math.round(p.worldX), wy:Math.round(p.worldY), key:hit?.key ?? null, cx:p.event.clientX, cy:p.event.clientY});
                 return;
             }
-            // 沒點到別的東西才輪到選中發射點的 zone 本體（大片的 zone 不擋底下的角色）
-            const zb = !hit && this._zoneBodyAt(p.worldX, p.worldY);
+            // zone 框線蓋過角色／擺設（記號除外）；框內要沒點到別的東西才輪到 zone 本體（大片的 zone 不擋底下的角色）
+            const zb = !hit?.emitter && !hit?.light && this._zoneBodyAt(p.worldX, p.worldY, true)
+                || !hit && this._zoneBodyAt(p.worldX, p.worldY);
             if(zb) {this._startZone(zb, p); this._cursor(p); return;}
             this._sel = hit?.key ?? null;
             this._send({sb:'select', key:this._sel});
@@ -935,9 +936,12 @@ export class Sandbox extends GameScene
         else
         {
             const hd = this._handleAt(p.worldX, p.worldY), zh = !hd && this._zoneHandleAt(p.worldX, p.worldY);
+            const pk = !hd && !zh && this._pickAt(p.worldX, p.worldY);
             c = hd ? (!hd.hy ? 'ew-resize' : !hd.hx ? 'ns-resize' : hd.hx*hd.hy>0 ? 'nwse-resize' : 'nesw-resize')
                 : zh ? ZONE_CURSOR[zh.part]
-                : this._radiusAt(p.worldX, p.worldY) ? 'ew-resize' : this._pickAt(p.worldX, p.worldY) ? 'grab'
+                : this._radiusAt(p.worldX, p.worldY) ? 'ew-resize'
+                : !pk?.emitter && !pk?.light && this._zoneBodyAt(p.worldX, p.worldY, true) ? 'move'
+                : pk ? 'grab'
                 : this._zoneBodyAt(p.worldX, p.worldY) ? 'move' : '';
         }
         this.game.canvas.style.cursor = c;

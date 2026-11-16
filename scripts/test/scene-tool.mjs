@@ -546,6 +546,29 @@ run('scene-tool', async t => {
         sb()._zoneTo(sb()._drag, ptr(zc2.x + 25, zc2.y + 15, true));
         sb()._endDrag();
         out.zoneResize = await until(async () => (await scDisk()).particles[0].def.emitZone.source.w !== 16) && JSON.stringify((await scDisk()).particles[0].def.emitZone.source);
+        // zone 蓋在擺設上：點框線（內外 6px）選到 zone、點框內選到擺設
+        await until(() => em('e1')?.def?.emitZone?.source?.w === 22);
+        const zc3 = sb()._zoneOrigin(em('e1')), mid = {x: zc3.x + 13, y: zc3.y + 10};
+        const pk0 = Object.keys(sb()._props);
+        await sc.addProp(tkey, Math.round(mid.x), Math.round(mid.y + 8));
+        await until(() => Object.keys(sb()._props).some(k => !pk0.includes(k)));
+        const pz = Object.keys(sb()._props).find(k => !pk0.includes(k));
+        await sc.setProp(pz, {depth: 500});
+        await until(() => sb()._props[pz]?.sp.depth > 400);
+        sc.pickRole('e1');
+        await until(() => sb()._sel === 'e1');
+        const down = (x, y) => sb().input.emit('pointerdown', {worldX: x, worldY: y, x: 0, y: 0, leftButtonDown: () => true, rightButtonDown: () => false,
+            middleButtonDown: () => false, event: {shiftKey: false, clientX: 0, clientY: 0}});
+        const under = [sb()._pickAt(zc3.x + 2, mid.y)?.key, sb()._pickAt(mid.x, mid.y)?.key];
+        down(zc3.x + 2 - 4 / sb().cameras.main.zoom, mid.y);
+        const onEdge = [sb()._drag?.zone, sb()._sel];
+        sb()._endDrag();
+        down(mid.x, mid.y);
+        out.zoneEdge = [...under.map(k => k === pz), ...onEdge, sb()._sel === pz];
+        sb()._endDrag();
+        sc.pickRole(pz);
+        sb()._send({sb: 'key', key: 'Delete'});
+        await until(() => !sb()._props[pz]);
 
         sc.pickRole('e1');
         sb()._send({sb: 'key', key: 'Delete'});
@@ -709,6 +732,7 @@ run('scene-tool', async t => {
     t.eq('sandbox zone：拖本體寫回發射點的 def', r.zoneMove, JSON.stringify({type: 'random', source: {x: 2, y: 4, w: 16, h: 4}}));
     t.eq('sandbox zone：選中後右下角有把手', r.zoneHandle, 'se');
     t.eq('sandbox zone：拖把手改大小（Shift 吸 4、左上固定）', r.zoneResize, JSON.stringify({x: 2, y: 4, w: 22, h: 12}));
+    t.eq('sandbox zone：蓋在擺設上，點框線選到 zone、點框內選到擺設', JSON.stringify(r.zoneEdge), JSON.stringify([true, true, 'emitZone', 'e1', true]));
     t.eq('粒子：Del 刪', JSON.stringify(r.delEm), JSON.stringify(['e2']));
 
     t.eq('日夜：沒寫時間＝08:00、白天全亮', JSON.stringify(r.time0), JSON.stringify(['08:00', 8, [255, 255, 255]]));
