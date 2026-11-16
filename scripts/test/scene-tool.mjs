@@ -210,6 +210,21 @@ run('scene-tool', async t => {
         await sc.addProp(tkey, 200, 200);
         out.prop = await until(() => prop('p1')) && [(await scDisk()).props, sc.S.pick, prop('p1').sp.texture.key, [prop('p1').sp.x, prop('p1').sp.y, prop('p1').sp.depth],
                                                      [prop('p1').sp.originX, prop('p1').sp.originY], prop('p1').sp.pipeline?.name, doc.querySelector('#right .sec').textContent];
+        // 錨點：選中的擺設＝sprite x/y、角色＝root x/y；工具列沒勾就不畫、記 localStorage
+        await until(() => sb()._sel === 'p1');
+        const ap = () => sb()._anchorPt();
+        out.anchorProp = [ap(), {x: prop('p1').sp.x, y: prop('p1').sp.y}];
+        sc.pickRole('r1');
+        await until(() => sb()._sel === 'r1');
+        out.anchorRole = [ap(), {x: pup('r1').x, y: pup('r1').y}];
+        const chkA = doc.getElementById('chkAnchor');
+        chkA.checked = false; chkA.dispatchEvent(new Event('change'));
+        out.anchorOff = await until(() => ap() === null) && [ap(), localStorage.getItem('tools.scene.anchor')];
+        chkA.checked = true; chkA.dispatchEvent(new Event('change'));
+        out.anchorOn = await until(() => ap() !== null) && localStorage.getItem('tools.scene.anchor');
+        sc.pickRole('p1');
+        await until(() => sb()._sel === 'p1');
+
         // 外部 png（還沒放進 textures/ 也行）：file:<相對專案路徑>
         await sc.addProp(`file:public/assets/${turl}`, 300, 200);
         out.file = await until(() => prop('p2')) && [prop('p2').sp.texture.key, prop('p2').sp.width > 0];
@@ -442,6 +457,10 @@ run('scene-tool', async t => {
 
     const p0 = r.prop;
     t.check('放擺設：寫檔、選起來、sandbox 用那張圖、錨點底部中間、深度＝y、受光', p0 && p0[0]?.[0]?.key === 'p1' && p0[1] === 'p1' && p0[3].join() === '200,200,200' && p0[4].join() === '0.5,1' && p0[5] === 'Light2D' && p0[6] === '擺設 p1', JSON.stringify(p0));
+    t.eq('錨點：選中的擺設畫在 sprite x/y', JSON.stringify(r.anchorProp[0]), JSON.stringify(r.anchorProp[1]));
+    t.eq('錨點：選中的角色畫在站的點（root x/y）', JSON.stringify(r.anchorRole[0]), JSON.stringify(r.anchorRole[1]));
+    t.eq('錨點：工具列取消勾選＝不畫、記 localStorage', JSON.stringify(r.anchorOff), JSON.stringify([null, '0']));
+    t.eq('錨點：勾回來', r.anchorOn, '1');
     t.check('外部 png：用網址載入', r.file?.[0]?.startsWith('file:') && r.file[1], JSON.stringify(r.file));
     t.check('載不到的圖：提示、不建', r.badTex);
     t.eq('屬性：翻轉、角度、錨點、深度＝y＋偏移', JSON.stringify(r.attrs), JSON.stringify([true, 30, 0, 0.5, 205]));

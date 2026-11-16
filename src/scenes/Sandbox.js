@@ -429,9 +429,26 @@ export class Sandbox extends GameScene
         const r = p?.visible && p.getShapeRect ? p.getShapeRect() : o?.sp.visible ? o.sp.getBounds() : null;
         if(!r) {return;}
         g.lineStyle(2/z, 0x7ddc5a, 1).strokeRect(r.x, r.y, r.width, r.height);
-        if(o) {g.fillStyle(0x7ddc5a, 1).fillCircle(o.sp.x, o.sp.y, 3/z);}   // 錨點
         const s = HANDLE/z;
         for(const hd of this._handles()) {g.fillStyle(0xffffff, 1).fillRect(hd.x-s/2, hd.y-s/2, s, s).lineStyle(1/z, 0x3a8a2a, 1).strokeRect(hd.x-s/2, hd.y-s/2, s, s);}
+        const a = this._anchorPt();
+        if(a)
+        {
+            // 黃點黑框＋十字：錨點常壓在綠框下邊上，要跟框線分得開
+            const ar = 4/z, c = ar*0.6;
+            g.fillStyle(0xffdd33, 1).fillCircle(a.x, a.y, ar).lineStyle(1.5/z, 0x000000, 1).strokeCircle(a.x, a.y, ar)
+                .lineStyle(1/z, 0x000000, 1).lineBetween(a.x-c, a.y, a.x+c, a.y).lineBetween(a.x, a.y-c, a.x, a.y+c);
+        }
+    }
+
+    // 選中的擺設（sprite 的 x/y）或角色（root 的 x/y＝套用 role.anchor 後站的點）；工具列「錨點」沒勾＝null
+    _anchorPt()
+    {
+        if(this._anchorOn===false) {return null;}
+        const o = this._props?.[this._sel], p = this._puppet(this._sel);
+        if(o?.sp.visible) {return {x:o.sp.x, y:o.sp.y};}
+        if(p?.visible) {return {x:p.x, y:p.y};}
+        return null;
     }
 
     //------------------------------------------------------
@@ -505,6 +522,7 @@ export class Sandbox extends GameScene
                 else {this._apply(m.scene);}
                 break;
             case 'grid': this._gridOn = !!m.on; this._drawGrid(); break;
+            case 'anchor': this._anchorOn = !!m.on; break;
             case 'home': this._home(); break;
             case 'select': this._sel = m.key ?? null; this._size = {lock:m.lock ?? 'pct', ratio:m.ratio ?? true}; break;
             case 'arm': this._arm = m.act ?? null; this._drawSel(); break;

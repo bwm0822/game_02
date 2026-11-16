@@ -10,7 +10,7 @@ import {KINDS, KIND_NAMES} from '../role/schema.js';
 import * as ST from './store.js';
 
 const LS = {sel: 'tools.scene.sel', grid: 'tools.scene.grid', role: 'tools.scene.lastRole', particle: 'tools.scene.lastParticle',
-            sizeLock: 'tools.scene.sizeLock', exportMode: 'tools.scene.exportMode', exportDir: 'tools.scene.exportDir'};
+            anchor: 'tools.scene.anchor', sizeLock: 'tools.scene.sizeLock', exportMode: 'tools.scene.exportMode', exportDir: 'tools.scene.exportDir'};
 const ls = {
     get: (k) => {try {return localStorage.getItem(k);} catch {return null;}},
     set: (k, v) => {try {localStorage.setItem(k, v);} catch { /* 私密視窗 */ }},
@@ -29,6 +29,7 @@ const S = {
     redo: [],
     ready: false,                   // sandbox 開好了
     grid: ls.get(LS.grid) !== '0',
+    anchor: ls.get(LS.anchor) !== '0',
     refs: {roles: {}, items: {}, abilities: {}, fx: {}, particles: {}},
     act: 'attack',                  // 動作下拉：attack／walk／ab:<技能 id>
     arm: null,                      // 指定目標中 {key, kind, id}
@@ -839,6 +840,7 @@ async function scanMaps(assets)
 function syncGame()
 {
     toGame({sb: 'grid', on: S.grid});
+    toGame({sb: 'anchor', on: S.anchor});
     toGame(playMsg());
     toGame(selMsg());
     toGame({sb: 'hide', keys: [...S.hidden]});
@@ -902,6 +904,8 @@ $('btnUndo').onclick = undo;
 $('btnRedo').onclick = redo;
 $('chkGrid').checked = S.grid;
 $('chkGrid').onchange = () => {S.grid = $('chkGrid').checked; ls.set(LS.grid, S.grid ? '1' : '0'); toGame({sb: 'grid', on: S.grid});};
+$('chkAnchor').checked = S.anchor;
+$('chkAnchor').onchange = () => {S.anchor = $('chkAnchor').checked; ls.set(LS.anchor, S.anchor ? '1' : '0'); toGame({sb: 'anchor', on: S.anchor});};
 $('btnHome').onclick = () => toGame({sb: 'home'});
 $('btnReload').onclick = reloadGame;
 $('btnReset').onclick = () => toGame({sb: 'reset'});
