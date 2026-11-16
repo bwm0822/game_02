@@ -110,6 +110,45 @@
     "frequency": 250,
     "quantity": 1
   },
+  "campfire": {
+    "img": "p-soft",
+    "emitZone": {
+      "type": "random",
+      "source": {
+        "x": -8,
+        "y": -2,
+        "w": 16,
+        "h": 4
+      }
+    },
+    "speedY": {
+      "min": -55,
+      "max": -30
+    },
+    "speedX": {
+      "min": -8,
+      "max": 8
+    },
+    "lifespan": {
+      "min": 450,
+      "max": 750
+    },
+    "scale": {
+      "start": 0.7,
+      "end": 0.1
+    },
+    "alpha": {
+      "start": 0.9,
+      "end": 0
+    },
+    "tint": {
+      "start": "#fff1a8",
+      "end": "#ff3a10"
+    },
+    "blendMode": "ADD",
+    "frequency": 30,
+    "quantity": 2
+  },
   "rain": {
     "img": "p-spark",
     "emitZone": {
