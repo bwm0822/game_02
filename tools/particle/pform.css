@@ -3,6 +3,9 @@
 .pform .props { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin: 6px 0 4px; }
 .pform .prop { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .pform .prop > .k { min-width: 8.5em; color: #ccc; }
+/* 欄位名靠左、欄寬照內容（蓋過 style.css 的 110px 靠右；權重打平、靠載入順序在後面） */
+.pform .fields.fields, .pform .box .fields.fields { grid-template-columns: auto minmax(0, 1fr); }
+.pform .fields > .k { text-align: left; }
 .pform .prop button { padding: 0 6px; }
 .pform .prop .chip { display: inline-flex; align-items: center; gap: 2px; }
 .pform .prop input[type=color] { width: 2.4em; height: 1.6em; padding: 0; border: 0; background: none; }

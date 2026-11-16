@@ -551,8 +551,8 @@ run('scene-tool', async t => {
         const zc3 = sb()._zoneOrigin(em('e1')), mid = {x: zc3.x + 13, y: zc3.y + 10};
         const pk0 = Object.keys(sb()._props);
         await sc.addProp(tkey, Math.round(mid.x), Math.round(mid.y + 8));
-        await until(() => Object.keys(sb()._props).some(k => !pk0.includes(k)));
-        const pz = Object.keys(sb()._props).find(k => !pk0.includes(k));
+        await until(() => Object.keys(sb()._props ?? {}).some(k => !pk0.includes(k)));
+        const pz = Object.keys(sb()._props ?? {}).find(k => !pk0.includes(k));
         await sc.setProp(pz, {depth: 500});
         await until(() => sb()._props[pz]?.sp.depth > 400);
         sc.pickRole('e1');
@@ -568,7 +568,7 @@ run('scene-tool', async t => {
         sb()._endDrag();
         sc.pickRole(pz);
         sb()._send({sb: 'key', key: 'Delete'});
-        await until(() => !sb()._props[pz]);
+        await until(() => sb()._props && !sb()._props[pz]);
 
         sc.pickRole('e1');
         sb()._send({sb: 'key', key: 'Delete'});
