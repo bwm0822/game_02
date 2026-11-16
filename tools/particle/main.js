@@ -82,7 +82,20 @@ function validate(id)
     for (const [k, def] of Object.entries(SC.PROPS))
         if (def.kind === 'val' && isObj(p[k]) && p[k].ease !== undefined && !(p[k].ease in EASE)) out.push(`${k}.ease 不認識的曲線：${p[k].ease}`);
     for (const k of ['emitZone', 'deathZone'])
-        if (p[k] !== undefined && !(isObj(p[k]) || Array.isArray(p[k]))) out.push(`${k} 應該是物件`);
+    {
+        const z = p[k], Z = SC.ZONES[k];
+        if (z === undefined) continue;
+        if (!(isObj(z) || Array.isArray(z))) {out.push(`${k} 應該是物件`); continue;}
+        for (const one of [z].flat())
+        {
+            if (!isObj(one)) continue;
+            if (one.type !== undefined && !Z.types.includes(one.type)) out.push(`${k}.type 不認識的值：${one.type}（${Z.types.join('／')}）`);
+            const sh = SC.shapeOf(one.source);
+            if (!sh) out.push(`${k}.source 認不得的形狀（{x,y,w,h}｜{x,y,r}｜{x1,y1,x2,y2}）`);
+            else if (!Z.shapes.includes(sh)) out.push(`${k} 不能用${SC.SHAPES[sh]}（Phaser 判斷不了粒子在不在裡面）`);
+            if (k === 'emitZone' && one.type === 'edge' && one.quantity === undefined && one.stepRate === undefined) out.push('emitZone 沿邊緣噴要寫 quantity');
+        }
+    }
     return out;
 }
 
@@ -178,11 +191,40 @@ function colorsEditor(id, k, v)
     ];
 }
 
+// emitZone／deathZone：type、形狀、數字（預覽也能拖）；陣列或認不得的寫法退回 JSON 框
+function zoneEditor(id, k, z)
+{
+    const put = (x) => set(id, [k], x);
+    if (!SC.zoneEditable(k, z)) return [jsonIn(z, k, put)];
+    const Z = SC.ZONES[k], s = z.source, shape = SC.shapeOf(s);
+    const sel = (dk, list, cur, names, f) => h('select', {dataset: {k: dk}, onchange: e => f(e.target.value)},
+        (list.includes(cur) ? list : [...list, cur]).map(o => h('option', {value: o, selected: o === cur}, names?.[o] ?? o)));
+    const ph = shape === 'rect' ? {x: String(-s.w / 2), y: String(-s.h / 2)} : {x: '0', y: '0'};
+    const nIn = (c) => [h('span', {class: 'dim'}, c), numInput(`${k}.source.${c}`, null, 'num', s[c], SC.optKey(shape, c) ? ph[c] : '', n => {
+        const src = {...s};
+        if (n === undefined && SC.optKey(shape, c)) delete src[c];
+        else src[c] = n ?? 0;
+        put({...z, source: src});
+    }, 1)];
+    const chk = (c, on, f) => h('label', null, h('input', {type: 'checkbox', dataset: {k: `${k}.${c}`}, checked: on, onchange: e => f(e.target.checked)}), c);
+    return [
+        sel(`${k}.type`, Z.types, z.type ?? Z.types[0], null, t => put(SC.setZoneType(z, t))),
+        sel(`${k}#shape`, Z.shapes, shape, SC.SHAPES, sh => put({...z, source: SC.convertShape(s, sh)})),
+        ...SC.SHAPE_KEYS[shape].flatMap(nIn),
+        ...z.type === 'edge' ? [
+            h('span', {class: 'dim'}, 'quantity'), numInput(`${k}.quantity`, null, 'int', z.quantity, '', n => {const o = {...z, quantity: n}; if (n === undefined) delete o.quantity; put(o);}, 1),
+            chk('yoyo', !!z.yoyo, on => {const o = {...z, yoyo: true}; if (!on) delete o.yoyo; put(o);}),
+            chk('seamless', z.seamless ?? true, on => {const o = {...z, seamless: false}; if (on) delete o.seamless; put(o);}),
+        ] : [],
+    ];
+}
+
 function propEditor(id, k, v)
 {
     const def = SC.PROPS[k], put = (x) => set(id, [k], x);
     switch (def.kind)
     {
+        case 'zone': return zoneEditor(id, k, v);
         case 'val': return valEditor(id, k, v);
         case 'num': return [num(v, k, n => put(n))];
         case 'bool': return [h('input', {type: 'checkbox', dataset: {k}, checked: !!v, onchange: e => put(e.target.checked)})];
@@ -381,4 +423,6 @@ async function loadRefs()
 })();
 
 // 給無頭測試用
+PV.onZone = (k, z) => S.sel && S.data[S.sel] && set(S.sel, [k], z);
+
 window.__pt = {S, D, add, validate, validateAll, missing, isUnused, render, loadRefs, collectRefs, collectTiled, SC, PV};

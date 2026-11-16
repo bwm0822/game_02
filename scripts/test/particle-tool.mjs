@@ -188,6 +188,86 @@ run('particle-tool', async t => {
     t.check('textures 的圖切成貼圖', r.texImg);
     t.check('改名有確認框', r.renameDlg);
     await t.page.evaluate(() => {const d = document.getElementById('dlgAsk'); if (d?.open) d.close('cancel');});
+
+    // zone：表單（形狀／type 切換、陣列退回 JSON、deathZone 沒有線段）、純函式拖曳、預覽真的用滑鼠拖
+    const z = await t.page.evaluate(async () => {
+        const pt = window.__pt, S = pt.S, D = pt.D, SC = pt.SC, PV = pt.PV, out = {};
+        const q = (s) => document.querySelector(s);
+        const fire = (el, v) => {el.value = v; el.dispatchEvent(new Event('change'));};
+        const sleep = (ms) => new Promise(res => setTimeout(res, ms));
+        S.view = 'form'; S.json = false; S.sel = 'campfire'; pt.render();
+        out.shape = q('[data-k="emitZone#shape"]')?.value;
+        fire(q('[data-k="emitZone#shape"]'), 'circle');
+        out.toCircle = JSON.stringify(S.data.campfire.emitZone.source);
+        D.undo();
+        fire(q('[data-k="emitZone.type"]'), 'edge');
+        out.edge = [S.data.campfire.emitZone.quantity, !!q('[data-k="emitZone.yoyo"]'), q('[data-k="emitZone.seamless"]')?.checked];
+        fire(q('[data-k="emitZone.type"]'), 'random');
+        out.unEdge = 'quantity' in S.data.campfire.emitZone;
+        D.undo(); D.undo();
+        fire(q('[data-k="emitZone.source.w"]'), '20');
+        out.w = S.data.campfire.emitZone.source.w;
+        D.undo();
+        fire(q('[data-k="zone.#add"]'), 'deathZone');
+        out.deathShapes = [...q('[data-k="deathZone#shape"]').options].map(o => o.value).join(',');
+        out.deathType = q('[data-k="deathZone.type"]').value;
+        D.undo();
+        D.set('campfire', ['emitZone'], [{type: 'random', source: {w: 4, h: 4}}]);
+        out.arrJson = q('[data-k="emitZone"]')?.tagName === 'INPUT' && !q('[data-k="emitZone#shape"]');
+        D.undo();
+        D.set('campfire', ['deathZone'], {source: {x1: 0, y1: 0, x2: 9, y2: 0}});
+        out.lineWarn = pt.validate('campfire').some(w => w.includes('deathZone 不能用線段'));
+        D.undo();
+        // 純函式
+        const r = {x: -8, y: -2, w: 16, h: 4};
+        out.dragMove = JSON.stringify(SC.dragZone('rect', r, 'move', {x: 0, y: 0}, {x: 5.4, y: 1.2}));
+        out.dragSe = JSON.stringify(SC.dragZone('rect', r, 'se', {x: 8, y: 2}, {x: 13, y: 9}, 4));
+        out.dragR = SC.dragZone('circle', {r: 5}, 'r', {x: 5, y: 0}, {x: 0, y: 12}).r;
+        out.dragLine = JSON.stringify(SC.dragZone('line', {x1: 0, y1: 0, x2: 10, y2: 0}, 'move', {x: 0, y: 0}, {x: 3, y: 2}));
+        out.noXY = JSON.stringify(SC.rectOf({w: 32, h: 8}));
+        // 預覽：原地情境、預設鏡頭，回傳發射點在畫面上的位置
+        PV.P.scene = 'point'; PV.P.view = null; PV.P.zbox = true; PV.P.auto = false; PV.st.zsel = null;
+        S.sel = 'campfire'; pt.render(); PV.replay();
+        for (let i = 0; i < 100 && PV.st.def?.emitZone?.source?.w !== 16; i++) await sleep(20);
+        await sleep(100);
+        const cv = q('#view .pv .stage canvas').getBoundingClientRect();
+        return {...out, cx: cv.left + cv.width / 2, cy: cv.top + cv.height / 2, k: cv.width / 240};
+    });
+    // 從發射點（框的中心）往右下拖 10×6 遊戲 px
+    await t.page.mouse.move(z.cx, z.cy);
+    await t.page.mouse.down();
+    await t.page.mouse.move(z.cx + 5 * z.k, z.cy + 3 * z.k, {steps: 3});
+    await t.page.mouse.move(z.cx + 10 * z.k, z.cy + 6 * z.k, {steps: 3});
+    await t.page.mouse.up();
+    const zd = await t.page.evaluate(async () => {
+        const pt = window.__pt, S = pt.S, D = pt.D, PV = pt.PV;
+        const src = JSON.stringify(S.data.campfire.emitZone.source), sel = PV.st.zsel;
+        D.undo();
+        const undone = JSON.stringify(S.data.campfire.emitZone.source);
+        // 滾輪：以游標為中心縮放、記在 P.view；置中回預設
+        const box = document.querySelector('#view .pv .stage'), cv = box.querySelector('canvas').getBoundingClientRect();
+        box.dispatchEvent(new WheelEvent('wheel', {deltaY: -100, clientX: cv.left + cv.width / 2, clientY: cv.top + cv.height / 2, bubbles: true, cancelable: true}));
+        const zoomed = PV.P.view?.zoom;
+        [...document.querySelectorAll('#view .pv button')].find(b => b.textContent === '置中').click();
+        return {src, sel, undone, zoomed, reset: PV.P.view === null && PV.st.scene.cameras.main.zoom === 1};
+    });
+    t.eq('zone 表單：認得矩形', z.shape, 'rect');
+    t.eq('矩形換成圓：保留中心、r＝短邊一半', z.toCircle, JSON.stringify({x: 0, y: 0, r: 2}));
+    t.eq('換成 edge：補 quantity、有 yoyo／seamless（預設勾）', JSON.stringify(z.edge), JSON.stringify([12, true, true]));
+    t.check('換回 random：拿掉 quantity', !z.unEdge);
+    t.eq('改寬', z.w, 20);
+    t.eq('deathZone 只有矩形／圓、type 預設 onLeave', `${z.deathShapes} ${z.deathType}`, 'rect,circle onLeave');
+    t.check('陣列 zone 退回 JSON 框', z.arrJson);
+    t.check('deathZone 用線段會警告', z.lineWarn);
+    t.eq('拖曳移動：吸整數', z.dragMove, JSON.stringify({x: -3, y: -1, w: 16, h: 4}));
+    t.eq('拖右下把手：Shift 吸 4、左上固定', z.dragSe, JSON.stringify({x: -8, y: -2, w: 20, h: 10}));
+    t.eq('拖圓周把手改 r（游標到圓心的距離）', z.dragR, 12);
+    t.eq('線段整條移動', z.dragLine, JSON.stringify({x1: 3, y1: 2, x2: 13, y2: 2}));
+    t.eq('矩形沒寫 x／y＝置中', z.noXY, JSON.stringify({x: -16, y: -4, w: 32, h: 8}));
+    t.eq('預覽真的拖：框跟著移、選中 emitZone', `${zd.src} ${zd.sel}`, `${JSON.stringify({x: 2, y: 4, w: 16, h: 4})} emitZone`);
+    t.eq('拖曳一步 undo', zd.undone, JSON.stringify({x: -8, y: -2, w: 16, h: 4}));
+    t.check('滾輪放大記在 P.view、置中回預設', zd.zoomed > 1 && zd.reset, `${zd.zoomed} ${zd.reset}`);
+
     await t.formFits('__pt');
 
     // 殼：有粒子分頁，排在特效後面；↗ 跳到特效分頁
