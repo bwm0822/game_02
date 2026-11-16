@@ -15,7 +15,7 @@
   - sandbox → 分頁另有 `zone {key, k, z}`（拖完發射點的 emitZone／deathZone）。
 - 分頁 → sandbox：`load {scene}`（底圖不同就 `scene.restart` 帶著 scene 重開，同一張直接套用）、`grid {on}`、`anchor {on}`、`icons {light, particle}`（記號開關）、`home`（整張地圖放進畫面）、`select {key}`（選取框）、`hide {keys}`（👁）、`arm {act}`（指定目標，null＝取消）、`do {act}`、`replay`、`reset`、`hit`／`die`／`revive {key}`、`fxTick {key, id}`、`time {t}`（預覽時間）、`ambient {color}`（預覽環境色）、`play {speed}`（0＝停）。
   - `act`＝`{key（誰做）, kind:'attack'|'ability'|'walk', id（技能）, tx, ty（目標格子）, tkey（點到的角色）}`。
-  - sandbox → 分頁：`ready`（剛開好、還沒有場景，分頁收到就送 `load`）、`loaded {map, w, h}`（套用完；w/h＝地圖格數，「＋」放在中間用）、`error {msg}`（地圖載入失敗、角色 id 不存在，顯示在狀態列）、`select {key}`（左鍵點到的角色，空白處＝null）、`move {key, tx, ty}`（角色拖曳放開）、`moveProp {key, x, y}`（擺設拖曳放開）、`moveEmitter {key, x, y}`（粒子發射點拖曳放開，跟著角色／擺設時是相對位置）、`resizeProp {key, patch}`（擺設大小把手放開）、`moveLight {key, x, y}`／`radiusLight {key, r, dir?}`／`arcLight {key, arc}`（光源拖曳／半徑把手（聚光燈連方向）／弧端把手放開）、`autoI {v}`（自動強度變了，右欄顯示）、`ctx {tx, ty, wx, wy, key, cx, cy}`（右鍵，wx/wy 世界座標，cx/cy 是 iframe 裡的 client 座標）、`key {key, ctrl, shift, alt}`（iframe 有焦點時的鍵盤，分頁照自己的快捷鍵處理）、`disarm`（指定中按右鍵）、`time {t}`（▶ 播放中的時鐘）。
+  - sandbox → 分頁：`ready`（剛開好、還沒有場景，分頁收到就送 `load`）、`loaded {map, w, h}`（套用完；w/h＝地圖格數，「＋」放在中間用）、`error {msg}`（地圖載入失敗、角色 id 不存在，顯示在狀態列）、`select {key}`（左鍵點到的角色，空白處＝null）、`move {key, tx, ty}`（角色拖曳放開）、`moveProp {key, x, y}`（擺設拖曳放開）、`moveEmitter {key, x, y}`（粒子發射點拖曳放開，跟著角色／擺設時是相對位置）、`resizeProp {key, patch}`（擺設大小把手放開）、`moveLight {key, x, y}`／`radiusLight {key, r, dir?}`／`arcLight {key, arc}`（光源拖曳／半徑把手（聚光燈連方向）／弧端把手放開）、`ctx {tx, ty, wx, wy, key, cx, cy}`（右鍵，wx/wy 世界座標，cx/cy 是 iframe 裡的 client 座標）、`key {key, ctrl, shift, alt}`（iframe 有焦點時的鍵盤，分頁照自己的快捷鍵處理）、`disarm`（指定中按右鍵）、`time {t}`（▶ 播放中的時鐘）。
 - 角色、物品、部位等遊戲資料（`role.json`、`item.json`、`part.json`、`anim.json`、`fx.json`、`particle.json`、`ability.json`、`local.json`、`textures.json`）在別的分頁存檔時，sandbox 的 DB 就舊了：分頁收到廣播就整個重開 iframe（工具列「重開」同）。
 - **sandbox 絕不寫遊戲存檔**：`Record.noSave = true`（`saveGame()` 直接 return），`Record.game` 是 sandbox 自己的一份。
 - 鏡頭：滾輪以游標為中心縮放（0.25～8）、中鍵拖曳平移；每張底圖的鏡頭記在 sandbox 的記憶體，換場景回同一張圖接著看；第一次看＝整張放進畫面（工具列「置中」同）。拉左／右欄、縮放視窗（iframe 變大小或移位）時場景裡的東西在螢幕上不動、zoom 不變（`_onResize` 讀 `frameElement` 位置扣回去；舊寬高自己記，因為 CameraManager 會先改好鏡頭大小）。開發版掛 `window.__sb`（Sandbox 場景）給測試。
@@ -68,10 +68,10 @@
 
 ## 光源
 
-- `lights: [{key:'l<n>', x, y, r, color, i?, follow?, dir?, arc?, soft?}]`：Light2D 光源（擺設、角色、地形都是 Light2D）。`arc`（光錐全寬，度）有填且 <360＝聚光燈，`dir`＝方向（度，0 右、順時針）、`soft`＝錐邊淡出比例（0～1，預設 0.2），沒填＝點光源；`Light2D` 已換成 `src/core/spotlight.js` 的 pipeline（`light.spot`，sandbox `_lightSpot()` 寫）。跟著角色時資料＝角色朝右的樣子，角色 `faceDir()` 是 −1 就鏡像（x 偏移取負、方向 `180−dir`，`_mirror()`；拖曳／把手寫回的是鏡像前的數字），跟著擺設不翻。`i` 沒寫＝照遊戲（`GM.LIGHT − 環境光.r`，同 `com_lamp`／`com_light`，天越黑越亮、白天是 0；`_ambient()` 一換就重算、送 `autoI` 給右欄顯示「自動（目前 x）」），寫了就固定。新的預設 `{r:120, color:'#ffcc88'}`。擺設原本的 `light`（黏在圖上的發光）拿掉了，燈＝擺設＋跟著它的光源。
+- `lights: [{key:'l<n>', x, y, r, color, i?, follow?, dir?, arc?, soft?}]`：Light2D 光源（擺設、角色、地形都是 Light2D）。`arc`（光錐全寬，度）有填且 <360＝聚光燈，`dir`＝方向（度，0 右、順時針）、`soft`＝錐邊淡出比例（0～1，預設 0.2），沒填＝點光源；`Light2D` 已換成 `src/core/spotlight.js` 的 pipeline（`light.spot`，sandbox `_lightSpot()` 寫）。跟著角色時資料＝角色朝右的樣子，角色 `faceDir()` 是 −1 就鏡像（x 偏移取負、方向 `180−dir`，`_mirror()`；拖曳／把手寫回的是鏡像前的數字），跟著擺設不翻。`i` 沒寫＝`GM.LIGHT`（1，同 `com_lamp`／`com_light`），寫了用它；強度不跟日夜變，天越亮燈越加不上去是 shader 的柔性壓縮做的（見下面）。新的預設 `{r:120, color:'#ffcc88'}`。擺設原本的 `light`（黏在圖上的發光）拿掉了，燈＝擺設＋跟著它的光源。
 - 畫面：每個光源一個光色圓點（黑框，選中綠框，固定 6 螢幕 px）；選中時畫虛線圈＝半徑、圈右邊一個白色把手拖 `r`（游標到圓心的距離，整數、最少 1，Shift 吸 16 的倍數，放開送 `radiusLight`）；聚光燈改畫扇形虛線（兩條邊＋弧，中線淡淡的），半徑把手在中線末端、拖它連 `dir` 一起改（Shift 吸 15°），弧兩端各一個把手拖 `arc`（＝兩倍的游標跟中線夾角，1～359，Shift 吸 15°，放開送 `arcLight`）。點選優先於角色／擺設（排在發射點後面）、拖曳（Shift 吸 16px）、方向鍵、Del、👁（藏＝強度 0、點不到）。右鍵「在這裡放光源」、左欄「光源（n）」＋（地圖中間），不問東西直接放。
 - 右欄：位置（跟著時是相對）、半徑、光錐／方向／柔和（光錐空白＝點光源，方向跟柔和反灰）、顏色、強度（空白＝自動）、跟著。
-- 遊戲裡 Tiled 的燈（`com_lamp`）照讀自訂屬性 `dir`／`arc`／`soft`（不能叫 `angle`：Phaser 會直接設到 Container 本身的 angle）；`com_light`（道具 `light`）還沒支援。shader 另外把「環境光＋燈光」每通道超過 0.8 的部分柔性壓縮、永遠不到 1（疊燈不爆白）。
+- 遊戲裡 Tiled 的燈（`com_lamp`）照讀自訂屬性 `dir`／`arc`／`soft`（不能叫 `angle`：Phaser 會直接設到 Container 本身的 angle）；`com_light`（道具 `light`）還沒支援。shader 另外把「環境光＋燈光」每通道超過起壓點（0.8 跟環境光取大的）的部分柔性壓縮、不超過 1（疊燈不爆白、環境光本身不被壓暗、白天燈自然加不上去）；燈的強度因此固定 `GM.LIGHT`，不再照環境光算（舊的 `GM.LIGHT − 環境光.r`、`regTS`／`UPDATETIME` 重算都拿掉了）。
 
 ## 記號開關（光源、粒子）
 
@@ -108,7 +108,7 @@
 ## 日夜
 
 - 工具列第二排：🕒 時間滑桿 00:00～23:59（1 分）、▶／⏸、倍速（每秒走 10／60／240 分鐘遊戲時間）、「自訂環境色」勾選＋色票。
-- 時間是 sandbox 的真 `TimeSystem` 時鐘：設 `TimeSystem.time` 再 `emit(0)`；sandbox 在 `TimeSystem.load()` 後第一個註冊自己的環境光（`GameScene.getAmbientColor()`＝`lutAmbient[小時]`，整點換，同遊戲），所以後面註冊的燈（`com_lamp`／`com_light` 照 `GM.LIGHT − 環境光.r` 算亮度）拿到的是新的環境光。木偶不註冊時間（不會扣裝備耐久）。
+- 時間是 sandbox 的真 `TimeSystem` 時鐘：設 `TimeSystem.time` 再 `emit(0)`；sandbox 在 `TimeSystem.load()` 後第一個註冊自己的環境光（`GameScene.getAmbientColor()`＝`lutAmbient[小時]`，整點換，同遊戲）。木偶不註冊時間（不會扣裝備耐久）。
 - 拖滑桿＝即時預覽（`time {t}`，不寫檔），放開才寫場景的 `time`（`'HH:MM'`，等於 `08:00`＝`Record.game_def` 的開局時間就拿掉欄位）。
 - ▶ 播放：sandbox 每 100ms 推時鐘、回報 `time {t}` 給分頁（滑桿跟著動），不寫檔；⏸ 把停下來的時間寫進場景。播放中編輯別的東西不會把時間拉回去（sandbox 只在場景檔的 `time` 變了才跳）。sandbox 重開（換底圖、重開鈕）後分頁會再送一次播放狀態。
 - 自訂環境色：場景的 `ambient`（`'#rrggbb'`）蓋掉 LUT，時間照走（燈照樣算）；調色票時即時預覽（`ambient {color}`），放開寫檔；取消勾選拿掉欄位。

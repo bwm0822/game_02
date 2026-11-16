@@ -368,15 +368,15 @@ run('scene-tool', async t => {
         const nl0 = nLights();
         await sc.addLight(400, 300);
         out.lightAdd = await until(() => lo('l1')) && [(await scDisk()).lights, sc.S.pick, doc.querySelector('#right .sec').textContent, sb()._pickAt(400, 300)?.key,
-                                                      lo('l1').light.radius, lo('l1').light.intensity === sb()._autoI(), !!doc.querySelector('#tree [data-key="l1"]'), nLights() === nl0 + 1];
-        out.autoText = await until(() => doc.getElementById('autoI')?.textContent.startsWith('自動（目前 ') && !doc.getElementById('autoI').textContent.includes('?')) && doc.getElementById('autoI').textContent;
+                                                      lo('l1').light.radius, lo('l1').light.intensity === 1, !!doc.querySelector('#tree [data-key="l1"]'), nLights() === nl0 + 1];
         await sc.setLight('l1', {i: 2, color: '#ff0000'});
         out.lightFixed = await until(() => lo('l1')?.light.intensity === 2) && [Math.round(lo('l1').light.color.r * 255), Math.round(lo('l1').light.color.g * 255)];
         await sc.setLight('l1', {i: undefined});
-        // 自動：環境光一變就重算
-        const ia = await until(() => lo('l1')?.light.intensity !== 2) && lo('l1').light.intensity;
+        // 強度不跟環境光變（日夜交給 shader）
+        await until(() => lo('l1')?.light.intensity === 1);
         await sc.setField('ambient', '#101010');
-        out.lightAuto = await until(() => lo('l1')?.light.intensity !== ia) && [lo('l1').light.intensity > ia, lo('l1').light.intensity === sb()._autoI()];
+        await until(() => sb().lights.ambientColor.r < 0.1);
+        out.lightAuto = lo('l1').light.intensity;
         await sc.setField('ambient', undefined);
         // 跟著擺設：下拉換對象位置換算、畫面不動；擺設搬了光跟著
         sc.pickRole('l1');
@@ -399,9 +399,6 @@ run('scene-tool', async t => {
         await until(async () => (await scDisk()).lights[0].x === 10);
         sb()._send({sb: 'key', key: 'ArrowRight'});
         out.lightMove = await until(async () => (await scDisk()).lights[0].x === 11) && [(await scDisk()).lights[0].x, (await scDisk()).lights[0].y];
-        // 白天自動強度本來就是 0：先固定 i 才看得出藏起來
-        await sc.setLight('l1', {i: 1});
-        await until(() => lo('l1')?.light.intensity === 1);
         sc.toggleHide('l1');
         out.lightHide = await until(() => sb()._hidden.has('l1')) && lo('l1').light.intensity === 0 && !sb()._lightAt(sb()._lightPos(lo('l1')).x, sb()._lightPos(lo('l1')).y);
         sc.toggleHide('l1');
@@ -417,7 +414,6 @@ run('scene-tool', async t => {
         out.lightIconOn = await until(() => sb()._icons?.light === true) && [lAt(), localStorage.getItem('tools.scene.lightIcon')];
         sc.pickRole('l1');
         await until(() => sb()._sel === 'l1');
-        await sc.setLight('l1', {i: undefined});
         // 聚光燈：光錐空白＝點光源、方向／柔和反灰；填了 arc 變扇形，中線末端把手改方向＋半徑、弧端把手改光錐
         const kDis = (k) => doc.querySelector(`#right [data-k="${k}"]`)?.disabled;
         out.spotOff = await until(() => doc.querySelector('#right [data-k="arc"]')) && [kDis('dir'), kDis('soft'), lo('l1').light.spot];
@@ -709,11 +705,10 @@ run('scene-tool', async t => {
     t.check('右欄把手：雙擊回預設', r.rgripReset[0] === r.rgrip[1] && r.rgripReset[1] === null, JSON.stringify(r.rgripReset));
     t.check('拉右欄／左欄：場景在螢幕上不動（zoom 1.5）', r.stay && r.stay.every(s => Math.abs(s[0] - r.stay[0][0]) <= 1 && Math.abs(s[1] - r.stay[0][1]) <= 1), JSON.stringify(r.stay));
     t.check('擺設面板沒有發光', r.noPropLight);
-    t.check('光源：放了存檔（預設 r120、沒寫 i）、選起來、點得到、左欄列、強度＝自動',
+    t.check('光源：放了存檔（預設 r120、沒寫 i）、選起來、點得到、左欄列、強度＝1',
         r.lightAdd && JSON.stringify(r.lightAdd[0]) === JSON.stringify([{key: 'l1', x: 400, y: 300, r: 120, color: '#ffcc88'}]) && r.lightAdd[1] === 'l1' && r.lightAdd[2] === '光源 l1' && r.lightAdd[3] === 'l1' && r.lightAdd[4] === 120 && r.lightAdd[5] && r.lightAdd[6] && r.lightAdd[7], JSON.stringify(r.lightAdd));
-    t.check('光源：右欄顯示目前的自動強度', !!r.autoText, r.autoText);
     t.eq('光源：填了 i＝固定、顏色', JSON.stringify(r.lightFixed), JSON.stringify([255, 0]));
-    t.eq('光源：自動強度跟著環境光（變暗→變亮）', JSON.stringify(r.lightAuto), JSON.stringify([true, true]));
+    t.eq('光源：沒寫 i＝1，不跟環境光變', r.lightAuto, 1);
     t.check('跟著下拉：不跟／角色／擺設', r.folOpts.join() === ',r1,r2,p2', JSON.stringify(r.folOpts));
     t.check('光源跟擺設：位置換成相對、畫面不動', r.lightFollow && r.lightFollow[0] === 100 && r.lightFollow[1] === 100 && r.lightFollow[2].x === 400 && r.lightFollow[2].y === 300, JSON.stringify(r.lightFollow));
     t.eq('光源跟擺設：擺設搬了光跟著', r.lightFollowMove, 420);

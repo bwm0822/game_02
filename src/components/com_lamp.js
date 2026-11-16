@@ -33,8 +33,7 @@ export class COM_Lamp extends Com
         const color = bb.color ?? 0xffaa00;
         const radius = bb.radius ?? 200;
         const pos = root.pos;
-        this._light = setSpot(this.scene.lights.addLight(pos.x, pos.y, radius, color, this._calcIntensity()), bb);
-        root.regTS();
+        this._light = setSpot(this.scene.lights.addLight(pos.x, pos.y, radius, color, GM.LIGHT), bb);
         if (bb.lamp_on) {root.setTexture?.(bb.lamp_on);}
     }
 
@@ -48,22 +47,9 @@ export class COM_Lamp extends Com
         {
             this.scene.lights.removeLight(this._light);
             this._light = null;
-            root.regTS();
         }
 
         if (bb.lamp_off) {root.setTexture?.(bb.lamp_off);}
-    }
-
-    _calcIntensity()
-    {
-        const amb = this.scene.lights.ambientColor;
-        return Math.max(0, GM.LIGHT - amb.r);
-    }
-
-    _syncIntensity()
-    {
-        if (!this._light) {return;}
-        this._light.intensity = this._calcIntensity();
     }
 
     //------------------------------------------------------
@@ -77,7 +63,6 @@ export class COM_Lamp extends Com
         // 0.初始化
         this._lit = false;
         this._light = null;
-        this._onUpdateTime = this._syncIntensity.bind(this);
         if (bb.lit) {this._turnOn();}
 
         // 1.提供 [外部操作的指令]
@@ -87,7 +72,6 @@ export class COM_Lamp extends Com
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
 
         // 3.註冊(event)給其他元件或外部呼叫
-        root.on(GM.EVT.UPDATETIME, this._onUpdateTime)
         root.on(GM.TURN_ON,  this._turnOn.bind(this));
         root.on(GM.TURN_OFF, this._turnOff.bind(this));
         
@@ -101,7 +85,6 @@ export class COM_Lamp extends Com
         {
             this.scene.lights.removeLight(this._light);
             this._light = null;
-            this.root.unregTS();
         }
     }
 }

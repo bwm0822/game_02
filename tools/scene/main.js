@@ -295,9 +295,9 @@ function lightPanel(l)
             row('方向', n('dir', 15, '0', point), '°'),
             row('柔和', n('soft', 0.05, '0.2', point)),
             row('顏色', h('input', {type: 'color', value: l.color ?? '#ffcc88', dataset: {k: 'color'}, onchange: (e) => setLight(l.key, {color: e.target.value})})),
-            row('強度', n('i', 0.1, '自動'), ' ', h('span', {class: 'dim', id: 'autoI'}, l.i === undefined ? `自動（目前 ${S.autoI ?? '?'}）` : '')),
+            row('強度', n('i', 0.1, '1')),
             row('跟著', followSelect(l, (patch) => setLight(l.key, patch)))),
-        h('div', {class: 'hint dim'}, '強度空白＝照遊戲（GM.LIGHT－環境光，天越黑越亮）；光錐空白或 ≥360＝點光源，方向 0＝右、順時針，柔和＝錐邊淡出比例（0～1）；跟著角色時寫的是角色朝右的樣子，朝左自動鏡像；'
+        h('div', {class: 'hint dim'}, '強度空白＝1（同遊戲 GM.LIGHT；日夜由 shader 處理：天越亮燈越加不上去、白天看不出來）；光錐空白或 ≥360＝點光源，方向 0＝右、順時針，柔和＝錐邊淡出比例（0～1）；跟著角色時寫的是角色朝右的樣子，朝左自動鏡像；'
             + '拖圓點移動、拖虛線上的把手改半徑（聚光燈：中線末端的把手連方向一起改、弧兩端的把手改光錐；Shift 吸 16px／15°）；方向鍵 1px、Shift＋方向鍵一格'),
         h('div', {class: 'acts'}, h('button', {onclick: () => deleteObj(l.key)}, '刪除（Del）')),
     ];
@@ -1033,12 +1033,6 @@ addEventListener('message', (e) => {
     else if (m.sb === 'moveLight') setLight(m.key, {x: m.x, y: m.y}).then(syncGame);
     else if (m.sb === 'radiusLight') setLight(m.key, {r: m.r, ...(m.dir !== undefined && {dir: m.dir})}).then(syncGame);
     else if (m.sb === 'arcLight') setLight(m.key, {arc: m.arc}).then(syncGame);
-    else if (m.sb === 'autoI')
-    {
-        S.autoI = m.v;
-        const el = $('autoI');
-        if (el && lightOf(S.pick)?.i === undefined) el.textContent = `自動（目前 ${m.v}）`;
-    }
     else if (m.sb === 'key') onKey(m);
     else if (m.sb === 'ctx')
     {

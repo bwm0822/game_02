@@ -214,9 +214,6 @@ export class Sandbox extends GameScene
     {
         const c = this._amb ? Phaser.Display.Color.HexStringToColor(this._amb).color : this.getAmbientColor(TimeSystem.time);
         this.lights.setAmbientColor(c);
-        Object.values(this._lights ?? {}).forEach(o=>this._lightI(o));
-        const ai = Math.round(this._autoI()*100)/100;
-        if(ai!==this._lastAutoI) {this._lastAutoI = ai; this._send({sb:'autoI', v:ai});}
     }
 
     static _hhmm({h, m}) {return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;}
@@ -335,7 +332,7 @@ export class Sandbox extends GameScene
     }
 
     //------------------------------------------------------
-    //  光源：{key, x, y, r, color（'#rrggbb'）, i?（沒寫＝照遊戲 GM.LIGHT－環境光，同 com_lamp）, follow?（角色／擺設 key：x/y 變成相對它）,
+    //  光源：{key, x, y, r, color（'#rrggbb'）, i?（沒寫＝GM.LIGHT，同 com_lamp）, follow?（角色／擺設 key：x/y 變成相對它）,
     //        dir?/arc?/soft?（聚光燈，core/spotlight.js；跟著角色時資料＝朝右的樣子，朝左鏡像）}
     //  畫面上畫一個光色圓點讓它點得到、拖得動；選中時虛線圈＝半徑、圈上的把手拖 r
     //------------------------------------------------------
@@ -375,13 +372,11 @@ export class Sandbox extends GameScene
         setSpot(o.light, {dir:this._mirror(o) ? 180 - dir : dir, arc, soft});
     }
 
-    // 亮度：藏著＝0、有寫 i 用它、沒寫照遊戲公式（環境光一換就重算）
+    // 亮度：藏著＝0、有寫 i 用它、沒寫＝GM.LIGHT（日夜交給 shader：起壓點至少是環境光，白天燈自然加不上去）
     _lightI(o)
     {
-        o.light.intensity = this._hidden.has(o.data.key) ? 0 : o.data.i ?? this._autoI();
+        o.light.intensity = this._hidden.has(o.data.key) ? 0 : o.data.i ?? GM.LIGHT;
     }
-
-    _autoI() {return Math.max(0, GM.LIGHT - this.lights.ambientColor.r);}
 
     _dropLight(k)
     {
