@@ -12,7 +12,7 @@
   - `GameScene` 的 constructor 收 key（預設 `'GameScene'`），`Sandbox` 用 `'Sandbox'`。
   - `map.js`：`scene.sandbox` 時不建 `type:npc` 物件、跳過 `@群組` 圖層（不碰存檔）。
 - 分頁的 HTML 面板用 postMessage 操作 iframe 裡的 sandbox（同無頭測試走 `window.__dbg` 的精神）。訊息都帶 `sb` 欄位：
-  - 分頁 → sandbox：`load {scene}`（底圖不同就 `scene.restart` 帶著 scene 重開，同一張直接套用）、`grid {on}`、`home`（整張地圖放進畫面）、`select {key}`（選取框）、`hide {keys}`（👁）、`arm {act}`（指定目標，null＝取消）、`do {act}`、`replay`、`reset`、`hit`／`die`／`revive {key}`、`fxTick {key, id}`、`time {t}`（預覽時間）、`ambient {color}`（預覽環境色）、`play {speed}`（0＝停）。
+  - 分頁 → sandbox：`load {scene}`（底圖不同就 `scene.restart` 帶著 scene 重開，同一張直接套用）、`grid {on}`、`anchor {on}`、`icons {light, particle}`（記號開關）、`home`（整張地圖放進畫面）、`select {key}`（選取框）、`hide {keys}`（👁）、`arm {act}`（指定目標，null＝取消）、`do {act}`、`replay`、`reset`、`hit`／`die`／`revive {key}`、`fxTick {key, id}`、`time {t}`（預覽時間）、`ambient {color}`（預覽環境色）、`play {speed}`（0＝停）。
   - `act`＝`{key（誰做）, kind:'attack'|'ability'|'walk', id（技能）, tx, ty（目標格子）, tkey（點到的角色）}`。
   - sandbox → 分頁：`ready`（剛開好、還沒有場景，分頁收到就送 `load`）、`loaded {map, w, h}`（套用完；w/h＝地圖格數，「＋」放在中間用）、`error {msg}`（地圖載入失敗、角色 id 不存在，顯示在狀態列）、`select {key}`（左鍵點到的角色，空白處＝null）、`move {key, tx, ty}`（角色拖曳放開）、`moveProp {key, x, y}`（擺設拖曳放開）、`moveEmitter {key, x, y}`（粒子發射點拖曳放開，跟著角色／擺設時是相對位置）、`resizeProp {key, patch}`（擺設大小把手放開）、`moveLight {key, x, y}`／`radiusLight {key, r}`（光源拖曳／半徑把手放開）、`autoI {v}`（自動強度變了，右欄顯示）、`ctx {tx, ty, wx, wy, key, cx, cy}`（右鍵，wx/wy 世界座標，cx/cy 是 iframe 裡的 client 座標）、`key {key, ctrl, shift, alt}`（iframe 有焦點時的鍵盤，分頁照自己的快捷鍵處理）、`disarm`（指定中按右鍵）、`time {t}`（▶ 播放中的時鐘）。
 - 角色、物品、部位等遊戲資料（`role.json`、`item.json`、`part.json`、`anim.json`、`fx.json`、`particle.json`、`ability.json`、`local.json`、`textures.json`）在別的分頁存檔時，sandbox 的 DB 就舊了：分頁收到廣播就整個重開 iframe（工具列「重開」同）。
@@ -68,6 +68,10 @@
 - `lights: [{key:'l<n>', x, y, r, color, i?, follow?}]`：Phaser Light2D 的點光源（擺設、角色、地形都是 Light2D）。`i` 沒寫＝照遊戲（`GM.LIGHT − 環境光.r`，同 `com_lamp`／`com_light`，天越黑越亮、白天是 0；`_ambient()` 一換就重算、送 `autoI` 給右欄顯示「自動（目前 x）」），寫了就固定。新的預設 `{r:120, color:'#ffcc88'}`。擺設原本的 `light`（黏在圖上的發光）拿掉了，燈＝擺設＋跟著它的光源。
 - 畫面：每個光源一個光色圓點（黑框，選中綠框，固定 6 螢幕 px）；選中時畫虛線圈＝半徑、圈右邊一個白色把手拖 `r`（游標到圓心的距離，整數、最少 1，Shift 吸 16 的倍數，放開送 `radiusLight`）。點選優先於角色／擺設（排在發射點後面）、拖曳（Shift 吸 16px）、方向鍵、Del、👁（藏＝強度 0、點不到）。右鍵「在這裡放光源」、左欄「光源（n）」＋（地圖中間），不問東西直接放。
 - 右欄：位置（跟著時是相對）、半徑、顏色、強度（空白＝自動）、跟著。
+
+## 記號開關（光源、粒子）
+
+- 工具列「☑ 光源記號」「☑ 粒子記號」（預設勾、記 `tools.scene.lightIcon`／`tools.scene.particleIcon`、送 `icons {light, particle}`，`syncGame()` 一開就送）：沒勾時光色圓點／橘色菱形不畫、畫面上點不到（點擊落到底下的角色／擺設），**選中的那一個例外**（從左欄選）：照樣畫記號（光源連虛線圈＋半徑把手）、能拖、方向鍵、Del，取消選取又藏。只管記號，光照跟粒子照常；👁 藏的照舊什麼都不畫。不寫 scenes.json、不進 undo（`Sandbox._markOn(kind, key)`）。
 
 ## 跟隨（粒子、光源）
 

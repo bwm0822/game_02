@@ -380,6 +380,17 @@ run('scene-tool', async t => {
         out.lightHide = await until(() => sb()._hidden.has('l1')) && lo('l1').light.intensity === 0 && !sb()._lightAt(sb()._lightPos(lo('l1')).x, sb()._lightPos(lo('l1')).y);
         sc.toggleHide('l1');
         out.lightUnhide = await until(() => lo('l1')?.light.intensity === 1);
+        // 工具列「光源記號」沒勾：選中的照樣點得到，沒選中的點不到；光照不變
+        const lAt = () => {const p = sb()._lightPos(lo('l1')); return !!sb()._lightAt(p.x, p.y);};
+        const chkL = doc.getElementById('chkLightIcon');
+        chkL.checked = false; chkL.dispatchEvent(new Event('change'));
+        out.lightIconSel = await until(() => sb()._icons?.light === false) && [lAt(), localStorage.getItem('tools.scene.lightIcon')];
+        sc.pickRole('r1');
+        out.lightIconOff = await until(() => sb()._sel === 'r1') && [lAt(), lo('l1').light.intensity];
+        chkL.checked = true; chkL.dispatchEvent(new Event('change'));
+        out.lightIconOn = await until(() => sb()._icons?.light === true) && [lAt(), localStorage.getItem('tools.scene.lightIcon')];
+        sc.pickRole('l1');
+        await until(() => sb()._sel === 'l1');
         await sc.setLight('l1', {i: undefined});
         // 粒子也能跟擺設
         const sid0 = Object.entries(sc.S.refs.particles).find(([, d]) => d.mode !== 'burst')[0];
@@ -435,6 +446,16 @@ run('scene-tool', async t => {
         sc.toggleHide('e1');
         out.hideEm = await until(() => em('e1')?.fx?.emitter?.visible === false) && !sb()._emitterAt(sb()._emitPos(em('e1')).x, sb()._emitPos(em('e1')).y);
         sc.toggleHide('e1');
+        const eAt = () => {const p = sb()._emitPos(em('e1')); return !!sb()._emitterAt(p.x, p.y);};
+        const chkP = doc.getElementById('chkParticleIcon');
+        sc.pickRole('e1');
+        await until(() => sb()._sel === 'e1');
+        chkP.checked = false; chkP.dispatchEvent(new Event('change'));
+        out.emIconSel = await until(() => sb()._icons?.particle === false) && [eAt(), localStorage.getItem('tools.scene.particleIcon')];
+        sc.pickRole('r1');
+        out.emIconOff = await until(() => sb()._sel === 'r1') && [eAt(), em('e1')?.fx?.emitter?.visible];
+        chkP.checked = true; chkP.dispatchEvent(new Event('change'));
+        out.emIconOn = await until(() => sb()._icons?.particle === true) && [eAt(), localStorage.getItem('tools.scene.particleIcon')];
         sc.pickRole('e1');
         sb()._send({sb: 'key', key: 'Delete'});
         out.delEm = await until(() => !em('e1')) && (await scDisk()).particles.map(e => e.key);
@@ -554,6 +575,9 @@ run('scene-tool', async t => {
     t.eq('光源：拖曳放開寫檔、方向鍵', JSON.stringify(r.lightMove), JSON.stringify([11, 20]));
     t.check('光源：👁 藏＝強度 0、點不到', r.lightHide);
     t.check('光源：取消藏＝回到原本強度', r.lightUnhide);
+    t.eq('光源記號沒勾：選中的照樣點得到、記 localStorage', JSON.stringify(r.lightIconSel), JSON.stringify([true, '0']));
+    t.eq('光源記號沒勾：沒選中的點不到、光照不變', JSON.stringify(r.lightIconOff), JSON.stringify([false, 1]));
+    t.eq('光源記號勾回來', JSON.stringify(r.lightIconOn), JSON.stringify([true, '1']));
     t.eq('粒子也能跟擺設', JSON.stringify(r.emProp), JSON.stringify([true, true]));
     t.eq('刪被跟的擺設：光源、粒子改成不跟、位置換成絕對', JSON.stringify(r.detach), JSON.stringify([null, true, true, null, true, true].map(v => v ?? undefined)));
     t.eq('刪被跟的擺設：undo 回來', JSON.stringify(r.detachUndo), JSON.stringify(['p2', 'p2']));
@@ -573,6 +597,9 @@ run('scene-tool', async t => {
     t.check('粒子：角色重建後照樣跟上', r.followMove);
     t.check('粒子：拖曳放開寫檔', r.moveEm);
     t.check('粒子：👁 藏起來、點不到', r.hideEm);
+    t.eq('粒子記號沒勾：選中的照樣點得到、記 localStorage', JSON.stringify(r.emIconSel), JSON.stringify([true, '0']));
+    t.eq('粒子記號沒勾：沒選中的點不到、粒子照噴', JSON.stringify(r.emIconOff), JSON.stringify([false, true]));
+    t.eq('粒子記號勾回來', JSON.stringify(r.emIconOn), JSON.stringify([true, '1']));
     t.eq('粒子：Del 刪', JSON.stringify(r.delEm), JSON.stringify(['e2']));
 
     t.eq('日夜：沒寫時間＝08:00、白天全亮', JSON.stringify(r.time0), JSON.stringify(['08:00', 8, [255, 255, 255]]));

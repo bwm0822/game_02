@@ -1,5 +1,5 @@
 // 場景分頁：iframe 跑遊戲本身（開發版 /?sandbox，src/scenes/Sandbox.js），左欄場景清單＋場景裡的東西、右欄屬性，tools/scenes.json 立刻寫檔＋undo；見 docs/scene-tool.md
-// 跟 sandbox 的訊息都帶 sb 欄位：→ load {scene}／grid {on}／home／select {key}／hide {keys}
+// 跟 sandbox 的訊息都帶 sb 欄位：→ load {scene}／grid {on}／home／select {key}／hide {keys}／icons {light,particle}
 //                               ← ready（剛開好、還沒載場景）／loaded {map}／error {msg}／select {key}／move {key,tx,ty}／ctx {tx,ty,key,cx,cy}／key {key,ctrl,shift,alt}
 import '../common/splitter.js';
 import {$, h, status, ask} from '../common/dom.js';
@@ -10,7 +10,7 @@ import {KINDS, KIND_NAMES} from '../role/schema.js';
 import * as ST from './store.js';
 
 const LS = {sel: 'tools.scene.sel', grid: 'tools.scene.grid', role: 'tools.scene.lastRole', particle: 'tools.scene.lastParticle',
-            anchor: 'tools.scene.anchor', sizeLock: 'tools.scene.sizeLock', exportMode: 'tools.scene.exportMode', exportDir: 'tools.scene.exportDir'};
+            anchor: 'tools.scene.anchor', lightIcon: 'tools.scene.lightIcon', particleIcon: 'tools.scene.particleIcon', sizeLock: 'tools.scene.sizeLock', exportMode: 'tools.scene.exportMode', exportDir: 'tools.scene.exportDir'};
 const ls = {
     get: (k) => {try {return localStorage.getItem(k);} catch {return null;}},
     set: (k, v) => {try {localStorage.setItem(k, v);} catch { /* 私密視窗 */ }},
@@ -30,6 +30,8 @@ const S = {
     ready: false,                   // sandbox 開好了
     grid: ls.get(LS.grid) !== '0',
     anchor: ls.get(LS.anchor) !== '0',
+    lightIcon: ls.get(LS.lightIcon) !== '0',
+    particleIcon: ls.get(LS.particleIcon) !== '0',
     refs: {roles: {}, items: {}, abilities: {}, fx: {}, particles: {}},
     act: 'attack',                  // 動作下拉：attack／walk／ab:<技能 id>
     arm: null,                      // 指定目標中 {key, kind, id}
@@ -913,10 +915,13 @@ async function scanMaps(assets)
     return out.sort((a, b) => (a === 'sandbox' ? -1 : b === 'sandbox' ? 1 : a.localeCompare(b)));
 }
 
+const iconsMsg = () => ({sb: 'icons', light: S.lightIcon, particle: S.particleIcon});
+
 function syncGame()
 {
     toGame({sb: 'grid', on: S.grid});
     toGame({sb: 'anchor', on: S.anchor});
+    toGame(iconsMsg());
     toGame(playMsg());
     toGame(selMsg());
     toGame({sb: 'hide', keys: [...S.hidden]});
@@ -990,6 +995,12 @@ $('chkGrid').checked = S.grid;
 $('chkGrid').onchange = () => {S.grid = $('chkGrid').checked; ls.set(LS.grid, S.grid ? '1' : '0'); toGame({sb: 'grid', on: S.grid});};
 $('chkAnchor').checked = S.anchor;
 $('chkAnchor').onchange = () => {S.anchor = $('chkAnchor').checked; ls.set(LS.anchor, S.anchor ? '1' : '0'); toGame({sb: 'anchor', on: S.anchor});};
+for (const k of ['lightIcon', 'particleIcon'])
+{
+    const el = $('chk' + k[0].toUpperCase() + k.slice(1));
+    el.checked = S[k];
+    el.onchange = () => {S[k] = el.checked; ls.set(LS[k], S[k] ? '1' : '0'); toGame(iconsMsg());};
+}
 $('btnHome').onclick = () => toGame({sb: 'home'});
 $('btnReload').onclick = reloadGame;
 $('btnReset').onclick = () => toGame({sb: 'reset'});

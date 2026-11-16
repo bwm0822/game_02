@@ -311,7 +311,7 @@ export class Sandbox extends GameScene
     {
         const r = 8/this.cameras.main.zoom;
         return Object.entries(this._emitters ?? {}).find(([k, o])=>{
-            if(this._hidden.has(k)) {return false;}
+            if(!this._markOn('particle', k)) {return false;}
             const p = this._emitPos(o);
             return Math.abs(p.x-wx)<=r && Math.abs(p.y-wy)<=r;
         });
@@ -378,7 +378,7 @@ export class Sandbox extends GameScene
     {
         const r = 8/this.cameras.main.zoom;
         return Object.entries(this._lights ?? {}).find(([k, o])=>{
-            if(this._hidden.has(k)) {return false;}
+            if(!this._markOn('light', k)) {return false;}
             const p = this._lightPos(o);
             return Math.abs(p.x-wx)<=r && Math.abs(p.y-wy)<=r;
         });
@@ -389,6 +389,12 @@ export class Sandbox extends GameScene
         const t = o.target?.active ? o.target : null;
         o.data = {...o.data, x:x-(t?.x ?? 0), y:y-(t?.y ?? 0)};
         o.light.setPosition(x, y);
+    }
+
+    // 記號畫不畫、點不點得到：👁 藏著＝不；工具列「光源記號／粒子記號」沒勾＝只有選中的那個
+    _markOn(kind, k)
+    {
+        return !this._hidden.has(k) && (this._icons?.[kind] !== false || k===this._sel);
     }
 
     // 選中光源的半徑把手（圈的右邊）
@@ -514,14 +520,14 @@ export class Sandbox extends GameScene
         }
         for(const [k, e] of Object.entries(this._emitters ?? {}))
         {
-            if(this._hidden.has(k)) {continue;}
+            if(!this._markOn('particle', k)) {continue;}
             const {x, y} = this._emitPos(e), s = 6/z;
             g.lineStyle(2/z, k===this._sel ? 0x7ddc5a : 0xff9933, 1).fillStyle(0x000000, 0.4)
                 .fillPoints([{x, y:y-s}, {x:x+s, y}, {x, y:y+s}, {x:x-s, y}], true).strokePoints([{x, y:y-s}, {x:x+s, y}, {x, y:y+s}, {x:x-s, y}], true);
         }
         for(const [k, o] of Object.entries(this._lights ?? {}))
         {
-            if(this._hidden.has(k)) {continue;}
+            if(!this._markOn('light', k)) {continue;}
             const {x, y} = this._lightPos(o), s = 6/z, sel = k===this._sel;
             g.fillStyle(o.hex, 1).fillCircle(x, y, s)
                 .lineStyle((sel ? 2 : 1.5)/z, sel ? 0x7ddc5a : 0x000000, 1).strokeCircle(x, y, s);
@@ -633,6 +639,7 @@ export class Sandbox extends GameScene
                 break;
             case 'grid': this._gridOn = !!m.on; this._drawGrid(); break;
             case 'anchor': this._anchorOn = !!m.on; break;
+            case 'icons': this._icons = {light:!!m.light, particle:!!m.particle}; break;
             case 'home': this._home(); break;
             case 'select': this._sel = m.key ?? null; this._size = {lock:m.lock ?? 'pct', ratio:m.ratio ?? true}; break;
             case 'arm': this._arm = m.act ?? null; this._drawSel(); break;
