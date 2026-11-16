@@ -9,7 +9,8 @@ import * as IC from '../common/icons.js';
 import {KINDS, KIND_NAMES} from '../role/schema.js';
 import * as ST from './store.js';
 
-const LS = {sel: 'tools.scene.sel', grid: 'tools.scene.grid', role: 'tools.scene.lastRole', particle: 'tools.scene.lastParticle'};
+const LS = {sel: 'tools.scene.sel', grid: 'tools.scene.grid', role: 'tools.scene.lastRole', particle: 'tools.scene.lastParticle',
+            sizeLock: 'tools.scene.sizeLock', exportMode: 'tools.scene.exportMode', exportDir: 'tools.scene.exportDir'};
 const ls = {
     get: (k) => {try {return localStorage.getItem(k);} catch {return null;}},
     set: (k, v) => {try {localStorage.setItem(k, v);} catch { /* 私密視窗 */ }},
@@ -343,6 +344,203 @@ function imgEl(img, size)
     return IC.iconEl(img, size);
 }
 
+// ---------- 擺設大小：畫面＝原圖 × pct%（只有 file: 圖）× sx／sy；pct 是「存檔…」烤圖用、sx/sy 是擺放，兩個不互相換算 ----------
+const isFile = (img) => !!img?.startsWith(FILE);
+const fileUrl = (img) => `/${img.slice(FILE.length).replace(/^public\//, '')}`;
+const pctOf = (p) => (isFile(p.img) ? (p.pct ?? 100) / 100 : 1);
+const r4 = (v) => Math.round(v * 10000) / 10000;
+const one = (v) => (v === 1 ? undefined : v);
+const sizes = {};       // img → {w, h}｜null（載不到）
+const freeRatio = new Set();    // sx===sy 卻要分開改的擺設（只在這次開著時）
+const sizeLock = () => (ls.get(LS.sizeLock) === 'scale' ? 'scale' : 'pct');
+
+const loadImg = (url) => new Promise(res => {const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = url;});
+
+function srcSize(img)
+{
+    if (img in sizes) return sizes[img];
+    sizes[img] = undefined;
+    (isFile(img) ? loadImg(fileUrl(img)).then(i => i && {w: i.naturalWidth, h: i.naturalHeight}) : IC.frameOf(img).then(r => r && {w: r.f.w, h: r.f.h}))
+        .then(s => {sizes[img] = s ?? null; if (propOf(S.pick)?.img === img) renderRight();});
+    return undefined;
+}
+
+function sizeRows(p, row)
+{
+    const sx = p.sx ?? 1, sy = p.sy ?? 1, k = pctOf(p), src = srcSize(p.img);
+    const linked = sx === sy && !freeRatio.has(p.key);
+    const inp = (v, step, k2, onchange, ph) => h('input', {type: 'number', step, value: v ?? '', placeholder: ph, class: 'n', dataset: {k: k2}, onchange: (e) => {
+        const n = +e.target.value;
+        if (e.target.value === '' || !(n > 0)) return renderRight();
+        onchange(n);
+    }});
+    const setS = (a, b) => setProp(p.key, {sx: one(r4(a)), sy: one(r4(b))});
+    const setPct = (v) => setProp(p.key, {pct: r4(v) === 100 ? undefined : r4(v)});
+    const byPct = () => sizeLock() === 'scale' && isFile(p.img);
+    const setW = (w) => {
+        if (byPct()) return setPct(w / (src.w * sx) * 100);
+        const v = w / (src.w * k);
+        return linked ? setS(v, v) : setS(v, sy);
+    };
+    const setH = (hh) => {
+        if (byPct()) return setPct(hh / (src.h * sy) * 100);
+        const v = hh / (src.h * k);
+        return linked ? setS(v, v) : setS(sx, v);
+    };
+    const ratio = h('label', {title: '勾著＝sx 跟 sy 一樣，只有一格'}, h('input', {type: 'checkbox', checked: linked, dataset: {k: 'ratio'}, onchange: (e) => {
+        if (e.target.checked) {freeRatio.delete(p.key); if (sx !== sy) return setS(sx, sx);}
+        else freeRatio.add(p.key);
+        renderRight();
+    }}), ' 等比');
+    const lock = isFile(p.img) && h('span', {title: '改寬高時誰吃下變化'}, ' 鎖：', ...[['pct', '%'], ['scale', 'scale']].map(([v, t]) => h('label', null,
+        h('input', {type: 'radio', name: 'sizeLock', value: v, checked: sizeLock() === v, dataset: {k: `lock.${v}`}, onchange: () => {ls.set(LS.sizeLock, v); renderRight();}}), t)));
+    return [
+        isFile(p.img) && row('%', inp(p.pct, 1, 'pct', setPct, '100'), h('span', {class: 'dim'}, ' 存檔時烤成原圖的幾 %')),
+        row('scale', linked ? inp(p.sx, 0.05, 'sx', (n) => setS(n, n), '1') : [inp(p.sx, 0.05, 'sx', (n) => setS(n, sy), '1'), ' × ', inp(p.sy, 0.05, 'sy', (n) => setS(sx, n), '1')], ' ', ratio),
+        row('寬高', src ? [inp(Math.round(src.w * k * sx), 1, 'w', setW), ' × ', inp(Math.round(src.h * k * sy), 1, 'h', setH), ' px', lock] : h('span', {class: 'dim'}, src === null ? '讀不到圖的大小' : '…')),
+        src && row('', h('span', {class: 'dim'}, `原圖 ${src.w}×${src.h}`)),
+    ];
+}
+
+// 把 file: 圖縮成 pct% 另存一份 PNG（場景不動）；path＝相對專案的資料夾；回傳 {path, w, h} 或丟錯
+async function bakeProp(key, path, name)
+{
+    const p = propOf(key);
+    if (!p || !isFile(p.img)) throw new Error('只有外部 png 的擺設能存檔');
+    name = name.trim().replace(/\.png$/i, '');
+    if (!name) throw new Error('檔名不能空白');
+    if (/[\\/:*?"<>|]/.test(name)) throw new Error(`檔名不能有 \\ / : * ? " < > |`);
+    const dir = await FS.resolveDir(S.root, path);
+    if (await FS.tryFile(dir, `${name}.png`)) throw new Error(`${path}/${name}.png 已經有了，換個檔名`);
+    const inTex = path === TEX || path.startsWith(`${TEX}/`);
+    if (inTex)
+    {
+        const hit = await findTexKey(await FS.resolveDir(S.root, TEX), name);
+        if (hit) throw new Error(`textures/${hit}.png 已經有了（texture key 不能撞名），換個檔名`);
+    }
+    const img = await loadImg(fileUrl(p.img));
+    if (!img) throw new Error(`讀不到 ${p.img.slice(FILE.length)}`);
+    const k = (p.pct ?? 100) / 100, w = Math.max(1, Math.round(img.naturalWidth * k)), hh = Math.max(1, Math.round(img.naturalHeight * k));
+    const cv = Object.assign(document.createElement('canvas'), {width: w, height: hh});
+    const g = cv.getContext('2d');
+    g.imageSmoothingQuality = 'high';
+    g.drawImage(img, 0, 0, w, hh);
+    await FS.writeFile(dir, `${name}.png`, await new Promise(res => cv.toBlob(res, 'image/png')));
+    if (inTex) await updateTextures();
+    return {path: `${path}/${name}.png`, w, h: hh};
+}
+
+const TEX = 'public/assets/textures';
+const TEX_SKIP = ['.tbd', 'minimap'];
+
+// textures/ 底下有沒有同名的 key（大小寫不分）；回傳相對 textures/ 的路徑（不含 .png）
+async function findTexKey(dir, name, pre = '')
+{
+    const {dirs, files} = await FS.listDir(dir);
+    const f = files.find(x => x.name.toLowerCase() === `${name.toLowerCase()}.png`);
+    if (f) return pre + f.name.slice(0, -4);
+    for (const d of dirs)
+    {
+        if (!pre && TEX_SKIP.includes(d.name)) continue;
+        const r = await findTexKey(d, name, `${pre}${d.name}/`);
+        if (r) return r;
+    }
+    return null;
+}
+
+async function updateTextures()
+{
+    try
+    {
+        const r = await (await fetch('/__tools/textures', {method: 'POST'})).json();
+        if (r.ok) SH.notifySaved('textures.json');
+        else status(`圖片清單沒更新：${r.errors.join('；')}`);
+    }
+    catch (e) {status(`圖片清單沒更新：${e.message}`);}
+}
+
+// 資料夾樹（懶載入）：root＝相對專案的根，cur＝預設選的資料夾；回傳 {el, get()}
+function folderTree(root, cur, onPick)
+{
+    const skip = (rel, n) => n.startsWith('.') || n === 'node_modules' || (rel === TEX && TEX_SKIP.includes(n));
+    let sel = null;
+    const node = (path, label, depth) => {
+        const kids = h('div', {hidden: true});
+        const tw = h('span', {class: 'tw'}, '▸');
+        const line = h('div', {class: 'fold', dataset: {path}, style: `padding-left:${depth * 14}px`}, tw, h('span', null, `📁 ${label}`));
+        let loaded = false;
+        const open = async (on) => {
+            if (on && !loaded)
+            {
+                loaded = true;
+                const {dirs} = await FS.listDir(await FS.resolveDir(S.root, path));
+                kids.replaceChildren(...dirs.filter(d => !skip(path, d.name)).map(d => node(`${path ? `${path}/` : ''}${d.name}`, d.name, depth + 1)));
+            }
+            kids.hidden = !on;
+            tw.textContent = on ? '▾' : '▸';
+        };
+        line.onclick = (e) => {
+            if (e.target === tw) return open(kids.hidden);
+            sel?.classList.remove('sel');
+            (sel = line).classList.add('sel');
+            onPick(path);
+        };
+        line.open = open;
+        return h('div', null, line, kids);
+    };
+    const top = node(root, root || S.root.name, 0);
+    const el = h('div', {class: 'folders'}, top);
+    // 一路展開到 cur、選起來
+    (async () => {
+        let n = top;
+        const segs = cur.slice(root.length).split('/').filter(Boolean);
+        for (let i = 0; ; i++)
+        {
+            const line = n.firstChild;
+            await line.open(true);
+            const next = i < segs.length && [...n.lastChild.children].find(c => c.firstChild.dataset.path.split('/').pop() === segs[i]);
+            if (!next) {line.click(); line.scrollIntoView({block: 'nearest'}); return;}
+            n = next;
+        }
+    })().catch(() => {});
+    return {el};
+}
+
+async function exportProp(p)
+{
+    if (!S.root) return status('先在上方選擇專案資料夾');
+    const src = p.img.slice(FILE.length), home = src.split('/').slice(0, -1).join('/');
+    const base = src.split('/').pop().replace(/\.png$/i, '');
+    let mode = ls.get(LS.exportMode) === 'home' ? 'home' : 'tex', path = '';
+    const box = h('div', {class: 'treebox'}), shown = h('div', {class: 'dim', style: 'word-break: break-all'});
+    const name = h('input', {size: 28, value: `${base}-copy`});
+    const build = () => {
+        const cur = mode === 'tex' ? (ls.get(LS.exportDir)?.startsWith(TEX) ? ls.get(LS.exportDir) : TEX) : home;
+        path = cur;
+        shown.textContent = path;
+        box.replaceChildren(folderTree(mode === 'tex' ? TEX : '', cur, (v) => {path = v; shown.textContent = v;}).el);
+    };
+    const radio = (v, t) => h('label', null, h('input', {type: 'radio', name: 'exMode', value: v, checked: mode === v, onchange: () => {mode = v; ls.set(LS.exportMode, v); build();}}), t);
+    build();
+    const k = (p.pct ?? 100) / 100, img = await loadImg(fileUrl(p.img));
+    if (!img) return status(`讀不到 ${src}`);
+    const p0 = ask(`存檔：烤成 ${p.pct ?? 100}%（${Math.max(1, Math.round(img.naturalWidth * k))}×${Math.max(1, Math.round(img.naturalHeight * k))}）`, [
+        h('div', {class: 'row2'}, radio('tex', '存到 textures'), ' ', radio('home', '存到原始路徑')),
+        box, shown,
+        h('label', null, '檔名 ', name, '.png'),
+        h('div', {class: 'hint dim'}, '場景不會改（擺設還是用原圖）；存進 textures/ 會自動更新圖片清單'),
+    ], [['ok', '存檔'], ['cancel', '取消']]);
+    name.select();
+    if (await p0 !== 'ok') return;
+    if (mode === 'tex') ls.set(LS.exportDir, path);
+    try
+    {
+        const r = await bakeProp(p.key, path, name.value);
+        status(`已存 ${r.path}（${r.w}×${r.h}）`);
+    }
+    catch (e) {status(e.message);}
+}
+
 function propPanel(p)
 {
     const put = (k, conv = Number) => (e) => {
@@ -357,10 +555,11 @@ function propPanel(p)
     return [
         h('div', {class: 'sec'}, `擺設 ${p.key}`),
         h('div', {class: 'row2'}, imgEl(p.img, 64), h('span', {class: 'dim', style: 'word-break: break-all'}, p.img),
-            h('button', {onclick: async () => {const v = await askImg(p.img); if (v) setProp(p.key, {img: v});}}, '換圖…')),
+            h('button', {onclick: async () => {const v = await askImg(p.img); if (v) setProp(p.key, {img: v, pct: isFile(v) ? p.pct : undefined});}}, '換圖…'),
+            isFile(p.img) && h('button', {title: '把原圖縮成 % 另存一份 PNG（場景不動）', onclick: () => exportProp(p)}, '存檔…')),
         h('table', {class: 'props'},
             row('位置', n('x', 1), ' ', n('y', 1)),
-            row('scale', n('scale', 0.05, '1')),
+            ...sizeRows(p, row),
             row('翻轉', h('input', {type: 'checkbox', checked: !!p.flip, dataset: {k: 'flip'}, onchange: put('flip')})),
             row('角度', n('angle', 1, '0')),
             row('錨點', n('ox', 0.05, '0.5'), ' ', n('oy', 0.05, '1')),
@@ -747,5 +946,5 @@ frame.src = '/?sandbox=1';
 refresh();
 
 // 給無頭測試用
-window.__sc = {S, setProject, addScene, dupScene, renameScene, deleteScene, select, undo, redo, addRole, setRole, setEquip, deleteRole, pickRole, toggleHide, arm, toGame, addProp, setProp, deleteObj, nudge, addEmitter, setEmitter, setField, setPlaying,
+window.__sc = {S, setProject, addScene, dupScene, renameScene, deleteScene, select, undo, redo, addRole, setRole, setEquip, deleteRole, pickRole, toggleHide, arm, toGame, addProp, setProp, deleteObj, nudge, bakeProp, srcSize, addEmitter, setEmitter, setField, setPlaying,
                flush: () => S.q};

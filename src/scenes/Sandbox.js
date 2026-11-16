@@ -111,8 +111,9 @@ export class Sandbox extends GameScene
     }
 
     //------------------------------------------------------
-    //  擺設：{key, img, x, y（錨點的世界座標）, scale, flip, angle, ox, oy, depth（加在 y 上）, light:{r, color, i, x, y}}
+    //  擺設：{key, img, x, y（錨點的世界座標）, sx, sy, pct, flip, angle, ox, oy, depth（加在 y 上）, light:{r, color, i, x, y}}
     //  img＝textures 的 key（可帶 :frame）或 file:<相對專案的路徑>（還沒放進 textures/ 的圖，vite 直接給）
+    //  pct＝file: 圖要烤成原圖的幾 %（工具「存檔…」用），這裡直接乘進 scale 模擬，不真的縮圖
     //------------------------------------------------------
     async _applyProps(list)
     {
@@ -156,8 +157,9 @@ export class Sandbox extends GameScene
 
     _makeProp(p, [key, frame])
     {
+        const k = p.img.startsWith('file:') ? (p.pct ?? 100) / 100 : 1;
         const sp = this.add.image(p.x, p.y, key, frame)
-            .setOrigin(p.ox ?? 0.5, p.oy ?? 1).setScale(p.scale ?? 1).setFlipX(!!p.flip).setAngle(p.angle ?? 0)
+            .setOrigin(p.ox ?? 0.5, p.oy ?? 1).setScale(k * (p.sx ?? 1), k * (p.sy ?? 1)).setFlipX(!!p.flip).setAngle(p.angle ?? 0)
             .setDepth(p.y + (p.depth ?? 0)).setPipeline('Light2D').setVisible(!this._hidden.has(p.key));
         const o = {sp, data:p, sig:JSON.stringify(p)};
         if(p.light)

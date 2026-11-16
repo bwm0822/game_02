@@ -218,8 +218,48 @@ run('scene-tool', async t => {
         await sc.deleteObj('p3');
 
         // 屬性
-        await sc.setProp('p1', {scale: 2, flip: true, angle: 30, ox: 0, oy: 0.5, depth: 5});
+        await sc.setProp('p1', {sx: 2, sy: 2, flip: true, angle: 30, ox: 0, oy: 0.5, depth: 5});
         out.attrs = await until(() => prop('p1')?.sp.scaleX === 2) && [prop('p1').sp.flipX, prop('p1').sp.angle, prop('p1').sp.originX, prop('p1').sp.originY, prop('p1').sp.depth];
+
+        // 大小：sx/sy 分開；pct 只對 file: 圖、乘進畫面
+        await sc.setProp('p1', {sy: 3, pct: 50});
+        out.sxy = await until(() => prop('p1')?.sp.scaleY === 3) && [prop('p1').sp.scaleX, prop('p1').sp.scaleY];
+        await sc.setProp('p1', {sy: 2, pct: undefined});
+        await sc.setProp('p2', {pct: 50, sx: 2, sy: 2});
+        out.pct = await until(() => prop('p2')?.sp.scaleX === 1) && prop('p2').sp.scaleY;
+
+        // 面板：寬高照鎖改 sx/sy 或 pct、等比勾選
+        win.localStorage.removeItem('tools.scene.sizeLock');
+        const p2 = async () => (await scDisk()).props.find(p => p.key === 'p2');
+        const pick = (k) => doc.querySelector(`#right [data-k="${k}"]`);
+        const setIn = (k, v) => {const e = pick(k); e.value = v; e.dispatchEvent(new win.Event('change'));};
+        const src = await until(() => sc.srcSize(prop('p2').data.img));
+        sc.pickRole('p2');
+        out.wh0 = await until(() => pick('w')?.value === String(src.w)) && [pick('w').value, pick('h').value, !!pick('sy'), pick('ratio').checked, !!pick('pct'), !!pick('lock.scale')];
+        setIn('w', src.w * 2);
+        out.wLinked = await until(async () => (await p2()).sx === 4) && [(await p2()).sx, (await p2()).sy, (await p2()).pct];
+        pick('ratio').click();
+        out.unlinked = await until(() => pick('sy')) && !!pick('sy');
+        setIn('h', src.h);
+        out.hFree = await until(async () => (await p2()).sy === 2) && [(await p2()).sx, (await p2()).sy];
+        pick('lock.scale').click();
+        await until(() => pick('lock.scale')?.checked);
+        setIn('w', src.w);
+        out.wPct = await until(async () => (await p2()).pct === 25) && [(await p2()).pct, (await p2()).sx, (await p2()).sy];
+        pick('ratio').click();
+        out.relink = await until(async () => (await p2()).sy === 4) && [(await p2()).sx, (await p2()).sy, !pick('sy')];
+        win.localStorage.removeItem('tools.scene.sizeLock');
+
+        // 存檔：縮成 pct% 另存，場景不動；撞名擋
+        await dir(proj, 'images', 'scene');
+        const before4 = await disk();
+        const baked = await sc.bakeProp('p2', 'images/scene', 'baked.png');
+        const bfh = await (await dir(proj, 'images', 'scene')).getFileHandle('baked.png');
+        const bimg = await createImageBitmap(await bfh.getFile());
+        out.bake = [baked.path, [baked.w, baked.h], [bimg.width, bimg.height], [Math.max(1, Math.round(src.w / 4)), Math.max(1, Math.round(src.h / 4))], await disk() === before4];
+        out.bakeDup = await sc.bakeProp('p2', 'images/scene', 'baked').then(() => '', e => e.message);
+        await write(await dir(proj, 'public', 'assets', 'textures', 'sub'), 'Baked2.png', 'x');
+        out.bakeKey = await sc.bakeProp('p2', 'public/assets/textures', 'baked2').then(() => '', e => e.message);
         const nl = () => sb().lights.lights.length;
         const l0 = nl();
         await sc.setProp('p1', {light: {r: 150, color: '#ff0000', i: 2, y: -10}});
@@ -361,6 +401,17 @@ run('scene-tool', async t => {
     t.check('外部 png：用網址載入', r.file?.[0]?.startsWith('file:') && r.file[1], JSON.stringify(r.file));
     t.check('載不到的圖：提示、不建', r.badTex);
     t.eq('屬性：翻轉、角度、錨點、深度＝y＋偏移', JSON.stringify(r.attrs), JSON.stringify([true, 30, 0, 0.5, 205]));
+    t.eq('大小：sx／sy 分開；textures 圖不吃 pct', JSON.stringify(r.sxy), JSON.stringify([2, 3]));
+    t.eq('大小：file: 圖畫面＝pct% × sx/sy', r.pct, 1);
+    t.check('面板：寬高＝原圖 × pct × sx、等比勾著＝一格 scale、file 圖有 % 跟鎖', r.wh0 && r.wh0[2] === false && r.wh0[3] === true && r.wh0[4] && r.wh0[5], JSON.stringify(r.wh0));
+    t.eq('鎖 %＋等比：改寬 → sx、sy 一起變', JSON.stringify(r.wLinked), JSON.stringify([4, 4, 50]));
+    t.check('取消等比：scale 變兩格', r.unlinked);
+    t.eq('鎖 %、不等比：改高只動 sy', JSON.stringify(r.hFree), JSON.stringify([4, 2]));
+    t.eq('鎖 scale：改寬 → 反算 pct', JSON.stringify(r.wPct), JSON.stringify([25, 4, 2]));
+    t.eq('勾回等比：sy＝sx', JSON.stringify(r.relink), JSON.stringify([4, 4, true]));
+    t.check('存檔：縮成 pct% 另存 PNG、場景不動', r.bake && r.bake[0] === 'images/scene/baked.png' && r.bake[1].join() === r.bake[3].join() && r.bake[2].join() === r.bake[3].join() && r.bake[4], JSON.stringify(r.bake));
+    t.check('存檔：同名檔擋', r.bakeDup.includes('已經有了'), r.bakeDup);
+    t.check('存檔：texture key 撞名擋（大小寫不分）', r.bakeKey.includes('texture key') && r.bakeKey.includes('sub/Baked2'), r.bakeKey);
     t.eq('發光：加一盞燈（半徑、強度、位移、顏色）', JSON.stringify(r.light), JSON.stringify([150, 2, 190, 255]));
     t.check('取消發光：燈拿掉', r.unlight);
     t.eq('拖曳放開：寫檔、sandbox 跟著', JSON.stringify(r.moveProp), JSON.stringify([208, 224]));
