@@ -223,6 +223,8 @@ run('fx-tool', async t => {
     t.eq('區域解除', r.zoneOff, null);
     t.eq('換回效果特效：放回角色', JSON.stringify(r.backToRole), JSON.stringify([true, true, false]));
     t.check('自動循環會播', r.auto);
+    await t.page.evaluate(() => {const d = document.getElementById('dlgAsk'); if (d?.open) d.close('cancel');});
+    await t.formFits('__fx');
 
     // 殼：「用到的」↗ 跳到能力分頁那個技能；特效存檔後能力分頁的效果 id 建議跟著更新
     await t.page.goto(new URL('tools/#fx', base).href);

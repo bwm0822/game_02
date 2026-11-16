@@ -1,7 +1,7 @@
 import {h, ask, status} from '../common/dom.js';
 import {str, isObj, getAt, replaceRaw, parseNum} from '../common/obj.js';
 import {createDoc} from '../common/doc.js';
-import {fieldInput, createForm} from '../common/form.js';
+import {fieldInput, numInput, createForm} from '../common/form.js';
 import {createViews, renderDatalists} from '../common/views.js';
 import * as IC from '../common/icons.js';
 import * as SH from '../common/shell.js';
@@ -129,7 +129,7 @@ function ownFields(id, p)
 }
 
 // ---------- 表單：Phaser 欄位 ----------
-const num = (val, k, f, ph) => h('input', {class: 'num', dataset: {k}, value: val ?? '', placeholder: ph ?? '', onchange: e => f(parseNum(e.target.value))});
+const num = (val, k, f, ph) => numInput(k, null, 'num', val, ph, f, SC.PROPS[k.split('.')[0]]?.step ?? 'any');
 const toHex = (c) => typeof c === 'number' ? `#${c.toString(16).padStart(6, '0')}` : /^#?[0-9a-f]{6}$/i.test(c ?? '') ? `#${c.replace('#', '')}` : '#ffffff';
 const colorIn = (val, k, f) => h('input', {type: 'color', dataset: {k}, value: toHex(val), onchange: e => f(e.target.value)});
 

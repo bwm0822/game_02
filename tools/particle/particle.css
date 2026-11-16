@@ -1,8 +1,5 @@
-.split { display: flex; gap: 16px; align-items: flex-start; }
-.split > .form { flex: 1; min-width: 0; }
 .item.ghost { opacity: .5; }
 .ico.builtin { background: #111; border-radius: 3px; }
-.pv { position: sticky; top: 0; flex: none; background: #25272b; border: 1px solid #333; border-radius: 4px; padding: 8px; }
 .pv .stage canvas { display: block; }
 .pv .opts { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; margin-top: 6px; font-size: 14px; max-width: 480px; }
 .pv .opts label { display: inline-flex; align-items: center; gap: 3px; }

@@ -6,14 +6,14 @@ import * as JE from './jsonedit.js';
 import * as H from './hist.js';
 import * as ST from './settings.js';
 
-// 數字欄：↑↓／上下三角形照設定的步進跳（f＝欄位名，沒設定的 int 跳 1、num 'any'），空的先從灰字起跳；同一格連按併成一步 undo（hist.js）
-function numInput(k, f, type, val, ph, put)
+// 數字欄：↑↓／上下三角形照設定的步進跳（f＝欄位名，沒設定的 int 跳 1、num 'any'；step 有給就用它），空的先從灰字起跳；同一格連按併成一步 undo（hist.js）
+export function numInput(k, f, type, val, ph, put, step)
 {
     const arrow = (el) => {
         H.arrow(k);
         if (el.value === '' && Number.isFinite(parseFloat(el.placeholder))) el.value = el.placeholder;
     };
-    return h('input', {type: 'number', class: 'num', step: ST.step(f) ?? (type === 'int' ? 1 : 'any'), dataset: {k}, value: val ?? '', placeholder: ph ?? '',
+    return h('input', {type: 'number', class: 'num', step: step ?? ST.step(f) ?? (type === 'int' ? 1 : 'any'), dataset: {k}, value: val ?? '', placeholder: ph ?? '',
         onkeydown: e => {if (e.key === 'ArrowUp' || e.key === 'ArrowDown') arrow(e.target);},
         onmousedown: e => {if (e.offsetX > e.target.clientWidth - 20) arrow(e.target);},
         onkeyup: H.clear, onmouseup: H.clear,

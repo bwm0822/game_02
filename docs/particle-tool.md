@@ -14,6 +14,8 @@
   - 「其他 Phaser 欄位」：表單沒列的 key（JSON 框，原樣傳給 Phaser）。
   - 標題列「JSON」：整筆 JSON 模式（`form.js` 共用）。
 - 右：Phaser 預覽（`preview.js`，`Phaser.AUTO`＝WebGL，tint／ADD 跟遊戲一樣；直接呼叫 `src/core/particle.js` 的 `playParticle`）。
+- Phaser 欄位的數值欄（數值／範圍／漸變）是 `type=number`，↑↓ 步進寫在 `schema.js` 的 `PROPS.<key>.step`（沒寫＝`any`），用 `form.js` 的 `numInput()`，同一格連按併成一步 undo。
+- 表單＋預覽的版面（`.split`／`.form`／`.split > .pv`）在 `tools/common/style.css`，特效分頁共用：預覽固定寬、表單在自己那欄裡折行（標題列、`.iconField`、`.prop`、input 縮到 100%），真的塞不下才在表單那欄出橫捲軸，永遠不蓋到預覽；測試 `t.formFits()` 量 1024／1400 兩種寬度。
   - 情境：原地／拖尾（白點沿弧線來回飛，emitter 跟著它）／角色身上（下拉選角色，預設第一個玩家角色，照 `partsOf()` 合成，`tools/common/pvstage.js` 跟特效分頁共用）／區域（寬×高格，`area` 選項，quantity 乘格數）。
   - 底色、速度（emitter 的 `timeScale`）、粒子數顯示。
   - 播放（從頭）、停止（`stop()`，剩下的飄完）、清除（`stop(true)`，關掉自動重播）、自動重播（一次噴或有 `duration` 的播完 0.4 秒後再播）。

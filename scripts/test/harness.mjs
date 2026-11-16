@@ -64,6 +64,34 @@ class Tester
     check(msg, cond, detail='') {cond ? this.ok(msg) : this.fail(`${msg}${detail ? `（${detail}）` : ''}`);}
     eq(msg, actual, expect) {this.check(msg, actual === expect, `實際 ${JSON.stringify(actual)}，預期 ${JSON.stringify(expect)}`);}
 
+    // 表單＋右邊預覽（.split）的工具頁：每筆都不能蓋到預覽；寬的視窗連捲軸都不能有，窄的允許表單那欄自己捲
+    async formFits(glob)
+    {
+        for (const [w, strict] of [[1024, false], [1400, true]])
+        {
+            await this.page.setViewport({width: w, height: 768});
+            const bad = await this.page.evaluate(async (glob, strict) => {
+                const T = window[glob], S = T.S, bad = [];
+                const json = S.json, sel = S.sel;
+                S.view = 'form'; S.json = false;
+                for (const id of Object.keys(S.data))
+                {
+                    S.sel = id; T.render();
+                    await new Promise(r => requestAnimationFrame(r));
+                    const form = document.querySelector('#view .split > .form'), pv = document.querySelector('#view .split > .pv'), view = document.getElementById('view');
+                    const over = form.scrollWidth > form.clientWidth + 1;
+                    if (form.getBoundingClientRect().right > pv.getBoundingClientRect().left || view.scrollWidth > view.clientWidth + 1
+                        || over && (strict || getComputedStyle(form).overflowX === 'visible'))
+                        bad.push(`${id}(${form.scrollWidth}>${form.clientWidth})`);
+                }
+                S.json = json; S.sel = sel; T.render();
+                return bad;
+            }, glob, strict);
+            this.check(`視窗 ${w} 寬：表單不溢出到預覽${strict ? '（不出捲軸）' : ''}`, !bad.length, bad.join(' '));
+        }
+        await this.page.setViewport({width: 1024, height: 768});
+    }
+
     // 在頁面裡執行，fn 拿到 window.__dbg 和額外參數
     // d.objs()：目前地圖的所有物件（角色在 scene.roles，其他在 scene.gos）
     eval(fn, ...args)

@@ -74,6 +74,7 @@ run('particle-tool', async t => {
         out.toNum = S.data.ember.lifespan;
         fire(q('[data-k="lifespan"]'), '900');
         out.num = S.data.ember.lifespan;
+        out.steps = ['lifespan', 'scale.start', 'scale.end'].map(k => `${q(`[data-k="${k}"]`).type}:${q(`[data-k="${k}"]`).step}`);
         fire(q('[data-k="scale.end"]'), '0.2');
         fire(q('[data-k="scale.ease"]'), 'Quad.Out');
         out.se = JSON.stringify(S.data.ember.scale);
@@ -167,6 +168,7 @@ run('particle-tool', async t => {
     t.eq('內建形狀下拉', r.img, 'p-dot');
     t.eq('範圍切成數值（取 min）', r.toNum, 400);
     t.eq('改數值', r.num, 900);
+    t.eq('數值欄有步進（schema 的 step）', r.steps.join(' '), 'number:50 number:0.05 number:0.05');
     t.eq('漸變改 end＋曲線', r.se, JSON.stringify({start: 0.35, end: 0.2, ease: 'Quad.Out'}));
     t.eq('顏色選擇器寫 #hex', r.tint, '#00ff00');
     t.eq('加屬性用預設值', r.add, 0);
@@ -185,6 +187,8 @@ run('particle-tool', async t => {
     t.check('一次噴自動重播', r.autoReplay);
     t.check('textures 的圖切成貼圖', r.texImg);
     t.check('改名有確認框', r.renameDlg);
+    await t.page.evaluate(() => {const d = document.getElementById('dlgAsk'); if (d?.open) d.close('cancel');});
+    await t.formFits('__pt');
 
     // 殼：有粒子分頁，排在特效後面；↗ 跳到特效分頁
     await t.page.goto(new URL('tools/#particle', base).href);
