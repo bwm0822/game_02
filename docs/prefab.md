@@ -85,6 +85,12 @@
    - 實例 key `f<n>`；右欄：換 prefab、錨點 x/y、狀態下拉（預設＋零件 look＋acts 的狀態）。
    - 左欄每段標題點一下摺疊（`tools.scene.fold`＝摺起來的段名陣列：`lib`／`scenes`／`roles`／`props`／`particles`／`lights`／`prefabs`）。
    - 這一步 prefab 庫的右鍵只有刪除（只檢查 scenes.json；地圖／道具的引用在第 5、6 步補），改名／複製在第 4 步。
-4. 場景分頁：組成 prefab（烤圖、粒子另存）＋編輯模式（零件、錨點、方塊、acts）＋改名／複製／刪除。
+4. 場景分頁：組成 prefab（烤圖、粒子另存）＋編輯模式（零件、錨點、方塊、acts）＋改名／複製／刪除。拆成：
+   - ✅ 4a 編輯模式（測試同 prefab-tool.mjs）：`S.edit＝{id, key（實例）, look（篩選）}`；`scene()` 在編輯時回傳 `editView()`＝那筆 prefab 攤成的假場景（png→擺設 `p<n>`、粒子→發射點 `e<n>`、光源 `l<n>`，座標＝實例錨點＋零件 x/y，篩掉的標 `_off`），所以原本的擺設／粒子／光源面板、拖曳、把手、Del 全部照用；`editScene()` 在編輯時走 `editParts()`：在假場景上跑同一個 fn 再 `fromSyn()` 寫回 prefab.json（新零件標成篩選中的狀態）。場景本身的欄位（底圖、時間）用 `editRealScene()`。
+     送 sandbox 的是 `gameScene()`：場景本身的東西 key 前面加 `x`、列在 `locked`（sandbox `_dimLocked()` 變暗、`_pickAt`／記號跳過），不含正在編的實例，再加上沒篩掉的零件。
+     右欄沒選＝prefab 面板（預設狀態、左鍵動作、右鍵動作 acts 表（local.json 沒有標 ⚠＋↗ 文字分頁）、占地方塊勾選＋x/y/w/h、縮圖外框唯讀）；擺設面板多「狀態」「特效（fx.json）」、深度改成 prefab 內部前後；發射點面板只剩粒子 id／位置／狀態（內容 ↗ 粒子分頁，沒有自己那份、不跟）；光源面板「跟著」換成「狀態」。
+     進入：實例右欄「✎ 編輯 prefab」、實例右鍵、新增空白 prefab 後自動進；離開：上方「離開」或 Esc → `finishEdit()`：照預設狀態看得到的 png 算 `thumb`（不算角度），`file:` 圖照 pct 烤成 `textures/prefabs/<id>/<id>-<檔名>.png`（撞 key 加 `-2`）、改寫 key、去 pct、更新圖片清單、重開 sandbox。編輯中不能放角色／prefab、換場景＝離開。
+   - 4b 組成 prefab＋改名／複製。
+   - 4c 錨點十字、占地方塊畫在畫面上可拖。
 5. Tiled：縮圖＋tsj＋template 自動產生、mapcheck。
 6. 放置道具 `item.json bb.prefab`＋ghost、其他工具的引用掃描、道具分頁選擇器。

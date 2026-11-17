@@ -31,7 +31,8 @@ run('prefab-tool', async t => {
         await sc.addScene('測試');
         // 新增空白 prefab：寫 prefab.json、場景中間放一個實例、選起來
         await sc.newPrefab('forge');
-        out.newPf = [await pfDisk(), (await scDisk()).prefabs, sc.S.pick];
+        out.newPf = [await pfDisk(), (await scDisk()).prefabs, sc.S.edit && {...sc.S.edit}, !doc.getElementById('editBar').hidden];
+        await sc.exitEdit();
         await sc.newPrefab('bad id');
         out.badId = doc.getElementById('status').textContent;
         await sc.undo();
@@ -102,11 +103,49 @@ run('prefab-tool', async t => {
         sc.pickRole('f2');
         await sc.deleteObj('f2');
         out.delInst = (await scDisk()).prefabs.map(o => o.key);
+
+        // ---------- 編輯模式 ----------
+        await sc.setInst('f1', {x: 400, y: 288, look: undefined});
+        await sc.addProp('Crate', 300, 200);              // 場景本身的擺設 p1
+        sc.enterEdit('f1');
+        const sbProps = () => Object.keys(sb()._props).sort();
+        out.enter = await until(() => sb()._props.xp1 && sb()._props.p2) && [sc.S.edit.id, doc.getElementById('editBar').textContent.includes('forge'),
+            sbProps(), sb()._props.xp1.sp.alpha, sb()._pickAt(300, 190)?.key ?? null, [...doc.querySelectorAll('#tree .item')].map(e => e.dataset.key),
+            doc.querySelector('#right .sec').textContent];
+        // 零件編輯＝寫 prefab.json（相對錨點），scenes.json 不動
+        const sc0 = JSON.stringify(await scDisk());
+        await sc.setProp('p1', {x: 410});
+        out.moveImg = [(await pfDisk()).forge.parts[0], JSON.stringify(await scDisk()) === sc0];
+        // 篩選 on：新零件標 on；只看得到 on＋沒標的
+        sc.S.edit.look = 'on';
+        await sc.addLight(400, 260);
+        out.addLight = [(await pfDisk()).forge.parts.at(-1), [...doc.querySelectorAll('#tree .item')].map(e => e.dataset.key)];
+        sc.S.edit.look = 'off';
+        sc.toggleFold('lights'); sc.toggleFold('lights');
+        out.filterOff = [...doc.querySelectorAll('#tree .item')].map(e => e.dataset.key);
+        sc.S.edit.look = null;
+        // prefab 欄位：預設狀態、acts、defAct、占地方塊
+        await sc.setPf({acts: {turn_on: 'on', turn_off: 'off'}, defAct: 'turn_on', grid: {x: -16, y: -16, w: 32, h: 16}});
+        sc.pickRole(null);
+        out.panel = [doc.querySelector('#right .sec').textContent, [...doc.querySelectorAll('#right tr[data-act]')].map(e => e.dataset.act),
+            doc.querySelector('#right [data-k="defAct"]').value, doc.querySelector('#right [data-k="grid.w"]').value];
+        // undo：零件編輯一步步退
+        await sc.undo();
+        out.undoPf = (await pfDisk()).forge.acts ?? null;
+        await sc.redo();
+        // 外部 png 零件：離開時照 pct 烤進 textures/prefabs/forge/、改成 texture key、算縮圖外框
+        await sc.addProp('file:public/assets/textures/props/Crate.png', 380, 288);
+        await sc.setProp('p3', {pct: 50});
+        const crate = await new Promise(res => {const i = new Image(); i.onload = () => res([i.naturalWidth, i.naturalHeight]); i.src = '/assets/textures/props/Crate.png';});
+        await sc.exitEdit();
+        const baked = await (await (await dir(proj, 'public', 'assets', 'textures', 'prefabs', 'forge')).getFileHandle('forge-Crate.png').catch(() => null))?.getFile();
+        const pf = (await pfDisk()).forge;
+        out.exit = [sc.S.edit, sc.S.pick, pf.parts.find(p => p.img === 'forge-Crate') ?? null, !!baked, pf.thumb, crate];
         return out;
     });
 
     t.check('prefab 庫：沒有 prefab 時提示', r.emptyLib.includes('還沒有 prefab'), r.emptyLib);
-    t.eq('新增空白 prefab：prefab.json 一筆、場景中間放 f1、選起來', JSON.stringify(r.newPf), JSON.stringify([{forge: {}}, [{key: 'f1', prefab: 'forge', x: 400, y: 288}], 'f1']));
+    t.eq('新增空白 prefab：prefab.json 一筆、場景中間放 f1、直接進編輯模式', JSON.stringify(r.newPf), JSON.stringify([{forge: {}}, [{key: 'f1', prefab: 'forge', x: 400, y: 288}], {id: 'forge', key: 'f1', look: null}, true]));
     t.check('id 不合法擋下', r.badId.includes('英數字'), r.badId);
     t.eq('undo：prefab.json 跟 scenes.json 一起回去', JSON.stringify(r.undoNew), JSON.stringify([{}, null]));
     t.eq('redo：兩個檔一起回來', JSON.stringify(r.redoNew), JSON.stringify([['forge'], 1]));
@@ -126,4 +165,21 @@ run('prefab-tool', async t => {
     t.eq('刪 prefab：prefab.json 拿掉、實例一起刪、sandbox 清掉', JSON.stringify(r.delPf), JSON.stringify([{}, null, true]));
     t.eq('undo 刪除：兩個檔一起回來', JSON.stringify(r.undoDel), JSON.stringify([['forge'], 2]));
     t.eq('刪實例', JSON.stringify(r.delInst), JSON.stringify(['f1']));
+
+    // 編輯模式
+    const [eid, ebar, eprops, ealpha, epick, etree, eright] = r.enter || [];
+    t.check('進編輯：上方編輯條', eid === 'forge' && ebar, JSON.stringify(r.enter));
+    t.eq('sandbox：場景本身的東西改 key（xp1）＋零件攤成擺設 p1/p2', JSON.stringify(eprops), JSON.stringify(['p1', 'p2', 'xp1']));
+    t.check('場景本身的東西變暗、點不到', ealpha < 0.5 && epick !== 'xp1', JSON.stringify([ealpha, epick]));
+    t.eq('左欄只列零件（off 的 Barrel、on 的 Crate、on 的光源）', JSON.stringify(etree), JSON.stringify(['p1', 'p2', 'l1']));
+    t.eq('右欄沒選＝prefab 面板', eright, 'prefab forge');
+    t.eq('拖零件：寫 prefab.json 相對錨點、scenes.json 不動', JSON.stringify(r.moveImg), JSON.stringify([{img: 'Barrel', x: 10}, true]));
+    t.eq('篩選 on 時新加的光源標 on、相對錨點', JSON.stringify(r.addLight[0]), JSON.stringify({light: {r: 120, color: '#ffcc88'}, y: -28, look: 'on'}));
+    t.eq('篩選 off：只列 off＋沒標的', JSON.stringify(r.filterOff), JSON.stringify(['p1']));
+    t.eq('prefab 面板：acts／左鍵動作／占地方塊', JSON.stringify(r.panel), JSON.stringify(['prefab forge', ['turn_on', 'turn_off'], 'turn_on', '32']));
+    t.eq('undo：prefab 欄位退一步', JSON.stringify(r.undoPf), JSON.stringify({turn_on: 'on'}));
+    const [xedit, xpick, xpart, xbaked, xthumb, crate] = r.exit;
+    t.check('離開：不在編輯、選回實例', xedit === null && xpick === 'f1', JSON.stringify([xedit, xpick]));
+    t.check('離開：外部 png 照 pct 烤進 textures/prefabs/forge/forge-Crate.png、改成 key、去掉 pct', xbaked && xpart && !('pct' in xpart) && xpart.x === -20, JSON.stringify(xpart));
+    t.check('離開：縮圖外框＝預設狀態看得到的 png 聯集', xthumb && xthumb.w >= Math.round(crate[0] / 2) && xthumb.h >= Math.round(crate[1] / 2), JSON.stringify([xthumb, crate]));
 });

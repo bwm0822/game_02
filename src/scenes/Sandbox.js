@@ -93,6 +93,7 @@ export class Sandbox extends GameScene
     async _apply(scene, {force=false}={})
     {
         this._scene = scene;
+        this._locked = new Set(scene.locked ?? []);   // 編輯 prefab 時場景裡其他東西：變暗、點不到
         // 重置：表演生出來的東西（火牆區域、屍體…）一起清掉；地圖本身的物件 uid 不是 -1
         if(force) {Object.values(this.gos).filter(g=>g.uid===-1 && g.active).forEach(g=>g._remove());}
         const want = Object.fromEntries((scene.roles ?? []).map(r=>[r.key, r]));
@@ -119,6 +120,7 @@ export class Sandbox extends GameScene
         // 粒子、光源可以跟著擺設：擺設建好（sprite 換新）才套
         this._applyEmitters(scene.particles ?? [], force);
         this._applyLights(scene.lights ?? [], force);
+        this._dimLocked();
         this._send({sb:'loaded', map:this.mapName, w:this.map.map.width, h:this.map.map.height});
     }
 
@@ -209,7 +211,18 @@ export class Sandbox extends GameScene
             this._insts[i.key] = {go, data:i, sig:sig(i)};
         }
         if(bad.length) {this._send({sb:'error', msg:`prefab.json 沒有：${[...new Set(bad)].join('、')}`});}
+        this._dimLocked();
     }
+
+    _dimLocked()
+    {
+        const a = (k)=>(this._locked?.has(k) ? 0.35 : 1);
+        this.roles.forEach(p=>p.setAlpha(a(p.key)));
+        Object.entries(this._props).forEach(([k, o])=>o.sp.setAlpha(a(k)));
+        Object.entries(this._insts).forEach(([k, o])=>o.go.active && o.go.setAlpha(a(k)));
+    }
+
+    _isLocked(k) {return !!this._locked?.has(k);}
 
     _dropInst(k)
     {
@@ -573,7 +586,7 @@ export class Sandbox extends GameScene
     // 記號畫不畫、點不點得到：👁 藏著＝不；工具列「光源記號／粒子記號」沒勾＝只有選中的那個
     _markOn(kind, k)
     {
-        return !this._hidden.has(k) && (this._icons?.[kind] !== false || k===this._sel);
+        return !this._hidden.has(k) && !this._isLocked(k) && (this._icons?.[kind] !== false || k===this._sel);
     }
 
     // 選中光源的半徑把手：點光源在圈的右邊、聚光燈在中線末端（畫面上的方向＝鏡像後的）
@@ -693,10 +706,11 @@ export class Sandbox extends GameScene
     // 點到的角色：身體方塊包住游標的、最上面那個；都沒有就看站在那格的
     _roleAt(wx, wy)
     {
-        const hits = this.roles.filter(p=>p.visible && p.getShapeRect?.().contains(wx, wy));
+        const roles = this.roles.filter(p=>p.visible && !this._isLocked(p.key));
+        const hits = roles.filter(p=>p.getShapeRect?.().contains(wx, wy));
         if(hits.length) {return hits.reduce((a, b)=>(b.depth>a.depth ? b : a));}
         const [tx, ty] = this.map.worldToTile(wx, wy);
-        return this.roles.find(p=>p.visible && this.map.worldToTile(p.x, p.y).every((v, i)=>v===[tx, ty][i]));
+        return roles.find(p=>this.map.worldToTile(p.x, p.y).every((v, i)=>v===[tx, ty][i]));
     }
 
     // 點到的東西（角色或擺設，最上面那個）：{key, role?, prop?}
@@ -710,7 +724,7 @@ export class Sandbox extends GameScene
             ...this.roles.filter(p=>p.visible && p.getShapeRect?.().contains(wx, wy)).map(role=>({key:role.key, role, depth:role.depth})),
             ...Object.entries(this._props).filter(([, o])=>o.sp.visible && o.sp.getBounds().contains(wx, wy)).map(([key, prop])=>({key, prop, depth:prop.sp.depth})),
             ...Object.entries(this._insts ?? {}).filter(([, o])=>o.go.active && o.go.getShapeRect().contains(wx, wy)).map(([key, inst])=>({key, inst, depth:inst.go.depth})),
-        ];
+        ].filter(x=>!this._isLocked(x.key));
         if(hits.length) {return hits.reduce((a, b)=>(b.depth>a.depth ? b : a));}
         const role = this._roleAt(wx, wy);
         return role ? {key:role.key, role} : null;
