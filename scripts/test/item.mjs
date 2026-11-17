@@ -273,7 +273,8 @@ run('item', async t => {
     await t.page.keyboard.press('Backspace');
     await t.page.$eval(ta, el => el.blur());
     const applied = await t.page.evaluate(() => {const it = window.__ie.S.items.tree; return [it.foo, JSON.stringify(it.bar), 'bb' in it, document.querySelector('#view [data-k="#raw"]').value];});
-    t.eq('失焦套用', JSON.stringify(applied.slice(0, 3)), JSON.stringify(["it's", '[1,"x"]', false]));
+    // bb 是已知欄位（地圖上的外觀，prefab 用），不在「其他欄位」框裡，換掉框的內容不會動到它
+    t.eq('失焦套用', JSON.stringify(applied.slice(0, 3)), JSON.stringify(["it's", '[1,"x"]', true]));
     t.check('套用後整理成標準 JSON', !applied[3].includes(',\n}'));
 
     // JSON 框：修正規則
@@ -386,12 +387,14 @@ run('item', async t => {
         box('製作材料').querySelector('button').click();
         out.create = [make0, st('製作材料')];
         ie.undo();
-        go('pot');
+        // 其他欄位先放一個 key（bb 是已知欄位了，pot 本身沒有不認識的 key），換道具再回來照規則展開
+        ie.set('pot', ['zz0'], 0);
+        go('sword-2'); go('pot');
         const raw0 = st('其他欄位');
         ie.set('pot', ['zz'], 1); ie.set('pot', ['zz2'], 2);
         out.tips = [document.querySelector('#view .fields > .k[title="gold"]')?.textContent, document.querySelector('#view .fields > .k[title="device.class"]')?.textContent];
         out.freeze = [raw0, st('其他欄位'), box('其他欄位').querySelector('.bar').textContent.includes('（3）')];
-        ie.undo(); ie.undo();
+        ie.undo(); ie.undo(); ie.undo();
         return out;
     });
     t.eq('預設：1 個 key 展開、array 收合、收合時看得到個數', JSON.stringify(fold.def), JSON.stringify(['▼', '▶', 0, true]));

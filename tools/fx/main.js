@@ -16,7 +16,7 @@ const D = createDoc({
     external: '可能是手動改的。',
     draw, validateAll: () => validateAll(), onNew: () => askNew(),
     innerRefs: () => [], renameRefs: () => {},
-    onSaved: (file) => {if (['ability.json', 'item.json', 'role.json', 'part.json', 'particle.json'].includes(file)) loadRefs().then(render);},
+    onSaved: (file) => {if (['ability.json', 'item.json', 'role.json', 'part.json', 'particle.json', 'prefab.json'].includes(file)) loadRefs().then(render);},
 });
 const {S, render, commit, set} = D;
 S.refs = {};    // 效果 id → [{tab: 'ability'|'item', id, type}]，type:'action' 是瞬間效果不播特效，不收
@@ -239,8 +239,10 @@ function refsEl(id)
 {
     const refs = refsOf(id);
     return h('div', {class: 'refs'}, h('span', null, '用到的：'),
-        refs.length ? refs.map(r => h('a', {class: 'go', title: `跳到${r.tab === 'ability' ? '能力' : '道具'}分頁（${r.type === 'zone' ? '技能的 zoneFx' : `effects 的 type: ${r.type}`}）`, onclick: () => SH.gotoTab(r.tab, [r.id])},
-                                      `${r.tab === 'ability' ? '能力' : '道具'} ${r.id} ↗`))
+        refs.length ? refs.map(r => {
+            const tab = {ability: '能力', item: '道具', scene: '場景'}[r.tab], kind = r.type === 'zone' ? '技能的 zoneFx' : r.type === 'prefab' ? 'prefab 的 png 零件' : `effects 的 type: ${r.type}`;
+            return h('a', {class: 'go', title: `跳到${tab}分頁（${kind}）`, onclick: () => SH.gotoTab(r.tab, [r.id])}, `${r.type === 'prefab' ? 'prefab' : tab} ${r.id} ↗`);
+        })
                     : h('span', {class: 'dim'}, '（沒有效果用這個 id，遊戲不會播）'));
 }
 
@@ -354,10 +356,14 @@ function collectRefs(data, tab, out)
 async function loadRefs()
 {
     const get = (f) => fetch(`/assets/json/${f}`, {cache: 'no-store'}).then(r => r.json()).catch(() => ({}));
-    const [abilities, items, roles, parts, particles] = await Promise.all([get('ability.json'), get('item.json'), get('role.json'), get('part.json'), get('particle.json')]);
+    const [abilities, items, roles, parts, particles, prefabs] = await Promise.all([get('ability.json'), get('item.json'), get('role.json'), get('part.json'), get('particle.json'), get('prefab.json')]);
     const refs = {};
     collectRefs(abilities, 'ability', refs);
     collectRefs(items, 'item', refs);
+    // prefab 的 png 零件掛的 fx（docs/prefab.md）：跳到場景分頁
+    for (const [id, pf] of Object.entries(prefabs))
+        for (const p of pf?.parts ?? [])
+            if (typeof p?.fx === 'string' && !(refs[p.fx] ??= []).some(r => r.tab === 'scene' && r.id === id)) refs[p.fx].push({tab: 'scene', id, type: 'prefab'});
     S.refs = refs;
     Object.assign(S.ext, {roles, items, abilities, parts, particles});
 }

@@ -7,6 +7,7 @@ import Utility from '../core/utility.js'
 import FxCell, {zoneDelays} from '../core/fxcell.js'
 import {playParticle} from '../core/particle.js'
 import {setSpot} from '../core/spotlight.js'
+import {thumbOf} from '../core/prefab.js'
 import {equipFor, hiddenParts, weaponOf, handOf, ROLE_PARTS, WRISTS, pivotOf, atPivot, fromPivot, rigOf} from '../core/equip.js'
 const _tag = 'view';
 
@@ -660,9 +661,6 @@ class View extends Phaser.GameObjects.Container
 }
 
 
-// prefab 的縮圖外框(相對錨點，左上角＋寬高)；沒有 thumb＝錨點在底部中間的 32×32
-export const thumbOf = (pf)=>pf?.thumb ?? {x:-16, y:-32, w:32, h:32};
-
 // prefab 的占地方塊(相對錨點的 {x,y,w,h}) → View 的 l/t/w/h 欄位；Tiled 有寫任何一個該組欄位就整組不套
 const PF_BOX ={body:['bl','br','bw','bt','bb','bh'], grid:['gl','gr','gw','gt','gb','gh'], zone:['zl','zr','zw','zt','zb','zh']};
 
@@ -698,6 +696,13 @@ export class ItemView extends View
         this.look ??= pf.look ?? null;
         if(pf.acts && Object.keys(pf.acts).length) {this.interactive = true;}
         return this;
+    }
+
+    // Tiled 物件的位置＝縮圖中心(modify 把 root 挪到錨點)；runtime 生的(uid -1：放置道具、存檔重建、場景分頁)位置就是錨點，
+    // 存檔記的也是錨點，重建時不能再挪一次
+    _setAnchor(modify)
+    {
+        return super._setAnchor(this._pf && this.root.uid===-1 ? false : modify);
     }
 
     // prefab 的 acts：{動作 id: 狀態}，右鍵選單照 id 出按鈕(文字 id.lab())，目標狀態＝目前狀態的藏起來

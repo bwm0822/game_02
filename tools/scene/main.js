@@ -1781,6 +1781,16 @@ async function setProject(root)
     refresh();
 }
 SH.onProject(setProject);
+// 別的分頁 ↗ 跳過來（粒子／特效／圖片分頁的 prefab 引用）：選第一個放了這個 prefab 的場景、選起那個實例
+SH.onGoto(([id] = []) => {
+    if (!id) return;
+    const name = Object.keys(S.data).find(n => S.data[n].prefabs?.some(o => o.prefab === id));
+    if (name === undefined) return status(`prefab ${id} 還沒放在任何場景（從左上 prefab 庫拖進畫面）`);
+    if (S.edit) S.edit = null;
+    select(name, false);
+    S.pick = S.data[name].prefabs.find(o => o.prefab === id).key;
+    refresh();
+});
 SH.onSaved((file) => {
     if (!S.root) return;
     if (file === ST.FILE) queue(async () => {S.data = await ST.read(); refresh();});

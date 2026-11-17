@@ -19,6 +19,7 @@ const D = createDoc({
     onSaved: (file) => {
         if (file === 'fx.json') loadKeys(file).then(fx => {S.fx = fx; render();});
         if (file === 'anim.json') loadKeys(file).then(a => {S.anims = a; render();});
+        if (file === 'prefab.json') loadKeys(file).then(p => {S.prefabs = p; render();});
         if (file === 'role.json' || file === 'part.json') loadJson(file).then(o => {S[file === 'role.json' ? 'roles' : 'parts'] = o; render();});
     },
 });
@@ -29,6 +30,7 @@ IC.onReload(render);
 Object.defineProperty(S, 'items', {get: () => S.data, set: (v) => {S.data = v;}});
 S.fx = [];
 S.anims = null;
+S.prefabs = [];
 S.roles = {};       // 唯讀：role.json、part.json（預覽的人偶）
 S.parts = {};
 const SEX_KEY = 'tools.item.sex';
@@ -347,6 +349,7 @@ function draw()
         key: [...SC.STATS, ...effs.map(e => e.key)],
         id: [...SC.EFF_FIELDS.id.suggest, ...S.fx, ...effs.map(e => e.id)],
         anim: S.anims ?? [],
+        prefab: S.prefabs,
     }, {items: o => S.items[o]?.lab});
 
     const ids = Object.keys(S.items);
@@ -365,7 +368,7 @@ function draw()
 }
 
 (async () => {
-    [S.fx, S.anims, S.roles, S.parts] = await Promise.all([loadKeys('fx.json'), loadKeys('anim.json'), loadJson('role.json'), loadJson('part.json')]);
+    [S.fx, S.anims, S.roles, S.parts, S.prefabs] = await Promise.all([loadKeys('fx.json'), loadKeys('anim.json'), loadJson('role.json'), loadJson('part.json'), loadKeys('prefab.json')]);
     render();
     IC.ready.then(render);
     D.listenGoto();

@@ -17,6 +17,7 @@ const GOTO = {
     'ability.json': (p) => ['ability', [p[0]]],
     'fx.json': (p) => ['fx', [p[0]]],
     'particle.json': (p) => ['particle', [p[0]]],
+    'prefab.json': (p) => ['scene', [p[0]]],
     'dialog.json': (p) => ['dialog', p],
     'story.json': (p) => p[0] === 'lines' && p.length > 1 ? ['story', p.slice(1)] : undefined,
 };

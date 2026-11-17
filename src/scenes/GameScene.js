@@ -17,6 +17,7 @@ import {Player} from '../roles/player.js'
 import Port from '../items/port.js'
 import Utility from '../core/utility.js'
 import DB from '../data/db.js'
+import {prefabGhost} from '../core/prefab.js'
 
 const PLACE_RANGE = 2;  // 放置範圍：玩家周圍 ±2 格(5x5)
 
@@ -760,8 +761,9 @@ export class GameScene extends Scene
             }
         }
 
-        this._placeGhost = Map.classMap[dat.device.class]?.ghost(this, ent.content)
-            .setDepth(Infinity).setAlpha(0.5).setVisible(false);
+        const pf = dat.bb?.prefab ? DB.prefab(dat.bb.prefab) : null;
+        this._placeGhost = (pf ? prefabGhost(this, pf) : Map.classMap[dat.device.class]?.ghost?.(this, ent.content))
+            ?.setDepth(Infinity).setAlpha(0.5).setVisible(false);
     }
 
     exitPlaceMode()
@@ -783,6 +785,13 @@ export class GameScene extends Scene
         return {cx:m.tileToWorldX(tx)+m.tileWidth/2, cy:m.tileToWorldY(ty)+m.tileHeight/2};
     }
 
+    // 放置的位置：一般裝置＝格子中心；prefab 外觀(bb.prefab)的位置是錨點，放在格子底邊中間
+    _placeAt(pt)
+    {
+        const {cx, cy} = this._tileCenter(...this.map.worldToTile(pt.x, pt.y));
+        return this._placeData?.dat.bb?.prefab ? {cx, cy:cy + this.map.map.tileHeight/2} : {cx, cy};
+    }
+
     isPlaceable(pt)
     {
         if(this.map.getWeight(pt) !== GM.W.EMPTY) {return false;}
@@ -796,8 +805,8 @@ export class GameScene extends Scene
         UiCursor.hide();
         const ghost = this._placeGhost;
         if(!ghost) {return;}
-        const {cx, cy} = this._tileCenter(...this.map.worldToTile(pt.x, pt.y));
-        const tint = this.isPlaceable(pt) ? 0xffffff : 0xff4040;
+        const {cx, cy} = this._placeAt(pt);
+        const tint =this.isPlaceable(pt) ? 0xffffff : 0xff4040;
         ghost.setPosition(cx, cy).setVisible(true).each(sp=>sp.setTint(tint));
     }
 
@@ -807,7 +816,7 @@ export class GameScene extends Scene
         const {dat, ent} = this._placeData;
         const cls = Map.classMap[dat.device.class];
         if(!cls) {return;}
-        const {cx, cy} = this._tileCenter(...this.map.worldToTile(pt.x, pt.y));
+        const {cx, cy} = this._placeAt(pt);
         new cls(this, cx, cy).init_runtime(ent.content);
         ent.empty();
         Ui.refreshAll();

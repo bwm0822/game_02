@@ -8,6 +8,7 @@ import * as IC from '../common/icons.js';
 import {stringify, eolOf} from '../common/tiledjson.js';
 import {roleRefs, renameRoleRefs} from '../common/maproles.js';
 import {joinPath} from '../../src/data/navgrid.js';
+import {defaultImgs} from '../../src/core/prefab.js';
 
 const ASSETS = 'public/assets';
 const PNG_DIR = `${ASSETS}/textures/prefabs`;
@@ -43,9 +44,7 @@ export async function renderThumb(pf, thumb = pf.thumb ?? DEF_THUMB)
 {
     const cv = Object.assign(document.createElement('canvas'), {width: Math.max(1, thumb.w), height: Math.max(1, thumb.h)});
     const g = cv.getContext('2d');
-    const parts = (pf.parts ?? []).map((p, i) => ({p, i})).filter(({p}) => p.img && (!p.look || p.look === pf.look))
-        .sort((a, b) => (a.p.depth ?? 0) - (b.p.depth ?? 0) || a.i - b.i);
-    for (const {p} of parts)
+    for (const p of defaultImgs(pf))
     {
         const r = await partImg(p.img);
         if (!r) continue;

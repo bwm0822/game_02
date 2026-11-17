@@ -65,6 +65,8 @@ export const FIELDS = {
     cook: {label: '烹煮成', type: 'obj', fields: {id: {label: 'id', type: 'itemref'}}},
     make: {label: '製作材料', type: 'obj', fields: {items: {label: '材料', type: 'map'}}},
     device: {label: '裝置', type: 'obj', fields: {class: {label: 'class', type: 'list', suggest: ['pot', 'dummy']}}},
+    // 放到地圖上的外觀（ItemView 讀的 bb）；prefab＝prefab.json 的 id（docs/prefab.md），其他 key（key/frame/wid/hei…）在「其他」
+    bb: {label: '地圖上的外觀（bb）', type: 'obj', fields: {prefab: {label: 'prefab', type: 'list'}}},
     effects: {label: '效果', type: 'effects'},
 };
 
@@ -79,7 +81,7 @@ export const CAT_FIELDS = {
     CAT_BAG: ['storage'],
     CAT_FOOD: ['useable', 'cps', 'effects', 'cook', 'make'],
     CAT_ITEM: ['cps', 'useable', 'effects', 'drop'],
-    CAT_DEVICE: ['device'],
+    CAT_DEVICE: ['device', 'bb'],
 };
 
 // 表單要顯示的欄位：基本＋這個分類建議的＋已經有值的已知欄位

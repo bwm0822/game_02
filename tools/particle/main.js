@@ -12,9 +12,9 @@ import * as SC from './schema.js';
 import {createPForm, pIcon, validateDef, isBurst, easeNames} from './pform.js';
 import {previewEl, PV} from './preview.js';
 
-const REF_FILES = ['ability.json', 'item.json', 'fx.json'];
-const TAB_OF = {'ability.json': 'ability', 'item.json': 'item', 'fx.json': 'fx'};
-const TAB_NAME = {ability: '能力', item: '道具', fx: '特效'};
+const REF_FILES = ['ability.json', 'item.json', 'fx.json', 'prefab.json'];
+const TAB_OF = {'ability.json': 'ability', 'item.json': 'item', 'fx.json': 'fx', 'prefab.json': 'scene'};
+const TAB_NAME = {ability: '能力', item: '道具', fx: '特效', scene: '場景（prefab）'};
 const REF_KEYS = ['particle', 'tickParticle'];
 
 // 改名只動 particle.json 的 key；確認框列出其他檔案的引用（doc.js 掃 assets），不跟著改

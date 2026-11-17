@@ -152,4 +152,46 @@ run('prefab', async t => {
     t.eq('燈有 prefab：com_lamp 不自己點燈（lit 被忽略）', a.lampLights0, 0);
     t.eq('燈有 prefab：開關照 prefab 的 acts', a.lampActs0.turn_on !== undefined && a.lampActs0.turn_off !== undefined, true);
     t.eq('燈 turn_on → prefab on、只有一盞光', `${a.lampLook}/${a.lampLights1}`, 'on/1');
+
+    // 放置道具（item.json 的 bb.prefab）：位置＝錨點、ghost 用零件、存檔重建不漂移、狀態跟著存
+    const p = await t.eval(async d => {
+        const gs = d.game.scene.getScene('GameScene');
+        const {default: Pot} = await import('/src/items/pot.js');
+        d.DB._prefabDB.t_pot = {look: 'off', acts: {turn_on: 'on'}, thumb: {x: -20, y: -40, w: 40, h: 40},
+                                parts: [{img: 'Barrel'}, {img: 'Crate', y: -20, look: 'on'}, {light: {r: 60}, look: 'on'}]};
+        d.DB._itemDB.t_potitem = {...d.DB.item('pot'), bb: {prefab: 't_pot'}};
+        const pl = d.GM.player, out = {};
+        const [tx, ty] = gs.map.worldToTile(pl.x, pl.y);
+        const cell = gs.map.tileToWorld(tx + 1, ty);
+        // 放置模式：ghost＝預設狀態的 png（Barrel 一張）、位置在格子底邊中間
+        const ent = {content: {id: 't_potitem'}, empty() {}};
+        gs.enterPlaceMode(d.DB.item('t_potitem'), ent);
+        gs.previewPlace({x: cell.x, y: cell.y});
+        out.ghost = [gs._placeGhost.list.length, gs._placeGhost.x - cell.x, gs._placeGhost.y - cell.y];
+        gs.exitPlaceMode();
+        // runtime 生出來：root＝錨點
+        const go = new Pot(gs, cell.x, cell.y + 16);
+        go.init_runtime({id: 't_potitem'});
+        out.pos = [go.x - cell.x, go.y - cell.y, go.getLook(), go.view._shape.list.length];
+        await go.aEmit('turn_on', pl);
+        // 存檔：runtime 陣列記錨點＋look；照存檔重建位置一樣（不會再挪一次）
+        const rt = (d.Record.game.scenes[gs._data.map] ??= {}).runtime ??= [];
+        const n0 = rt.length;
+        go.save();
+        const e = rt[n0];
+        out.saved = [e.class, e.id, e.x - cell.x, e.y - cell.y, e.look];
+        rt.splice(n0, 1);
+        go.emit('remove');
+        const go2 = new Pot(gs, e.x, e.y);
+        go2.init_runtime(e);
+        out.reload = [go2.x - cell.x, go2.y - cell.y, go2.getLook()];
+        go2.emit('remove');
+        delete d.DB._prefabDB.t_pot;
+        delete d.DB._itemDB.t_potitem;
+        return out;
+    });
+    t.eq('放置 ghost：預設狀態的 png 一張、位置在格子底邊中間', JSON.stringify(p.ghost), JSON.stringify([1, 0, 16]));
+    t.eq('runtime 生出來：位置就是錨點、預設 off', JSON.stringify(p.pos), JSON.stringify([0, 16, 'off', 2]));
+    t.eq('存檔：runtime 記錨點跟 look', JSON.stringify(p.saved), JSON.stringify(['pot', 't_potitem', 0, 16, 'on']));
+    t.eq('照存檔重建：位置不漂移、狀態 on', JSON.stringify(p.reload), JSON.stringify([0, 16, 'on']));
 });

@@ -1,6 +1,6 @@
 # Prefab（png＋粒子＋光源＋fx 組成的物件）
 
-2026-11-17 定案。在場景分頁把 png／粒子／光源（png 可掛 fx）組成可重複使用的物件，存成資料，遊戲（Tiled 地圖、放置道具）跟場景分頁共用。
+2026-11-17 定案，同日 6 步全部完成。在場景分頁把 png／粒子／光源（png 可掛 fx）組成可重複使用的物件，存成資料，遊戲（Tiled 地圖、放置道具）跟場景分頁共用。
 
 ## 資料：`public/assets/json/prefab.json`（手寫來源檔，`DB.prefab(id)`）
 
@@ -100,4 +100,8 @@
    - `src/data/mapcheck.js` 的 `isPrefabObj`／`prefabIssue`：`prefab` 指到 prefab.json 沒有的＝錯誤，地圖分頁的 ⚠（`summarize()`）跟 `node scripts/maps.js` 都會報。
    - 注意：Tiled 物件的位置是縮圖左下角，prefab 的縮圖外框變了（例如零件往左加）已經擺好的物件錨點會跟著偏；不要在 Tiled 裡拉 prefab 物件的大小（寬高要等於 thumb）。
    - `tools/common/icons.js` 多 `reloadList()`：自己更新圖片清單時重讀（廣播不會傳回自己）。
-6. 放置道具 `item.json bb.prefab`＋ghost、其他工具的引用掃描、道具分頁選擇器。
+6. ✅ 放置道具 `item.json bb.prefab`＋ghost、其他工具的引用掃描、道具分頁選擇器（測試 prefab.mjs、prefab-tool.mjs）。
+   - **位置的兩種意思**：Tiled 物件（uid ≠ -1）的位置＝縮圖中心，ItemView `modify` 把 root 挪到錨點；runtime 生的（uid -1：放置道具、存檔重建、場景分頁 sandbox）位置**就是錨點**（`ItemView._setAnchor()` 對 prefab＋uid -1 不挪），存檔記的也是錨點，重建不會漂移。sandbox 的實例因此直接 `new Item(x, y)`。
+   - 放置：`GameScene._placeAt()`：有 `bb.prefab` 的放在格子底邊中間（錨點），ghost 是 `src/core/prefab.js` 的 `prefabGhost()`（預設狀態的 png，不含粒子／光源）；`thumbOf`／`defaultImgs` 也搬到這裡（場景跟工具都 import，場景不 import components）。
+   - 道具分頁：`bb` 變成已知欄位（`CAT_DEVICE` 建議），子欄位 `prefab`＝下拉 prefab.json 的 id，其他 bb key 在「其他」JSON 框。
+   - 引用掃描：粒子分頁（prefab 零件的 `particle`，↗ 場景分頁）、特效分頁（png 零件的 `fx`）、圖片分頁（`img` 本來就是 FIELDS，prefab.json 加 ↗）；場景分頁收 ↗：選第一個放了那個 prefab 的場景、選起實例。

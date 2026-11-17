@@ -8,7 +8,6 @@ import {GameObject} from '../core/gameobject.js'
 import {GM, GS} from '../core/setting.js'
 import Puppet from '../roles/puppet.js'
 import Item from '../items/item.js'
-import {thumbOf} from '../components/view.js'
 import DB from '../data/db.js'
 import {playParticle} from '../core/particle.js'
 import {setSpot} from '../core/spotlight.js'
@@ -204,8 +203,7 @@ export class Sandbox extends GameScene
             const pf = DB.prefab(i.prefab);
             if(!pf) {bad.push(i.prefab); continue;}
             if(this._hidden.has(i.key)) {continue;}
-            const t = thumbOf(pf);
-            const go = new Item(this, i.x + t.x + t.w/2, i.y + t.y + t.h/2);   // Tiled 的位置＝縮圖中心，ItemView 搬到錨點
+            const go = new Item(this, i.x, i.y);   // uid -1（runtime）：位置就是錨點
             go.bb.prefab = i.prefab;
             if(i.look) {go.bb.look = i.look;}
             go.init_prefab();
