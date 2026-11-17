@@ -116,9 +116,12 @@ export default class UiOption extends UiFrame
         return this;
     }
 
+    // 沒見過的指令(prefab 的 acts)第一次用到才建按鈕，之後重用；文字 k.lab()
     checkItem(k,v)
     {
-        v!==GM.HIDE && this._items[k].show().setEnable(v===GM.EN);
+        if(v===GM.HIDE) {return;}
+        if(!this._items[k]) {this.addItem(k);}
+        this._items[k].show().setEnable(v===GM.EN);
     }
 
     act(key)

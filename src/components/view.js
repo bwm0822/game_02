@@ -693,7 +693,19 @@ export class ItemView extends View
             this[h] = box.h;
         }
         this.look ??= pf.look ?? null;
+        if(pf.acts && Object.keys(pf.acts).length) {this.interactive = true;}
         return this;
+    }
+
+    // prefab 的 acts：{動作 id: 狀態}，右鍵選單照 id 出按鈕(文字 id.lab())，目標狀態＝目前狀態的藏起來
+    _bindActs(root)
+    {
+        for(const [act, look] of Object.entries(this._pf.acts ?? {}))
+        {
+            root._setAct(act, ()=>this.look===look ? GM.HIDE : GM.EN);
+            root.on(act, ()=>this._setLook(look));
+        }
+        if(this._pf.defAct) {root._defAct = this._pf.defAct;}
     }
 
     _addShape(alpha)
@@ -904,6 +916,7 @@ export class ItemView extends View
         root.setShape = this._setShape.bind(this);
         root.setLook = this._setLook.bind(this);
         root.getLook = ()=>this.look;
+        if(this._pf) {this._bindActs(root);}
 
         // 3.註冊(event)給其他元件或外部呼叫
         // root.on('setTexture', this._setTexture.bind(this));

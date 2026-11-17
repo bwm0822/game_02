@@ -73,9 +73,12 @@ export class GameObject extends Phaser.GameObjects.Container
     // 所有可操作的指令
     get acts() {return this._acts;}
 
-    // 依順序取出第一個可供操作的指令
-    get act() { return ORDER.find(key=>this._acts[key]===GM.EN &&
-                                        key!==GM.OBSERVE); }
+    // 左鍵的預設指令：有 _defAct(prefab 的 defAct)且可用就是它，否則依 ORDER 取第一個可用的
+    get act()
+    {
+        if(this._defAct && this._acts[this._defAct]===GM.EN) {return this._defAct;}
+        return ORDER.find(key=>this._acts[key]===GM.EN && key!==GM.OBSERVE);
+    }
 
     // 物件狀態
     get sta() {return this.bb.sta;}

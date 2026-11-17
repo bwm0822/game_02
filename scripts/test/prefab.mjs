@@ -84,4 +84,72 @@ run('prefab', async t => {
     t.eq('切走時火焰先播 fx 的 end（還看得到）', JSON.stringify(r.ending), '[true,false,true]');
     t.eq('不存在的狀態：end 播完只剩沒寫 look 的', JSON.stringify(r.bad), '[true,false,false]');
     t.eq('不存在的狀態：光源關掉', r.badLights, 0);
+
+    // acts／defAct／動態選單按鈕／燈交給 prefab
+    const a = await t.eval(async d => {
+        const gs = d.game.scene.getScene('GameScene');
+        const {default: Item} = await import('/src/items/item.js');
+        const {default: Lamp} = await import('/src/items/lamp.js');
+        const {default: UiOption} = await import('/src/ui/uioption.js');
+        d.DB._prefabDB.t_brazier = {
+            look: 'off', acts: {t_fan: 'on', t_douse: 'off'}, defAct: 't_fan',
+            parts: [{img: 'Barrel'}, {light: {r: 80}, look: 'on'}],
+        };
+        d.DB._prefabDB.t_lamp = {
+            look: 'off', acts: {turn_on: 'on', turn_off: 'off'},
+            parts: [{img: 'Barrel'}, {light: {r: 80}, look: 'on'}],
+        };
+        const p = d.GM.player;
+        const nLights = () => gs.lights.lights.length;
+        const L0 = nLights();
+        const out = {};
+
+        const go = new Item(gs, p.x + 96, p.y);
+        go.uid = 987655;
+        go.bb.prefab = 't_brazier';
+        go.init_prefab();
+        const acts = () => Object.fromEntries(Object.entries(go.acts).map(([k, v]) => [k, v === d.GM.EN ? 'en' : v === d.GM.HIDE ? 'hide' : v]));
+        out.interactive = !!go.view._zone;
+        out.acts0 = acts();
+        out.def0 = go.act;
+        await go.aEmit('t_fan', p);
+        out.look1 = go.getLook();
+        out.acts1 = acts();
+        out.def1 = go.act ?? null;
+        out.lights1 = nLights() - L0;
+
+        UiOption.show(0, 0, go.acts, go);
+        const it = UiOption.instance._items;
+        out.btn = {douse: !!it.t_douse?.visible, fan: it.t_fan ? it.t_fan.visible : 'none'};
+        UiOption.instance.close();
+        go.emit('remove');
+
+        const lamp = new Lamp(gs, p.x + 160, p.y);
+        lamp.uid = 987656;
+        lamp.bb.prefab = 't_lamp';
+        lamp.bb.lit = true;
+        lamp.init_prefab();
+        out.lampLights0 = nLights() - L0;
+        out.lampActs0 = Object.fromEntries(Object.entries(lamp.acts));
+        await lamp.aEmit('turn_on', p);
+        out.lampLights1 = nLights() - L0;
+        out.lampLook = lamp.getLook();
+        lamp.emit('remove');
+
+        for (const id of [987655, 987656]) delete d.Record.game.scenes?.[gs._data.map]?.prefab?.[id];
+        delete d.DB._prefabDB.t_brazier;
+        delete d.DB._prefabDB.t_lamp;
+        return out;
+    });
+    t.check('有 acts 的 item 變成可互動', a.interactive);
+    t.eq('off：只出 t_fan', JSON.stringify(a.acts0), '{"t_fan":"en","t_douse":"hide"}');
+    t.eq('左鍵＝defAct', a.def0, 't_fan');
+    t.eq('觸發 t_fan → on', a.look1, 'on');
+    t.eq('on：t_fan 藏、t_douse 出', JSON.stringify(a.acts1), '{"t_fan":"hide","t_douse":"en"}');
+    t.eq('defAct 藏起來時左鍵沒有預設（acts 不進 ORDER）', a.def1, null);
+    t.eq('on：光源亮', a.lights1, 1);
+    t.check('選單：動態建 t_douse 按鈕並顯示、藏著的 t_fan 不顯示（還沒用到就不建）', a.btn.douse === true && a.btn.fan !== true, JSON.stringify(a.btn));
+    t.eq('燈有 prefab：com_lamp 不自己點燈（lit 被忽略）', a.lampLights0, 0);
+    t.eq('燈有 prefab：開關照 prefab 的 acts', a.lampActs0.turn_on !== undefined && a.lampActs0.turn_off !== undefined, true);
+    t.eq('燈 turn_on → prefab on、只有一盞光', `${a.lampLook}/${a.lampLights1}`, 'on/1');
 });

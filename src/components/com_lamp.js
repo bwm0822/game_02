@@ -63,6 +63,7 @@ export class COM_Lamp extends Com
         // 0.初始化
         this._lit = false;
         this._light = null;
+        if (bb.prefab) {return;}    // 有 prefab：光源跟開關都由 prefab(ItemView 的 look／acts)管
         if (bb.lit) {this._turnOn();}
 
         // 1.提供 [外部操作的指令]

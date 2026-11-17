@@ -37,9 +37,9 @@
 - `ItemView`（`src/components/view.js`）看到 `bb.prefab` 就整個接手（不另開 com，所有掛 ItemView 的物件自動支援）：`_setData()` 套縮圖大小、錨點、沒被 Tiled 覆寫的占地方塊；`_addShape()` 不建單張圖，`_shape`＝放在錨點的 container，png 零件各包一個 holder（fx tween 動 holder）照 `depth` 排；粒子 `playParticle({target:root})`、光源 `scene.lights.addLight`＋`setSpot`（`i` 沒寫＝`GM.LIGHT`）。outline／遮擋半透明照舊作用在 `_shape`。`root.setTexture`／`setShape` 對 prefab 無效。
 - `root.setLook(x)`／`root.getLook()` 切狀態（遊戲中切換播 fx 的 spawn／end，讀檔直接建不播）；ItemView 的 `save()`／`load()` 存讀 `look`（`Item` 也補了 `this.load()`）。
 - 純裝飾的 prefab 用現有的 `type:"item"`（`Item`：不可互動、SOLID 遮擋）。
-- 第 2 步：`acts` 用 `_setAct` 註冊、`root.on(<act>)` → `setLook`；`defAct`。
-- 有 prefab 的 lamp：光源跟開關都由 prefab 管，`com_lamp` 看到 `bb.prefab` 不建自己的燈。
-- `UiOption` 改成動態按鈕：沒見過的 act key 臨時建按鈕（建一次重用），文字 `key.lab()`。
+- `acts`：ItemView `_bindActs()` 用 `_setAct` 註冊、`root.on(<act>)` → `setLook`；有 acts 的 prefab 自動 `interactive`（純裝飾的 `item` 也點得到）。`defAct` 存 `root._defAct`，`GameObject.act`（左鍵／游標）先看它可用就用，否則照舊 `ORDER`（所以 acts 預設不搶左鍵）。
+- 有 prefab 的 lamp：光源跟開關都由 prefab 管，`com_lamp` 看到 `bb.prefab` 整個不動作（`lit` 也忽略，初始狀態看 prefab 的 `look`／Tiled 的 `look`），prefab 要自己寫 `acts:{turn_on, turn_off}`。
+- `UiOption.checkItem()`：沒見過的 act key 第一次要顯示時才建按鈕（建一次重用），文字 `key.lab()`（local.json 沒有＝紅字 key）；游標沒對應圖示＝預設游標。
 - 存檔：`bb.look` 跟著 prefab／runtime 存檔。
 - 來源：
   - Tiled：物件屬性 `prefab`（自動產生的 template 帶），可覆寫 `look`、`type`（行為照舊由 `type` 決定）。
@@ -77,7 +77,7 @@
 ## 實作順序（每步 commit＋無頭測試＋更新本文件）
 
 1. ✅ 資料＋遊戲核心：prefab.json、`DB.prefab`、ItemView 多圖＋狀態／粒子／光源／fx、存檔；測試 `scripts/test/prefab.mjs`（測試裡臨時塞一筆進 `DB._prefabDB`，prefab.json 目前是空的）。
-2. 互動：acts＋動態 UiOption＋`defAct`、lamp 交接。
+2. ✅ 互動：acts＋動態 UiOption＋`defAct`、lamp 交接（測試同 prefab.mjs）。
 3. 場景分頁：prefab 庫＋實例（放置／拖曳／狀態預覽）＋左欄摺疊。
 4. 場景分頁：組成 prefab（烤圖、粒子另存）＋編輯模式（零件、錨點、方塊、acts）＋改名／複製／刪除。
 5. Tiled：縮圖＋tsj＋template 自動產生、mapcheck。
