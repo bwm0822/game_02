@@ -141,6 +141,28 @@ run('prefab-tool', async t => {
         const baked = await (await (await dir(proj, 'public', 'assets', 'textures', 'prefabs', 'forge')).getFileHandle('forge-Crate.png').catch(() => null))?.getFile();
         const pf = (await pfDisk()).forge;
         out.exit = [sc.S.edit, sc.S.pick, pf.parts.find(p => p.img === 'forge-Crate') ?? null, !!baked, pf.thumb, crate];
+
+        // ---------- 組成 prefab ----------
+        await sc.addScene('組成');
+        const cDisk = async () => (await read(await dir(proj, 'tools'), 'scenes.json'))['組成'];
+        await sc.addProp('Barrel', 200, 200);
+        await sc.addEmitter('campfire', 0, -30);
+        await sc.setEmitter('e1', {follow: 'p1', def: {img: 'p-dot', speedY: -20}});
+        await sc.addLight(210, 190);
+        await sc.setLight('l1', {follow: 'p1', x: 10, y: -10});
+        await sc.composePrefab(null, {keys: ['p1', 'e1'], id: 'brazier', defs: {e1: 'brazier-campfire'}});
+        const partDisk = () => read(json, 'particle.json');
+        out.compose = [(await pfDisk()).brazier, (await partDisk())?.['brazier-campfire'] ?? null, await cDisk(), sc.S.pick];
+        await sc.undo();
+        out.composeUndo = [(await pfDisk()).brazier ?? null, (await partDisk())?.['brazier-campfire'] ?? null, (await cDisk()).props?.length, (await cDisk()).prefabs ?? null];
+        await sc.redo();
+        out.composeRedo = !!(await pfDisk()).brazier?.thumb;
+
+        // 改名：prefab.json key＋所有場景的實例；複製
+        await sc.renamePrefab('brazier', 'fire_pit');
+        out.rename = [Object.keys(await pfDisk()), (await cDisk()).prefabs.map(o => o.prefab)];
+        await sc.dupPrefab('fire_pit', 'fire_pit-copy');
+        out.dup = [Object.keys(await pfDisk()), JSON.stringify((await pfDisk())['fire_pit-copy']) === JSON.stringify((await pfDisk()).fire_pit)];
         return out;
     });
 
@@ -182,4 +204,16 @@ run('prefab-tool', async t => {
     t.check('離開：不在編輯、選回實例', xedit === null && xpick === 'f1', JSON.stringify([xedit, xpick]));
     t.check('離開：外部 png 照 pct 烤進 textures/prefabs/forge/forge-Crate.png、改成 key、去掉 pct', xbaked && xpart && !('pct' in xpart) && xpart.x === -20, JSON.stringify(xpart));
     t.check('離開：縮圖外框＝預設狀態看得到的 png 聯集', xthumb && xthumb.w >= Math.round(crate[0] / 2) && xthumb.h >= Math.round(crate[1] / 2), JSON.stringify([xthumb, crate]));
+
+    // 組成
+    const [cpf, cpart, cscene, cpick] = r.compose;
+    t.eq('組成：零件相對錨點（第一個擺設）、跟著的粒子換成絕對再換相對、參照另存的 id', JSON.stringify(cpf?.parts), JSON.stringify([{img: 'Barrel'}, {particle: 'brazier-campfire', y: -30}]));
+    t.check('組成：算縮圖外框', !!cpf?.thumb, JSON.stringify(cpf));
+    t.eq('組成：發射點自己那份另存進 particle.json', JSON.stringify(cpart), JSON.stringify({img: 'p-dot', speedY: -20}));
+    t.eq('組成：原地換成實例、沒勾但跟著的光源改成絕對位置', JSON.stringify(cscene), JSON.stringify({map: 'sandbox', lights: [{key: 'l1', x: 210, y: 190, r: 120, color: '#ffcc88'}], prefabs: [{key: 'f1', prefab: 'brazier', x: 200, y: 200}]}));
+    t.eq('組成：選起實例', cpick, 'f1');
+    t.eq('undo 組成（含收尾）：一筆退回三個檔', JSON.stringify(r.composeUndo), JSON.stringify([null, null, 1, null]));
+    t.check('redo 組成：連縮圖外框一起回來', r.composeRedo);
+    t.eq('改名：prefab.json＋場景實例', JSON.stringify(r.rename), JSON.stringify([['forge', 'fire_pit'], ['fire_pit']]));
+    t.eq('複製：一模一樣的新一筆', JSON.stringify(r.dup), JSON.stringify([['forge', 'fire_pit', 'fire_pit-copy'], true]));
 });

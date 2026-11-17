@@ -5,10 +5,11 @@ import * as SH from '../common/shell.js';
 
 export const FILE = 'scenes.json';
 export const PREFAB = 'prefab.json';
+export const PARTICLE = 'particle.json';    // 組成 prefab 時發射點自己那份另存／覆寫
 export const EMPTY = '{}\n';
 export const newScene = () => ({map: 'sandbox'});
 
-const PATHS = {[FILE]: 'tools', [PREFAB]: 'public/assets/json'};
+const PATHS = {[FILE]: 'tools', [PREFAB]: 'public/assets/json', [PARTICLE]: 'public/assets/json'};
 let root = null;
 const serialize = (data) => JSON.stringify(data, null, 2) + '\n';
 

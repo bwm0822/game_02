@@ -90,7 +90,7 @@
      送 sandbox 的是 `gameScene()`：場景本身的東西 key 前面加 `x`、列在 `locked`（sandbox `_dimLocked()` 變暗、`_pickAt`／記號跳過），不含正在編的實例，再加上沒篩掉的零件。
      右欄沒選＝prefab 面板（預設狀態、左鍵動作、右鍵動作 acts 表（local.json 沒有標 ⚠＋↗ 文字分頁）、占地方塊勾選＋x/y/w/h、縮圖外框唯讀）；擺設面板多「狀態」「特效（fx.json）」、深度改成 prefab 內部前後；發射點面板只剩粒子 id／位置／狀態（內容 ↗ 粒子分頁，沒有自己那份、不跟）；光源面板「跟著」換成「狀態」。
      進入：實例右欄「✎ 編輯 prefab」、實例右鍵、新增空白 prefab 後自動進；離開：上方「離開」或 Esc → `finishEdit()`：照預設狀態看得到的 png 算 `thumb`（不算角度），`file:` 圖照 pct 烤成 `textures/prefabs/<id>/<id>-<檔名>.png`（撞 key 加 `-2`）、改寫 key、去 pct、更新圖片清單、重開 sandbox。編輯中不能放角色／prefab、換場景＝離開。
-   - 4b 組成 prefab＋改名／複製。
+   - ✅ 4b 組成 prefab＋改名／複製：擺設／粒子／光源右鍵（左欄或畫面）「組成 prefab…」→ 對話框填 id、勾要組的東西（預設勾點的那個＋跟著它的）、有自己那份（✎）的發射點選「另存成新 id（預設 `<prefab>-<原id>`）／覆寫原 id」；錨點＝第一個勾的擺設；跟著別人的先換成絕對位置；沒勾卻跟著被組走的改絕對位置；scenes.json＋prefab.json＋particle.json（store 的 `PARTICLE`）一起寫，接著 `finishEdit()` 收尾，兩步用 `mergeUndo()` 併成一筆 undo；particle.json 變了 sandbox 整個重開。prefab 庫右鍵 改名…（prefab.json key 保留順序＋所有場景實例；地圖／template／道具在第 5、6 步補）／複製…（整筆複製、不放實例）。
    - 4c 錨點十字、占地方塊畫在畫面上可拖。
 5. Tiled：縮圖＋tsj＋template 自動產生、mapcheck。
 6. 放置道具 `item.json bb.prefab`＋ghost、其他工具的引用掃描、道具分頁選擇器。

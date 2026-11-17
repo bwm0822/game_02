@@ -84,6 +84,8 @@ function gotData(data)
 {
     if (data[ST.FILE]) S.data = data[ST.FILE];
     if (data[ST.PREFAB]) S.prefabs = data[ST.PREFAB];
+    // particle.json 是組成 prefab 時寫的：sandbox 的 DB 舊了，整個重開
+    if (data[ST.PARTICLE]) {S.refs.particles = data[ST.PARTICLE]; reloadGame();}
 }
 
 // 改目前場景：fn(場景)；場景被別處刪了就擋；編輯 prefab 時改的是零件（editParts）
@@ -595,6 +597,141 @@ function prefabPanel()
         h('div', {class: 'hint dim'}, t ? `縮圖外框 ${t.x},${t.y} ${t.w}×${t.h}（離開編輯時照預設狀態的 png 自動算）` : '縮圖外框：離開編輯時照預設狀態的 png 自動算'),
         h('div', {class: 'hint dim'}, '點畫面上的零件編輯；右鍵放擺設／粒子／光源（新零件標成上方篩選的狀態）'),
     ];
+}
+
+// ---------- 改名／複製 prefab ----------
+// 改名連帶改所有場景的實例（地圖／template／道具的引用在之後的步驟補）
+async function renamePrefab(from, to)
+{
+    to ??= await askName(`改名 prefab ${from}`, from);
+    if (to === null || to === from) return;
+    const err = prefabIdError(to);
+    if (err) return status(err);
+    await commit((scenes, pf) => {
+        if (!(from in pf)) throw new Error(`prefab.json 沒有 ${from}`);
+        ST.renameKey(pf, from, to);
+        for (const sc of Object.values(scenes)) for (const o of sc.prefabs ?? []) if (o.prefab === from) o.prefab = to;
+    }, undefined, undefined, PREFAB_FILES);
+    if (S.edit?.id === from) {S.edit.id = to; refresh();}
+    if (ls.get(LS.prefab) === from) ls.set(LS.prefab, to);
+}
+
+async function dupPrefab(from, to)
+{
+    if (to === undefined)
+    {
+        let n = `${from}-copy`;
+        for (let i = 2; n in S.prefabs; i++) n = `${from}-copy${i}`;
+        to = await askName(`複製 prefab ${from}`, n);
+    }
+    if (to === null) return;
+    const err = prefabIdError(to);
+    if (err) return status(err);
+    await commit((scenes, pf) => {
+        if (!(from in pf)) throw new Error(`prefab.json 沒有 ${from}`);
+        pf[to] = structuredClone(pf[from]);
+    }, undefined, undefined, PREFAB_FILES);
+}
+
+// ---------- 組成 prefab：場景裡挑擺設／粒子／光源 → prefab.json 一筆＋原地換成一個實例 ----------
+// 錨點＝第一個勾的擺設（沒有就第一個勾的東西）；跟著角色／擺設的粒子／光源先換成絕對位置；
+// 發射點有自己那份（def）的要另存成 particle.json 的新 id 或覆寫原 id（prefab 只能參照）；最後照「離開編輯」收尾（烤圖、縮圖外框）
+async function composePrefab(start, opt)
+{
+    if (S.sel === null) return status('先選或新增一個場景');
+    if (S.edit) return status('編輯 prefab 中，先按上方「離開」');
+    const sc = realScene();
+    const all = [...props().map(o => ['props', o, `擺設 ${o.key}　${propName(o)}`]), ...emitters().map(o => ['particles', o, `粒子 ${o.key}　${o.id}${o.def ? ' ✎' : ''}`]),
+                 ...lights().map(o => ['lights', o, `光源 ${o.key}`])];
+    if (!all.length) return status('場景裡沒有擺設／粒子／光源可以組');
+    let pick, id, defs;
+    if (opt) ({keys: pick, id, defs = {}} = opt);
+    else
+    {
+        let n = 'prefab';
+        for (let i = 2; n in S.prefabs; i++) n = `prefab${i}`;
+        const idInp = h('input', {size: 20, value: n});
+        const checks = all.map(([, o, t]) => h('label', {style: 'display:block'}, h('input', {type: 'checkbox', value: o.key, checked: o.key === start || o.follow === start}), ' ', t));
+        const defRows = all.filter(([k, o]) => k === 'particles' && o.def).map(([, o]) => {
+            const mode = h('select', null, h('option', {value: 'new'}, '另存成新 id'), h('option', {value: 'over'}, `覆寫 ${o.id}`));
+            const inp = h('input', {size: 16, value: `${n}-${o.id}`});
+            mode.onchange = () => {inp.disabled = mode.value === 'over';};
+            return {key: o.key, el: h('div', {class: 'row2'}, `${o.key}（${o.id} ✎）`, mode, inp), get: () => (mode.value === 'over' ? o.id : inp.value.trim())};
+        });
+        const p = ask('組成 prefab', [
+            h('label', null, 'id ', idInp, h('span', {class: 'dim'}, '　英數字、_、-')),
+            h('div', {class: 'dim', style: 'margin-top:6px'}, '要組進去的東西（錨點＝第一個勾的擺設）'),
+            h('div', {class: 'treebox', style: 'height:auto; max-height:260px; padding:4px'}, checks),
+            defRows.length && h('div', {class: 'dim', style: 'margin-top:6px'}, '有自己改過內容（✎）的粒子：prefab 只能參照 particle.json'),
+            defRows.map(r => r.el),
+        ], [['ok', '組成'], ['cancel', '取消']]);
+        idInp.select();
+        if (await p !== 'ok') return;
+        id = idInp.value.trim();
+        pick = checks.map(l => l.querySelector('input')).filter(c => c.checked).map(c => c.value);
+        defs = Object.fromEntries(defRows.map(r => [r.key, r.get()]));
+    }
+    const err = prefabIdError(id);
+    if (err) return status(err);
+    const chosen = all.filter(([, o]) => pick.includes(o.key));
+    if (!chosen.length) return status('至少勾一個');
+    for (const [, o] of chosen.filter(([k, o]) => k === 'particles' && o.def))
+    {
+        const v = defs[o.key];
+        if (!PREFAB_ID.test(v ?? '')) return status(`${o.key} 的粒子 id「${v ?? ''}」只能用英數字、_、-`);
+        if (v !== o.id && S.refs.particles[v]) return status(`particle.json 已經有 ${v}（要蓋掉原本的請選「覆寫 ${o.id}」）`);
+    }
+    const abs = (o) => {const b = o.follow ? followBase(sc, o.follow) : null; return {x: (b?.x ?? 0) + o.x, y: (b?.y ?? 0) + o.y};};
+    const first = chosen.find(([k]) => k === 'props') ?? chosen[0];
+    const anchor = abs(first[1]);
+    const name = S.sel, key = instKey();
+    const syn = {props: [], particles: [], lights: []};
+    for (const [k, o] of chosen)
+    {
+        const {follow, every, def, ...rest} = o;
+        syn[k].push({...rest, ...abs(o), ...(k === 'particles' && def && {id: defs[o.key]})});
+    }
+    const parts = fromSyn(syn, anchor.x, anchor.y);
+    const newDefs = chosen.filter(([k, o]) => k === 'particles' && o.def).map(([, o]) => [defs[o.key], o.def]);
+    const files = newDefs.length ? [...PREFAB_FILES, ST.PARTICLE] : PREFAB_FILES;
+    await commit((scenes, pf, particles) => {
+        if (id in pf) throw new Error(`已經有 prefab「${id}」`);
+        const s = scenes[name];
+        if (!s) throw new Error(`找不到場景「${name}」`);
+        pf[id] = {parts};
+        for (const [pid, d] of newDefs) particles[pid] = structuredClone(d);
+        const gone = new Set(pick);
+        // 沒勾、卻跟著被組走的擺設：換成絕對位置
+        for (const o of [...(s.particles ?? []), ...(s.lights ?? [])].filter(o => !gone.has(o.key) && gone.has(o.follow)))
+        {
+            const b = followBase(s, o.follow);
+            o.x += b?.x ?? 0;
+            o.y += b?.y ?? 0;
+            delete o.follow;
+        }
+        for (const k of KINDS3)
+        {
+            if (!s[k]) continue;
+            s[k] = s[k].filter(o => !gone.has(o.key));
+            if (!s[k].length) delete s[k];
+        }
+        (s.prefabs ??= []).push({key, prefab: id, x: anchor.x, y: anchor.y});
+    }, undefined, key, files);
+    if (!S.prefabs[id]) return;
+    const n0 = S.undo.length;
+    try {await finishEdit(id);}
+    catch (e) {status(`prefab 收尾失敗：${e.message}`);}
+    mergeUndo(n0);
+    S.pick = key;
+    refresh();
+}
+
+// 把 n0 之後多出來的那一步併進前一步（組成＋收尾＝一筆 undo）
+function mergeUndo(n0)
+{
+    if (S.undo.length !== n0 + 1 || n0 < 1) return;
+    const b = S.undo.pop(), a = S.undo.at(-1);
+    for (const [f, t] of Object.entries(b.files)) a.files[f] = a.files[f] ? {before: a.files[f].before, after: t.after} : t;
 }
 
 function instPanel(o)
@@ -1221,7 +1358,7 @@ function renderLib()
         ...(isFolded('lib') ? [] : ids.map(id => h('div', {
             class: 'item', draggable: 'true', dataset: {prefab: id}, title: '拖進遊戲畫面放一個',
             ondragstart: (e) => {e.dataTransfer.setData('application/x-prefab', id); e.dataTransfer.effectAllowed = 'copy';},
-            oncontextmenu: (e) => menu(e, [['刪除', () => deletePrefab(id)]]),
+            oncontextmenu: (e) => menu(e, [['改名…', () => renamePrefab(id)], ['複製…', () => dupPrefab(id)], ['刪除', () => deletePrefab(id)]]),
         }, pfIcon(id, 20), h('span', {class: 'id'}, id), h('span', {class: 'lab dim'}, `${prefabUses(id).reduce((n, [, c]) => n + c, 0) || ''}`)))),
         !isFolded('lib') && !ids.length && h('div', {class: 'dim'}, S.root ? '還沒有 prefab，按 ＋ 新增' : ''));
 }
@@ -1261,19 +1398,19 @@ function renderTree()
         ...sec('props', `${ed ? 'png' : '擺設'}（${vis(props()).length}）`, plus('放擺設', () => placeProp(S.center[0] * 32 + 16, S.center[1] * 32 + 32)), () => vis(props()).map(p => h('div', {
             class: `item${p.key === S.pick ? ' sel' : ''}${S.hidden.has(p.key) ? ' hid' : ''}`, dataset: {key: p.key},
             onclick: () => pickRole(p.key === S.pick ? null : p.key),
-            oncontextmenu: (e) => menu(e, [['刪除', () => deleteObj(p.key)]]),
+            oncontextmenu: (e) => menu(e, [...(ed ? [] : [['組成 prefab…', () => composePrefab(p.key)]]), ['刪除', () => deleteObj(p.key)]]),
         }, h('button', {class: 'eye', title: '暫時藏起來（不存檔）', onclick: (e) => {e.stopPropagation(); toggleHide(p.key);}}, S.hidden.has(p.key) ? '◌' : '👁'),
            imgEl(p.img, 20), h('span', {class: 'id'}, p.img.startsWith(FILE) ? p.img.split('/').pop() : p.img), h('span', {class: 'mark dim'}, `${p.x},${p.y}`)))),
         ...sec('particles', `粒子（${vis(emitters()).length}）`, plus('放粒子發射點', () => placeEmitter(S.center[0] * 32 + 16, S.center[1] * 32 + 16)), () => vis(emitters()).map(e => h('div', {
             class: `item${e.key === S.pick ? ' sel' : ''}${S.hidden.has(e.key) ? ' hid' : ''}`, dataset: {key: e.key},
             onclick: () => pickRole(e.key === S.pick ? null : e.key),
-            oncontextmenu: (ev) => menu(ev, [['刪除', () => deleteObj(e.key)]]),
+            oncontextmenu: (ev) => menu(ev, [...(ed ? [] : [['組成 prefab…', () => composePrefab(e.key)]]), ['刪除', () => deleteObj(e.key)]]),
         }, h('button', {class: 'eye', title: '暫時藏起來（不存檔）', onclick: (ev) => {ev.stopPropagation(); toggleHide(e.key);}}, S.hidden.has(e.key) ? '◌' : '👁'),
            h('span', {class: defOf(e) ? 'id' : 'id warn', title: e.def ? '自訂（發射點自己那份）' : ''}, e.def ? `${e.id} ✎` : e.id), e.follow && h('span', {class: 'lab'}, `→ ${followName(e.follow)}`), h('span', {class: 'mark dim'}, `${e.x},${e.y}`)))),
         ...sec('lights', `光源（${vis(lights()).length}）`, plus('放光源', () => addLight(S.center[0] * 32 + 16, S.center[1] * 32 + 16)), () => vis(lights()).map(l => h('div', {
             class: `item${l.key === S.pick ? ' sel' : ''}${S.hidden.has(l.key) ? ' hid' : ''}`, dataset: {key: l.key},
             onclick: () => pickRole(l.key === S.pick ? null : l.key),
-            oncontextmenu: (ev) => menu(ev, [['刪除', () => deleteObj(l.key)]]),
+            oncontextmenu: (ev) => menu(ev, [...(ed ? [] : [['組成 prefab…', () => composePrefab(l.key)]]), ['刪除', () => deleteObj(l.key)]]),
         }, h('button', {class: 'eye', title: '暫時藏起來（不存檔）', onclick: (ev) => {ev.stopPropagation(); toggleHide(l.key);}}, S.hidden.has(l.key) ? '◌' : '👁'),
            h('span', {class: 'swatch', style: `background:${l.color ?? '#ffcc88'}`}), h('span', {class: 'id'}, l.key),
            l.follow && h('span', {class: 'lab'}, `→ ${followName(l.follow)}`), h('span', {class: 'mark dim'}, `${l.x},${l.y}`)))),
@@ -1523,6 +1660,7 @@ addEventListener('message', (e) => {
             ? [['在這裡放 png…', () => placeProp(m.wx, m.wy)], ['在這裡放粒子…', () => placeEmitter(m.wx, m.wy)], ['在這裡放光源', () => addLight(m.wx, m.wy)]]
             : [[`在這裡放角色…（${m.tx}, ${m.ty}）`, () => placeAt(m.tx, m.ty)], ['在這裡放擺設…', () => placeProp(m.wx, m.wy)], ['在這裡放粒子…', () => placeEmitter(m.wx, m.wy)], ['在這裡放光源', () => addLight(m.wx, m.wy)], ['在這裡放 prefab…', () => placeInst(m.wx, m.wy)]];
         if (m.key && isInst(m.key) && !S.edit) items.push(['✎ 編輯 prefab', () => enterEdit(m.key)]);
+        if (m.key && (isProp(m.key) || isEm(m.key) || isLight(m.key)) && !S.edit) items.push(['組成 prefab…', () => composePrefab(m.key)]);
         if (m.key) items.push([`刪除 ${roleOf(m.key)?.id ?? m.key}`, () => deleteObj(m.key)]);
         if (S.sel === null) return status('先選或新增一個場景');
         menu(at, items);
@@ -1613,5 +1751,5 @@ refresh();
 
 // 給無頭測試用
 window.__sc = {S, setProject, addScene, dupScene, renameScene, deleteScene, select, undo, redo, addRole, setRole, setEquip, deleteRole, pickRole, toggleHide, arm, toGame, addProp, setProp, deleteObj, nudge, bakeProp, srcSize, addLight, setLight, addEmitter, setEmitter, setField, setPlaying,
-               addInst, setInst, newPrefab, deletePrefab, toggleFold, enterEdit, exitEdit, setPf,
+               addInst, setInst, newPrefab, deletePrefab, toggleFold, enterEdit, exitEdit, setPf, composePrefab, renamePrefab, dupPrefab,
                flush: () => S.q};
