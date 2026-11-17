@@ -47,6 +47,8 @@ export default class DB
 
         this._particleDB = scene.cache.json.get('particle');
 
+        this._prefabDB = scene.cache.json.get('prefab') ?? {};
+
         this._animDB = scene.cache.json.get('anim');
 
         this._navDB = scene.cache.json.get('navgraph');
@@ -106,6 +108,14 @@ export default class DB
     {
         const p = this._particleDB?.[id];
         if(id && !p) {dlog(T.WARN)(`particle.json 沒有 ${id}`);}
+        return p;
+    }
+
+    // prefab.json 的一筆(docs/prefab.md)；有 id 卻查不到就 dlog
+    static prefab(id)
+    {
+        const p = this._prefabDB?.[id];
+        if(id && !p) {dlog(T.WARN)(`prefab.json 沒有 ${id}`);}
         return p;
     }
 

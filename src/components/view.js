@@ -6,6 +6,7 @@ import {uPic,uBbc,uImage} from '../ui/uicomponents.js'
 import Utility from '../core/utility.js'
 import FxCell, {zoneDelays} from '../core/fxcell.js'
 import {playParticle} from '../core/particle.js'
+import {setSpot} from '../core/spotlight.js'
 import {equipFor, hiddenParts, weaponOf, handOf, ROLE_PARTS, WRISTS, pivotOf, atPivot, fromPivot, rigOf} from '../core/equip.js'
 const _tag = 'view';
 
@@ -659,13 +660,52 @@ class View extends Phaser.GameObjects.Container
 }
 
 
+// prefab 的占地方塊(相對錨點的 {x,y,w,h}) → View 的 l/t/w/h 欄位；Tiled 有寫任何一個該組欄位就整組不套
+const PF_BOX = {body:['bl','br','bw','bt','bb','bh'], grid:['gl','gr','gw','gt','gb','gh'], zone:['zl','zr','zw','zt','zb','zh']};
+
 export class ItemView extends View
 {
+    constructor(scene)
+    {
+        super(scene);
+        this.prefab = null;     // prefab.json 的 id(docs/prefab.md)：有就照零件建圖，不用 key/frame
+        this.look = null;       // prefab 的狀態，沒給＝prefab 的 look
+    }
+
+    // prefab：大小＝縮圖外框、錨點＝prefab 的 (0,0)，占地方塊沒被 Tiled 覆寫就用 prefab 的
+    _setData()
+    {
+        super._setData();
+        const pf = this._pf = this.prefab ? DB.prefab(this.prefab) : null;
+        if(!pf) {return this;}
+        const t = pf.thumb ?? {x:-16, y:-32, w:32, h:32};
+        this.wid = t.w;
+        this.hei = t.h;
+        this.anchorX = -(t.x + t.w/2);
+        this.anchorY = -(t.y + t.h/2);
+        for(const [k, [l, , w, top, , h]] of Object.entries(PF_BOX))
+        {
+            const box = pf[k];
+            if(!box || PF_BOX[k].some(f=>this[f]!=null)) {continue;}
+            this[l] = box.x - t.x;
+            this[w] = box.w;
+            this[top] = box.y - t.y;
+            this[h] = box.h;
+        }
+        this.look ??= pf.look ?? null;
+        return this;
+    }
+
     _addShape(alpha)
     {
         // console.log('_addShape=',this.key,this.frame,this.wid,this.hei)
 
-        if(this.key)
+        if(this._pf)
+        {
+            this._buildPrefab();
+            if(alpha!=null) {this._shape.setAlpha(alpha);}
+        }
+        else if(this.key)
         {
             if(Utility.isTexture(this.scene,this.key))
             {
@@ -719,14 +759,129 @@ export class ItemView extends View
         return this;
     }
 
+    //--------------------------------------------------
+    // prefab：png 零件在 _shape(放在錨點的 container)裡照 depth 排，粒子跟著 root、光源放在錨點＋x/y；
+    // 零件有 look＝只在那個狀態出現，沒有＝永遠在；png 零件的 fx(fx.json)跑 spawn/idle/end tween(同 FxCell，動的是包圖的 holder)
+    //--------------------------------------------------
+    _buildPrefab()
+    {
+        const scene = this.scene;
+        this._shape = scene.add.container(this.anchorX, this.anchorY);
+        this.add(this._shape);
+        const parts = (this._pf.parts ?? []).map((p, i)=>({p, i}))
+                        .sort((a, b)=>(a.p.depth ?? 0) - (b.p.depth ?? 0) || a.i - b.i);
+        this._parts = [];
+        for(const {p} of parts)
+        {
+            const e = {p, on:false};
+            if(p.img)
+            {
+                const [key, frame] = p.img.split(':');
+                if(!scene.textures.exists(key)) {dlog(T.WARN)(`prefab ${this.prefab}：沒有圖 ${p.img}`); continue;}
+                const img = scene.add.image(0, 0, key, frame)
+                    .setOrigin(p.ox ?? 0.5, p.oy ?? 1).setScale(p.sx ?? 1, p.sy ?? 1)
+                    .setFlipX(!!p.flip).setAngle(p.angle ?? 0).setPipeline('Light2D');
+                e.holder = scene.add.container(p.x ?? 0, p.y ?? 0, [img]).setVisible(false);
+                e.fx = p.fx ? DB.fx(p.fx) : null;
+                this._shape.add(e.holder);
+            }
+            else if(!p.particle && !p.light) {continue;}
+            this._parts.push(e);
+        }
+        this._applyLook(false);
+    }
+
+    _applyLook(anim)
+    {
+        const look = this.look;
+        if(look && !this._pf.parts?.some(p=>p.look===look)) {dlog(T.WARN)(`prefab ${this.prefab} 沒有狀態 ${look}`);}
+        for(const e of this._parts ?? [])
+        {
+            const on = !e.p.look || e.p.look===look;
+            if(on===e.on) {continue;}
+            e.on = on;
+            if(e.holder) {this._imgOn(e, on, anim);}
+            else if(e.p.particle) {this._particleOn(e, on);}
+            else {this._lightOn(e, on);}
+        }
+    }
+
+    _imgOn(e, on, anim)
+    {
+        const h = e.holder, fx = e.fx, tweens = this.scene.tweens;
+        tweens.killTweensOf(h);
+        if(on)
+        {
+            h.setPosition(e.p.x ?? 0, e.p.y ?? 0).setScale(1).setAlpha(1).setAngle(0).setVisible(true);
+            const idle = ()=>{
+                if(!fx?.idle) {return;}
+                const {randDelay=0, ...tw} = fx.idle;
+                tweens.add({...tw, targets:h, delay:Math.random()*randDelay});
+            };
+            if(anim && fx?.spawn)
+            {
+                const {stagger, from, ...tw} = fx.spawn;
+                tweens.add({...tw, targets:h, onComplete:idle});
+            }
+            else {idle();}
+        }
+        else if(anim && fx?.end) {tweens.add({...fx.end, targets:h, onComplete:()=>h.setVisible(false)});}
+        else {h.setVisible(false);}
+    }
+
+    _particleOn(e, on)
+    {
+        if(on) {e.em = playParticle(this.scene, DB.particle(e.p.particle), {target:this.root, ox:e.p.x ?? 0, oy:e.p.y ?? 0});}
+        else {e.em?.stop(); e.em = null;}
+    }
+
+    _lightOn(e, on)
+    {
+        const lights = this.scene.lights;
+        if(on)
+        {
+            const l = e.p.light, pos = this.root.pos;
+            const color = Phaser.Display.Color.HexStringToColor(l.color ?? '#ffcc88').color;
+            e.light = setSpot(lights.addLight(pos.x + (e.p.x ?? 0), pos.y + (e.p.y ?? 0), l.r ?? 120, color, l.i ?? GM.LIGHT), l);
+        }
+        else if(e.light) {lights.removeLight(e.light); e.light = null;}
+    }
+
+    _setLook(look)
+    {
+        if(!this._pf || look===this.look) {return;}
+        this.look = look;
+        this._applyLook(true);
+    }
+
+    _updatePos(pos)
+    {
+        super._updatePos(pos);
+        const p = this.root.pos;
+        this._parts?.forEach(e=>e.light && e.light.setPosition(p.x + (e.p.x ?? 0), p.y + (e.p.y ?? 0)));
+    }
+
+    _remove()
+    {
+        super._remove();
+        this._parts?.forEach(e=>{
+            if(e.holder) {this.scene?.tweens.killTweensOf(e.holder);}
+            e.em?.stop();
+            if(e.light) {this.scene?.lights.removeLight(e.light);}
+        });
+        this._parts = null;
+    }
+
     _setTexture(key_frame)
     {
+        if(this._pf) {return;}
         const[key,frame]=key_frame.split(':');
         this._shape.setTexture(key,frame);
     }
 
     _setShape({sprite,x=0,y=0,scl,origin={x:0.5,y:0.5}}={})
     {
+        if(this._pf) {return;}
         const[key,frame]=sprite.split(':');
         this._shape.setTexture(key,frame);
         this._shape.setOrigin(origin.x,origin.y);
@@ -747,11 +902,23 @@ export class ItemView extends View
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
         root.setTexture = this._setTexture.bind(this);
         root.setShape = this._setShape.bind(this);
+        root.setLook = this._setLook.bind(this);
+        root.getLook = ()=>this.look;
 
         // 3.註冊(event)給其他元件或外部呼叫
         // root.on('setTexture', this._setTexture.bind(this));
 
     }
+
+    // prefab 的狀態跟著存檔；讀檔直接換狀態不播 fx
+    load(data)
+    {
+        if(!this._pf || data?.look==null || data.look===this.look) {return;}
+        this.look = data.look;
+        this._applyLook(false);
+    }
+
+    save() {return this._pf ? {look:this.look} : undefined;}
 }
 
 
