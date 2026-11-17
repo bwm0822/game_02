@@ -93,6 +93,7 @@ export class Sandbox extends GameScene
     async _apply(scene, {force=false}={})
     {
         this._scene = scene;
+        this._editLive = null;
         this._locked = new Set(scene.locked ?? []);   // 編輯 prefab 時場景裡其他東西：變暗、點不到
         // 重置：表演生出來的東西（火牆區域、屍體…）一起清掉；地圖本身的物件 uid 不是 -1
         if(force) {Object.values(this.gos).filter(g=>g.uid===-1 && g.active).forEach(g=>g._remove());}
@@ -223,6 +224,60 @@ export class Sandbox extends GameScene
     }
 
     _isLocked(k) {return !!this._locked?.has(k);}
+
+    //------------------------------------------------------
+    //  編輯 prefab：scene.edit＝{anchor:{x,y}（世界）, boxes:{body,grid,zone}（相對錨點的 {x,y,w,h}）}
+    //  畫錨點十字（橘）＋占地方塊（body 紅、grid 藍、zone 綠），十字拖＝改錨點、方塊左上把手拖＝移動、右下把手拖＝大小
+    //  放開才回報（moveAnchor {x,y}／editBox {k, box}），拖的時候改 this._scene.edit 的副本畫
+    //------------------------------------------------------
+    static BOX_COLOR = {body:0xff5555, grid:0x55aaff, zone:0x66dd66};
+
+    _editHandles()
+    {
+        const e = this._editLive ?? this._scene?.edit;
+        if(!e) {return [];}
+        const out = [];
+        for(const [k, b] of Object.entries(e.boxes ?? {}))
+        {
+            if(!b) {continue;}
+            out.push({kind:'move', k, x:e.anchor.x + b.x, y:e.anchor.y + b.y}, {kind:'size', k, x:e.anchor.x + b.x + b.w, y:e.anchor.y + b.y + b.h});
+        }
+        out.push({kind:'anchor', x:e.anchor.x, y:e.anchor.y});
+        return out;
+    }
+
+    _editHandleAt(wx, wy)
+    {
+        const s = (HANDLE/2 + 3)/this.cameras.main.zoom;
+        return this._editHandles().reverse().find(hd=>Math.abs(hd.x-wx)<=s && Math.abs(hd.y-wy)<=s) ?? null;
+    }
+
+    _drawEdit(g, z)
+    {
+        const e = this._editLive ?? this._scene?.edit;
+        if(!e) {return;}
+        const {x:ax, y:ay} = e.anchor, s = HANDLE/z;
+        for(const [k, b] of Object.entries(e.boxes ?? {}))
+        {
+            if(!b) {continue;}
+            const c = Sandbox.BOX_COLOR[k];
+            g.lineStyle(1.5/z, c, 0.9).strokeRect(ax + b.x, ay + b.y, b.w, b.h);
+            g.fillStyle(c, 1).fillRect(ax + b.x - s/2, ay + b.y - s/2, s, s).fillRect(ax + b.x + b.w - s/2, ay + b.y + b.h - s/2, s, s);
+        }
+        const r = 7/z;
+        g.lineStyle(2/z, 0x000000, 1).strokeCircle(ax, ay, r).lineBetween(ax-r*1.6, ay, ax+r*1.6, ay).lineBetween(ax, ay-r*1.6, ax, ay+r*1.6);
+        g.lineStyle(1/z, 0xff9933, 1).strokeCircle(ax, ay, r).lineBetween(ax-r*1.6, ay, ax+r*1.6, ay).lineBetween(ax, ay-r*1.6, ax, ay+r*1.6);
+    }
+
+    _editTo(d, wx, wy, snap)
+    {
+        const sn = (v)=>(snap ? Math.round(v/16)*16 : Math.round(v));
+        const e = this._editLive;
+        if(d.hd.kind==='anchor') {e.anchor = {x:sn(wx), y:sn(wy)}; return;}
+        const b = e.boxes[d.hd.k], {x:ax, y:ay} = e.anchor;
+        if(d.hd.kind==='move') {b.x = sn(wx) - ax; b.y = sn(wy) - ay;}
+        else {b.w = Math.max(1, sn(wx) - ax - b.x); b.h = Math.max(1, sn(wy) - ay - b.y);}
+    }
 
     _dropInst(k)
     {
@@ -750,6 +805,7 @@ export class Sandbox extends GameScene
                 .fillPoints([{x, y:y-s}, {x:x+s, y}, {x, y:y+s}, {x:x-s, y}], true).strokePoints([{x, y:y-s}, {x:x+s, y}, {x, y:y+s}, {x:x-s, y}], true);
         }
         this._drawZones(g, z);
+        this._drawEdit(g, z);
         for(const [k, o] of Object.entries(this._lights ?? {}))
         {
             if(!this._markOn('light', k)) {continue;}
@@ -975,6 +1031,8 @@ export class Sandbox extends GameScene
                 return;
             }
             if(p.rightButtonDown() && this._arm) {this._arm = null; this._send({sb:'disarm'}); this._cursor(p); return;}
+            const eh = p.leftButtonDown() && this._editHandleAt(p.worldX, p.worldY);
+            if(eh) {this._editLive = structuredClone(this._scene.edit); this._drag = {edit:eh}; return;}
             const hd = p.leftButtonDown() && this._handleAt(p.worldX, p.worldY);
             if(hd) {this._startResize(hd); return;}
             const rh = p.leftButtonDown() && this._radiusAt(p.worldX, p.worldY);
@@ -1021,6 +1079,11 @@ export class Sandbox extends GameScene
             {
                 if(!p.leftButtonDown()) {this._endDrag(); return;}
                 this._resizeTo(this._drag, p.worldX, p.worldY, p.event.shiftKey);
+            }
+            else if(this._drag?.edit)
+            {
+                if(!p.leftButtonDown()) {this._endDrag(); return;}
+                this._editTo(this._drag, p.worldX, p.worldY, p.event.shiftKey);
             }
             else if(this._drag?.radius)
             {
@@ -1078,9 +1141,11 @@ export class Sandbox extends GameScene
         else if(d || this._pan) {c = 'grabbing';}
         else
         {
-            const hd = this._handleAt(p.worldX, p.worldY), zh = !hd && this._zoneHandleAt(p.worldX, p.worldY);
-            const pk = !hd && !zh && this._pickAt(p.worldX, p.worldY);
-            c = hd ? (!hd.hy ? 'ew-resize' : !hd.hx ? 'ns-resize' : hd.hx*hd.hy>0 ? 'nwse-resize' : 'nesw-resize')
+            const eh = this._editHandleAt(p.worldX, p.worldY);
+            const hd = !eh && this._handleAt(p.worldX, p.worldY), zh = !eh && !hd && this._zoneHandleAt(p.worldX, p.worldY);
+            const pk = !eh && !hd && !zh && this._pickAt(p.worldX, p.worldY);
+            c = eh ? (eh.kind==='size' ? 'nwse-resize' : 'move')
+                : hd ?(!hd.hy ? 'ew-resize' : !hd.hx ? 'ns-resize' : hd.hx*hd.hy>0 ? 'nwse-resize' : 'nesw-resize')
                 : zh ? ZONE_CURSOR[zh.part]
                 : this._radiusAt(p.worldX, p.worldY) || this._arcAt(p.worldX, p.worldY) ? 'pointer'
                 : !pk?.emitter && !pk?.light && this._zoneBodyAt(p.worldX, p.worldY, true) ? 'move'
@@ -1095,6 +1160,16 @@ export class Sandbox extends GameScene
     {
         const d = this._drag;
         this._drag = null;
+        if(d?.edit)
+        {
+            const live = this._editLive, e0 = this._scene?.edit;
+            if(!live || !e0) {this._editLive = null; return;}
+            // 回報後等分頁寫檔、送回新場景才清副本（不然會閃回舊位置）
+            if(d.edit.kind==='anchor') {if(live.anchor.x!==e0.anchor.x || live.anchor.y!==e0.anchor.y) {this._send({sb:'moveAnchor', x:live.anchor.x, y:live.anchor.y}); return;}}
+            else if(JSON.stringify(live.boxes[d.edit.k])!==JSON.stringify(e0.boxes[d.edit.k])) {this._send({sb:'editBox', k:d.edit.k, box:live.boxes[d.edit.k]}); return;}
+            this._editLive = null;
+            return;
+        }
         if(d?.resize)
         {
             if(d.patch) {this._send({sb:'resizeProp', key:d.key, patch:d.patch});}

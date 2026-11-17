@@ -406,7 +406,30 @@ function gameScene()
     const out = {...syn, roles: X(real.roles), prefabs: X(real.prefabs?.filter(o => o.key !== S.edit.key))};
     for (const k of KINDS3) out[k] = [...X(real[k]), ...live(syn[k])];
     out.locked = [...out.roles, ...out.prefabs, ...KINDS3.flatMap(k => X(real[k]))].map(o => o.key);
+    const inst = real.prefabs?.find(o => o.key === S.edit.key), pf = S.prefabs[S.edit.id] ?? {};
+    out.edit = {anchor: {x: inst?.x ?? 0, y: inst?.y ?? 0}, boxes: Object.fromEntries(BOXES.map(([k]) => [k, pf[k] ?? null]))};
     return out;
+}
+
+// 拖錨點十字：零件、占地方塊、縮圖外框反向挪（畫面上不動），實例搬到新錨點；別的場景同一個 prefab 的實例錨點不動、圖會挪
+function moveAnchor(x, y)
+{
+    const {id, key} = S.edit, name = S.sel;
+    return commit((scenes, pfs) => {
+        const pf = pfs[id], inst = scenes[name]?.prefabs?.find(o => o.key === key);
+        if (!pf || !inst) throw new Error(`找不到正在編輯的 prefab ${id}`);
+        const dx = x - inst.x, dy = y - inst.y;
+        if (!dx && !dy) return false;
+        for (const p of pf.parts ?? [])
+        {
+            const nx = (p.x ?? 0) - dx, ny = (p.y ?? 0) - dy;
+            if (nx) p.x = nx; else delete p.x;
+            if (ny) p.y = ny; else delete p.y;
+        }
+        for (const k of [...BOXES.map(([b]) => b), 'thumb']) if (pf[k]) {pf[k].x -= dx; pf[k].y -= dy;}
+        inst.x = x;
+        inst.y = y;
+    }, undefined, undefined, PREFAB_FILES);
 }
 
 function enterEdit(key)
@@ -595,7 +618,8 @@ function prefabPanel()
         h('div', {class: 'sec'}, '占地方塊', h('span', {class: 'dim'}, '（相對錨點的左上角＋寬高；Tiled 物件有寫就蓋掉）')),
         h('table', {class: 'props'}, BOXES.map(boxRow)),
         h('div', {class: 'hint dim'}, t ? `縮圖外框 ${t.x},${t.y} ${t.w}×${t.h}（離開編輯時照預設狀態的 png 自動算）` : '縮圖外框：離開編輯時照預設狀態的 png 自動算'),
-        h('div', {class: 'hint dim'}, '點畫面上的零件編輯；右鍵放擺設／粒子／光源（新零件標成上方篩選的狀態）'),
+        h('div', {class: 'hint dim'}, '點畫面上的零件編輯；右鍵放擺設／粒子／光源（新零件標成上方篩選的狀態）；'
+            + '橘色十字＝錨點，拖它改錨點（零件不動、整個 prefab 的原點換位置，別處的實例圖會挪）；方塊左上把手移動、右下把手改大小，Shift 吸 16px'),
     ];
 }
 
@@ -1638,6 +1662,8 @@ addEventListener('message', (e) => {
     }
     else if (m.sb === 'moveEmitter') setEmitter(m.key, {x: m.x, y: m.y}).then(syncGame);
     else if (m.sb === 'moveInst') setInst(m.key, {x: m.x, y: m.y}).then(syncGame);
+    else if (m.sb === 'moveAnchor' && S.edit) moveAnchor(m.x, m.y).then(syncGame);
+    else if (m.sb === 'editBox' && S.edit) setPf({[m.k]: m.box}).then(syncGame);
     else if (m.sb === 'dropPrefab')
     {
         if (S.sel === null) return status('先選或新增一個場景');
@@ -1751,5 +1777,5 @@ refresh();
 
 // 給無頭測試用
 window.__sc = {S, setProject, addScene, dupScene, renameScene, deleteScene, select, undo, redo, addRole, setRole, setEquip, deleteRole, pickRole, toggleHide, arm, toGame, addProp, setProp, deleteObj, nudge, bakeProp, srcSize, addLight, setLight, addEmitter, setEmitter, setField, setPlaying,
-               addInst, setInst, newPrefab, deletePrefab, toggleFold, enterEdit, exitEdit, setPf, composePrefab, renamePrefab, dupPrefab,
+               addInst, setInst, newPrefab, deletePrefab, toggleFold, enterEdit, exitEdit, setPf, composePrefab, renamePrefab, dupPrefab, moveAnchor,
                flush: () => S.q};

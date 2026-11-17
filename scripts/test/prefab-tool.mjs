@@ -163,6 +163,20 @@ run('prefab-tool', async t => {
         out.rename = [Object.keys(await pfDisk()), (await cDisk()).prefabs.map(o => o.prefab)];
         await sc.dupPrefab('fire_pit', 'fire_pit-copy');
         out.dup = [Object.keys(await pfDisk()), JSON.stringify((await pfDisk())['fire_pit-copy']) === JSON.stringify((await pfDisk()).fire_pit)];
+
+        // ---------- 錨點十字、占地方塊 ----------
+        sc.enterEdit('f1');
+        out.handles = await until(() => sc.S.ready && sb()?._scene?.edit) && [sb()._scene.edit.anchor, sb()._editHandleAt(200, 200)?.kind ?? null];
+        const thumb0 = (await pfDisk()).fire_pit.thumb;
+        sb()._send({sb: 'moveAnchor', x: 210, y: 200});
+        out.anchor = await until(async () => (await cDisk()).prefabs[0].x === 210) && [(await pfDisk()).fire_pit.parts.map(p => [p.x ?? 0, p.y ?? 0]),
+            (await cDisk()).prefabs[0], (await pfDisk()).fire_pit.thumb.x - thumb0.x, await until(() => sb()._scene?.edit?.anchor.x === 210)];
+        sb()._send({sb: 'editBox', k: 'grid', box: {x: -20, y: -10, w: 40, h: 10}});
+        out.box = await until(async () => (await pfDisk()).fire_pit.grid) && [(await pfDisk()).fire_pit.grid,
+            await until(() => sb()._scene?.edit?.boxes.grid) && sb()._editHandleAt(210 - 20, 200 - 10)?.kind, sb()._editHandleAt(210 + 20, 200)?.kind];
+        await sc.undo();
+        out.boxUndo = (await pfDisk()).fire_pit.grid ?? null;
+        await sc.exitEdit();
         return out;
     });
 
@@ -216,4 +230,10 @@ run('prefab-tool', async t => {
     t.check('redo 組成：連縮圖外框一起回來', r.composeRedo);
     t.eq('改名：prefab.json＋場景實例', JSON.stringify(r.rename), JSON.stringify([['forge', 'fire_pit'], ['fire_pit']]));
     t.eq('複製：一模一樣的新一筆', JSON.stringify(r.dup), JSON.stringify([['forge', 'fire_pit', 'fire_pit-copy'], true]));
+
+    // 錨點十字、占地方塊
+    t.eq('編輯時 sandbox 有錨點十字（實例位置）', JSON.stringify(r.handles), JSON.stringify([{x: 200, y: 200}, 'anchor']));
+    t.eq('拖錨點：零件反向挪、實例搬過去、縮圖外框跟著挪', JSON.stringify(r.anchor), JSON.stringify([[[-10, 0], [-10, -30]], {key: 'f1', prefab: 'fire_pit', x: 210, y: 200}, -10, true]));
+    t.eq('拖方塊：寫 prefab 的 grid、左上＝移動把手、右下＝大小把手', JSON.stringify(r.box), JSON.stringify([{x: -20, y: -10, w: 40, h: 10}, 'move', 'size']));
+    t.eq('undo 方塊', r.boxUndo, null);
 });
