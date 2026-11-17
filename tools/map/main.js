@@ -23,7 +23,7 @@ import * as TP from '../common/schedpos.js';
 import * as RT from '../common/schedroute.js';
 import {spotsOn, clashOf, occupyEl} from '../role/occupy.js';
 import {isRoleObj, roleObjs, placeOf, spriteOf, forgetSprites, SPRITE_HALF} from './roles.js';
-import {roleIssues, checkMapRoles, isPortObj, portIssue} from '../../src/data/mapcheck.js';
+import {roleIssues, checkMapRoles, isPortObj, portIssue, isPrefabObj, prefabIssue} from '../../src/data/mapcheck.js';
 import {buildPlan, hhmm, mod, parseAt} from '../../src/data/schedplan.js';
 import {daySegs} from '../role/schedbar.js';
 import '../common/splitter.js';
@@ -92,6 +92,7 @@ const readJsonFile = async (f, def) => {
 async function loadRefs()
 {
     S.roles = await readJsonFile('role.json', {});
+    S.prefabs = await readJsonFile('prefab.json', {});
     S.items = await readJsonFile('item.json', {});
     S.parts = await PT.readParts(S.assets.json).catch(() => ({}));
     const nav = S.nav = await readJsonFile('navgraph.json', {nodes: {}, edges: {}});
@@ -290,6 +291,7 @@ async function summarize(name)
             const o = resolveObject(raw, tpl);
             if (o.name) names.add(o.name);
             if (isPortObj(o)) ports.push(o);
+            if (isPrefabObj(o)) {const x = prefabIssue(o, S.prefabs); if (x) issues.push(`物件 ${o.id}：${x.msg}`);}
             if (o.name && o.type !== 'npc')
             {
                 const w = o.width || map.tilewidth, hh = o.height || map.tileheight;
@@ -1623,7 +1625,7 @@ addEventListener('keydown', (e) => {
 });
 SH.onSaved((file) => {
     if (!S.assets) return;
-    if (file === 'role.json') act(loadRefs().then(() => resummarize(S.maps.map(m => m.name))).then(render));
+    if (file === 'role.json' || file === 'prefab.json') act(loadRefs().then(() => resummarize(S.maps.map(m => m.name))).then(render));
     else if (['item.json', 'part.json'].includes(file)) act(loadRefs().then(render));
     else if (file === 'story.json') act(loadSpawns().then(renderRight));
     // template 改了（角色分頁改名）：快取全丟、整個重讀

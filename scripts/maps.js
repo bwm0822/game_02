@@ -1,14 +1,15 @@
 import fs from 'fs'
 import path from 'path'
 import {loadMap} from '../src/data/navgrid.js'
-import {checkMapRoles, isPortObj, portIssue} from '../src/data/mapcheck.js'
+import {checkMapRoles, isPortObj, portIssue, isPrefabObj, prefabIssue} from '../src/data/mapcheck.js'
 
-// 地圖檢查（同工具地圖分頁的 ⚠）：角色不存在／是玩家／站在地圖外、門指到不存在的地圖 → 錯誤；具名 NPC、站在擋住的格子、門的落腳點找不到 → 警告；有錯誤 exit code 1
+// 地圖檢查（同工具地圖分頁的 ⚠）：角色不存在／是玩家／站在地圖外、門指到不存在的地圖、prefab 不存在 → 錯誤；具名 NPC、站在擋住的格子、門的落腳點找不到 → 警告；有錯誤 exit code 1
 const ASSETS = './public/assets';
 const MAP_DIR = `${ASSETS}/maps`;
 
 const roles = JSON.parse(fs.readFileSync(`${ASSETS}/json/role.json`, 'utf-8'));
 const readJson = (rel) => {try {return JSON.parse(fs.readFileSync(`${ASSETS}/${rel}`, 'utf-8'));} catch {return null;}};
+const prefabs = readJson('json/prefab.json') ?? {};
 
 function mapNames(dir, pre = '', out = [])
 {
@@ -46,6 +47,11 @@ for (const name of all)
         if (!names.has(target) && await load(target)) names.set(target, new Set(loaded.get(target).objs.map(x => x.name).filter(Boolean)));
         const x = portIssue(o, namesOf);
         if (x) report(x.level, `maps/${name}.json 物件 ${o.id}（門）`, x.msg);
+    }
+    for (const o of d.objs.filter(isPrefabObj))
+    {
+        const x = prefabIssue(o, prefabs);
+        if (x) report(x.level, `maps/${name}.json 物件 ${o.id}（prefab）`, x.msg);
     }
 }
 if (errors) {console.error(`地圖檢查：${errors} 個錯誤、${warns} 個警告`); process.exitCode = 1;}

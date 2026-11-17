@@ -34,6 +34,14 @@ export function roleIssues(rid, roles)
     return [];
 }
 
+// 物件（或它的 template）的 prefab 屬性指到 prefab.json 沒有的條目＝錯誤（docs/prefab.md）
+export const isPrefabObj = (o) => o.props?.prefab != null && o.props.prefab !== '';
+export function prefabIssue(o, prefabs)
+{
+    const id = String(o.props.prefab);
+    return prefabs?.[id] ? null : {level: 'error', msg: `prefab.json 沒有「${id}」`};
+}
+
 // d＝navgrid 的 loadMap() 結果；回傳 [{level, oid（物件 id）, rid, tile, msg}]；grid 沒給就自己算（同路網：牆、物件佔住的格子＝0）
 export function checkMapRoles(d, roles, grid = null)
 {

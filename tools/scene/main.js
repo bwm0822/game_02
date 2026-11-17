@@ -14,6 +14,7 @@ import {renderDatalists} from '../common/views.js';
 import {KINDS, KIND_NAMES} from '../role/schema.js';
 import {createPForm, easeNames} from '../particle/pform.js';
 import * as ST from './store.js';
+import * as TL from './tiled.js';
 
 const LS = {sel: 'tools.scene.sel', grid: 'tools.scene.grid', role: 'tools.scene.lastRole', particle: 'tools.scene.lastParticle', prefab: 'tools.scene.lastPrefab', fold: 'tools.scene.fold',
             anchor: 'tools.scene.anchor', lightIcon: 'tools.scene.lightIcon', particleIcon: 'tools.scene.particleIcon', sizeLock: 'tools.scene.sizeLock', exportMode: 'tools.scene.exportMode', exportDir: 'tools.scene.exportDir'};
@@ -320,6 +321,8 @@ const prefabUses = (id) => Object.entries(S.data).map(([n, sc]) => [n, (sc.prefa
 
 async function deletePrefab(id, sure)
 {
+    const used = TL.usedBy(await TL.prefabRefs(S.root, id), id);
+    if (used.length) return status(`prefab ${id} 還有地圖在用，不能刪：${used.join('；')}`);
     const uses = prefabUses(id);
     const msg = uses.length ? `會從 prefab.json 拿掉，場景裡的實例一起刪：${uses.map(([n, c]) => `${n}（${c}）`).join('、')}（可以復原）` : '會從 prefab.json 拿掉（可以復原）';
     if (!sure && await ask(`刪除 prefab ${id}`, msg, [['ok', '刪除'], ['cancel', '取消']]) !== 'ok') return;
@@ -332,6 +335,9 @@ async function deletePrefab(id, sure)
             if (!sc.prefabs.length) delete sc.prefabs;
         }
     }, undefined, instOf(S.pick)?.prefab === id ? null : S.pick, PREFAB_FILES);
+    if (S.prefabs[id]) return;
+    try {await TL.dropPrefab(S.root, id); await updateTextures();}
+    catch (e) {status(`Tiled 的縮圖／template 沒刪完：${e.message}`);}
 }
 
 // ---------- 編輯 prefab（S.edit＝{id, key（實例）, look（狀態篩選，null＝全部）}） ----------
@@ -487,6 +493,8 @@ async function finishEdit(id = S.edit?.id)
     const pf = S.prefabs[id];
     if (!pf) return;
     const thumb = await thumbFor(pf);
+    // Tiled 用的縮圖／tsj／template（烤圖前合成：file: 圖直接讀原圖）
+    await TL.syncPrefab(S.root, id, {...pf, thumb: thumb ?? undefined});
     const baked = {};
     const files = [...new Set((pf.parts ?? []).filter(p => p.img && isFile(p.img)).map(p => `${p.pct ?? 100}|${p.img}`))];
     if (files.length)
@@ -504,8 +512,8 @@ async function finishEdit(id = S.edit?.id)
             await bakeImg(img, pct, dir, name);
             baked[f] = name;
         }
-        await updateTextures();
     }
+    await updateTextures();
     await commit((s, pfs) => {
         const p = pfs[id];
         if (!p) return false;
@@ -638,6 +646,16 @@ async function renamePrefab(from, to)
     }, undefined, undefined, PREFAB_FILES);
     if (S.edit?.id === from) {S.edit.id = to; refresh();}
     if (ls.get(LS.prefab) === from) ls.set(LS.prefab, to);
+    if (!S.prefabs[to]) return;
+    // 地圖／template／縮圖／tsj 跟著改（不進 undo）
+    try
+    {
+        const done = await TL.renamePrefab(S.root, from, to);
+        for (const rel of done.filter(r => r.startsWith('maps/'))) SH.notifySaved(rel);
+        await updateTextures();
+        if (done.length) status(`連帶改了：${done.join('、')}`);
+    }
+    catch (e) {status(`地圖／template 沒改完：${e.message}`);}
 }
 
 async function dupPrefab(from, to)
@@ -655,6 +673,9 @@ async function dupPrefab(from, to)
         if (!(from in pf)) throw new Error(`prefab.json 沒有 ${from}`);
         pf[to] = structuredClone(pf[from]);
     }, undefined, undefined, PREFAB_FILES);
+    if (!S.prefabs[to]) return;
+    try {await TL.syncPrefab(S.root, to, S.prefabs[to]); await updateTextures();}
+    catch (e) {status(`Tiled 的縮圖／template 沒產生：${e.message}`);}
 }
 
 // ---------- 組成 prefab：場景裡挑擺設／粒子／光源 → prefab.json 一筆＋原地換成一個實例 ----------
@@ -1154,7 +1175,7 @@ async function updateTextures()
     try
     {
         const r = await (await fetch('/__tools/textures', {method: 'POST'})).json();
-        if (r.ok) SH.notifySaved('textures.json');
+        if (r.ok) {SH.notifySaved('textures.json'); await IC.reloadList();}
         else status(`圖片清單沒更新：${r.errors.join('；')}`);
     }
     catch (e) {status(`圖片清單沒更新：${e.message}`);}

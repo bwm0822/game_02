@@ -1,5 +1,6 @@
 // 地圖（maps/**/*.json）跟 template（templates/**/*.tj）裡指到某個角色 id 的地方：物件自己的屬性 id、template 的屬性 id（用那個 template 的地圖列出來）
 // 角色分頁改名時連帶改（地圖照 Tiled 排版寫回、template 只換那個值），刪除時有人用就擋
+// prop 換成 'prefab' 就是 prefab 的引用（場景分頁 prefab 改名／刪除用）
 import * as FS from './fs.js';
 import {stringify, eolOf} from './tiledjson.js';
 import {joinPath} from '../../src/data/navgrid.js';
@@ -12,12 +13,13 @@ async function walk(dir, pre, ext, out = [])
     return out;
 }
 const dirOf = (p) => p.slice(0, p.lastIndexOf('/'));
-const idProp = (o) => o?.properties?.find(p => p.name === 'id');
+const propOf = (o, prop) => o?.properties?.find(p => p.name === prop);
 const objects = (map) => (map.layers ?? []).filter(l => l.type === 'objectgroup').flatMap(l => l.objects);
 
 // → {maps: [{rel, oids}]（物件自己寫 id 的）, tpls: [{rel, maps: [rel]}]}（相對 public/assets）
-export async function roleRefs(assets, rid)
+export async function roleRefs(assets, rid, prop = 'id')
 {
+    const idProp = (o) => propOf(o, prop);
     const tpls = new Map();
     const td = await FS.tryDir(assets, 'templates');
     for (const f of td ? await walk(td, 'templates/', '.tj') : [])
@@ -51,14 +53,14 @@ export const refLines = (refs) => [
 export const refCount = (refs) => refs.maps.length + refs.tpls.length;
 
 // 改名：地圖物件自己的 id、template 的 id；回傳寫了哪些檔（相對 assets）
-export async function renameRoleRefs(assets, refs, from, to)
+export async function renameRoleRefs(assets, refs, from, to, prop = 'id')
 {
     const done = [];
     for (const m of refs.maps)
     {
         const {dir, file} = await FS.resolveFile(assets, m.rel);
         const text = await (await file.getFile()).text(), map = JSON.parse(text);
-        for (const o of objects(map)) {const p = idProp(o); if (p && String(p.value) === from) p.value = to;}
+        for (const o of objects(map)) {const p = propOf(o, prop); if (p && String(p.value) === from) p.value = to;}
         await FS.writeFile(dir, file.name, new Blob([stringify(map, eolOf(text))]));
         done.push(m.rel);
     }
@@ -68,8 +70,8 @@ export async function renameRoleRefs(assets, refs, from, to)
     {
         const {dir, file} = await FS.resolveFile(assets, t.rel);
         const text = await (await file.getFile()).text();
-        const re = new RegExp(`("name"\\s*:\\s*"id"\\s*,(?:\\s*"type"\\s*:\\s*"string"\\s*,)?\\s*"value"\\s*:\\s*)"${esc(from)}"`);
-        if (!re.test(text)) throw new Error(`${t.rel} 找不到 id「${from}」`);
+        const re = new RegExp(`("name"\\s*:\\s*"${prop}"\\s*,(?:\\s*"type"\\s*:\\s*"string"\\s*,)?\\s*"value"\\s*:\\s*)"${esc(from)}"`);
+        if (!re.test(text)) throw new Error(`${t.rel} 找不到 ${prop}「${from}」`);
         await FS.writeFile(dir, file.name, new Blob([text.replace(re, `$1"${to}"`)]));
         done.push(t.rel);
     }

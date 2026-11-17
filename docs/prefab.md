@@ -49,7 +49,7 @@
 ## Tiled
 
 存 prefab 時自動產生：
-1. 縮圖 `textures/prefabs/<id>.png`（預設狀態的 png 零件合成，不畫粒子／光源）
+1. 縮圖 `textures/prefabs/prefab-<id>.png`（預設狀態的 png 零件合成，不畫粒子／光源）
 2. 圖片集合型 tileset `tilesets/prefabs.tsj`
 3. template `templates/prefabs/<id>.tj`（`gid`＝縮圖、屬性 `prefab`、寬高＝縮圖）
 
@@ -92,5 +92,12 @@
      進入：實例右欄「✎ 編輯 prefab」、實例右鍵、新增空白 prefab 後自動進；離開：上方「離開」或 Esc → `finishEdit()`：照預設狀態看得到的 png 算 `thumb`（不算角度），`file:` 圖照 pct 烤成 `textures/prefabs/<id>/<id>-<檔名>.png`（撞 key 加 `-2`）、改寫 key、去 pct、更新圖片清單、重開 sandbox。編輯中不能放角色／prefab、換場景＝離開。
    - ✅ 4b 組成 prefab＋改名／複製：擺設／粒子／光源右鍵（左欄或畫面）「組成 prefab…」→ 對話框填 id、勾要組的東西（預設勾點的那個＋跟著它的）、有自己那份（✎）的發射點選「另存成新 id（預設 `<prefab>-<原id>`）／覆寫原 id」；錨點＝第一個勾的擺設；跟著別人的先換成絕對位置；沒勾卻跟著被組走的改絕對位置；scenes.json＋prefab.json＋particle.json（store 的 `PARTICLE`）一起寫，接著 `finishEdit()` 收尾，兩步用 `mergeUndo()` 併成一筆 undo；particle.json 變了 sandbox 整個重開。prefab 庫右鍵 改名…（prefab.json key 保留順序＋所有場景實例；地圖／template／道具在第 5、6 步補）／複製…（整筆複製、不放實例）。
    - ✅ 4c 錨點十字、占地方塊畫在畫面上可拖：`gameScene()` 多送 `edit:{anchor, boxes}`，sandbox `_drawEdit()` 畫橘色十字＋body 紅／grid 藍／zone 綠框，`_editHandleAt()` 優先於其他把手；拖的時候改副本 `_editLive`，放開送 `moveAnchor {x,y}`（分頁 `moveAnchor()`：零件、方塊、thumb 反向挪，實例搬到新錨點，畫面不動）或 `editBox {k, box}`（`setPf`）；Shift 吸 16px。方塊要先在 prefab 面板勾起來才畫。
-5. Tiled：縮圖＋tsj＋template 自動產生、mapcheck。
+5. ✅ Tiled：縮圖＋tsj＋template 自動產生、mapcheck（`tools/scene/tiled.js`，測試同 prefab-tool.mjs）。
+   - 縮圖檔名是 `textures/prefabs/prefab-<id>.png`（texture key `prefab-<id>`，避免跟別的圖撞名），`renderThumb()` 把預設狀態看得到的 png 零件照 depth（含 flip／angle／scale／pct）合成進 thumb 框；`finishEdit()`（離開編輯、組成）在烤圖前呼叫 `syncPrefab()`，所以 file: 圖直接讀原圖。
+   - `tilesets/prefabs.tsj`：圖片集合型，tile id 給了就不換（地圖裡的 gid＝firstgid＋id 才不會跑），改名只換 `image`、刪除只拿掉那格（id 空著）。
+   - `templates/prefabs/<id>.tj`：`gid`、寬高＝thumb、屬性 `prefab`；已有的保留 `type` 跟其他屬性（預設 `item`）。
+   - 改名（`renamePrefab()`）：`maproles.js` 的 `roleRefs`／`renameRoleRefs` 多了 `prop` 參數（`'prefab'`）改地圖物件跟 template 的屬性；自己的 template 改檔名、地圖裡 `template` 路徑指到舊檔的跟著改（廣播 `maps/...`）；縮圖 png 改名、tsj 圖路徑改。刪除：地圖物件或用它 template 的地圖還在就擋（列出來），沒人用才刪 template／縮圖／tsj 那格。複製：產生新的一套。這些檔**不進 undo**。
+   - `src/data/mapcheck.js` 的 `isPrefabObj`／`prefabIssue`：`prefab` 指到 prefab.json 沒有的＝錯誤，地圖分頁的 ⚠（`summarize()`）跟 `node scripts/maps.js` 都會報。
+   - 注意：Tiled 物件的位置是縮圖左下角，prefab 的縮圖外框變了（例如零件往左加）已經擺好的物件錨點會跟著偏；不要在 Tiled 裡拉 prefab 物件的大小（寬高要等於 thumb）。
+   - `tools/common/icons.js` 多 `reloadList()`：自己更新圖片清單時重讀（廣播不會傳回自己）。
 6. 放置道具 `item.json bb.prefab`＋ghost、其他工具的引用掃描、道具分頁選擇器。

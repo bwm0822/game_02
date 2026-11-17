@@ -158,11 +158,40 @@ run('prefab-tool', async t => {
         await sc.redo();
         out.composeRedo = !!(await pfDisk()).brazier?.thumb;
 
-        // 改名：prefab.json key＋所有場景的實例；複製
+        // ---------- Tiled：縮圖 png、prefabs.tsj、template ----------
+        const assets = await dir(proj, 'public', 'assets');
+        const has = async (path, name) => !!(await (await dir(assets, ...path.split('/'))).getFileHandle(name).catch(() => null));
+        const tsj = await read(await dir(assets, 'tilesets'), 'prefabs.tsj');
+        const tplB = await read(await dir(assets, 'templates', 'prefabs'), 'brazier.tj');
+        const thB = (await pfDisk()).brazier.thumb;
+        out.tiled = [await has('textures/prefabs', 'prefab-forge.png'), await has('textures/prefabs', 'prefab-brazier.png'),
+            tsj.name, tsj.tiles.map(t => [t.id, t.image]), tsj.tiles.find(t => t.image.endsWith('prefab-brazier.png')).imagewidth === thB.w,
+            tplB.object.gid === tsj.tiles.find(t => t.image.endsWith('prefab-brazier.png')).id + 1, [tplB.object.width, tplB.object.height].join() === [thB.w, thB.h].join(),
+            tplB.object.type, tplB.object.properties, tplB.tileset.source];
+
+        // 地圖：一個物件用 template、一個物件自己寫 prefab 屬性
+        await write(await dir(assets, 'maps'), 't.json', JSON.stringify({layers: [{type: 'objectgroup', name: 'o', objects: [
+            {id: 1, template: '../templates/prefabs/brazier.tj', x: 0, y: 0},
+            {id: 2, gid: 1, x: 32, y: 32, width: 32, height: 32, properties: [{name: 'prefab', type: 'string', value: 'brazier'}]}]}]}));
+        // 改名：prefab.json key＋所有場景的實例＋地圖／template／縮圖／tsj；複製
         await sc.renamePrefab('brazier', 'fire_pit');
         out.rename = [Object.keys(await pfDisk()), (await cDisk()).prefabs.map(o => o.prefab)];
+        const tmap = await read(await dir(assets, 'maps'), 't.json');
+        const tsj2 = await read(await dir(assets, 'tilesets'), 'prefabs.tsj');
+        out.renameTiled = [tmap.layers[0].objects[0].template, tmap.layers[0].objects[1].properties[0].value,
+            await has('templates/prefabs', 'fire_pit.tj'), await has('templates/prefabs', 'brazier.tj'),
+            (await read(await dir(assets, 'templates', 'prefabs'), 'fire_pit.tj')).object.properties.find(p => p.name === 'prefab').value,
+            await has('textures/prefabs', 'prefab-fire_pit.png'), await has('textures/prefabs', 'prefab-brazier.png'),
+            tsj2.tiles.map(t => [t.id, t.image]).filter(([, i]) => i.includes('fire') || i.includes('brazier'))];
+        // 刪除：地圖在用就擋
+        await sc.deletePrefab('fire_pit', true);
+        out.delBlocked = [Object.keys(await pfDisk()).includes('fire_pit'), doc.getElementById('status').textContent];
         await sc.dupPrefab('fire_pit', 'fire_pit-copy');
-        out.dup = [Object.keys(await pfDisk()), JSON.stringify((await pfDisk())['fire_pit-copy']) === JSON.stringify((await pfDisk()).fire_pit)];
+        out.dup = [Object.keys(await pfDisk()), JSON.stringify((await pfDisk())['fire_pit-copy']) === JSON.stringify((await pfDisk()).fire_pit),
+            await has('templates/prefabs', 'fire_pit-copy.tj'), await has('textures/prefabs', 'prefab-fire_pit-copy.png')];
+        await sc.deletePrefab('fire_pit-copy', true);
+        out.delCopy = [Object.keys(await pfDisk()).includes('fire_pit-copy'), await has('templates/prefabs', 'fire_pit-copy.tj'), await has('textures/prefabs', 'prefab-fire_pit-copy.png'),
+            (await read(await dir(assets, 'tilesets'), 'prefabs.tsj')).tiles.some(t => t.image.includes('copy'))];
 
         // ---------- 錨點十字、占地方塊 ----------
         sc.enterEdit('f1');
@@ -228,8 +257,18 @@ run('prefab-tool', async t => {
     t.eq('組成：選起實例', cpick, 'f1');
     t.eq('undo 組成（含收尾）：一筆退回三個檔', JSON.stringify(r.composeUndo), JSON.stringify([null, null, 1, null]));
     t.check('redo 組成：連縮圖外框一起回來', r.composeRedo);
+    const [tf, tb, tname, ttiles, tw, tgid, tsize, ttype, tprops, tsrc] = r.tiled;
+    t.check('Tiled：每筆 prefab 有縮圖 png（textures/prefabs/prefab-<id>.png）', tf && tb, JSON.stringify(r.tiled));
+    t.eq('Tiled：prefabs.tsj（name＝檔名、tile id 照產生順序）', JSON.stringify([tname, ttiles]), JSON.stringify(['prefabs', [[0, '../textures/prefabs/prefab-forge.png'], [1, '../textures/prefabs/prefab-brazier.png']]]));
+    t.check('Tiled：tsj 圖大小＝縮圖外框', tw);
+    t.check('Tiled：template gid＝那格、寬高＝縮圖外框', tgid && tsize, JSON.stringify(r.tiled));
+    t.eq('Tiled：template 預設 type item、屬性 prefab、指 prefabs.tsj', JSON.stringify([ttype, tprops, tsrc]), JSON.stringify(['item', [{name: 'prefab', type: 'string', value: 'brazier'}], '../../tilesets/prefabs.tsj']));
     t.eq('改名：prefab.json＋場景實例', JSON.stringify(r.rename), JSON.stringify([['forge', 'fire_pit'], ['fire_pit']]));
-    t.eq('複製：一模一樣的新一筆', JSON.stringify(r.dup), JSON.stringify([['forge', 'fire_pit', 'fire_pit-copy'], true]));
+    t.eq('改名：地圖的 template 路徑、物件的 prefab 屬性、template 檔名＋屬性、縮圖、tsj 圖（id 不變）', JSON.stringify(r.renameTiled),
+         JSON.stringify(['../templates/prefabs/fire_pit.tj', 'fire_pit', true, false, 'fire_pit', true, false, [[1, '../textures/prefabs/prefab-fire_pit.png']]]));
+    t.check('刪除：地圖在用就擋、列出來', r.delBlocked[0] && r.delBlocked[1].includes('maps/t.json'), JSON.stringify(r.delBlocked));
+    t.eq('複製：一模一樣的新一筆＋template＋縮圖', JSON.stringify(r.dup), JSON.stringify([['forge', 'fire_pit', 'fire_pit-copy'], true, true, true]));
+    t.eq('刪除沒人用的：prefab.json、template、縮圖、tsj 那格都拿掉', JSON.stringify(r.delCopy), JSON.stringify([false, false, false, false]));
 
     // 錨點十字、占地方塊
     t.eq('編輯時 sandbox 有錨點十字（實例位置）', JSON.stringify(r.handles), JSON.stringify([{x: 200, y: 200}, 'anchor']));

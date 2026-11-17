@@ -36,12 +36,14 @@ await loadList();
 const reloadFns = [];
 // 清單重載完才呼叫，重畫要接這個：收到 textures.json 廣播的當下 IMAGES 還是舊的
 export const onReload = (fn) => reloadFns.push(fn);
-onSaved((file) => {
-    if (file === 'textures.json') loadList().then(() => {
-        cache.clear();
-        for (const fn of reloadFns) fn();
-    });
-});
+// 自己更新圖片清單時用（廣播不會傳回發送的分頁）
+export async function reloadList()
+{
+    await loadList();
+    cache.clear();
+    for (const fn of reloadFns) fn();
+}
+onSaved((file) => {if (file === 'textures.json') reloadList();});
 
 const cache = new Map();       // url → {p: Promise<img|null>, img, failed}
 function load(url)
