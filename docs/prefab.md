@@ -78,7 +78,13 @@
 
 1. ✅ 資料＋遊戲核心：prefab.json、`DB.prefab`、ItemView 多圖＋狀態／粒子／光源／fx、存檔；測試 `scripts/test/prefab.mjs`（測試裡臨時塞一筆進 `DB._prefabDB`，prefab.json 目前是空的）。
 2. ✅ 互動：acts＋動態 UiOption＋`defAct`、lamp 交接（測試同 prefab.mjs）。
-3. 場景分頁：prefab 庫＋實例（放置／拖曳／狀態預覽）＋左欄摺疊。
+3. ✅ 場景分頁：prefab 庫＋實例（放置／拖曳／狀態預覽）＋左欄摺疊（測試 `scripts/test/prefab-tool.mjs`）。
+   - `tools/scene/store.js` 改成多檔：`edit(fn, [scenes.json, prefab.json])`＝一筆 undo（undo 項目 `{files:{檔名:{before, after}}}`）；prefab.json 不在專案就當 `{}`、寫的時候才建資料夾。
+   - prefab.json 跟著 `load` 訊息送進 sandbox（`m.prefabs` 蓋掉 `DB._prefabDB`），自己改 prefab.json 不重開 iframe；別的分頁存 prefab.json（廣播）＝重讀＋重送。
+   - sandbox `_applyInsts()`：實例建成 `Item`（位置＝錨點換回縮圖中心，同 Tiled），簽名含那筆 prefab 跟 👁，變了就重建；點選用 `getShapeRect()`（縮圖框）、拖曳搬 root＋`view._syncLights()`、放開送 `moveInst`；左欄 prefab 庫 HTML5 拖放，sandbox canvas 收 `drop`（`application/x-prefab`）回 `dropPrefab {id, wx, wy}`。
+   - 實例 key `f<n>`；右欄：換 prefab、錨點 x/y、狀態下拉（預設＋零件 look＋acts 的狀態）。
+   - 左欄每段標題點一下摺疊（`tools.scene.fold`＝摺起來的段名陣列：`lib`／`scenes`／`roles`／`props`／`particles`／`lights`／`prefabs`）。
+   - 這一步 prefab 庫的右鍵只有刪除（只檢查 scenes.json；地圖／道具的引用在第 5、6 步補），改名／複製在第 4 步。
 4. 場景分頁：組成 prefab（烤圖、粒子另存）＋編輯模式（零件、錨點、方塊、acts）＋改名／複製／刪除。
 5. Tiled：縮圖＋tsj＋template 自動產生、mapcheck。
 6. 放置道具 `item.json bb.prefab`＋ghost、其他工具的引用掃描、道具分頁選擇器。

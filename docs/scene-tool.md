@@ -24,7 +24,8 @@
 
 手寫來源檔（工具寫），進 git，`{<場景名>: {...}}` 可多組；遊戲不讀。存：底圖、時間（＋自訂環境色）、角色實例、擺設、粒子發射點、角色身上的狀態特效。
 
-- 一筆＝`{map, time?, ambient?, roles?, props?, particles?, lights?}`（`time`／`ambient` 見「日夜」）；角色 key 是 `r<n>`、擺設是 `p<n>`、粒子發射點是 `e<n>`、光源是 `l<n>`，選取／👁／Del 共用同一套 key：
+- 一筆＝`{map, time?, ambient?, roles?, props?, particles?, lights?, prefabs?}`（`time`／`ambient` 見「日夜」）；角色 key 是 `r<n>`、擺設是 `p<n>`、粒子發射點是 `e<n>`、光源是 `l<n>`、prefab 實例是 `f<n>`，選取／👁／Del 共用同一套 key：
+  - `prefabs`：`[{key, prefab, x, y, look?}]`（x/y＝錨點），見 [prefab.md](prefab.md)；prefab.json 本身也由這個分頁寫，跟 scenes.json 同一個 undo。
   - `particles`：見「特效」；角色另有 `fx: [fx.json id]`。
   - `props`：`[{key, img, x, y, sx?, sy?, pct?, flip?, angle?, ox?, oy?, depth?}]`，見「擺設」。
   - `lights`：`[{key, x, y, r, color, i?, follow?, dir?, arc?, soft?}]`，見「光源」。
@@ -119,7 +120,7 @@
 
 ## 版面（三欄，排在「粒子」後面）
 
-- 左：場景清單（＋ 新增；右鍵 改名／複製／刪除，雙擊改名；點選中的再點一次＝取消選取＝空白 sandbox；選取記 `tools.scene.sel`）＋目前場景物件樹（角色／擺設／粒子，👁 暫藏、Del 刪；第 2 步起）；下方 ↶／↷（Ctrl+Z／Ctrl+Y）。
+- 左：最上面 prefab 庫（見 prefab.md）；每段標題點一下摺疊（記 `tools.scene.fold`）；場景清單（＋ 新增；右鍵 改名／複製／刪除，雙擊改名；點選中的再點一次＝取消選取＝空白 sandbox；選取記 `tools.scene.sel`）＋目前場景物件樹（角色／擺設／粒子，👁 暫藏、Del 刪；第 2 步起）；下方 ↶／↷（Ctrl+Z／Ctrl+Y）。
 - 中：iframe＋工具列（底圖、格線、置中、重置、重開）＋第二排（時間／▶／倍速／自訂環境色）；左鍵選取拖曳、右鍵選單放東西。
 - 右：選中物件的屬性；角色下方是動作區。左邊框可拖拉改寬（`data-resize-right`，記 `tools.right.scene`，雙擊回預設 320px），遊戲畫面吃剩下的。
 

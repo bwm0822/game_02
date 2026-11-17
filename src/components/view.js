@@ -660,8 +660,11 @@ class View extends Phaser.GameObjects.Container
 }
 
 
+// prefab 的縮圖外框(相對錨點，左上角＋寬高)；沒有 thumb＝錨點在底部中間的 32×32
+export const thumbOf = (pf)=>pf?.thumb ?? {x:-16, y:-32, w:32, h:32};
+
 // prefab 的占地方塊(相對錨點的 {x,y,w,h}) → View 的 l/t/w/h 欄位；Tiled 有寫任何一個該組欄位就整組不套
-const PF_BOX = {body:['bl','br','bw','bt','bb','bh'], grid:['gl','gr','gw','gt','gb','gh'], zone:['zl','zr','zw','zt','zb','zh']};
+const PF_BOX ={body:['bl','br','bw','bt','bb','bh'], grid:['gl','gr','gw','gt','gb','gh'], zone:['zl','zr','zw','zt','zb','zh']};
 
 export class ItemView extends View
 {
@@ -678,7 +681,7 @@ export class ItemView extends View
         super._setData();
         const pf = this._pf = this.prefab ? DB.prefab(this.prefab) : null;
         if(!pf) {return this;}
-        const t = pf.thumb ?? {x:-16, y:-32, w:32, h:32};
+        const t = thumbOf(pf);
         this.wid = t.w;
         this.hei = t.h;
         this.anchorX = -(t.x + t.w/2);
@@ -869,6 +872,12 @@ export class ItemView extends View
     _updatePos(pos)
     {
         super._updatePos(pos);
+        this._syncLights();
+    }
+
+    // 光源不在 container 裡：物件搬了(場景分頁拖曳也是)要跟上
+    _syncLights()
+    {
         const p = this.root.pos;
         this._parts?.forEach(e=>e.light && e.light.setPosition(p.x + (e.p.x ?? 0), p.y + (e.p.y ?? 0)));
     }

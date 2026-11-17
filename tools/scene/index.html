@@ -11,6 +11,10 @@
     #left .row2 { display: flex; gap: 4px; align-items: center; font-size: 14px; }
     #left .sec { color: #aaa; font-weight: bold; font-size: 14px; }
     #list { flex: none; max-height: 35%; overflow: auto; }
+    #lib { flex: none; max-height: 30%; overflow: auto; border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 4px; }
+    #lib .item { cursor: grab; }
+    #left .head .tw, #left .head .sec { cursor: pointer; user-select: none; }
+    #left .head .tw { width: 12px; color: #888; font-size: 12px; }
     #tree { flex: 1; overflow: auto; border-top: 1px solid #333; padding-top: 6px; }
     #tree .item .eye { padding: 0 3px; font-size: 12px; line-height: 1.3; }
     #tree .item.hid .id, #tree .item.hid .lab { opacity: .45; }
@@ -58,7 +62,8 @@
 <body>
 <main>
     <aside id="left">
-        <div class="row2"><span class="sec grow">場景</span><button id="btnNew" title="新增場景">＋</button></div>
+        <div id="lib"></div>
+        <div id="scenesHead"></div>
         <div id="list"></div>
         <div id="tree" hidden></div>
         <div class="row2"><span class="grow"></span><button id="btnUndo" title="復原（Ctrl+Z，直接寫回 scenes.json）">↶</button><button id="btnRedo" title="重做（Ctrl+Y）">↷</button></div>

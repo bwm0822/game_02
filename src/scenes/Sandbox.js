@@ -7,6 +7,8 @@ import Utility from '../core/utility.js'
 import {GameObject} from '../core/gameobject.js'
 import {GM, GS} from '../core/setting.js'
 import Puppet from '../roles/puppet.js'
+import Item from '../items/item.js'
+import {thumbOf} from '../components/view.js'
 import DB from '../data/db.js'
 import {playParticle} from '../core/particle.js'
 import {setSpot} from '../core/spotlight.js'
@@ -77,8 +79,10 @@ export class Sandbox extends GameScene
         this._sel = this._data.sel ?? null;
         this._hidden = new Set(this._data.hidden);
         this._props = {};
+        this._insts = {};
         this._drawGrid();
         this._initInput();
+        this._initDrop();
         if(import.meta.env.DEV) {window.__sb = this;}
         if(this._data.scene) {this._apply(this._data.scene);}
         else {this._send({sb:'ready', map:this.mapName});}
@@ -111,6 +115,7 @@ export class Sandbox extends GameScene
         else {this._ambient();}
         await this._applyProps(scene.props ?? []);
         if(this._scene!==scene) {return;}   // 載外部圖的期間又來了新的場景
+        this._applyInsts(scene.prefabs ?? [], force);
         // 粒子、光源可以跟著擺設：擺設建好（sprite 換新）才套
         this._applyEmitters(scene.particles ?? [], force);
         this._applyLights(scene.lights ?? [], force);
@@ -175,6 +180,67 @@ export class Sandbox extends GameScene
     {
         this._props[k].sp.destroy();
         delete this._props[k];
+    }
+
+    //------------------------------------------------------
+    //  prefab 實例：{key, prefab, x, y（錨點的世界座標）, look?}，建成真的遊戲物件（Item＋ItemView，同遊戲）
+    //  prefab.json 跟著 load 訊息送來（m.prefabs，蓋掉 DB），資料或那筆 prefab 變了就重建；👁 藏＝不建
+    //------------------------------------------------------
+    _applyInsts(list, force)
+    {
+        const sig = (i)=>JSON.stringify([i, DB.prefab(i.prefab) ?? null, this._hidden.has(i.key)]);
+        const want = Object.fromEntries(list.map(i=>[i.key, i]));
+        for(const [k, o] of Object.entries(this._insts))
+        {
+            if(force || !want[k] || sig(want[k])!==o.sig || !o.go.active) {this._dropInst(k);}
+        }
+        const bad = [];
+        for(const i of list)
+        {
+            if(this._insts[i.key]) {continue;}
+            const pf = DB.prefab(i.prefab);
+            if(!pf) {bad.push(i.prefab); continue;}
+            if(this._hidden.has(i.key)) {continue;}
+            const t = thumbOf(pf);
+            const go = new Item(this, i.x + t.x + t.w/2, i.y + t.y + t.h/2);   // Tiled 的位置＝縮圖中心，ItemView 搬到錨點
+            go.bb.prefab = i.prefab;
+            if(i.look) {go.bb.look = i.look;}
+            go.init_prefab();
+            this._insts[i.key] = {go, data:i, sig:sig(i)};
+        }
+        if(bad.length) {this._send({sb:'error', msg:`prefab.json 沒有：${[...new Set(bad)].join('、')}`});}
+    }
+
+    _dropInst(k)
+    {
+        const o = this._insts[k];
+        if(o.go.active) {o.go._remove();}
+        delete this._insts[k];
+    }
+
+    _placeInst(o, x, y)
+    {
+        o.go.setPosition(x, y);
+        o.go.updateDepth();
+        o.go.view?._syncLights?.();
+    }
+
+    // 從場景分頁左欄的 prefab 庫拖進來（HTML5 拖放，同源 iframe 讀得到 dataTransfer）
+    _initDrop()
+    {
+        const cv = this.game.canvas, cam = this.cameras.main;
+        const over = (e)=>{if(e.dataTransfer?.types.includes('application/x-prefab')) {e.preventDefault(); e.dataTransfer.dropEffect = 'copy';}};
+        const drop = (e)=>{
+            const id = e.dataTransfer?.getData('application/x-prefab');
+            if(!id) {return;}
+            e.preventDefault();
+            const r = cv.getBoundingClientRect();
+            const p = cam.getWorldPoint((e.clientX - r.left) * cv.width / r.width, (e.clientY - r.top) * cv.height / r.height);
+            this._send({sb:'dropPrefab', id, wx:Math.round(p.x), wy:Math.round(p.y)});
+        };
+        cv.addEventListener('dragover', over);
+        cv.addEventListener('drop', drop);
+        this.events.once('shutdown', ()=>{cv.removeEventListener('dragover', over); cv.removeEventListener('drop', drop);});
     }
 
     // 拖曳中：深度照新的 y（跟著它的光源每幀在 update 跟上、粒子跟著 sprite）
@@ -643,6 +709,7 @@ export class Sandbox extends GameScene
         const hits = [
             ...this.roles.filter(p=>p.visible && p.getShapeRect?.().contains(wx, wy)).map(role=>({key:role.key, role, depth:role.depth})),
             ...Object.entries(this._props).filter(([, o])=>o.sp.visible && o.sp.getBounds().contains(wx, wy)).map(([key, prop])=>({key, prop, depth:prop.sp.depth})),
+            ...Object.entries(this._insts ?? {}).filter(([, o])=>o.go.active && o.go.getShapeRect().contains(wx, wy)).map(([key, inst])=>({key, inst, depth:inst.go.depth})),
         ];
         if(hits.length) {return hits.reduce((a, b)=>(b.depth>a.depth ? b : a));}
         const role = this._roleAt(wx, wy);
@@ -699,8 +766,8 @@ export class Sandbox extends GameScene
         {
             g.fillStyle(0xffffff, 1).fillRect(hd.x-s/2, hd.y-s/2, s, s).lineStyle(1/z, 0x3a8a2a, 1).strokeRect(hd.x-s/2, hd.y-s/2, s, s);
         }
-        const p = this._puppet(this._sel), o = this._props?.[this._sel];
-        const r = p?.visible && p.getShapeRect ? p.getShapeRect() : o?.sp.visible ? o.sp.getBounds() : null;
+        const p = this._puppet(this._sel), o = this._props?.[this._sel], fi = this._insts?.[this._sel];
+        const r = p?.visible && p.getShapeRect ? p.getShapeRect() : o?.sp.visible ? o.sp.getBounds() : fi?.go.active ? fi.go.getShapeRect() : null;
         if(!r) {return;}
         g.lineStyle(2/z, 0x7ddc5a, 1).strokeRect(r.x, r.y, r.width, r.height);
         for(const hd of this._handles()) {g.fillStyle(0xffffff, 1).fillRect(hd.x-s/2, hd.y-s/2, s, s).lineStyle(1/z, 0x3a8a2a, 1).strokeRect(hd.x-s/2, hd.y-s/2, s, s);}
@@ -718,8 +785,9 @@ export class Sandbox extends GameScene
     _anchorPt()
     {
         if(this._anchorOn===false) {return null;}
-        const o = this._props?.[this._sel], p = this._puppet(this._sel);
+        const o = this._props?.[this._sel], p = this._puppet(this._sel), fi = this._insts?.[this._sel];
         if(o?.sp.visible) {return {x:o.sp.x, y:o.sp.y};}
+        if(fi?.go.active) {return {x:fi.go.x, y:fi.go.y};}
         if(p?.visible) {return {x:p.x, y:p.y};}
         return null;
     }
@@ -791,6 +859,7 @@ export class Sandbox extends GameScene
         switch(m.sb)
         {
             case 'load':
+                if(m.prefabs) {DB._prefabDB = m.prefabs;}
                 if((m.scene.map ?? 'sandbox') !== this.mapName) {this._saveCam(); this.scene.restart({map:m.scene.map, scene:m.scene, grid:this._gridOn, sel:this._sel, hidden:[...this._hidden]});}
                 else {this._apply(m.scene);}
                 break;
@@ -816,6 +885,7 @@ export class Sandbox extends GameScene
                 Object.entries(this._props).forEach(([k, o])=>o.sp.setVisible(!this._hidden.has(k)));
                 Object.entries(this._emitters ?? {}).forEach(([k, o])=>o.fx?.emitter?.setVisible(!this._hidden.has(k)));
                 Object.values(this._lights ?? {}).forEach(o=>this._lightI(o));
+                if(this._scene) {this._applyInsts(this._scene.prefabs ?? []);}
                 break;
         }
     }
@@ -913,6 +983,7 @@ export class Sandbox extends GameScene
             this._send({sb:'select', key:this._sel});
             if(hit?.role) {this._drag = {role:hit.role, from:this.map.worldToTile(hit.role.x, hit.role.y), to:null};}
             else if(hit?.prop) {this._drag = {prop:hit.prop, key:hit.key, dx:hit.prop.sp.x-p.worldX, dy:hit.prop.sp.y-p.worldY, moved:false};}
+            else if(hit?.inst) {this._drag = {inst:hit.inst, key:hit.key, dx:hit.inst.go.x-p.worldX, dy:hit.inst.go.y-p.worldY, moved:false};}
             else if(hit?.emitter)
             {
                 const e = this._emitPos(hit.emitter);
@@ -952,7 +1023,7 @@ export class Sandbox extends GameScene
                 if(!p.leftButtonDown()) {this._endDrag(); return;}
                 this._zoneTo(this._drag, p);
             }
-            else if(this._drag?.prop || this._drag?.emitter || this._drag?.light)
+            else if(this._drag?.prop || this._drag?.emitter || this._drag?.light || this._drag?.inst)
             {
                 if(!p.leftButtonDown()) {this._endDrag(); return;}
                 // 自由拖；按住 Shift 錨點吸到 16px（格子交點＋格子中心）
@@ -961,6 +1032,7 @@ export class Sandbox extends GameScene
                 else {[x, y] = [x, y].map(Math.round);}
                 this._drag.moved = true;
                 if(this._drag.prop) {this._placeProp(this._drag.prop, x, y);}
+                else if(this._drag.inst) {this._placeInst(this._drag.inst, x, y);}
                 else if(this._drag.light) {this._placeLight(this._drag.light, x, y);}
                 else {this._placeEmitter(this._drag.emitter, x, y);}
             }
@@ -1046,6 +1118,12 @@ export class Sandbox extends GameScene
         {
             const {x, y} = d.prop.sp;
             if(d.moved && (x!==d.prop.data.x || y!==d.prop.data.y)) {this._send({sb:'moveProp', key:d.key, x, y});}
+            return;
+        }
+        if(d?.inst)
+        {
+            const {x, y} = d.inst.go;
+            if(d.moved && (x!==d.inst.data.x || y!==d.inst.data.y)) {this._send({sb:'moveInst', key:d.key, x, y});}
             return;
         }
         if(!d?.to || (d.to[0]===d.from[0] && d.to[1]===d.from[1])) {return;}

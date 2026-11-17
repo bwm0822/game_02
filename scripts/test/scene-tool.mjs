@@ -657,7 +657,7 @@ run('scene-tool', async t => {
     t.eq('面向左／右', JSON.stringify(r.face), JSON.stringify([true, true]));
     t.eq('sandbox 點選：左欄跟著選', r.pick, 'r2');
     t.check('sandbox 拖曳放開：寫檔、重建在新格子', r.move);
-    t.eq('sandbox 右鍵：放角色／擺設／粒子／光源＋刪除', JSON.stringify(r.ctx), JSON.stringify(['在這裡放角色…（3, 3）', '在這裡放擺設…', '在這裡放粒子…', '在這裡放光源', '刪除 mary']));
+    t.eq('sandbox 右鍵：放角色／擺設／粒子／光源／prefab＋刪除', JSON.stringify(r.ctx), JSON.stringify(['在這裡放角色…（3, 3）', '在這裡放擺設…', '在這裡放粒子…', '在這裡放光源', '在這裡放 prefab…', '刪除 mary']));
     t.eq('👁 暫藏：不寫檔、點不到', JSON.stringify(r.hide), JSON.stringify([true, true]));
     t.eq('sandbox 裡按 Del：刪選中的', JSON.stringify(r.delRole), JSON.stringify([null, 'r1']));
     t.eq('sandbox 裡按 Ctrl+Z：復原、選回去', JSON.stringify(r.undoDel), JSON.stringify([['r1', 'r2'], 'r2']));
