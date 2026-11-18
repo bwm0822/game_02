@@ -58,15 +58,32 @@
 ## 場景分頁
 
 - 左欄（每段都可摺疊，記住）：
-  - 最上方「prefab 庫 ＋」：列出 prefab.json 全部（縮圖），拖進畫面＝放實例；右鍵 改名…／複製…／刪除；＋＝新增空白 prefab（取 id → 畫面中央放實例 → 進編輯模式）。
+  - 最上方「prefab 庫 ＋」：列出 prefab.json 全部（縮圖），點一下＝選目前場景第一個用它的實例、鏡頭移過去（sandbox `focus {key}`，沒有就提示拖進畫面），拖進畫面＝放實例；右鍵 改名…／複製…／刪除；＋＝新增空白 prefab（取 id → 立刻寫空的一筆 → 畫面中央放實例並選中）；有草稿的那筆標紅 ●。
   - 場景清單、角色／擺設／粒子／光源，多一段「prefab 實例 ＋」（＋ 選單挑 id、放地圖中間；畫面右鍵「放 prefab ▸」）。
-- 實例（scenes.json）：`{key, prefab, x, y, look?}`；一般模式下是真正的遊戲物件（同遊戲程式），右欄切狀態預覽。
+- 實例（scenes.json）：`{key, prefab, x, y, look?}`；是真正的遊戲物件（同遊戲程式）。
 - 組成：多選擺設／粒子／光源 → 右鍵「組成 prefab…」：錨點預設第一個擺設的錨點；`file:` 圖照 pct 烤成 `textures/prefabs/<id>/<檔名>.png`（撞名加 `-2`）、改寫 texture key、自動更新圖片清單；有 `def` 的發射點問「另存成 particle.json 新 id（預設 `<prefab>-<原id>`）／覆寫原 id」。原本那幾個東西換成一個實例。
-- 實例右鍵：編輯 prefab／拆開（攤回一般擺設／粒子／光源，不動 prefab.json）。
-- 編輯模式：其他東西變暗鎖住；零件攤開成擺設／發射點／光源用現有的把手與表單編；錨點十字可拖（零件反向移動、畫面不動，Shift 吸格線）；body／grid／zone 三種方塊畫出來可拖；上方條「正在編輯 X｜狀態：全部／各狀態｜離開」，選某狀態只顯示那狀態＋沒寫 look 的零件，新零件自動標成目前篩選的狀態；acts 表單（local.json 沒有的 key 標 ⚠＋一鍵補）。改了直接寫 prefab.json（同圖其他實例跟著變）；換成 `file:` 圖存時一樣烤。
-- prefab.json＋scenes.json＋產生的檔案共用一個 undo 堆疊，一次動作＝一筆，立刻寫檔＋廣播。
+- **沒有編輯模式**（2026-11-18 拿掉）：選中實例時右欄三區，見下面「右欄編輯＋草稿」。
+- scenes.json 的改動（含實例自己的欄位）立刻寫檔＋廣播；prefab.json＋scenes.json＋產生的檔案共用一個 undo 堆疊，一次動作＝一筆。
+
+### 右欄編輯＋草稿
+
+- 選中實例＝右欄三區：
+  1. **實例**（scenes.json，立刻寫、不算草稿）：換 prefab（草稿中先問）、**位置**（錨點在場景的座標；草稿移過錨點就顯示含位移的畫面位置）、狀態（這個實例的初始狀態，兼當下面零件清單的篩選）。
+  2. **prefab 內容**（草稿）：預設狀態、左鍵動作、右鍵動作 acts（local.json 沒有標 ⚠＋↗ 文字分頁）、占地方塊勾選＋x/y/w/h、移動錨點（x y＋套用）、縮圖外框（唯讀）。
+  3. **零件清單**（草稿）：一列一個（縮圖／🔥／光色點＋名稱＋狀態），不屬於實例目前狀態的標灰；點一列在下面展開表單（一次一個，`S.part`＝index），↑↓ 排序、✕ 刪除，底下「＋ png／＋ 粒子／＋ 光源」（新零件放錨點、沒有 look）。png 表單同擺設（換圖可選 textures 或 `file:`、%／scale／寬高、翻轉、角度、錨點、深度＝prefab 內部前後、狀態、特效 fx.json）；粒子＝particle.json id（↗ 粒子分頁）＋位置＋狀態；光源＝位置、半徑、光錐、方向、柔和、顏色、強度、狀態（`setPart()` 把 r/color/i/dir/arc/soft 寫進 `light`）。位置都相對錨點。
+- **草稿**（`S.draft＝{id, key, base, pf, thumb, dx, dy, undo, redo}`）：第一次改 prefab 內容才開始（`editPf()`），改的是記憶體副本，`pfOf(id)` 有草稿回傳草稿；送 sandbox 的 prefab.json 換成草稿（`prefabsMsg()`，同場景同 prefab 的其他實例也照草稿畫），點選範圍用即時算的縮圖外框（`liveThumb()`，不寫檔）。右欄「● 未存［儲存］［放棄］」。
+  - 儲存（按鈕或 Ctrl+S，輸入框有焦點也行）：`saveDraft()` 寫 prefab.json（＋實例補償錨點位移），接著 `finishEdit()` 收尾（算 `thumb`、Tiled 縮圖／tsj／template、`file:` 圖照 pct 烤成 `textures/prefabs/<id>/<id>-<檔名>.png` 改寫 key），`mergeUndo()` 併成全域一筆。
+  - 草稿自己一疊 undo（快照 `{pf, dx, dy, part}`）：草稿中 Ctrl+Z／Y 只退草稿的步驟，退不到草稿之前的全域步驟。
+  - 離開草稿：取消選取（`pickRole`）、換場景、會選到別的東西的編輯（`commit()` 的 sel／pick 換了）、換 prefab、刪掉／改名這筆、↗ 跳過來 → `leaveDraft()` 問「儲存／放棄／取消」。
+  - 別的分頁改了 prefab.json：重讀後比對草稿開始時的 `base`，那筆變了就問「保留我的草稿／放棄草稿用新的」（`draftConflict()`）。
+  - 移動錨點（`moveAnchor(id, x, y)`）：零件、占地方塊、thumb 反向挪，草稿記累積 `dx/dy`；送 sandbox 的實例畫在 存檔位置＋d（`gameScene()`），所以畫面不動；草稿中拖實例立刻寫「畫面位置 − d」；儲存時實例 `+d`；放棄＝歸零。別處已放好的同 prefab 實例錨點不動、圖會挪。
+  - sandbox 收到的草稿可能有還沒烤的 `file:` 零件：`Sandbox._pfFiles()` 把 img 換成 `file|<路徑>`（ItemView 用 `:` 切 frame）、pct 乘進 sx/sy，`_loadPartFiles()` 先載圖。
+- **畫面**（`inspect {key, boxes, part}`，`inspectMsg()`）：選中的實例唯讀畫橘色錨點十字、有勾的占地方塊（body 紅／grid 藍／zone 綠）、展開零件的外框（藍；png 照圖框不算角度、粒子／光源畫點，光源加半徑圈）。已選中再點：點到零件（`_partAt()`：目前狀態看得到的，粒子／光源的點優先、png 照 depth 取最上面）＝回報 `part {key, i}` 展開它，空白處 i＝null 收起；按在展開的零件上拖＝移零件（png holder／光源跟著動，放開回報 `movePart {key, i, x, y}` 相對錨點，Shift 吸 16px），按在其他地方拖＝搬實例。
+- 鍵盤：展開零件時 Del 刪零件、方向鍵移零件（草稿，Shift 一格）；收起時作用在實例。Esc：先收零件，再取消選取。
 - 改名：連帶改 template／縮圖／tsj／所有地圖跟 template 的 `prefab`、scenes.json、item.json，一筆 undo。刪除：地圖或道具有用到就擋（列出來）；只有 scenes.json 用到就連實例一起拿掉。
 - `textures/prefabs/` 不再被用到的圖不自動刪，交給圖片分頁的「未使用」。
+
+> 下面「實作順序」第 4 步的編輯模式（`S.edit`／`editView()`／`locked`／拖錨點十字與方塊）2026-11-18 已整個換成上面的右欄編輯＋草稿，留著當紀錄。
 
 ## 其他工具連動
 
