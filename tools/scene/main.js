@@ -1124,21 +1124,26 @@ function sizeRows(p, row)
     ];
 }
 
+const bakeName = (name) => name.trim().replace(/\.png$/i, '');
+
 // 把 file: 圖縮成 pct% 另存一份 PNG（場景不動）；path＝相對專案的資料夾；回傳 {path, w, h} 或丟錯
-async function bakeProp(key, path, name)
+// overwrite＝同資料夾同名檔可以蓋掉（呼叫端先問過）；擺設自己的原圖一律不能蓋
+async function bakeProp(key, path, name, overwrite = false)
 {
     const p = propOf(key);
     if (!p || !isFile(p.img)) throw new Error('只有外部 png 的擺設能存檔');
-    name = name.trim().replace(/\.png$/i, '');
+    name = bakeName(name);
     if (!name) throw new Error('檔名不能空白');
     if (/[\\/:*?"<>|]/.test(name)) throw new Error(`檔名不能有 \\ / : * ? " < > |`);
+    const out = `${path ? `${path}/` : ''}${name}.png`;
+    if (out.toLowerCase() === p.img.slice(FILE.length).toLowerCase()) throw new Error('不能覆蓋擺設正在用的原圖，換個檔名');
     const dir = await FS.resolveDir(S.root, path);
-    if (await FS.tryFile(dir, `${name}.png`)) throw new Error(`${path}/${name}.png 已經有了，換個檔名`);
+    if (!overwrite && await FS.tryFile(dir, `${name}.png`)) throw new Error(`${out} 已經有了，換個檔名`);
     const inTex = path === TEX || path.startsWith(`${TEX}/`);
     if (inTex)
     {
         const hit = await findTexKey(await FS.resolveDir(S.root, TEX), name);
-        if (hit) throw new Error(`textures/${hit}.png 已經有了（texture key 不能撞名），換個檔名`);
+        if (hit && hit.toLowerCase() !== out.slice(TEX.length + 1, -4).toLowerCase()) throw new Error(`textures/${hit}.png 已經有了（texture key 不能撞名），換個檔名`);
     }
     const img = await loadImg(fileUrl(p.img));
     if (!img) throw new Error(`讀不到 ${p.img.slice(FILE.length)}`);
@@ -1149,7 +1154,7 @@ async function bakeProp(key, path, name)
     g.drawImage(img, 0, 0, w, hh);
     await FS.writeFile(dir, `${name}.png`, await new Promise(res => cv.toBlob(res, 'image/png')));
     if (inTex) await updateTextures();
-    return {path: `${path}/${name}.png`, w, h: hh};
+    return {path: out, w, h: hh};
 }
 
 const TEX = 'public/assets/textures';
@@ -1181,11 +1186,24 @@ async function updateTextures()
     catch (e) {status(`圖片清單沒更新：${e.message}`);}
 }
 
-// 資料夾樹（懶載入）：root＝相對專案的根，cur＝預設選的資料夾；回傳 {el, get()}
-function folderTree(root, cur, onPick)
+// 資料夾樹（懶載入，資料夾後面列 .png）：root＝相對專案的根，cur＝預設選的資料夾，self＝標灰的檔（擺設的原圖）；
+// 點資料夾 onPick(path)、點檔案 onPick(所在資料夾, 檔名不含 .png)
+function folderTree(root, cur, onPick, self = '')
 {
     const skip = (rel, n) => n.startsWith('.') || n === 'node_modules' || (rel === TEX && TEX_SKIP.includes(n));
     let sel = null;
+    const select = (line) => {
+        sel?.classList.remove('sel');
+        (sel = line).classList.add('sel');
+    };
+    const file = (path, f, depth) => {
+        const rel = `${path ? `${path}/` : ''}${f.name}`;
+        const mine = rel.toLowerCase() === self.toLowerCase();
+        const line = h('div', {class: `fold file${mine ? ' dim' : ''}`, dataset: {file: rel}, title: mine ? '擺設正在用的原圖（不能覆蓋）' : '', style: `padding-left:${depth * 14}px`},
+            h('span', {class: 'tw'}), h('span', null, `🖼 ${f.name}`));
+        line.onclick = () => {select(line); onPick(path, f.name.slice(0, -4));};
+        return line;
+    };
     const node = (path, label, depth) => {
         const kids = h('div', {hidden: true});
         const tw = h('span', {class: 'tw'}, '▸');
@@ -1195,16 +1213,17 @@ function folderTree(root, cur, onPick)
             if (on && !loaded)
             {
                 loaded = true;
-                const {dirs} = await FS.listDir(await FS.resolveDir(S.root, path));
-                kids.replaceChildren(...dirs.filter(d => !skip(path, d.name)).map(d => node(`${path ? `${path}/` : ''}${d.name}`, d.name, depth + 1)));
+                const {dirs, files} = await FS.listDir(await FS.resolveDir(S.root, path));
+                kids.replaceChildren(
+                    ...dirs.filter(d => !skip(path, d.name)).map(d => node(`${path ? `${path}/` : ''}${d.name}`, d.name, depth + 1)),
+                    ...files.filter(f => /\.png$/i.test(f.name)).map(f => file(path, f, depth + 1)));
             }
             kids.hidden = !on;
             tw.textContent = on ? '▾' : '▸';
         };
         line.onclick = (e) => {
             if (e.target === tw) return open(kids.hidden);
-            sel?.classList.remove('sel');
-            (sel = line).classList.add('sel');
+            select(line);
             onPick(path);
         };
         line.open = open;
@@ -1220,7 +1239,7 @@ function folderTree(root, cur, onPick)
         {
             const line = n.firstChild;
             await line.open(true);
-            const next = i < segs.length && [...n.lastChild.children].find(c => c.firstChild.dataset.path.split('/').pop() === segs[i]);
+            const next = i < segs.length && [...n.lastChild.children].find(c => c.firstChild.dataset.path?.split('/').pop() === segs[i]);
             if (!next) {line.click(); line.scrollIntoView({block: 'nearest'}); return;}
             n = next;
         }
@@ -1240,7 +1259,11 @@ async function exportProp(p)
         const cur = mode === 'tex' ? (ls.get(LS.exportDir)?.startsWith(TEX) ? ls.get(LS.exportDir) : TEX) : home;
         path = cur;
         shown.textContent = path;
-        box.replaceChildren(folderTree(mode === 'tex' ? TEX : '', cur, (v) => {path = v; shown.textContent = v;}).el);
+        box.replaceChildren(folderTree(mode === 'tex' ? TEX : '', cur, (v, f) => {
+            path = v;
+            shown.textContent = v;
+            if (f != null) name.value = f;
+        }, src).el);
     };
     const radio = (v, t) => h('label', null, h('input', {type: 'radio', name: 'exMode', value: v, checked: mode === v, onchange: () => {mode = v; ls.set(LS.exportMode, v); build();}}), t);
     build();
@@ -1257,7 +1280,10 @@ async function exportProp(p)
     if (mode === 'tex') ls.set(LS.exportDir, path);
     try
     {
-        const r = await bakeProp(p.key, path, name.value);
+        const n = bakeName(name.value), out = `${path ? `${path}/` : ''}${n}.png`;
+        const dup = n && out.toLowerCase() !== src.toLowerCase() && !/[\\/:*?"<>|]/.test(n) && await FS.tryFile(await FS.resolveDir(S.root, path), `${n}.png`);
+        if (dup && !confirm(`${out} 已存在，要覆蓋嗎？`)) return;
+        const r = await bakeProp(p.key, path, name.value, !!dup);
         status(`已存 ${r.path}（${r.w}×${r.h}）`);
     }
     catch (e) {status(e.message);}
@@ -1807,6 +1833,6 @@ frame.src = '/?sandbox=1';
 refresh();
 
 // 給無頭測試用
-window.__sc = {S, setProject, addScene, dupScene, renameScene, deleteScene, select, undo, redo, addRole, setRole, setEquip, deleteRole, pickRole, toggleHide, arm, toGame, addProp, setProp, deleteObj, nudge, bakeProp, srcSize, addLight, setLight, addEmitter, setEmitter, setField, setPlaying,
+window.__sc = {S, setProject, addScene, dupScene, renameScene, deleteScene, select, undo, redo, addRole, setRole, setEquip, deleteRole, pickRole, toggleHide, arm, toGame, addProp, setProp, deleteObj, nudge, bakeProp, folderTree, srcSize, addLight, setLight, addEmitter, setEmitter, setField, setPlaying,
                addInst, setInst, newPrefab, deletePrefab, toggleFold, enterEdit, exitEdit, setPf, composePrefab, renamePrefab, dupPrefab, moveAnchor,
                flush: () => S.q};

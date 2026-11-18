@@ -279,6 +279,23 @@ run('scene-tool', async t => {
         out.bakeDup = await sc.bakeProp('p2', 'images/scene', 'baked').then(() => '', e => e.message);
         await write(await dir(proj, 'public', 'assets', 'textures', 'sub'), 'Baked2.png', 'x');
         out.bakeKey = await sc.bakeProp('p2', 'public/assets/textures', 'baked2').then(() => '', e => e.message);
+        out.bakeOver = await sc.bakeProp('p2', 'images/scene', 'baked', true).then(r => r.path, e => e.message);
+        out.bakeOverKey = await sc.bakeProp('p2', 'public/assets/textures/sub', 'Baked2', true).then(r => r.path, e => e.message);
+        const own = `public/assets/${turl}`, ownDir = own.split('/').slice(0, -1).join('/'), ownName = own.split('/').pop().slice(0, -4);
+        out.bakeOwn = await sc.bakeProp('p2', ownDir, ownName, true).then(() => '', e => e.message);
+        // 存檔框的樹：資料夾後面列 .png、點檔案回傳所在資料夾＋檔名、原圖標灰
+        await write(await dir(proj, 'images', 'scene'), 'note.txt', 'x');
+        await write(await dir(proj, 'images', 'scene', 'zz'), 'a.png', 'x');
+        const picks = [];
+        const ft = sc.folderTree('images', 'images/scene', (p, f) => picks.push([p, f ?? null]), 'images/scene/BAKED.png');
+        doc.body.append(ft.el);
+        const rows = () => [...ft.el.querySelectorAll('.fold')].map(e => e.textContent.replace(/^[▸▾]/, ''));
+        await until(() => rows().includes('🖼 baked.png'));
+        out.ftree = rows();
+        const frow = ft.el.querySelector('.fold.file');
+        frow.click();
+        out.treePick = [picks.at(-1), frow.classList.contains('dim'), frow.classList.contains('sel')];
+        ft.el.remove();
 
         // 畫面上拉大小：8 個把手、對邊固定；鎖 % 改 sx/sy（等比照勾選）、鎖 scale 改 pct；Shift 吸 16px；有角度不出把手
         win.localStorage.removeItem('tools.scene.sizeLock');
@@ -696,6 +713,11 @@ run('scene-tool', async t => {
     t.check('存檔：縮成 pct% 另存 PNG、場景不動', r.bake && r.bake[0] === 'images/scene/baked.png' && r.bake[1].join() === r.bake[3].join() && r.bake[2].join() === r.bake[3].join() && r.bake[4], JSON.stringify(r.bake));
     t.check('存檔：同名檔擋', r.bakeDup.includes('已經有了'), r.bakeDup);
     t.check('存檔：texture key 撞名擋（大小寫不分）', r.bakeKey.includes('texture key') && r.bakeKey.includes('sub/Baked2'), r.bakeKey);
+    t.eq('存檔：確認過可以覆蓋同名檔', r.bakeOver, 'images/scene/baked.png');
+    t.eq('存檔：覆蓋 textures 裡自己那張不算撞 key', r.bakeOverKey, 'public/assets/textures/sub/Baked2.png');
+    t.check('存檔：擺設正在用的原圖不能蓋', r.bakeOwn.includes('原圖'), r.bakeOwn);
+    t.eq('存檔框的樹：子資料夾在前、只列 .png', JSON.stringify(r.ftree), JSON.stringify(['📁 images', '📁 scene', '📁 zz', '🖼 baked.png']));
+    t.eq('存檔框的樹：點檔案＝所在資料夾＋檔名、原圖標灰、選起來', JSON.stringify(r.treePick), JSON.stringify([['images/scene', 'baked'], true, true]));
     t.eq('畫面把手：選中的擺設 8 個', r.handles, 8);
     t.check('拉右邊（鎖 %＋等比）：sx/sy 一起變、左邊固定、底部（錨點）不動', r.dragR && r.dragR[0] === 2 && r.dragR[1] === 2 && r.dragR[2] === r.dragR[4] && r.dragR[3] === 200, JSON.stringify(r.dragR));
     t.check('拉下邊＋Shift（不等比）：只改 sy、邊吸到 16px', r.dragB && r.dragB[0] === 2 && r.dragB[1] === r.dragB[2], JSON.stringify(r.dragB));
