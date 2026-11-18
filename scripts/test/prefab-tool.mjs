@@ -110,6 +110,21 @@ run('prefab-tool', async t => {
         const partRows = () => [...doc.querySelectorAll('#right .part')].map(e => [+e.dataset.part, e.classList.contains('off')]);
         const secs = () => [...doc.querySelectorAll('#right .sec')].map(e => e.firstChild.textContent);
         out.panel0 = [partRows(), secs()];
+        // 右欄摺疊：屬性／零件／實例各自收起、記 localStorage；草稿列那條不摺
+        const fold = (k) => doc.querySelector(`#right .head[data-fold="${k}"] .tw`)?.textContent;
+        sc.toggleFold('right.props');
+        sc.toggleFold('right.parts');
+        out.rFold = [secs(), fold('right.props'), fold('right.parts'), doc.querySelectorAll('#right .part').length, !!doc.querySelector('#right [data-k="defAct"]'),
+            JSON.parse(win.localStorage.getItem('tools.scene.fold'))];
+        sc.toggleFold('right.inst');
+        out.rFoldInst = [secs()[0], !!doc.querySelector('#right [data-k="instLook"]')];
+        sc.toggleFold('right.inst');
+        sc.toggleFold('right.props');
+        // 零件摺著時開零件（sandbox 點到）＝自動打開、記住
+        sc.openPart(1);
+        out.rAutoOpen = [fold('right.parts'), doc.querySelectorAll('#right .partform').length, JSON.parse(win.localStorage.getItem('tools.scene.fold'))];
+        sc.openPart(null);
+        out.rStayOpen = fold('right.parts');
         // 點零件展開表單；改欄位＝草稿（記憶體＋sandbox 照草稿畫），prefab.json／scenes.json 都不動
         sc.openPart(0);
         out.open = [doc.querySelectorAll('#right .partform').length, !!doc.querySelector('#right .partform [data-k="x"]'), doc.querySelector('#right .part.sel')?.dataset.part];
@@ -236,6 +251,8 @@ run('prefab-tool', async t => {
             (await read(await dir(assets, 'tilesets'), 'prefabs.tsj')).tiles.some(t => t.image.includes('copy'))];
 
         // ---------- 移動錨點（草稿）：零件、方塊反向挪，實例畫面上不動；草稿中拖實例寫存檔位置；儲存才補償實例 ----------
+        // 組成寫了 particle.json → sandbox 整個重開，等它建好
+        await until(() => sc.S.ready && sb()?._insts?.f1?.go);
         sc.pickRole('f1');
         await sc.setPf('fire_pit', {grid: {x: -16, y: -16, w: 32, h: 16}});
         const thumb0 = sc.S.prefabs.fire_pit.thumb;
@@ -278,14 +295,14 @@ run('prefab-tool', async t => {
     });
 
     t.check('prefab 庫：沒有 prefab 時提示', r.emptyLib.includes('還沒有 prefab'), r.emptyLib);
-    t.eq('新增空白 prefab：prefab.json 一筆、場景中間放 f1、選起來（右欄實例面板）', JSON.stringify(r.newPf), JSON.stringify([{forge: {}}, [{key: 'f1', prefab: 'forge', x: 400, y: 288}], 'f1', 'prefab f1']));
+    t.eq('新增空白 prefab：prefab.json 一筆、場景中間放 f1、選起來（右欄實例面板）', JSON.stringify(r.newPf), JSON.stringify([{forge: {}}, [{key: 'f1', prefab: 'forge', x: 400, y: 288}], 'f1', '實例 f1']));
     t.check('id 不合法擋下', r.badId.includes('英數字'), r.badId);
     t.eq('undo：prefab.json 跟 scenes.json 一起回去', JSON.stringify(r.undoNew), JSON.stringify([{}, null]));
     t.eq('redo：兩個檔一起回來', JSON.stringify(r.redoNew), JSON.stringify([['forge'], 1]));
     t.eq('別處改 prefab.json：sandbox 照新內容建成 Item、預設 off', JSON.stringify(r.built), JSON.stringify(['Item', 'forge', 'off', [true, false]]));
     t.eq('prefab 庫列出、可拖', JSON.stringify(r.libRow), JSON.stringify([['forge', true]]));
     t.eq('sandbox 點得到實例', r.pick, 'f1');
-    t.eq('右欄：實例面板', r.right, 'prefab f1');
+    t.eq('右欄：實例面板', r.right, '實例 f1');
     t.eq('狀態下拉：預設＋零件／acts 的狀態', JSON.stringify(r.lookOpts), JSON.stringify(['', 'off', 'on']));
     t.eq('改狀態：寫檔、sandbox 重建成 on（Crate 出現、一盞光）', JSON.stringify(r.look), JSON.stringify(['on', [true, true], 1]));
     t.eq('sandbox 拖曳放開：寫檔、重建在新位置', JSON.stringify(r.move), JSON.stringify([{key: 'f1', prefab: 'forge', x: 200, y: 160, look: 'on'}, [200, 160]]));
@@ -300,8 +317,13 @@ run('prefab-tool', async t => {
     t.eq('刪實例', JSON.stringify(r.delInst), JSON.stringify(['f1']));
 
     // 右欄改 prefab 內容
-    t.eq('右欄：實例＋prefab 內容＋零件清單（不屬實例目前狀態 off 的標灰）', JSON.stringify(r.panel0),
-         JSON.stringify([[[0, false], [1, true], [2, true]], ['prefab f1', 'prefab 內容 forge', '右鍵動作', '占地方塊', '移動錨點', '零件（3）']]));
+    t.eq('右欄：實例＋prefab 標題＋屬性＋零件清單（不屬實例目前狀態 off 的標灰）', JSON.stringify(r.panel0),
+         JSON.stringify([[[0, false], [1, true], [2, true]], ['實例 f1', 'prefab forge', '屬性', '右鍵動作', '占地方塊', '移動錨點', '零件（3）']]));
+    t.eq('摺屬性＋零件：只剩標題、▸、prefab 標題不摺、記 localStorage', JSON.stringify(r.rFold),
+         JSON.stringify([['實例 f1', 'prefab forge', '屬性', '零件（3）'], '▸', '▸', 0, false, ['right.props', 'right.parts']]));
+    t.eq('摺實例', JSON.stringify(r.rFoldInst), JSON.stringify(['實例 f1', false]));
+    t.eq('零件摺著時開零件：自動打開、記住', JSON.stringify(r.rAutoOpen), JSON.stringify(['▾', 1, []]));
+    t.eq('收起零件不自動摺回', r.rStayOpen, '▾');
     t.eq('點零件：展開它的表單（一次一個）', JSON.stringify(r.open), JSON.stringify([1, true, '0']));
     t.eq('改零件＝草稿：相對錨點、兩個檔都不動、右欄出現儲存、庫標 ●', JSON.stringify(r.moveImg), JSON.stringify([{img: 'Barrel', x: 10}, true, true, true, '●']));
     t.check('sandbox 照草稿重建', r.sbDraft);

@@ -67,10 +67,11 @@
 
 ### 右欄編輯＋草稿
 
-- 選中實例＝右欄三區：
-  1. **實例**（scenes.json，立刻寫、不算草稿）：換 prefab（草稿中先問）、**位置**（錨點在場景的座標；草稿移過錨點就顯示含位移的畫面位置）、狀態（這個實例的初始狀態，兼當下面零件清單的篩選）。
-  2. **prefab 內容**（草稿）：預設狀態、左鍵動作、右鍵動作 acts（local.json 沒有標 ⚠＋↗ 文字分頁）、占地方塊勾選＋x/y/w/h、移動錨點（x y＋套用）、縮圖外框（唯讀）。
-  3. **零件清單**（草稿）：一列一個（縮圖／🔥／光色點＋名稱＋狀態），不屬於實例目前狀態的標灰；點一列在下面展開表單（一次一個，`S.part`＝index），↑↓ 排序、✕ 刪除，底下「＋ png／＋ 粒子／＋ 光源」（新零件放錨點、沒有 look）。png 表單同擺設（換圖可選 textures 或 `file:`、%／scale／寬高、翻轉、角度、錨點、深度＝prefab 內部前後、狀態、特效 fx.json）；粒子＝particle.json id（↗ 粒子分頁）＋位置＋狀態；光源＝位置、半徑、光錐、方向、柔和、顏色、強度、狀態（`setPart()` 把 r/color/i/dir/arc/soft 寫進 `light`）。位置都相對錨點。
+- 選中實例＝右欄三區，**每區可摺疊**（2026-11-18，標題 ▸/▾，跟左欄共用 `secHead()`／`foldSec()`，摺起來的記在 localStorage `tools.scene.fold` 的 `right.inst`／`right.props`／`right.parts`，全域一份、預設全展開；屬性裡的小段不再分層摺；說明灰字在展開後的內容第一列）：
+  1. **實例 `f<n>`**（scenes.json，立刻寫、不算草稿）：換 prefab（草稿中先問）、**位置**（錨點在場景的座標；草稿移過錨點就顯示含位移的畫面位置）、狀態（這個實例的初始狀態，兼當下面零件清單的篩選）。
+  - 中間一條**不能摺**的「prefab `<id>`」標題，下面是草稿列（● 未存［儲存］［放棄］，沒草稿時是提示），摺了屬性／零件照樣看得到。
+  2. **屬性**（草稿；摺起來時 acts 有 local.json 沒有的 id 標 ⚠）：預設狀態、左鍵動作、右鍵動作 acts（local.json 沒有標 ⚠＋↗ 文字分頁）、占地方塊勾選＋x/y/w/h、移動錨點（x y＋套用）、縮圖外框（唯讀）。
+  3. **零件（n）**（草稿；零件摺著時 `openPart()` 開一個零件（sandbox 點到）會自動打開並記住，收起零件不摺回）：一列一個（縮圖／🔥／光色點＋名稱＋狀態），不屬於實例目前狀態的標灰；點一列在下面展開表單（一次一個，`S.part`＝index），↑↓ 排序、✕ 刪除，底下「＋ png／＋ 粒子／＋ 光源」（新零件放錨點、沒有 look）。png 表單同擺設（換圖可選 textures 或 `file:`、%／scale／寬高、翻轉、角度、錨點、深度＝prefab 內部前後、狀態、特效 fx.json）；粒子＝particle.json id（↗ 粒子分頁）＋位置＋狀態；光源＝位置、半徑、光錐、方向、柔和、顏色、強度、狀態（`setPart()` 把 r/color/i/dir/arc/soft 寫進 `light`）。位置都相對錨點。
 - **草稿**（`S.draft＝{id, key, base, pf, thumb, dx, dy, undo, redo}`）：第一次改 prefab 內容才開始（`editPf()`），改的是記憶體副本，`pfOf(id)` 有草稿回傳草稿；送 sandbox 的 prefab.json 換成草稿（`prefabsMsg()`，同場景同 prefab 的其他實例也照草稿畫），點選範圍用即時算的縮圖外框（`liveThumb()`，不寫檔）。右欄「● 未存［儲存］［放棄］」。
   - 儲存（按鈕或 Ctrl+S，輸入框有焦點也行）：`saveDraft()` 寫 prefab.json（＋實例補償錨點位移），接著 `finishEdit()` 收尾（算 `thumb`、Tiled 縮圖／tsj／template、`file:` 圖照 pct 烤成 `textures/prefabs/<id>/<id>-<檔名>.png` 改寫 key），`mergeUndo()` 併成全域一筆。
   - 草稿自己一疊 undo（快照 `{pf, dx, dy, part}`）：草稿中 Ctrl+Z／Y 只退草稿的步驟，退不到草稿之前的全域步驟。

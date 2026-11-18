@@ -552,6 +552,7 @@ function delPart(id, i)
 function openPart(i)
 {
     S.part = i;
+    if (i !== null && isFolded('right.parts')) toggleFold('right.parts');
     toGame(inspectMsg());
     renderRight();
 }
@@ -719,27 +720,30 @@ function prefabPanel(id)
             onchange: (e) => setPf1({[k]: e.target.checked ? {x: -16, y: -32, w: 32, h: 32} : undefined})}), ' ', n('x'), n('y'), ' ', n('w'), '×', n('h'));
     };
     const d = draftOf(id), t = d ? d.thumb : pf.thumb;
+    const warn = acts.some(([a]) => !S.refs.local[a]) && h('span', {class: 'warn', title: '有動作 id 不在 local.json'}, ' ⚠');
     return [
-        h('div', {class: 'sec'}, `prefab 內容 ${id}`, h('span', {class: 'dim'}, '（prefab.json，用到它的地方一起變）')),
+        h('div', {class: 'sec pfhead'}, `prefab ${id}`, h('span', {class: 'dim'}, '（prefab.json，用到它的地方一起變）')),
         d ? h('div', {class: 'row2 draft', dataset: {k: 'draft'}}, h('span', {class: 'warn'}, '● 未存'),
             h('button', {dataset: {k: 'saveDraft'}, title: '寫進 prefab.json（Ctrl+S）', onclick: () => saveDraft()}, '儲存'),
             h('button', {dataset: {k: 'dropDraft'}, title: '丟掉沒存的改動', onclick: () => dropDraft()}, '放棄'),
             h('span', {class: 'dim'}, 'Ctrl+Z 退草稿裡的步驟'))
           : h('div', {class: 'hint dim'}, '改了先存在草稿（畫面照草稿），按儲存／Ctrl+S 才寫 prefab.json'),
-        h('table', {class: 'props'},
-            row('預設狀態', lookSelect(id, pf.look, (v) => setPf1({look: v}), '（沒有）')),
-            row('左鍵動作', defSel)),
-        h('div', {class: 'sec'}, '右鍵動作', h('span', {class: 'dim'}, '（動作 id → 切到的狀態；選單文字＝local.json 的 id）')),
-        h('table', {class: 'props'}, acts.map(actRow)),
-        h('div', {class: 'row2'}, h('button', {dataset: {k: 'addAct'}, onclick: () => {
-            let n = 'turn_on';
-            for (let i = 2; acts.some(([a]) => a === n); i++) n = `act${i}`;
-            setActs([...acts, [n, pf.look ?? '']]);
-        }}, '＋ 動作'), acts.some(([a]) => !S.refs.local[a]) && h('button', {onclick: () => SH.gotoTab('local')}, '↗ 文字分頁')),
-        h('div', {class: 'sec'}, '占地方塊', h('span', {class: 'dim'}, '（相對錨點的左上角＋寬高；Tiled 物件有寫就蓋掉）')),
-        h('table', {class: 'props'}, BOXES.map(boxRow)),
-        anchorRow(id),
-        h('div', {class: 'hint dim'}, t ? `縮圖外框 ${t.x},${t.y} ${t.w}×${t.h}（照預設狀態的 png 自動算）` : '縮圖外框：照預設狀態的 png 自動算'),
+        ...foldSec('right.props', ['屬性', warn], () => [
+            h('table', {class: 'props'},
+                row('預設狀態', lookSelect(id, pf.look, (v) => setPf1({look: v}), '（沒有）')),
+                row('左鍵動作', defSel)),
+            h('div', {class: 'sec'}, '右鍵動作', h('span', {class: 'dim'}, '（動作 id → 切到的狀態；選單文字＝local.json 的 id）')),
+            h('table', {class: 'props'}, acts.map(actRow)),
+            h('div', {class: 'row2'}, h('button', {dataset: {k: 'addAct'}, onclick: () => {
+                let n = 'turn_on';
+                for (let i = 2; acts.some(([a]) => a === n); i++) n = `act${i}`;
+                setActs([...acts, [n, pf.look ?? '']]);
+            }}, '＋ 動作'), warn && h('button', {onclick: () => SH.gotoTab('local')}, '↗ 文字分頁')),
+            h('div', {class: 'sec'}, '占地方塊', h('span', {class: 'dim'}, '（相對錨點的左上角＋寬高；Tiled 物件有寫就蓋掉）')),
+            h('table', {class: 'props'}, BOXES.map(boxRow)),
+            anchorRow(id),
+            h('div', {class: 'hint dim'}, t ? `縮圖外框 ${t.x},${t.y} ${t.w}×${t.h}（照預設狀態的 png 自動算）` : '縮圖外框：照預設狀態的 png 自動算'),
+        ]),
     ];
 }
 
@@ -764,8 +768,8 @@ function partsPanel(o)
 {
     const id = o.prefab, pf = pfOf(id) ?? {}, parts = pf.parts ?? [], look = o.look ?? pf.look;
     const btn = (t, title, fn) => h('button', {title, onclick: (e) => {e.stopPropagation(); fn();}}, t);
-    return [
-        h('div', {class: 'sec'}, `零件（${parts.length}）`, h('span', {class: 'dim'}, '（位置相對錨點；畫面上再點實例＝展開點到的，展開的可以拖、方向鍵移、Del 刪，Esc 收起）')),
+    return foldSec('right.parts', `零件（${parts.length}）`, () => [
+        h('div', {class: 'hint dim'}, '位置相對錨點；畫面上再點實例＝展開點到的，展開的可以拖、方向鍵移、Del 刪，Esc 收起'),
         ...parts.flatMap((p, i) => [
             h('div', {class: `part${i === S.part ? ' sel' : ''}${p.look && p.look !== look ? ' off' : ''}`, dataset: {part: i}, onclick: () => openPart(i === S.part ? null : i)},
                 partIcon(p), h('span', {class: 'id'}, partName(p)), p.look && h('span', {class: 'lab'}, p.look), h('span', {class: 'grow'}),
@@ -775,7 +779,7 @@ function partsPanel(o)
         h('div', {class: 'row2'}, h('button', {dataset: {k: 'addPng'}, onclick: () => addPart(id, 'png')}, '＋ png'),
             h('button', {dataset: {k: 'addParticle'}, onclick: () => addPart(id, 'particle')}, '＋ 粒子'),
             h('button', {dataset: {k: 'addLight'}, onclick: () => addPart(id, 'light')}, '＋ 光源')),
-    ];
+    ]);
 }
 
 function partRows(id, i, p)
@@ -985,8 +989,7 @@ function instPanel(o)
         h('option', {value: ''}, `（預設${pf?.look ? `：${pf.look}` : ''}）`), looks.map(v => h('option', {value: v}, v)));
     if (o.look && !looks.includes(o.look)) look.append(h('option', {value: o.look}, `⚠ ${o.look}`));
     look.value = o.look ?? '';
-    return [
-        h('div', {class: 'sec'}, `prefab ${o.key}`, pf ? null : h('span', {class: 'warn'}, `　prefab.json 沒有 ${o.prefab}`)),
+    return foldSec('right.inst', [`實例 ${o.key}`, pf ? null : h('span', {class: 'warn'}, `　prefab.json 沒有 ${o.prefab}`)], () => [
         h('div', {class: 'row2'}, pfIcon(o.prefab, 48)),
         h('table', {class: 'props'},
             row('prefab', idSel),
@@ -994,7 +997,7 @@ function instPanel(o)
             row('狀態', look)),
         h('div', {class: 'hint dim'}, '位置＝錨點在場景的哪裡；狀態只改這個實例的初始狀態（存在場景裡），下面零件照它標灰；拖曳移動、Shift 吸 16px；方向鍵 1px、Shift＋方向鍵一格'),
         h('div', {class: 'acts'}, h('button', {onclick: () => deleteObj(o.key)}, '刪除實例（Del）')),
-    ];
+    ]);
 }
 
 // ---------- 光源 ----------
@@ -1600,6 +1603,7 @@ function toggleFold(k)
     renderLib();
     renderList();
     renderTree();
+    renderRight();
 }
 
 function secHead(k, title, btn)
@@ -1608,6 +1612,9 @@ function secHead(k, title, btn)
     return h('div', {class: 'row2 head', dataset: {fold: k}},
         h('span', {class: 'tw', onclick: t}, f ? '▸' : '▾'), h('span', {class: 'sec grow', onclick: t}, title), btn);
 }
+
+// 右欄可摺的一段（實例／屬性／零件），摺起來只剩標題
+const foldSec = (k, title, rows) => [secHead(k, title), ...(isFolded(k) ? [] : rows())];
 
 // prefab 庫：prefab.json 全部；拖進遊戲畫面＝放實例（sandbox 收 drop），右鍵刪除
 function renderLib()
