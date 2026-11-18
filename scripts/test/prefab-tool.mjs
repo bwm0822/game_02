@@ -234,6 +234,24 @@ run('prefab-tool', async t => {
         await sc.deletePrefab('fire_pit-copy', true);
         out.delCopy = [Object.keys(await pfDisk()).includes('fire_pit-copy'), await has('templates/prefabs', 'fire_pit-copy.tj'), await has('textures/prefabs', 'prefab-fire_pit-copy.png'),
             (await read(await dir(assets, 'tilesets'), 'prefabs.tsj')).tiles.some(t => t.image.includes('copy'))];
+
+        // ---------- 移動錨點（草稿）：零件、方塊反向挪，實例畫面上不動；草稿中拖實例寫存檔位置；儲存才補償實例 ----------
+        sc.pickRole('f1');
+        await sc.setPf('fire_pit', {grid: {x: -16, y: -16, w: 32, h: 16}});
+        const thumb0 = sc.S.prefabs.fire_pit.thumb;
+        await sc.moveAnchor('fire_pit', 10, 0);
+        const dpf = () => sc.S.draft.pf;
+        out.anchor = [dpf().parts.map(p => [p.x ?? 0, p.y ?? 0]), dpf().grid, (await cDisk()).prefabs[0].x,
+            await until(() => sb()._insts.f1?.go?.x === 210), doc.querySelector('#right [data-k="x"]').value];
+        sb()._send({sb: 'moveInst', key: 'f1', x: 230, y: 200});
+        out.anchorDrag = await until(async () => (await cDisk()).prefabs[0].x === 220) && [!!sc.S.draft, await until(() => sb()._insts.f1?.go?.x === 230)];
+        await sc.undo();
+        out.anchorUndo = [sc.S.draft.dx, dpf().grid.x];
+        await sc.redo();
+        await sc.saveDraft();
+        const fp = (await pfDisk()).fire_pit;
+        out.anchorSave = [fp.parts.map(p => [p.x ?? 0, p.y ?? 0]), fp.grid.x, (await cDisk()).prefabs[0].x, fp.thumb.x - thumb0.x, sc.S.draft,
+            await until(() => sb()._insts.f1?.go?.x === 230)];
         return out;
     });
 
@@ -261,7 +279,7 @@ run('prefab-tool', async t => {
 
     // 右欄改 prefab 內容
     t.eq('右欄：實例＋prefab 內容＋零件清單（不屬實例目前狀態 off 的標灰）', JSON.stringify(r.panel0),
-         JSON.stringify([[[0, false], [1, true], [2, true]], ['prefab f1', 'prefab 內容 forge', '右鍵動作', '占地方塊', '零件（3）']]));
+         JSON.stringify([[[0, false], [1, true], [2, true]], ['prefab f1', 'prefab 內容 forge', '右鍵動作', '占地方塊', '移動錨點', '零件（3）']]));
     t.eq('點零件：展開它的表單（一次一個）', JSON.stringify(r.open), JSON.stringify([1, true, '0']));
     t.eq('改零件＝草稿：相對錨點、兩個檔都不動、右欄出現儲存、庫標 ●', JSON.stringify(r.moveImg), JSON.stringify([{img: 'Barrel', x: 10}, true, true, true, '●']));
     t.check('sandbox 照草稿重建', r.sbDraft);
@@ -304,4 +322,12 @@ run('prefab-tool', async t => {
     t.check('刪除：地圖在用就擋、列出來', r.delBlocked[0] && r.delBlocked[1].includes('maps/t.json'), JSON.stringify(r.delBlocked));
     t.eq('複製：一模一樣的新一筆＋template＋縮圖', JSON.stringify(r.dup), JSON.stringify([['forge', 'fire_pit', 'fire_pit-copy'], true, true, true]));
     t.eq('刪除沒人用的：prefab.json、template、縮圖、tsj 那格都拿掉', JSON.stringify(r.delCopy), JSON.stringify([false, false, false, false]));
+
+    // 移動錨點
+    t.eq('移動錨點：零件、方塊反向挪，scenes.json 不動，sandbox／右欄位置＝畫面不動', JSON.stringify(r.anchor),
+         JSON.stringify([[[-10, 0], [-10, -30]], {x: -26, y: -16, w: 32, h: 16}, 200, true, '210']));
+    t.eq('草稿中拖實例：立刻寫存檔位置（扣掉位移）、還在草稿', JSON.stringify(r.anchorDrag), JSON.stringify([true, true]));
+    t.eq('草稿 undo：位移跟零件一起退', JSON.stringify(r.anchorUndo), JSON.stringify([0, -16]));
+    t.eq('儲存：prefab.json 換新原點、實例補償位移（畫面不動）、縮圖外框跟著挪', JSON.stringify(r.anchorSave),
+         JSON.stringify([[[-10, 0], [-10, -30]], -26, 230, -10, null, true]));
 });

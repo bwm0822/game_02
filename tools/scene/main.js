@@ -370,7 +370,8 @@ function fromSyn(syn, ax, ay)
 }
 
 // ---------- 草稿：改 prefab 內容只動記憶體（sandbox 照草稿畫），按儲存才寫 prefab.json ----------
-// S.draft＝{id, key（選中的實例）, base（開始時 prefab.json 那筆的 JSON，偵測別處改過）, pf, thumb（即時算的縮圖外框）, undo, redo（{pf, part}）}
+// S.draft＝{id, key（選中的實例）, base（開始時 prefab.json 那筆的 JSON，偵測別處改過）, pf, thumb（即時算的縮圖外框）,
+//          dx, dy（移動錨點的累積位移：實例畫在 存檔位置＋d，畫面不動；儲存時才寫進實例）, undo, redo（{pf, dx, dy, part}）}
 const pfOf = (id) => (S.draft?.id === id ? S.draft.pf : S.prefabs[id]);
 const draftOf = (id) => (S.draft?.id === id ? S.draft : null);
 
@@ -384,21 +385,51 @@ function prefabsMsg()
     return {...S.prefabs, [d.id]: pf};
 }
 
-// 改 prefab 內容：fn(那筆 prefab 的副本)，回傳 false＝沒改；第一次改才開始草稿
-function editPf(id, fn)
+// 送給 sandbox 的場景：草稿的實例加上錨點位移
+function gameScene()
+{
+    const sc = cur(), d = S.draft;
+    if (!d || (!d.dx && !d.dy)) return sc;
+    return {...sc, prefabs: sc.prefabs?.map(o => (o.key === d.key ? {...o, x: o.x + d.dx, y: o.y + d.dy} : o))};
+}
+
+// 實例畫面上的位置（草稿移過錨點就加上位移）
+const instAt = (o) => {
+    const d = S.draft?.key === o.key ? S.draft : null;
+    return {x: o.x + (d?.dx ?? 0), y: o.y + (d?.dy ?? 0)};
+};
+
+// 改 prefab 內容：fn(那筆 prefab 的副本)，回傳 false＝沒改；第一次改才開始草稿；shift＝錨點位移（移動錨點）
+function editPf(id, fn, shift)
 {
     const src = pfOf(id);
     if (!src) {status(`prefab.json 沒有 ${id}`); return Promise.resolve();}
     const next = structuredClone(src);
-    if (fn(next) === false || str(next) === str(src)) {renderRight(); return Promise.resolve();}
-    S.draft ??= {id, key: S.pick, base: str(S.prefabs[id]), pf: null, thumb: src.thumb ?? null, undo: [], redo: []};
+    if (fn(next) === false || (str(next) === str(src) && !shift)) {renderRight(); return Promise.resolve();}
+    S.draft ??= {id, key: S.pick, base: str(S.prefabs[id]), pf: null, thumb: src.thumb ?? null, dx: 0, dy: 0, undo: [], redo: []};
     const d = S.draft;
-    if (!(H.take() && d.undo.length)) d.undo.push({pf: d.pf ?? structuredClone(src), part: S.part});
+    if (!(H.take() && d.undo.length)) d.undo.push({pf: d.pf ?? structuredClone(src), dx: d.dx, dy: d.dy, part: S.part});
     d.redo = [];
     d.pf = next;
+    if (shift) {d.dx += shift.x; d.dy += shift.y;}
     liveThumb();
     refresh();
     return Promise.resolve();
+}
+
+// 移動錨點：零件、占地方塊、縮圖外框反向挪，實例跟著補償（畫面不動）；別處的同 prefab 實例錨點不動、圖會挪
+function moveAnchor(id, x, y)
+{
+    if (!x && !y) return Promise.resolve();
+    return editPf(id, pf => {
+        for (const p of pf.parts ?? [])
+        {
+            const nx = (p.x ?? 0) - x, ny = (p.y ?? 0) - y;
+            if (nx) p.x = nx; else delete p.x;
+            if (ny) p.y = ny; else delete p.y;
+        }
+        for (const k of [...BOXES.map(([b]) => b), 'thumb']) if (pf[k]) {pf[k].x -= x; pf[k].y -= y;}
+    }, {x, y});
 }
 
 // 草稿的縮圖外框（算圖大小要等）：算完還是同一份草稿才套
@@ -416,9 +447,8 @@ function draftStep(from, to)
 {
     const d = S.draft, u = d[from].pop();
     if (!u) return status('草稿最早的一步了（再往前要先儲存或放棄）');
-    d[to].push({pf: d.pf, part: S.part});
-    d.pf = u.pf;
-    S.part = u.part;
+    d[to].push({pf: d.pf, dx: d.dx, dy: d.dy, part: S.part});
+    ({pf: d.pf, dx: d.dx, dy: d.dy, part: S.part} = u);
     liveThumb();
     refresh();
 }
@@ -428,9 +458,12 @@ async function saveDraft()
 {
     const d = S.draft;
     if (!d) return true;
-    await commit((s, pfs) => {
+    const name = S.sel;
+    await commit((scenes, pfs) => {
         if (!(d.id in pfs)) throw new Error(`prefab.json 沒有 ${d.id}`);
         pfs[d.id] = structuredClone(d.pf);
+        const o = scenes[name]?.prefabs?.find(x => x.key === d.key);
+        if (o) {o.x += d.dx; o.y += d.dy;}
     }, undefined, undefined, PREFAB_FILES);
     if (str(S.prefabs[d.id]) !== str(d.pf)) return false;
     S.draft = null;
@@ -690,8 +723,22 @@ function prefabPanel(id)
         }}, '＋ 動作'), acts.some(([a]) => !S.refs.local[a]) && h('button', {onclick: () => SH.gotoTab('local')}, '↗ 文字分頁')),
         h('div', {class: 'sec'}, '占地方塊', h('span', {class: 'dim'}, '（相對錨點的左上角＋寬高；Tiled 物件有寫就蓋掉）')),
         h('table', {class: 'props'}, BOXES.map(boxRow)),
+        anchorRow(id),
         h('div', {class: 'hint dim'}, t ? `縮圖外框 ${t.x},${t.y} ${t.w}×${t.h}（照預設狀態的 png 自動算）` : '縮圖外框：照預設狀態的 png 自動算'),
     ];
+}
+
+// 移動錨點：輸入位移按套用（畫面不動，零件、方塊反向挪）
+function anchorRow(id)
+{
+    const d = draftOf(id);
+    const dx = h('input', {type: 'number', step: 1, value: 0, class: 'n', dataset: {k: 'anchorDx'}});
+    const dy = h('input', {type: 'number', step: 1, value: 0, class: 'n', dataset: {k: 'anchorDy'}});
+    return h('div', null,
+        h('div', {class: 'sec'}, '移動錨點', h('span', {class: 'dim'}, '（畫面不動；別處放好的實例圖會挪）')),
+        h('div', {class: 'row2'}, 'x ', dx, ' y ', dy,
+            h('button', {dataset: {k: 'anchorApply'}, title: '錨點往右下移 (x, y)：零件、占地方塊反向挪，這個實例跟著補償', onclick: () => moveAnchor(id, +dx.value || 0, +dy.value || 0)}, '套用'),
+            d && (d.dx || d.dy) ? h('span', {class: 'dim'}, `草稿裡已移 ${d.dx}, ${d.dy}`) : null));
 }
 
 const partName = (p) => (p.img ? propName(p) : p.particle ?? `光源 r${p.light?.r ?? ''}`);
@@ -910,8 +957,9 @@ function mergeUndo(n0)
 
 function instPanel(o)
 {
-    const pf = S.prefabs[o.prefab];
-    const n = (k) => h('input', {type: 'number', step: 1, value: o[k], class: 'n', dataset: {k}, onchange: (e) => e.target.value !== '' && setInst(o.key, {[k]: +e.target.value})});
+    const pf = S.prefabs[o.prefab], at = instAt(o);
+    // 顯示畫面上的位置（草稿移過錨點就含位移），寫回扣掉
+    const n = (k) => h('input', {type: 'number', step: 1, value: at[k], class: 'n', dataset: {k}, onchange: (e) => e.target.value !== '' && setInst(o.key, {[k]: +e.target.value - (at[k] - o[k])})});
     const row = (k, ...v) => h('tr', null, h('td', {class: 'k'}, k), h('td', null, ...v));
     const idSel = h('select', {dataset: {k: 'prefab'}, onchange: () => setInst(o.key, {prefab: idSel.value, look: undefined})},
         Object.keys(S.prefabs).map(id => h('option', {value: id}, id)));
@@ -1778,7 +1826,7 @@ function syncGame()
     toGame(playMsg());
     toGame(selMsg());
     toGame({sb: 'hide', keys: [...S.hidden]});
-    toGame({sb: 'load', scene: cur(), prefabs: prefabsMsg()});
+    toGame({sb: 'load', scene: gameScene(), prefabs: prefabsMsg()});
 }
 
 // ---------- sandbox ----------
@@ -1816,7 +1864,12 @@ addEventListener('message', (e) => {
         setProp(m.key, {x, y, ...('pct' in m.patch ? {pct: pct === 100 ? undefined : pct} : {sx: one(sx), sy: one(sy)})}).then(syncGame);
     }
     else if (m.sb === 'moveEmitter') setEmitter(m.key, {x: m.x, y: m.y}).then(syncGame);
-    else if (m.sb === 'moveInst') setInst(m.key, {x: m.x, y: m.y}).then(syncGame);
+    else if (m.sb === 'moveInst')
+    {
+        // 畫面位置扣掉草稿的錨點位移＝存檔位置
+        const o = instOf(m.key), at = o ? instAt(o) : {x: 0, y: 0};
+        setInst(m.key, {x: m.x - (at.x - (o?.x ?? 0)), y: m.y - (at.y - (o?.y ?? 0))}).then(syncGame);
+    }
     else if (m.sb === 'dropPrefab')
     {
         if (S.sel === null) return status('先選或新增一個場景');
@@ -1950,5 +2003,5 @@ refresh();
 
 // 給無頭測試用
 window.__sc = {S, setProject, addScene, dupScene, renameScene, deleteScene, select, undo, redo, addRole, setRole, setEquip, deleteRole, pickRole, toggleHide, arm, toGame, addProp, setProp, deleteObj, nudge, bakeProp, folderTree, exportProp: (key) => exportProp(propOf(key)), srcSize, addLight, setLight, addEmitter, setEmitter, setField, setPlaying,
-               addInst, setInst, newPrefab, deletePrefab, toggleFold, setPf, setPart, addPart, movePart, delPart, openPart, pickPrefab, saveDraft, dropDraft, composePrefab, renamePrefab, dupPrefab,
+               addInst, setInst, newPrefab, deletePrefab, toggleFold, setPf, setPart, addPart, movePart, delPart, openPart, pickPrefab, saveDraft, dropDraft, moveAnchor, composePrefab, renamePrefab, dupPrefab,
                flush: () => S.q};
