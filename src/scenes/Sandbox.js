@@ -957,6 +957,7 @@ export class Sandbox extends GameScene
             case 'anchor': this._anchorOn = !!m.on; break;
             case 'icons': this._icons = {light:!!m.light, particle:!!m.particle}; break;
             case 'home': this._home(); break;
+            case 'focus': {const go = this._insts?.[m.key]?.go; if(go) {this.cameras.main.pan(go.x, go.y, 250, 'Sine.easeInOut');} break;}
             case 'select': this._sel = m.key ?? null; this._size = {lock:m.lock ?? 'pct', ratio:m.ratio ?? true}; break;
             case 'arm': this._arm = m.act ?? null; this._drawSel(); this._cursor(); break;
             case 'do': this._do(m.act); break;
