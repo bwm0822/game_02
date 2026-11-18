@@ -526,6 +526,7 @@ async function addPart(id, kind, v)
     if (kind === 'particle') ls.set(LS.particle, v);
     const part = kind === 'png' ? {img: v} : kind === 'particle' ? {particle: v} : {light: {...LIGHT}};
     S.part = pfOf(id)?.parts?.length ?? 0;
+    if (isFolded('right.parts')) toggleFold('right.parts');
     await editPf(id, pf => {(pf.parts ??= []).push(part);});
 }
 
@@ -722,12 +723,11 @@ function prefabPanel(id)
     const d = draftOf(id), t = d ? d.thumb : pf.thumb;
     const warn = acts.some(([a]) => !S.refs.local[a]) && h('span', {class: 'warn', title: '有動作 id 不在 local.json'}, ' ⚠');
     return [
-        h('div', {class: 'sec pfhead'}, `prefab ${id}`, h('span', {class: 'dim'}, '（prefab.json，用到它的地方一起變）')),
         d ? h('div', {class: 'row2 draft', dataset: {k: 'draft'}}, h('span', {class: 'warn'}, '● 未存'),
             h('button', {dataset: {k: 'saveDraft'}, title: '寫進 prefab.json（Ctrl+S）', onclick: () => saveDraft()}, '儲存'),
             h('button', {dataset: {k: 'dropDraft'}, title: '丟掉沒存的改動', onclick: () => dropDraft()}, '放棄'),
             h('span', {class: 'dim'}, 'Ctrl+Z 退草稿裡的步驟'))
-          : h('div', {class: 'hint dim'}, '改了先存在草稿（畫面照草稿），按儲存／Ctrl+S 才寫 prefab.json'),
+          : null,
         ...foldSec('right.props', ['屬性', warn], () => [
             h('table', {class: 'props'},
                 row('預設狀態', lookSelect(id, pf.look, (v) => setPf1({look: v}), '（沒有）')),
@@ -742,7 +742,7 @@ function prefabPanel(id)
             h('div', {class: 'sec'}, '占地方塊', h('span', {class: 'dim'}, '（相對錨點的左上角＋寬高；Tiled 物件有寫就蓋掉）')),
             h('table', {class: 'props'}, BOXES.map(boxRow)),
             anchorRow(id),
-            h('div', {class: 'hint dim'}, t ? `縮圖外框 ${t.x},${t.y} ${t.w}×${t.h}（照預設狀態的 png 自動算）` : '縮圖外框：照預設狀態的 png 自動算'),
+            h('div', {class: 'dim'}, t ? `縮圖外框 ${t.x},${t.y} ${t.w}×${t.h}（照預設狀態的 png 自動算）` : '縮圖外框：照預設狀態的 png 自動算'),
         ]),
     ];
 }
@@ -768,18 +768,15 @@ function partsPanel(o)
 {
     const id = o.prefab, pf = pfOf(id) ?? {}, parts = pf.parts ?? [], look = o.look ?? pf.look;
     const btn = (t, title, fn) => h('button', {title, onclick: (e) => {e.stopPropagation(); fn();}}, t);
+    const add = (k, kind, t) => h('button', {dataset: {k}, onclick: () => addPart(id, kind)}, t);
     return foldSec('right.parts', `零件（${parts.length}）`, () => [
-        h('div', {class: 'hint dim'}, '位置相對錨點；畫面上再點實例＝展開點到的，展開的可以拖、方向鍵移、Del 刪，Esc 收起'),
         ...parts.flatMap((p, i) => [
             h('div', {class: `part${i === S.part ? ' sel' : ''}${p.look && p.look !== look ? ' off' : ''}`, dataset: {part: i}, onclick: () => openPart(i === S.part ? null : i)},
                 partIcon(p), h('span', {class: 'id'}, partName(p)), p.look && h('span', {class: 'lab'}, p.look), h('span', {class: 'grow'}),
                 btn('↑', '往前（同深度時畫在下面）', () => movePart(id, i, -1)), btn('↓', '往後', () => movePart(id, i, 1)), btn('✕', '拿掉這個零件', () => delPart(id, i))),
             i === S.part && h('div', {class: 'partform'}, ...partRows(id, i, p)),
         ]),
-        h('div', {class: 'row2'}, h('button', {dataset: {k: 'addPng'}, onclick: () => addPart(id, 'png')}, '＋ png'),
-            h('button', {dataset: {k: 'addParticle'}, onclick: () => addPart(id, 'particle')}, '＋ 粒子'),
-            h('button', {dataset: {k: 'addLight'}, onclick: () => addPart(id, 'light')}, '＋ 光源')),
-    ]);
+    ], [add('addPng', 'png', '＋png'), add('addParticle', 'particle', '＋粒子'), add('addLight', 'light', '＋光源')]);
 }
 
 function partRows(id, i, p)
@@ -802,7 +799,6 @@ function partRows(id, i, p)
             row('深度', n('depth', 1, '0'), h('span', {class: 'dim'}, ' prefab 裡的前後（大的在前）')),
             look,
             row('特效', fxSelect(p.fx, (v) => set({fx: v})))),
-        isFile(p.img) && h('div', {class: 'hint dim'}, '外部 png：儲存時照 % 烤進 textures/prefabs/'),
     ];
     if (p.particle)
     {
@@ -995,7 +991,6 @@ function instPanel(o)
             row('prefab', idSel),
             row('位置', n('x'), ' ', n('y')),
             row('狀態', look)),
-        h('div', {class: 'hint dim'}, '位置＝錨點在場景的哪裡；狀態只改這個實例的初始狀態（存在場景裡），下面零件照它標灰；拖曳移動、Shift 吸 16px；方向鍵 1px、Shift＋方向鍵一格'),
         h('div', {class: 'acts'}, h('button', {onclick: () => deleteObj(o.key)}, '刪除實例（Del）')),
     ]);
 }
@@ -1614,7 +1609,7 @@ function secHead(k, title, btn)
 }
 
 // 右欄可摺的一段（實例／屬性／零件），摺起來只剩標題
-const foldSec = (k, title, rows) => [secHead(k, title), ...(isFolded(k) ? [] : rows())];
+const foldSec = (k, title, rows, btn) => [secHead(k, title, btn), ...(isFolded(k) ? [] : rows())];
 
 // prefab 庫：prefab.json 全部；拖進遊戲畫面＝放實例（sandbox 收 drop），右鍵刪除
 function renderLib()
@@ -1716,19 +1711,21 @@ function renderRight()
 
 function drawRight()
 {
-    const r = roleOf(S.pick), box = $('right');
-    if (propOf(S.pick)) return box.replaceChildren(...propPanel(propOf(S.pick)));
-    if (emOf(S.pick)) return box.replaceChildren(...emPanel(emOf(S.pick)));
-    if (lightOf(S.pick)) return box.replaceChildren(...lightPanel(lightOf(S.pick)));
+    const r = roleOf(S.pick);
+    // replaceChildren 不像 h() 會濾掉 `cond && …` 留下的 false
+    const put = (...kids) => $('right').replaceChildren(...kids.flat(Infinity).filter(c => c !== null && c !== undefined && c !== false));
+    if (propOf(S.pick)) return put(propPanel(propOf(S.pick)));
+    if (emOf(S.pick)) return put(emPanel(emOf(S.pick)));
+    if (lightOf(S.pick)) return put(lightPanel(lightOf(S.pick)));
     const o = instOf(S.pick);
-    if (o) return box.replaceChildren(...instPanel(o), ...(pfOf(o.prefab) ? [...prefabPanel(o.prefab), ...partsPanel(o)] : []));
-    if (!r) return box.replaceChildren(h('span', {class: 'dim'}, S.sel === null ? '' : '點畫面上的角色、或左邊清單選一個；右鍵畫面放角色'));
+    if (o) return put(instPanel(o), pfOf(o.prefab) ? [prefabPanel(o.prefab), partsPanel(o)] : []);
+    if (!r) return put(h('span', {class: 'dim'}, S.sel === null ? '' : '點畫面上的角色、或左邊清單選一個；右鍵畫面放角色'));
     const idSel = roleSelect(r.id);
     idSel.onchange = () => setRole(r.key, {id: idSel.value});
     const face = h('select', {onchange: () => setRole(r.key, {face: face.value || undefined})},
         h('option', {value: ''}, '（預設）'), h('option', {value: 'l'}, '左'), h('option', {value: 'r'}, '右'));
     face.value = r.face ?? '';
-    box.replaceChildren(
+    put(
         h('div', {class: 'sec'}, `角色 ${r.key}`, S.refs.roles[r.id] ? null : h('span', {class: 'warn'}, `　role.json 沒有 ${r.id}`)),
         h('table', {class: 'props'},
             h('tr', null, h('td', {class: 'k'}, '角色'), h('td', null, idSel)),

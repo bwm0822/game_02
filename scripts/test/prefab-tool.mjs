@@ -127,16 +127,21 @@ run('prefab-tool', async t => {
         out.rStayOpen = fold('right.parts');
         // 點零件展開表單；改欄位＝草稿（記憶體＋sandbox 照草稿畫），prefab.json／scenes.json 都不動
         sc.openPart(0);
-        out.open = [doc.querySelectorAll('#right .partform').length, !!doc.querySelector('#right .partform [data-k="x"]'), doc.querySelector('#right .part.sel')?.dataset.part];
+        out.open = [doc.querySelectorAll('#right .partform').length, !!doc.querySelector('#right .partform [data-k="x"]'), doc.querySelector('#right .part.sel')?.dataset.part,
+            /\bfalse\b/.test(doc.querySelector('#right').textContent), doc.querySelectorAll('#right .hint').length];
         const sc0 = JSON.stringify(await scDisk()), pf0 = JSON.stringify(await pfDisk());
         const draft = () => sc.S.draft?.pf;
         await sc.setPart('forge', 0, {x: 10});
         out.moveImg = [draft().parts[0], JSON.stringify(await pfDisk()) === pf0, JSON.stringify(await scDisk()) === sc0,
             !!doc.querySelector('#right [data-k="saveDraft"]'), doc.querySelector('#lib .item[data-prefab="forge"] .warn')?.textContent];
         out.sbDraft = await until(() => inst()?.go?.view?._shape?.list?.[0]?.x === 10);
-        // 加光源：放在錨點、沒有 look、展開它；光源欄位寫進 light
-        await sc.addPart('forge', 'light');
-        out.addLight = [draft().parts.at(-1), sc.S.part];
+        // 加光源：零件摺著時按標題列的＋光源＝放在錨點、沒有 look、自動打開並展開它；光源欄位寫進 light
+        sc.toggleFold('right.parts');
+        const addBtn = doc.querySelector('#right .head[data-fold="right.parts"] [data-k="addLight"]');
+        out.addBtns = [...doc.querySelectorAll('#right .head[data-fold="right.parts"] button')].map(b => b.textContent);
+        addBtn.click();
+        await until(() => draft().parts.length === 4);
+        out.addLight = [draft().parts.at(-1), sc.S.part, fold('right.parts'), doc.querySelectorAll('#right .partform').length];
         await sc.setPart('forge', 3, {r: 90, look: 'on'});
         out.setLight = draft().parts[3];
         await sc.movePart('forge', 3, -1);
@@ -317,17 +322,18 @@ run('prefab-tool', async t => {
     t.eq('刪實例', JSON.stringify(r.delInst), JSON.stringify(['f1']));
 
     // 右欄改 prefab 內容
-    t.eq('右欄：實例＋prefab 標題＋屬性＋零件清單（不屬實例目前狀態 off 的標灰）', JSON.stringify(r.panel0),
-         JSON.stringify([[[0, false], [1, true], [2, true]], ['實例 f1', 'prefab forge', '屬性', '右鍵動作', '占地方塊', '移動錨點', '零件（3）']]));
-    t.eq('摺屬性＋零件：只剩標題、▸、prefab 標題不摺、記 localStorage', JSON.stringify(r.rFold),
-         JSON.stringify([['實例 f1', 'prefab forge', '屬性', '零件（3）'], '▸', '▸', 0, false, ['right.props', 'right.parts']]));
+    t.eq('右欄：實例＋屬性＋零件清單（沒有 prefab 標題列；不屬實例目前狀態 off 的標灰）', JSON.stringify(r.panel0),
+         JSON.stringify([[[0, false], [1, true], [2, true]], ['實例 f1', '屬性', '右鍵動作', '占地方塊', '移動錨點', '零件（3）']]));
+    t.eq('摺屬性＋零件：只剩標題、▸、記 localStorage', JSON.stringify(r.rFold),
+         JSON.stringify([['實例 f1', '屬性', '零件（3）'], '▸', '▸', 0, false, ['right.props', 'right.parts']]));
     t.eq('摺實例', JSON.stringify(r.rFoldInst), JSON.stringify(['實例 f1', false]));
     t.eq('零件摺著時開零件：自動打開、記住', JSON.stringify(r.rAutoOpen), JSON.stringify(['▾', 1, []]));
     t.eq('收起零件不自動摺回', r.rStayOpen, '▾');
-    t.eq('點零件：展開它的表單（一次一個）', JSON.stringify(r.open), JSON.stringify([1, true, '0']));
+    t.eq('點零件：展開它的表單（一次一個）；右欄沒有漏出 false、沒有橘色說明', JSON.stringify(r.open), JSON.stringify([1, true, '0', false, 0]));
     t.eq('改零件＝草稿：相對錨點、兩個檔都不動、右欄出現儲存、庫標 ●', JSON.stringify(r.moveImg), JSON.stringify([{img: 'Barrel', x: 10}, true, true, true, '●']));
     t.check('sandbox 照草稿重建', r.sbDraft);
-    t.eq('加光源：在錨點、沒有 look、展開它', JSON.stringify(r.addLight), JSON.stringify([{light: {r: 120, color: '#ffcc88'}}, 3]));
+    t.eq('零件標題列右邊：＋png／＋粒子／＋光源（摺著也在）', JSON.stringify(r.addBtns), JSON.stringify(['＋png', '＋粒子', '＋光源']));
+    t.eq('摺著按＋光源：在錨點、沒有 look、自動打開並展開它', JSON.stringify(r.addLight), JSON.stringify([{light: {r: 120, color: '#ffcc88'}}, 3, '▾', 1]));
     t.eq('光源欄位寫進 light、狀態寫在零件上', JSON.stringify(r.setLight), JSON.stringify({light: {r: 90, color: '#ffcc88'}, look: 'on'}));
     t.eq('零件往前：順序換、展開的跟著', JSON.stringify(r.movePart), JSON.stringify([['Barrel', 'Crate', 90, 80], 2]));
     t.eq('刪零件：展開的收起', JSON.stringify(r.delPart), JSON.stringify([3, null]));
