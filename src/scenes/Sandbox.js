@@ -93,8 +93,6 @@ export class Sandbox extends GameScene
     async _apply(scene, {force=false}={})
     {
         this._scene = scene;
-        this._editLive = null;
-        this._locked = new Set(scene.locked ?? []);   // 編輯 prefab 時場景裡其他東西：變暗、點不到
         // 重置：表演生出來的東西（火牆區域、屍體…）一起清掉；地圖本身的物件 uid 不是 -1
         if(force) {Object.values(this.gos).filter(g=>g.uid===-1 && g.active).forEach(g=>g._remove());}
         const want = Object.fromEntries((scene.roles ?? []).map(r=>[r.key, r]));
@@ -122,7 +120,6 @@ export class Sandbox extends GameScene
         // 粒子、光源可以跟著擺設：擺設建好（sprite 換新）才套
         this._applyEmitters(scene.particles ?? [], force);
         this._applyLights(scene.lights ?? [], force);
-        this._dimLocked();
         this._send({sb:'loaded', map:this.mapName, w:this.map.map.width, h:this.map.map.height});
     }
 
@@ -235,71 +232,85 @@ export class Sandbox extends GameScene
             this._insts[i.key] = {go, data:i, sig:sig(i)};
         }
         if(bad.length) {this._send({sb:'error', msg:`prefab.json 沒有：${[...new Set(bad)].join('、')}`});}
-        this._dimLocked();
     }
-
-    _dimLocked()
-    {
-        const a = (k)=>(this._locked?.has(k) ? 0.35 : 1);
-        this.roles.forEach(p=>p.setAlpha(a(p.key)));
-        Object.entries(this._props).forEach(([k, o])=>o.sp.setAlpha(a(k)));
-        Object.entries(this._insts).forEach(([k, o])=>o.go.active && o.go.setAlpha(a(k)));
-    }
-
-    _isLocked(k) {return !!this._locked?.has(k);}
 
     //------------------------------------------------------
-    //  編輯 prefab：scene.edit＝{anchor:{x,y}（世界）, boxes:{body,grid,zone}（相對錨點的 {x,y,w,h}）}
-    //  畫錨點十字（橘）＋占地方塊（body 紅、grid 藍、zone 綠），十字拖＝改錨點、方塊左上把手拖＝移動、右下把手拖＝大小
-    //  放開才回報（moveAnchor {x,y}／editBox {k, box}），拖的時候改 this._scene.edit 的副本畫
+    //  選中的 prefab 實例（場景分頁送 inspect {key, boxes:{body,grid,zone}, part}）：畫錨點十字（橘）、有勾的占地方塊
+    //  （body 紅、grid 藍、zone 綠）、右欄展開的零件外框，都只看不拖；已選中再點＝回報點到的零件（part {key, i}，空白處 i＝null），
+    //  展開的那個零件可以拖（放開回報 movePart {key, i, x, y}，相對錨點；png、光源跟著動，粒子只動外框）
     //------------------------------------------------------
     static BOX_COLOR = {body:0xff5555, grid:0x55aaff, zone:0x66dd66};
 
-    _editHandles()
+    _inspected()
     {
-        const e = this._editLive ?? this._scene?.edit;
-        if(!e) {return [];}
-        const out = [];
-        for(const [k, b] of Object.entries(e.boxes ?? {}))
+        const k = this._inspect?.key;
+        return k && k===this._sel && this._insts[k]?.go.active ? this._insts[k] : null;
+    }
+
+    // 零件 i 的位置（世界座標）；png 多一個外框 rect（不算角度）、光源多半徑 r
+    _partGeom(o, i)
+    {
+        const p = DB.prefab(o.data.prefab)?.parts?.[i];
+        if(!p) {return null;}
+        const d = this._drag?.p===p ? this._drag : null;
+        const x = o.go.x + (d ? d.x : p.x ?? 0), y = o.go.y + (d ? d.y : p.y ?? 0);
+        if(!p.img) {return {x, y, r:p.light ? p.light.r ?? 120 : null};}
+        const [key, frame] = p.img.split(':');
+        const f = this.textures.exists(key) && this.textures.getFrame(key, frame);
+        if(!f) {return {x, y};}
+        const w = f.width*Math.abs(p.sx ?? 1), h = f.height*Math.abs(p.sy ?? 1);
+        return {x, y, rect:new Phaser.Geom.Rectangle(x - (p.ox ?? 0.5)*w, y - (p.oy ?? 1)*h, w, h)};
+    }
+
+    // 點到選中實例的哪個零件（目前狀態看得到的；粒子／光源的點優先，png 照前後取最上面）；沒有＝null
+    _partAt(o, wx, wy)
+    {
+        const parts = DB.prefab(o.data.prefab)?.parts ?? [], look = o.go.getLook?.() ?? null, tol = 8/this.cameras.main.zoom;
+        let best = null;
+        parts.forEach((p, i)=>{
+            const g = (!p.look || p.look===look) && this._partGeom(o, i);
+            if(!g) {return;}
+            if(!p.img) {if(Math.hypot(g.x - wx, g.y - wy)<=tol) {best = {i, z:Infinity};} return;}
+            const z = p.depth ?? 0;
+            if(g.rect?.contains(wx, wy) && (!best || z>=best.z)) {best = {i, z};}
+        });
+        return best ? best.i : null;
+    }
+
+    _drawInspect(g, z)
+    {
+        const o = this._inspected();
+        if(!o) {return;}
+        const ax = o.go.x, ay = o.go.y;
+        for(const [k, b] of Object.entries(this._inspect.boxes ?? {}))
         {
-            if(!b) {continue;}
-            out.push({kind:'move', k, x:e.anchor.x + b.x, y:e.anchor.y + b.y}, {kind:'size', k, x:e.anchor.x + b.x + b.w, y:e.anchor.y + b.y + b.h});
+            if(b) {g.lineStyle(1.5/z, Sandbox.BOX_COLOR[k], 0.9).strokeRect(ax + b.x, ay + b.y, b.w, b.h);}
         }
-        out.push({kind:'anchor', x:e.anchor.x, y:e.anchor.y});
-        return out;
-    }
-
-    _editHandleAt(wx, wy)
-    {
-        const s = (HANDLE/2 + 3)/this.cameras.main.zoom;
-        return this._editHandles().reverse().find(hd=>Math.abs(hd.x-wx)<=s && Math.abs(hd.y-wy)<=s) ?? null;
-    }
-
-    _drawEdit(g, z)
-    {
-        const e = this._editLive ?? this._scene?.edit;
-        if(!e) {return;}
-        const {x:ax, y:ay} = e.anchor, s = HANDLE/z;
-        for(const [k, b] of Object.entries(e.boxes ?? {}))
+        const i = this._inspect.part, pg = i!=null && this._partGeom(o, i);
+        if(pg)
         {
-            if(!b) {continue;}
-            const c = Sandbox.BOX_COLOR[k];
-            g.lineStyle(1.5/z, c, 0.9).strokeRect(ax + b.x, ay + b.y, b.w, b.h);
-            g.fillStyle(c, 1).fillRect(ax + b.x - s/2, ay + b.y - s/2, s, s).fillRect(ax + b.x + b.w - s/2, ay + b.y + b.h - s/2, s, s);
+            g.lineStyle(2/z, 0x33ccff, 1);
+            if(pg.rect) {g.strokeRectShape(pg.rect);}
+            else
+            {
+                g.strokeCircle(pg.x, pg.y, 6/z);
+                if(pg.r) {g.lineStyle(1/z, 0x33ccff, 0.6).strokeCircle(pg.x, pg.y, pg.r);}
+            }
         }
         const r = 7/z;
         g.lineStyle(2/z, 0x000000, 1).strokeCircle(ax, ay, r).lineBetween(ax-r*1.6, ay, ax+r*1.6, ay).lineBetween(ax, ay-r*1.6, ax, ay+r*1.6);
         g.lineStyle(1/z, 0xff9933, 1).strokeCircle(ax, ay, r).lineBetween(ax-r*1.6, ay, ax+r*1.6, ay).lineBetween(ax, ay-r*1.6, ax, ay+r*1.6);
     }
 
-    _editTo(d, wx, wy, snap)
+    // 拖展開的零件：png 的 holder、光源跟著動（放開等分頁寫進草稿、送回來重建）
+    _placePart(d, x, y)
     {
-        const sn = (v)=>(snap ? Math.round(v/16)*16 : Math.round(v));
-        const e = this._editLive;
-        if(d.hd.kind==='anchor') {e.anchor = {x:sn(wx), y:sn(wy)}; return;}
-        const b = e.boxes[d.hd.k], {x:ax, y:ay} = e.anchor;
-        if(d.hd.kind==='move') {b.x = sn(wx) - ax; b.y = sn(wy) - ay;}
-        else {b.w = Math.max(1, sn(wx) - ax - b.x); b.h = Math.max(1, sn(wy) - ay - b.y);}
+        d.x = x;
+        d.y = y;
+        d.moved = true;
+        const e = d.inst.go.view?._parts?.find(e=>e.p===d.p);
+        if(e?.holder) {e.holder.setPosition(x, y);}
+        if(e?.light) {e.light.x = d.inst.go.x + x; e.light.y = d.inst.go.y + y;}
     }
 
     _dropInst(k)
@@ -664,7 +675,7 @@ export class Sandbox extends GameScene
     // 記號畫不畫、點不點得到：👁 藏著＝不；工具列「光源記號／粒子記號」沒勾＝只有選中的那個
     _markOn(kind, k)
     {
-        return !this._hidden.has(k) && !this._isLocked(k) && (this._icons?.[kind] !== false || k===this._sel);
+        return !this._hidden.has(k) && (this._icons?.[kind] !== false || k===this._sel);
     }
 
     // 選中光源的半徑把手：點光源在圈的右邊、聚光燈在中線末端（畫面上的方向＝鏡像後的）
@@ -784,7 +795,7 @@ export class Sandbox extends GameScene
     // 點到的角色：身體方塊包住游標的、最上面那個；都沒有就看站在那格的
     _roleAt(wx, wy)
     {
-        const roles = this.roles.filter(p=>p.visible && !this._isLocked(p.key));
+        const roles = this.roles.filter(p=>p.visible);
         const hits = roles.filter(p=>p.getShapeRect?.().contains(wx, wy));
         if(hits.length) {return hits.reduce((a, b)=>(b.depth>a.depth ? b : a));}
         const [tx, ty] = this.map.worldToTile(wx, wy);
@@ -802,7 +813,7 @@ export class Sandbox extends GameScene
             ...this.roles.filter(p=>p.visible && p.getShapeRect?.().contains(wx, wy)).map(role=>({key:role.key, role, depth:role.depth})),
             ...Object.entries(this._props).filter(([, o])=>o.sp.visible && o.sp.getBounds().contains(wx, wy)).map(([key, prop])=>({key, prop, depth:prop.sp.depth})),
             ...Object.entries(this._insts ?? {}).filter(([, o])=>o.go.active && o.go.getShapeRect().contains(wx, wy)).map(([key, inst])=>({key, inst, depth:inst.go.depth})),
-        ].filter(x=>!this._isLocked(x.key));
+        ];
         if(hits.length) {return hits.reduce((a, b)=>(b.depth>a.depth ? b : a));}
         const role = this._roleAt(wx, wy);
         return role ? {key:role.key, role} : null;
@@ -828,7 +839,7 @@ export class Sandbox extends GameScene
                 .fillPoints([{x, y:y-s}, {x:x+s, y}, {x, y:y+s}, {x:x-s, y}], true).strokePoints([{x, y:y-s}, {x:x+s, y}, {x, y:y+s}, {x:x-s, y}], true);
         }
         this._drawZones(g, z);
-        this._drawEdit(g, z);
+        this._drawInspect(g, z);
         for(const [k, o] of Object.entries(this._lights ?? {}))
         {
             if(!this._markOn('light', k)) {continue;}
@@ -981,6 +992,7 @@ export class Sandbox extends GameScene
             case 'anchor': this._anchorOn = !!m.on; break;
             case 'icons': this._icons = {light:!!m.light, particle:!!m.particle}; break;
             case 'home': this._home(); break;
+            case 'inspect': this._inspect = m.inspect ?? null; break;
             case 'focus': {const go = this._insts?.[m.key]?.go; if(go) {this.cameras.main.pan(go.x, go.y, 250, 'Sine.easeInOut');} break;}
             case 'select': this._sel = m.key ?? null; this._size = {lock:m.lock ?? 'pct', ratio:m.ratio ?? true}; break;
             case 'arm': this._arm = m.act ?? null; this._drawSel(); this._cursor(); break;
@@ -1077,8 +1089,6 @@ export class Sandbox extends GameScene
                 return;
             }
             if(p.rightButtonDown() && this._arm) {this._arm = null; this._send({sb:'disarm'}); this._cursor(p); return;}
-            const eh = p.leftButtonDown() && this._editHandleAt(p.worldX, p.worldY);
-            if(eh) {this._editLive = structuredClone(this._scene.edit); this._drag = {edit:eh}; return;}
             const hd = p.leftButtonDown() && this._handleAt(p.worldX, p.worldY);
             if(hd) {this._startResize(hd); return;}
             const rh = p.leftButtonDown() && this._radiusAt(p.worldX, p.worldY);
@@ -1087,6 +1097,17 @@ export class Sandbox extends GameScene
             if(ah) {this._drag = {arc:ah.o, key:this._sel, arc0:ah.o.data.arc}; return;}
             const zh = p.leftButtonDown() && this._zoneHandleAt(p.worldX, p.worldY);
             if(zh) {this._startZone(zh, p); return;}
+            // 已選中的 prefab 實例：按在展開的零件上＝拖零件；其他地方＝拖實例，沒拖動就回報點到的零件
+            const ins = p.leftButtonDown() && this._inspected();
+            const pi = ins ? this._partAt(ins, p.worldX, p.worldY) : null;
+            if(ins && (pi!==null || ins.go.getShapeRect().contains(p.worldX, p.worldY)))
+            {
+                const pp = pi!==null && pi===this._inspect.part && DB.prefab(ins.data.prefab).parts[pi];
+                if(pp) {this._drag = {p:pp, part:pi, inst:ins, key:this._sel, x:pp.x ?? 0, y:pp.y ?? 0, ox:ins.go.x + (pp.x ?? 0) - p.worldX, oy:ins.go.y + (pp.y ?? 0) - p.worldY, moved:false};}
+                else {this._drag = {inst:ins, key:this._sel, dx:ins.go.x-p.worldX, dy:ins.go.y-p.worldY, moved:false, pickPart:pi};}
+                this._cursor(p);
+                return;
+            }
             const hit = this._pickAt(p.worldX, p.worldY);
             if(p.rightButtonDown())
             {
@@ -1126,10 +1147,14 @@ export class Sandbox extends GameScene
                 if(!p.leftButtonDown()) {this._endDrag(); return;}
                 this._resizeTo(this._drag, p.worldX, p.worldY, p.event.shiftKey);
             }
-            else if(this._drag?.edit)
+            else if(this._drag?.p)
             {
                 if(!p.leftButtonDown()) {this._endDrag(); return;}
-                this._editTo(this._drag, p.worldX, p.worldY, p.event.shiftKey);
+                // 零件位置相對錨點；Shift 吸 16px（世界座標）
+                const go = this._drag.inst.go;
+                let x = p.worldX + this._drag.ox, y = p.worldY + this._drag.oy;
+                [x, y] = p.event.shiftKey ? [x, y].map(v=>Math.round(v/16)*16) : [x, y].map(Math.round);
+                this._placePart(this._drag, x - go.x, y - go.y);
             }
             else if(this._drag?.radius)
             {
@@ -1187,11 +1212,9 @@ export class Sandbox extends GameScene
         else if(d || this._pan) {c = 'grabbing';}
         else
         {
-            const eh = this._editHandleAt(p.worldX, p.worldY);
-            const hd = !eh && this._handleAt(p.worldX, p.worldY), zh = !eh && !hd && this._zoneHandleAt(p.worldX, p.worldY);
-            const pk = !eh && !hd && !zh && this._pickAt(p.worldX, p.worldY);
-            c = eh ? (eh.kind==='size' ? 'nwse-resize' : 'move')
-                : hd ?(!hd.hy ? 'ew-resize' : !hd.hx ? 'ns-resize' : hd.hx*hd.hy>0 ? 'nwse-resize' : 'nesw-resize')
+            const hd = this._handleAt(p.worldX, p.worldY), zh = !hd && this._zoneHandleAt(p.worldX, p.worldY);
+            const pk = !hd && !zh && this._pickAt(p.worldX, p.worldY);
+            c = hd ?(!hd.hy ? 'ew-resize' : !hd.hx ? 'ns-resize' : hd.hx*hd.hy>0 ? 'nwse-resize' : 'nesw-resize')
                 : zh ? ZONE_CURSOR[zh.part]
                 : this._radiusAt(p.worldX, p.worldY) || this._arcAt(p.worldX, p.worldY) ? 'pointer'
                 : !pk?.emitter && !pk?.light && this._zoneBodyAt(p.worldX, p.worldY, true) ? 'move'
@@ -1206,14 +1229,9 @@ export class Sandbox extends GameScene
     {
         const d = this._drag;
         this._drag = null;
-        if(d?.edit)
+        if(d?.p)
         {
-            const live = this._editLive, e0 = this._scene?.edit;
-            if(!live || !e0) {this._editLive = null; return;}
-            // 回報後等分頁寫檔、送回新場景才清副本（不然會閃回舊位置）
-            if(d.edit.kind==='anchor') {if(live.anchor.x!==e0.anchor.x || live.anchor.y!==e0.anchor.y) {this._send({sb:'moveAnchor', x:live.anchor.x, y:live.anchor.y}); return;}}
-            else if(JSON.stringify(live.boxes[d.edit.k])!==JSON.stringify(e0.boxes[d.edit.k])) {this._send({sb:'editBox', k:d.edit.k, box:live.boxes[d.edit.k]}); return;}
-            this._editLive = null;
+            if(d.moved && (d.x!==(d.p.x ?? 0) || d.y!==(d.p.y ?? 0))) {this._send({sb:'movePart', key:d.key, i:d.part, x:d.x, y:d.y});}
             return;
         }
         if(d?.resize)
@@ -1259,6 +1277,7 @@ export class Sandbox extends GameScene
         {
             const {x, y} = d.inst.go;
             if(d.moved && (x!==d.inst.data.x || y!==d.inst.data.y)) {this._send({sb:'moveInst', key:d.key, x, y});}
+            else if(!d.moved && 'pickPart' in d) {this._send({sb:'part', key:d.key, i:d.pickPart});}
             return;
         }
         if(!d?.to || (d.to[0]===d.from[0] && d.to[1]===d.from[1])) {return;}

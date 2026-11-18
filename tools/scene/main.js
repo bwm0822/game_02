@@ -552,7 +552,22 @@ function delPart(id, i)
 function openPart(i)
 {
     S.part = i;
+    toGame(inspectMsg());
     renderRight();
+}
+
+// 選中的實例在 sandbox 畫錨點十字、有勾的占地方塊、展開的零件外框（照草稿）
+function inspectMsg()
+{
+    const o = instOf(S.pick), pf = o && pfOf(o.prefab);
+    return {sb: 'inspect', inspect: pf ? {key: o.key, boxes: Object.fromEntries(BOXES.map(([k]) => [k, pf[k] ?? null])), part: S.part} : null};
+}
+
+// 展開的零件：方向鍵移（草稿）
+function nudgePart(dx, dy)
+{
+    const o = instOf(S.pick), p = o && pfOf(o.prefab)?.parts?.[S.part];
+    if (p) return setPart(o.prefab, S.part, {x: (p.x ?? 0) + dx || undefined, y: (p.y ?? 0) + dy || undefined});
 }
 
 // 圖的原始大小（file: 圖＝原圖，不含 pct）
@@ -750,7 +765,7 @@ function partsPanel(o)
     const id = o.prefab, pf = pfOf(id) ?? {}, parts = pf.parts ?? [], look = o.look ?? pf.look;
     const btn = (t, title, fn) => h('button', {title, onclick: (e) => {e.stopPropagation(); fn();}}, t);
     return [
-        h('div', {class: 'sec'}, `零件（${parts.length}）`, h('span', {class: 'dim'}, '（位置相對錨點）')),
+        h('div', {class: 'sec'}, `零件（${parts.length}）`, h('span', {class: 'dim'}, '（位置相對錨點；畫面上再點實例＝展開點到的，展開的可以拖、方向鍵移、Del 刪，Esc 收起）')),
         ...parts.flatMap((p, i) => [
             h('div', {class: `part${i === S.part ? ' sel' : ''}${p.look && p.look !== look ? ' off' : ''}`, dataset: {part: i}, onclick: () => openPart(i === S.part ? null : i)},
                 partIcon(p), h('span', {class: 'id'}, partName(p)), p.look && h('span', {class: 'lab'}, p.look), h('span', {class: 'grow'}),
@@ -1510,6 +1525,7 @@ function pickRole(key)
     if (key !== S.pick) S.part = null;
     S.pick = key;
     toGame(selMsg());
+    toGame(inspectMsg());
     renderTree();
     renderRight();
 }
@@ -1827,6 +1843,7 @@ function syncGame()
     toGame(selMsg());
     toGame({sb: 'hide', keys: [...S.hidden]});
     toGame({sb: 'load', scene: gameScene(), prefabs: prefabsMsg()});
+    toGame(inspectMsg());
 }
 
 // ---------- sandbox ----------
@@ -1835,14 +1852,18 @@ function onKey(k)
     if (k.ctrl && k.key.toLowerCase() === 's') saveDraft();
     else if (k.ctrl && k.key.toLowerCase() === 'z' && !k.shift) undo();
     else if (k.ctrl && (k.key.toLowerCase() === 'y' || (k.key.toLowerCase() === 'z' && k.shift))) redo();
+    // 展開了零件：Del／方向鍵作用在零件（草稿）；Esc 第一次收零件、第二次取消選取
+    else if (k.key === 'Delete' && S.part !== null && instOf(S.pick)) delPart(instOf(S.pick).prefab, S.part);
     else if (k.key === 'Delete' && S.pick) deleteObj(S.pick);
     else if (k.key.startsWith('Arrow') && (propOf(S.pick) || emOf(S.pick) || lightOf(S.pick) || instOf(S.pick)))
     {
-        const d = k.shift ? 32 : 1;
-        nudge({ArrowLeft: -d, ArrowRight: d}[k.key] ?? 0, {ArrowUp: -d, ArrowDown: d}[k.key] ?? 0);
+        const d = k.shift ? 32 : 1, dx = {ArrowLeft: -d, ArrowRight: d}[k.key] ?? 0, dy = {ArrowUp: -d, ArrowDown: d}[k.key] ?? 0;
+        if (S.part !== null && instOf(S.pick)) nudgePart(dx, dy); else nudge(dx, dy);
     }
     else if (k.key === ' ') toGame({sb: 'replay'});
     else if (k.key === 'Escape' && S.arm) arm(false);
+    else if (k.key === 'Escape' && S.part !== null) openPart(null);
+    else if (k.key === 'Escape' && S.pick) pickRole(null);
     else return false;
     return true;
 }
@@ -1864,6 +1885,8 @@ addEventListener('message', (e) => {
         setProp(m.key, {x, y, ...('pct' in m.patch ? {pct: pct === 100 ? undefined : pct} : {sx: one(sx), sy: one(sy)})}).then(syncGame);
     }
     else if (m.sb === 'moveEmitter') setEmitter(m.key, {x: m.x, y: m.y}).then(syncGame);
+    else if (m.sb === 'part' && m.key === S.pick) openPart(m.i);
+    else if (m.sb === 'movePart' && instOf(m.key)) setPart(instOf(m.key).prefab, m.i, {x: m.x || undefined, y: m.y || undefined});
     else if (m.sb === 'moveInst')
     {
         // 畫面位置扣掉草稿的錨點位移＝存檔位置

@@ -252,6 +252,28 @@ run('prefab-tool', async t => {
         const fp = (await pfDisk()).fire_pit;
         out.anchorSave = [fp.parts.map(p => [p.x ?? 0, p.y ?? 0]), fp.grid.x, (await cDisk()).prefabs[0].x, fp.thumb.x - thumb0.x, sc.S.draft,
             await until(() => sb()._insts.f1?.go?.x === 230)];
+
+        // ---------- 畫面互動：選中實例畫記號、點零件展開、拖零件、鍵盤 ----------
+        sc.pickRole('f1');
+        const ins = () => sb()._inspected?.();
+        await until(() => ins());
+        const go = ins().go;
+        out.partAt = [sb()._partAt(ins(), go.x - 10, go.y - 5), sb()._partAt(ins(), go.x - 10, go.y - 30), sb()._partAt(ins(), go.x + 500, go.y)];
+        sb()._send({sb: 'part', key: 'f1', i: 0});
+        out.inspect = await until(() => sb()._inspect?.part === 0) && [sc.S.part, sb()._inspect.boxes.grid, !!sb()._partGeom(ins(), 0).rect];
+        sb()._send({sb: 'movePart', key: 'f1', i: 0, x: -6, y: 2});
+        await until(() => sc.S.draft?.pf.parts[0].x === -6);
+        const key = (k) => {doc.body.dispatchEvent(new win.KeyboardEvent('keydown', {key: k, bubbles: true})); return sc.flush();};
+        await key('ArrowRight');
+        out.dragPart = [sc.S.draft.pf.parts[0], (await pfDisk()).fire_pit.parts[0]];
+        await key('Escape');
+        out.esc1 = [sc.S.part, sc.S.pick];
+        sc.openPart(0);
+        await key('Delete');
+        out.delKey = [sc.S.draft.pf.parts.length, sc.S.part, sc.S.pick];
+        key('Escape');
+        await answer('drop');
+        out.esc2 = [sc.S.pick, sc.S.draft, (await pfDisk()).fire_pit.parts.length, await until(() => !sb()._inspected())];
         return out;
     });
 
@@ -330,4 +352,12 @@ run('prefab-tool', async t => {
     t.eq('草稿 undo：位移跟零件一起退', JSON.stringify(r.anchorUndo), JSON.stringify([0, -16]));
     t.eq('儲存：prefab.json 換新原點、實例補償位移（畫面不動）、縮圖外框跟著挪', JSON.stringify(r.anchorSave),
          JSON.stringify([[[-10, 0], [-10, -30]], -26, 230, -10, null, true]));
+
+    // 畫面互動
+    t.eq('點選中實例：png 照外框、粒子照點、外面＝沒有', JSON.stringify(r.partAt), JSON.stringify([0, 1, null]));
+    t.eq('sandbox 回報點到零件：右欄展開、sandbox 畫外框＋占地方塊', JSON.stringify(r.inspect), JSON.stringify([0, {x: -26, y: -16, w: 32, h: 16}, true]));
+    t.eq('拖展開的零件＋方向鍵：寫草稿（相對錨點）、prefab.json 不動', JSON.stringify(r.dragPart), JSON.stringify([{img: 'Barrel', x: -5, y: 2}, {img: 'Barrel', x: -10}]));
+    t.eq('Esc 第一次：收起零件、實例還選著', JSON.stringify(r.esc1), JSON.stringify([null, 'f1']));
+    t.eq('展開零件時 Del：刪零件（草稿）、實例還在', JSON.stringify(r.delKey), JSON.stringify([1, null, 'f1']));
+    t.eq('Esc 第二次：取消選取（有草稿先問，放棄）、sandbox 不畫記號', JSON.stringify(r.esc2), JSON.stringify([null, null, 2, true]));
 });
