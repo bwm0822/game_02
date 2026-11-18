@@ -37,6 +37,14 @@
     #right .pform select { max-width: 100%; }    .warn { color: #f88; }
     #tree .swatch { flex: none; width: 12px; height: 12px; border-radius: 50%; border: 1px solid #000; }
     .treebox { width: 420px; height: 280px; overflow: auto; border: 1px solid #444; margin: 6px 0; }
+    /* 詢問框外框不捲：高度不夠時只縮 .treebox（自己捲），沒有 treebox 才讓 body 捲、按鈕照樣看得到 */
+    #dlgAsk[open] { display: flex; flex-direction: column; max-height: calc(100vh - 40px); box-sizing: border-box; overflow: hidden; }
+    #dlgAsk form { display: flex; flex-direction: column; flex: 0 1 auto; min-height: 0; }
+    #dlgAsk form > * { flex: none; }
+    #dlgAsk .body { flex: 0 1 auto; min-height: 0; max-height: none; display: flex; flex-direction: column; align-items: flex-start; }
+    #dlgAsk .body:has(> .treebox) { overflow: hidden; }
+    #dlgAsk .body > * { flex: none; }
+    #dlgAsk .body > .treebox { flex: 0 1 auto; min-height: 80px; }
     .folders .fold { cursor: pointer; white-space: nowrap; padding: 1px 4px; }
     .folders .fold:hover { background: #333; }
     .folders .fold.sel { background: #2f6db5; color: #fff; }

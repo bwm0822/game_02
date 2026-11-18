@@ -1833,6 +1833,6 @@ frame.src = '/?sandbox=1';
 refresh();
 
 // 給無頭測試用
-window.__sc = {S, setProject, addScene, dupScene, renameScene, deleteScene, select, undo, redo, addRole, setRole, setEquip, deleteRole, pickRole, toggleHide, arm, toGame, addProp, setProp, deleteObj, nudge, bakeProp, folderTree, srcSize, addLight, setLight, addEmitter, setEmitter, setField, setPlaying,
+window.__sc = {S, setProject, addScene, dupScene, renameScene, deleteScene, select, undo, redo, addRole, setRole, setEquip, deleteRole, pickRole, toggleHide, arm, toGame, addProp, setProp, deleteObj, nudge, bakeProp, folderTree, exportProp: (key) => exportProp(propOf(key)), srcSize, addLight, setLight, addEmitter, setEmitter, setField, setPlaying,
                addInst, setInst, newPrefab, deletePrefab, toggleFold, enterEdit, exitEdit, setPf, composePrefab, renamePrefab, dupPrefab, moveAnchor,
                flush: () => S.q};

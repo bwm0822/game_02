@@ -296,6 +296,19 @@ run('scene-tool', async t => {
         frow.click();
         out.treePick = [picks.at(-1), frow.classList.contains('dim'), frow.classList.contains('sel')];
         ft.el.remove();
+        // 存檔框：iframe 很矮時外框不捲、按鈕看得到、只有樹縮
+        const ifr = T.S.frames.scene, oldH = ifr.style.height;
+        ifr.style.height = '360px';
+        await until(() => win.innerHeight <= 360);
+        sc.exportProp('p2');
+        const dlg = doc.getElementById('dlgAsk');
+        await until(() => dlg.open && dlg.querySelector('.treebox .fold'));
+        const tb = dlg.querySelector('.treebox'), btn = dlg.querySelector('.buttons button').getBoundingClientRect();
+        const noScroll = (e) => e.scrollHeight <= e.clientHeight + 1;
+        out.dlgFit = [noScroll(dlg), noScroll(dlg.querySelector('.body')), btn.bottom <= win.innerHeight, tb.clientHeight < 280, tb.clientHeight >= 80];
+        dlg.close('cancel');
+        ifr.style.height = oldH;
+        await until(() => win.innerHeight > 360);
 
         // 畫面上拉大小：8 個把手、對邊固定；鎖 % 改 sx/sy（等比照勾選）、鎖 scale 改 pct；Shift 吸 16px；有角度不出把手
         win.localStorage.removeItem('tools.scene.sizeLock');
@@ -718,6 +731,7 @@ run('scene-tool', async t => {
     t.check('存檔：擺設正在用的原圖不能蓋', r.bakeOwn.includes('原圖'), r.bakeOwn);
     t.eq('存檔框的樹：子資料夾在前、只列 .png', JSON.stringify(r.ftree), JSON.stringify(['📁 images', '📁 scene', '📁 zz', '🖼 baked.png']));
     t.eq('存檔框的樹：點檔案＝所在資料夾＋檔名、原圖標灰、選起來', JSON.stringify(r.treePick), JSON.stringify([['images/scene', 'baked'], true, true]));
+    t.eq('存檔框：視窗矮時外框／body 不捲、按鈕在畫面內、只有樹縮（≥80）', JSON.stringify(r.dlgFit), JSON.stringify([true, true, true, true, true]));
     t.eq('畫面把手：選中的擺設 8 個', r.handles, 8);
     t.check('拉右邊（鎖 %＋等比）：sx/sy 一起變、左邊固定、底部（錨點）不動', r.dragR && r.dragR[0] === 2 && r.dragR[1] === 2 && r.dragR[2] === r.dragR[4] && r.dragR[3] === 200, JSON.stringify(r.dragR));
     t.check('拉下邊＋Shift（不等比）：只改 sy、邊吸到 16px', r.dragB && r.dragB[0] === 2 && r.dragB[1] === r.dragB[2], JSON.stringify(r.dragB));
