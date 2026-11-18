@@ -116,6 +116,7 @@ export class Sandbox extends GameScene
         if(force || t!==this._sceneTime) {this._sceneTime = t; this._setTime(t);}
         else {this._ambient();}
         await this._applyProps(scene.props ?? []);
+        await this._loadPartFiles(scene.prefabs ?? []);
         if(this._scene!==scene) {return;}   // 載外部圖的期間又來了新的場景
         this._applyInsts(scene.prefabs ?? [], force);
         // 粒子、光源可以跟著擺設：擺設建好（sprite 換新）才套
@@ -158,16 +159,39 @@ export class Sandbox extends GameScene
             const [key, frame] = img.split(':');
             return this.textures.exists(key) ? [key, frame] : null;
         }
-        if(!this.textures.exists(img))
+        return await this._loadFile(img, img) ? [img] : null;
+    }
+
+    // file:<路徑> 載成 texture key（載過就跳過）
+    async _loadFile(img, key)
+    {
+        if(!this.textures.exists(key))
         {
             await new Promise((res)=>{
                 // vite：public/ 底下的檔在網址根目錄，其他照專案路徑；要完整網址，不然 loader 會接在 setPath('assets') 後面
-                this.load.image(img, `${location.origin}/${img.slice(5).replace(/^public\//, '').split('/').map(encodeURIComponent).join('/')}`);
+                this.load.image(key, `${location.origin}/${img.slice(5).replace(/^public\//, '').split('/').map(encodeURIComponent).join('/')}`);
                 this.load.once('complete', res);
                 this.load.start();
             });
         }
-        return this.textures.exists(img) ? [img] : null;
+        return this.textures.exists(key);
+    }
+
+    // 場景分頁的 prefab 草稿可能有還沒烤的 file: 零件：ItemView 用 : 切 frame，key 換成 file|<路徑>，pct 乘進 sx/sy
+    static _pfFiles(pfs)
+    {
+        const conv = (p)=>{
+            if(!p.img?.startsWith('file:')) {return p;}
+            const {pct, ...q} = p, k = (pct ?? 100)/100;
+            return {...q, img:`file|${p.img.slice(5)}`, sx:(p.sx ?? 1)*k, sy:(p.sy ?? 1)*k};
+        };
+        return Object.fromEntries(Object.entries(pfs).map(([id, pf])=>[id, pf.parts?.some(p=>p.img?.startsWith('file:')) ? {...pf, parts:pf.parts.map(conv)} : pf]));
+    }
+
+    async _loadPartFiles(insts)
+    {
+        const keys = new Set(insts.flatMap(i=>(DB.prefab(i.prefab)?.parts ?? []).map(p=>p.img).filter(k=>k?.startsWith('file|'))));
+        for(const k of keys) {await this._loadFile(`file:${k.slice(5)}`, k);}
     }
 
     _makeProp(p, [key, frame])
@@ -949,7 +973,7 @@ export class Sandbox extends GameScene
         switch(m.sb)
         {
             case 'load':
-                if(m.prefabs) {DB._prefabDB = m.prefabs;}
+                if(m.prefabs) {DB._prefabDB = Sandbox._pfFiles(m.prefabs);}
                 if((m.scene.map ?? 'sandbox') !== this.mapName) {this._saveCam(); this.scene.restart({map:m.scene.map, scene:m.scene, grid:this._gridOn, sel:this._sel, hidden:[...this._hidden]});}
                 else {this._apply(m.scene);}
                 break;

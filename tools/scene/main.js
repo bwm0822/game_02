@@ -61,8 +61,10 @@ const queue = (fn) => (S.q = S.q.then(fn).catch(e => status(e.message)));
 
 // ---------- 編輯（立刻寫檔＋undo） ----------
 // files：要一起改的檔（預設只有 scenes.json；有 prefab.json 時 fn(scenes, prefabs)），多檔一筆 undo
-function commit(fn, sel, pick, files)
+// 會換場景／選別的東西的編輯：有 prefab 草稿先問 儲存／放棄／取消
+async function commit(fn, sel, pick, files)
 {
+    if (S.draft && ((pick !== undefined && pick !== S.draft.key) || (sel !== undefined && sel !== S.sel)) && !await leaveDraft()) return;
     return queue(async () => {
         const r = await ST.edit(fn, files);
         if (!r) return;
@@ -107,8 +109,9 @@ const step = (from, to, i) => queue(async () => {
     S.pick = u.pick[i];
     refresh();
 });
-const undo = () => step(S.undo, S.redo, 0);
-const redo = () => step(S.redo, S.undo, 1);
+// 有 prefab 草稿時退／重做的是草稿裡的步驟
+const undo = () => (S.draft ? draftStep('undo', 'redo') : step(S.undo, S.redo, 0));
+const redo = () => (S.draft ? draftStep('redo', 'undo') : step(S.redo, S.undo, 1));
 
 // ---------- 場景清單 ----------
 const uniq = (base) => {let n = base; for (let i = 2; n in S.data; i++) n = `${base}${i}`; return n;};
@@ -261,8 +264,9 @@ function addInst(prefab, x, y)
     return editScene(sc => {(sc.prefabs ??= []).push({key, prefab, x, y});}, key);
 }
 
-function setInst(key, patch)
+async function setInst(key, patch)
 {
+    if ('prefab' in patch && S.draft?.key === key && !await leaveDraft()) return renderRight();
     return editScene(sc => {
         const o = sc.prefabs?.find(x => x.key === key);
         if (!o) throw new Error(`場景裡沒有 ${key}`);
@@ -325,6 +329,7 @@ const prefabUses = (id) => Object.entries(S.data).map(([n, sc]) => [n, (sc.prefa
 
 async function deletePrefab(id, sure)
 {
+    if (S.draft?.id === id && !await leaveDraft()) return;
     const used = TL.usedBy(await TL.prefabRefs(S.root, id), id);
     if (used.length) return status(`prefab ${id} 還有地圖在用，不能刪：${used.join('；')}`);
     const uses = prefabUses(id);
@@ -364,21 +369,105 @@ function fromSyn(syn, ax, ay)
     return out;
 }
 
-const pfOf = (id) => S.prefabs[id];
+// ---------- 草稿：改 prefab 內容只動記憶體（sandbox 照草稿畫），按儲存才寫 prefab.json ----------
+// S.draft＝{id, key（選中的實例）, base（開始時 prefab.json 那筆的 JSON，偵測別處改過）, pf, thumb（即時算的縮圖外框）, undo, redo（{pf, part}）}
+const pfOf = (id) => (S.draft?.id === id ? S.draft.pf : S.prefabs[id]);
+const draftOf = (id) => (S.draft?.id === id ? S.draft : null);
 
-// 改 prefab 內容：fn(那筆 prefab)，回傳 false＝沒改；寫完收尾（縮圖外框、Tiled、file: 圖烤進 textures），併成同一筆 undo
-async function editPf(id, fn)
+// 送給 sandbox 的 prefab.json：草稿那筆換成草稿（點選範圍用即時算的縮圖外框）
+function prefabsMsg()
 {
-    const before = str(S.prefabs[id]);
+    const d = S.draft;
+    if (!d) return S.prefabs;
+    const pf = {...d.pf};
+    if (d.thumb) pf.thumb = d.thumb; else delete pf.thumb;
+    return {...S.prefabs, [d.id]: pf};
+}
+
+// 改 prefab 內容：fn(那筆 prefab 的副本)，回傳 false＝沒改；第一次改才開始草稿
+function editPf(id, fn)
+{
+    const src = pfOf(id);
+    if (!src) {status(`prefab.json 沒有 ${id}`); return Promise.resolve();}
+    const next = structuredClone(src);
+    if (fn(next) === false || str(next) === str(src)) {renderRight(); return Promise.resolve();}
+    S.draft ??= {id, key: S.pick, base: str(S.prefabs[id]), pf: null, thumb: src.thumb ?? null, undo: [], redo: []};
+    const d = S.draft;
+    if (!(H.take() && d.undo.length)) d.undo.push({pf: d.pf ?? structuredClone(src), part: S.part});
+    d.redo = [];
+    d.pf = next;
+    liveThumb();
+    refresh();
+    return Promise.resolve();
+}
+
+// 草稿的縮圖外框（算圖大小要等）：算完還是同一份草稿才套
+async function liveThumb()
+{
+    const d = S.draft, pf = d?.pf;
+    if (!d) return;
+    const t = await thumbFor(pf);
+    if (S.draft !== d || d.pf !== pf || str(t) === str(d.thumb)) return;
+    d.thumb = t;
+    syncGame();
+}
+
+function draftStep(from, to)
+{
+    const d = S.draft, u = d[from].pop();
+    if (!u) return status('草稿最早的一步了（再往前要先儲存或放棄）');
+    d[to].push({pf: d.pf, part: S.part});
+    d.pf = u.pf;
+    S.part = u.part;
+    liveThumb();
+    refresh();
+}
+
+// 儲存：prefab.json 寫草稿，收尾（縮圖外框、Tiled、file: 圖烤進 textures）併成同一筆 undo；失敗留著草稿、回傳 false
+async function saveDraft()
+{
+    const d = S.draft;
+    if (!d) return true;
     await commit((s, pfs) => {
-        if (!pfs[id]) throw new Error(`prefab.json 沒有 ${id}`);
-        return fn(pfs[id]);
+        if (!(d.id in pfs)) throw new Error(`prefab.json 沒有 ${d.id}`);
+        pfs[d.id] = structuredClone(d.pf);
     }, undefined, undefined, PREFAB_FILES);
-    if (str(S.prefabs[id]) === before) return;
+    if (str(S.prefabs[d.id]) !== str(d.pf)) return false;
+    S.draft = null;
     const n0 = S.undo.length;
-    try {await finishEdit(id);}
+    try {await finishEdit(d.id);}
     catch (e) {status(`prefab 收尾失敗：${e.message}`);}
     mergeUndo(n0);
+    refresh();
+    return true;
+}
+
+function dropDraft()
+{
+    S.draft = null;
+    refresh();
+}
+
+// 要離開草稿（取消選取、換場景、換 prefab、刪掉…）：問 儲存／放棄／取消，回傳 true＝可以繼續
+async function leaveDraft()
+{
+    if (!S.draft) return true;
+    const v = await ask('prefab 還沒存', `prefab ${S.draft.id} 改了還沒存`, [['save', '儲存'], ['drop', '放棄'], ['cancel', '取消']]);
+    if (v === 'save') return saveDraft();
+    if (v === 'drop') {dropDraft(); return true;}
+    return false;
+}
+
+// 別處改了草稿那筆（prefab.json 廣播）：問 保留草稿／用新的
+async function draftConflict()
+{
+    const d = S.draft;
+    if (!d || str(S.prefabs[d.id]) === d.base) return;
+    if (!S.prefabs[d.id]) {status(`prefab ${d.id} 在別處被刪了，草稿丟掉`); return dropDraft();}
+    const v = await ask('prefab 在別處改了', `prefab ${d.id} 在別處改過了（你還有沒存的草稿）`, [['keep', '保留我的草稿'], ['theirs', '放棄草稿用新的']]);
+    if (S.draft !== d) return;
+    if (v === 'theirs') return dropDraft();
+    d.base = str(S.prefabs[d.id]);
 }
 
 // 零件欄位：patch 值 undefined＝拿掉；光源的 r/color/… 寫進 light
@@ -581,9 +670,14 @@ function prefabPanel(id)
         return row(name, h('input', {type: 'checkbox', checked: !!b, dataset: {k: `${k}.on`}, title: '沒勾＝照 ItemView 預設（整個縮圖框）',
             onchange: (e) => setPf1({[k]: e.target.checked ? {x: -16, y: -32, w: 32, h: 32} : undefined})}), ' ', n('x'), n('y'), ' ', n('w'), '×', n('h'));
     };
-    const t = pf.thumb;
+    const d = draftOf(id), t = d ? d.thumb : pf.thumb;
     return [
         h('div', {class: 'sec'}, `prefab 內容 ${id}`, h('span', {class: 'dim'}, '（prefab.json，用到它的地方一起變）')),
+        d ? h('div', {class: 'row2 draft', dataset: {k: 'draft'}}, h('span', {class: 'warn'}, '● 未存'),
+            h('button', {dataset: {k: 'saveDraft'}, title: '寫進 prefab.json（Ctrl+S）', onclick: () => saveDraft()}, '儲存'),
+            h('button', {dataset: {k: 'dropDraft'}, title: '丟掉沒存的改動', onclick: () => dropDraft()}, '放棄'),
+            h('span', {class: 'dim'}, 'Ctrl+Z 退草稿裡的步驟'))
+          : h('div', {class: 'hint dim'}, '改了先存在草稿（畫面照草稿），按儲存／Ctrl+S 才寫 prefab.json'),
         h('table', {class: 'props'},
             row('預設狀態', lookSelect(id, pf.look, (v) => setPf1({look: v}), '（沒有）')),
             row('左鍵動作', defSel)),
@@ -642,7 +736,7 @@ function partRows(id, i, p)
             row('深度', n('depth', 1, '0'), h('span', {class: 'dim'}, ' prefab 裡的前後（大的在前）')),
             look,
             row('特效', fxSelect(p.fx, (v) => set({fx: v})))),
-        isFile(p.img) && h('div', {class: 'hint dim'}, '外部 png：存檔時照 % 烤進 textures/prefabs/'),
+        isFile(p.img) && h('div', {class: 'hint dim'}, '外部 png：儲存時照 % 烤進 textures/prefabs/'),
     ];
     if (p.particle)
     {
@@ -671,6 +765,7 @@ function partRows(id, i, p)
 // 改名連帶改所有場景的實例（地圖／template／道具的引用在之後的步驟補）
 async function renamePrefab(from, to)
 {
+    if (S.draft?.id === from && !await leaveDraft()) return;
     to ??= await askName(`改名 prefab ${from}`, from);
     if (to === null || to === from) return;
     const err = prefabIdError(to);
@@ -1362,6 +1457,7 @@ function selMsg()
 
 function pickRole(key)
 {
+    if (S.draft && key !== S.draft.key) {leaveDraft().then(ok => (ok ? pickRole(key) : toGame(selMsg()))); return;}
     if (S.arm && S.arm.key !== key) {S.arm = null; toGame({sb: 'arm', act: null});}
     if (key !== S.pick) S.part = null;
     S.pick = key;
@@ -1460,7 +1556,8 @@ function renderLib()
             onclick: () => pickPrefab(id),
             ondragstart: (e) => {e.dataTransfer.setData('application/x-prefab', id); e.dataTransfer.effectAllowed = 'copy';},
             oncontextmenu: (e) => menu(e, [['改名…', () => renamePrefab(id)], ['複製…', () => dupPrefab(id)], ['刪除', () => deletePrefab(id)]]),
-        }, pfIcon(id, 20), h('span', {class: 'id'}, id), h('span', {class: 'lab dim'}, `${prefabUses(id).reduce((n, [, c]) => n + c, 0) || ''}`)))),
+        }, pfIcon(id, 20), h('span', {class: 'id'}, id), S.draft?.id === id && h('span', {class: 'warn', title: '有沒存的草稿'}, '●'),
+           h('span', {class: 'lab dim'}, `${prefabUses(id).reduce((n, [, c]) => n + c, 0) || ''}`)))),
         ...(!isFolded('lib') && !ids.length ? [h('div', {class: 'dim'}, S.root ? '還沒有 prefab，按 ＋ 新增' : '')] : []));
 }
 
@@ -1470,7 +1567,7 @@ function renderList()
     if (isFolded('scenes')) return $('list').replaceChildren();
     $('list').replaceChildren(...Object.keys(S.data).map(name => h('div', {
         class: `item${name === S.sel ? ' sel' : ''}`, dataset: {name},
-        onclick: () => select(name === S.sel ? null : name),
+        onclick: async () => {if (await leaveDraft()) select(name === S.sel ? null : name);},
         ondblclick: () => renameScene(name),
         oncontextmenu: (e) => menu(e, [['改名…', () => renameScene(name)], ['複製…', () => dupScene(name)], ['刪除', () => deleteScene(name)]]),
     }, h('span', {class: 'id'}, name), h('span', {class: 'lab'}, S.data[name].map ?? ''))));
@@ -1605,14 +1702,15 @@ function refresh()
 {
     if (S.sel !== null && !(S.sel in S.data)) select(null, false);
     if (S.pick &&!roleOf(S.pick) && !propOf(S.pick) && !emOf(S.pick) && !lightOf(S.pick) && !instOf(S.pick)) S.pick = null;
+    if (S.draft && (S.pick !== S.draft.key || instOf(S.pick)?.prefab !== S.draft.id)) {status(`prefab ${S.draft.id} 的實例不見了，草稿丟掉`); S.draft = null;}
     if (S.part !== null && !(S.part < (pfOf(instOf(S.pick)?.prefab)?.parts?.length ?? 0))) S.part = null;
     renderLib();
     renderList();
     renderTree();
     renderRight();
     $('sceneName').textContent = S.sel ?? '（沒選場景：空白 sandbox）';
-    $('btnUndo').disabled = !S.undo.length;
-    $('btnRedo').disabled = !S.redo.length;
+    $('btnUndo').disabled = !(S.draft ?? S).undo.length;
+    $('btnRedo').disabled = !(S.draft ?? S).redo.length;
     renderBar();
     syncGame();
 }
@@ -1680,13 +1778,14 @@ function syncGame()
     toGame(playMsg());
     toGame(selMsg());
     toGame({sb: 'hide', keys: [...S.hidden]});
-    toGame({sb: 'load', scene: cur(), prefabs: S.prefabs});
+    toGame({sb: 'load', scene: cur(), prefabs: prefabsMsg()});
 }
 
 // ---------- sandbox ----------
 function onKey(k)
 {
-    if (k.ctrl && k.key.toLowerCase() === 'z' && !k.shift) undo();
+    if (k.ctrl && k.key.toLowerCase() === 's') saveDraft();
+    else if (k.ctrl && k.key.toLowerCase() === 'z' && !k.shift) undo();
     else if (k.ctrl && (k.key.toLowerCase() === 'y' || (k.key.toLowerCase() === 'z' && k.shift))) redo();
     else if (k.key === 'Delete' && S.pick) deleteObj(S.pick);
     else if (k.key.startsWith('Arrow') && (propOf(S.pick) || emOf(S.pick) || lightOf(S.pick) || instOf(S.pick)))
@@ -1785,6 +1884,13 @@ $('chkAmb').onchange = () => setField('ambient', $('chkAmb').checked ? $('clrAmb
 $('clrAmb').oninput = () => $('chkAmb').checked && toGame({sb: 'ambient', color: $('clrAmb').value});
 $('clrAmb').onchange = () => $('chkAmb').checked && setField('ambient', $('clrAmb').value);
 addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's' && !e.target.closest('dialog'))
+    {
+        e.preventDefault();
+        document.activeElement?.blur();
+        saveDraft();
+        return;
+    }
     if (e.target.closest('input, textarea, select, dialog')) return;
     if (onKey({key: e.key, ctrl: e.ctrlKey || e.metaKey, shift: e.shiftKey, alt: e.altKey})) e.preventDefault();
 });
@@ -1802,6 +1908,7 @@ async function loadRefs()
 function setProject(root)
 {
     S.root = root;
+    S.draft = null;
     return queue(async () => {
         S.undo = [];
         S.redo = [];
@@ -1816,8 +1923,8 @@ function setProject(root)
 }
 SH.onProject(setProject);
 // 別的分頁 ↗ 跳過來（粒子／特效／圖片分頁的 prefab 引用）：選第一個放了這個 prefab 的場景、選起那個實例
-SH.onGoto(([id] = []) => {
-    if (!id) return;
+SH.onGoto(async ([id] = []) => {
+    if (!id || !await leaveDraft()) return;
     const name = Object.keys(S.data).find(n => S.data[n].prefabs?.some(o => o.prefab === id));
     if (name === undefined) return status(`prefab ${id} 還沒放在任何場景（從左上 prefab 庫拖進畫面）`);
     select(name, false);
@@ -1827,7 +1934,7 @@ SH.onGoto(([id] = []) => {
 SH.onSaved((file) => {
     if (!S.root) return;
     if (file === ST.FILE) queue(async () => {S.data = await ST.read(); refresh();});
-    else if (file === ST.PREFAB) queue(async () => {S.prefabs = await ST.read(ST.PREFAB); refresh();});
+    else if (file === ST.PREFAB) queue(async () => {S.prefabs = await ST.read(ST.PREFAB); refresh();}).then(draftConflict);
     else if (GAME_FILES.includes(file))
     {
         if (['role.json', 'item.json', 'ability.json', 'fx.json', 'particle.json', 'local.json'].includes(file)) queue(async () => {await loadRefs(); refresh();});
@@ -1843,5 +1950,5 @@ refresh();
 
 // 給無頭測試用
 window.__sc = {S, setProject, addScene, dupScene, renameScene, deleteScene, select, undo, redo, addRole, setRole, setEquip, deleteRole, pickRole, toggleHide, arm, toGame, addProp, setProp, deleteObj, nudge, bakeProp, folderTree, exportProp: (key) => exportProp(propOf(key)), srcSize, addLight, setLight, addEmitter, setEmitter, setField, setPlaying,
-               addInst, setInst, newPrefab, deletePrefab, toggleFold, setPf, setPart, addPart, movePart, delPart, openPart, pickPrefab, composePrefab, renamePrefab, dupPrefab,
+               addInst, setInst, newPrefab, deletePrefab, toggleFold, setPf, setPart, addPart, movePart, delPart, openPart, pickPrefab, saveDraft, dropDraft, composePrefab, renamePrefab, dupPrefab,
                flush: () => S.q};
