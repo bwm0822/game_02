@@ -1404,6 +1404,7 @@ function menu(e, items)
     m.style.top = `${Math.min(e.clientY, innerHeight - r.height - 4)}px`;
 }
 addEventListener('pointerdown', (e) => {if (!e.target.closest('.ctxmenu')) document.querySelector('.ctxmenu')?.remove();});
+addEventListener('contextmenu', (e) => {if (!e.target.closest('input, textarea, select')) e.preventDefault();});
 
 // ---------- 左欄每段都能摺疊（點標題；摺起來的段名記 localStorage） ----------
 const foldSet = () => {try {return new Set(JSON.parse(ls.get(LS.fold) ?? '[]'));} catch {return new Set();}};
@@ -1437,7 +1438,7 @@ function renderLib()
             ondragstart: (e) => {e.dataTransfer.setData('application/x-prefab', id); e.dataTransfer.effectAllowed = 'copy';},
             oncontextmenu: (e) => menu(e, [['改名…', () => renamePrefab(id)], ['複製…', () => dupPrefab(id)], ['刪除', () => deletePrefab(id)]]),
         }, pfIcon(id, 20), h('span', {class: 'id'}, id), h('span', {class: 'lab dim'}, `${prefabUses(id).reduce((n, [, c]) => n + c, 0) || ''}`)))),
-        !isFolded('lib') && !ids.length && h('div', {class: 'dim'}, S.root ? '還沒有 prefab，按 ＋ 新增' : ''));
+        ...(!isFolded('lib') && !ids.length ? [h('div', {class: 'dim'}, S.root ? '還沒有 prefab，按 ＋ 新增' : '')] : []));
 }
 
 function renderList()
@@ -1465,7 +1466,7 @@ function renderTree()
     const vis = (list) => list.filter(o => !o._off);
     const ed = !!S.edit;
     box.replaceChildren(
-        ed && h('div', {class: 'dim'}, `prefab ${S.edit.id} 的零件`),
+        ...(ed ? [h('div', {class: 'dim'}, `prefab ${S.edit.id} 的零件`)] : []),
         ...(ed ? [] : sec('roles', `角色（${roles().length}）`, plus('放角色', () => placeAt(...S.center)), () => roles().map(r => h('div', {
             class: `item${r.key === S.pick ? ' sel' : ''}${S.hidden.has(r.key) ? ' hid' : ''}`, dataset: {key: r.key},
             onclick: () => pickRole(r.key === S.pick ? null : r.key),
@@ -1830,7 +1831,9 @@ SH.onSaved((file) => {
     else if (GAME_FILES.includes(file))
     {
         if (['role.json', 'item.json', 'ability.json', 'fx.json', 'particle.json', 'local.json'].includes(file)) queue(async () => {await loadRefs(); refresh();});
-        reloadGame();
+        // 加了圖（包括「存檔…」存進 textures/）：sandbox 自己補載新 key，不重開；同 key 換內容要按重開
+        if (file === 'textures.json') toGame({sb: 'textures'});
+        else reloadGame();
     }
 });
 S.center = [12, 8];

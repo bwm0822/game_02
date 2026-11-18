@@ -283,6 +283,20 @@ run('scene-tool', async t => {
         out.bakeOverKey = await sc.bakeProp('p2', 'public/assets/textures/sub', 'Baked2', true).then(r => r.path, e => e.message);
         const own = `public/assets/${turl}`, ownDir = own.split('/').slice(0, -1).join('/'), ownName = own.split('/').pop().slice(0, -4);
         out.bakeOwn = await sc.bakeProp('p2', ownDir, ownName, true).then(() => '', e => e.message);
+        // textures.json 更新（存檔進 textures/ 後 vite watcher→殼廣播）：sandbox 不重開，只補載缺的 key；缺圖的木偶重建、其他不動
+        const gw = game();
+        gw.__keep = 1;
+        const missTex = (o) => o.texture?.key === '__MISSING' || (o.list ?? []).some(missTex);
+        const texOf = (k) => {const ks = new Set(); const walk = (o) => {if (o.texture) ks.add(o.texture.key); (o.list ?? []).forEach(walk);}; walk(pup(k)); return ks;};
+        const r2Tex = texOf('r2'), r1Tex = [...texOf('r1')].find(k => tex.image[k] && !r2Tex.has(k));
+        // 同一個 task 裡拿掉圖＋重建，中間不會畫到被拿掉的圖
+        sb().textures.remove(r1Tex);
+        sb()._apply(sb()._scene, {force: true});
+        const missing = await until(() => pup('r1') && missTex(pup('r1')));
+        const r2obj = pup('r2');
+        new BroadcastChannel('tools').postMessage({type: 'saved', file: 'textures.json'});
+        const healed = await until(() => sb().textures.exists(r1Tex) && pup('r1') && !missTex(pup('r1')));
+        out.texReload = [missing, healed, game() === gw && gw.__keep === 1, pup('r2') === r2obj];
         // 存檔框的樹：資料夾後面列 .png、點檔案回傳所在資料夾＋檔名、原圖標灰
         await write(await dir(proj, 'images', 'scene'), 'note.txt', 'x');
         await write(await dir(proj, 'images', 'scene', 'zz'), 'a.png', 'x');
@@ -739,6 +753,7 @@ run('scene-tool', async t => {
     t.check('存檔：texture key 撞名擋（大小寫不分）', r.bakeKey.includes('texture key') && r.bakeKey.includes('sub/Baked2'), r.bakeKey);
     t.eq('存檔：確認過可以覆蓋同名檔', r.bakeOver, 'images/scene/baked.png');
     t.eq('存檔：覆蓋 textures 裡自己那張不算撞 key', r.bakeOverKey, 'public/assets/textures/sub/Baked2.png');
+    t.eq('圖片清單更新：sandbox 不重開、補載缺的 key、缺圖的木偶重建、其他木偶不動', JSON.stringify(r.texReload), JSON.stringify([true, true, true, true]));
     t.check('存檔：擺設正在用的原圖不能蓋', r.bakeOwn.includes('原圖'), r.bakeOwn);
     t.eq('存檔框的樹：子資料夾在前、只列 .png', JSON.stringify(r.ftree), JSON.stringify(['📁 images', '📁 scene', '📁 zz', '🖼 baked.png']));
     t.eq('存檔框的樹：點檔案＝所在資料夾＋檔名、原圖標灰、選起來', JSON.stringify(r.treePick), JSON.stringify([['images/scene', 'baked'], true, true]));

@@ -2,6 +2,7 @@ import { Scene } from 'phaser';
 import Map from '../manager/map.js';
 import Record from '../infra/record.js';
 import Lang from '../infra/lang.js';
+import { queueTextures } from '../core/texlist.js';
 
 export class Preloader extends Scene
 {
@@ -39,11 +40,7 @@ export class Preloader extends Scene
         this.load.setPath('assets');
 
         // 圖片清單由 scripts/textures.js 掃 textures/ 產生，json 載完才排入圖
-        this.load.once('filecomplete-json-textures', (key, type, tex) => {
-            for (const [k, url] of Object.entries(tex.image)) {this.load.image(k, url);}
-            for (const [k, s] of Object.entries(tex.sheet)) {this.load.spritesheet(k, s.url, {frameWidth: s.w, frameHeight: s.h, margin: s.margin, spacing: s.spacing});}
-            for (const [k, a] of Object.entries(tex.atlas)) {this.load.atlas(k, a.url, a.json);}
-        });
+        this.load.once('filecomplete-json-textures', (key, type, tex) => queueTextures(this.load, tex));
         this.load.json('textures', 'json/textures.json');
 
         // this.load.plugin('rexbbcodetextplugin', 'https://raw.githubusercontent.com/rexrainbow/phaser3-rex-notes/master/dist/rexbbcodetextplugin.min.js', true);

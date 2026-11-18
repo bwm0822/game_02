@@ -11,6 +11,7 @@ import Item from '../items/item.js'
 import DB from '../data/db.js'
 import {playParticle} from '../core/particle.js'
 import {setSpot} from '../core/spotlight.js'
+import {queueTextures} from '../core/texlist.js'
 import {shapeOf, zoneEditable, rectOf, handlesOf, hitZone, edgeZone, zoneArea, dragZone, ZONE_CURSOR} from '../core/pzone.js'
 
 // 開發版的 gym 場景：工具殼「場景」分頁的 iframe 跑 /?sandbox，用 postMessage 操作（訊息帶 sb 欄位，見 docs/scene-tool.md）
@@ -920,6 +921,27 @@ export class Sandbox extends GameScene
         this._placeProp(o, x, y);
     }
 
+    //------------------------------------------------------
+    //  textures.json 更新（加了圖）：不重開，只補載沒載過的 key；之前缺圖的木偶／prefab 實例重建，其他不動
+    //  同一個 key 換了內容不會換新（要按重開）
+    //------------------------------------------------------
+    async _reloadTex()
+    {
+        const tex = await (await fetch(`assets/json/textures.json?t=${Date.now()}`)).json();
+        if(!this.scene.isActive()) {return;}
+        const has = (k)=>this.textures.exists(k);
+        const missTex = (o)=>o.texture?.key==='__MISSING' || (o.list ?? []).some(missTex);
+        const stalePuppets = this.roles.filter(missTex);
+        const staleInsts = Object.entries(this._insts).filter(([, o])=>(DB.prefab(o.data.prefab)?.parts ?? []).some(p=>p.img && !has(p.img.split(':')[0]))).map(([k])=>k);
+        this.load.setPath('assets');
+        if(!queueTextures(this.load, tex, has)) {return;}
+        await new Promise((res)=>{this.load.once('complete', res); this.load.start();});
+        if(!this._scene || !this.scene.isActive()) {return;}
+        stalePuppets.forEach(p=>p.dismiss());
+        staleInsts.forEach(k=>this._insts[k] && this._dropInst(k));
+        await this._apply(this._scene);
+    }
+
     _send(msg) {window.parent.postMessage(msg, '*');}
 
     _recv(m)
@@ -940,6 +962,7 @@ export class Sandbox extends GameScene
             case 'do': this._do(m.act); break;
             case 'replay': if(this._last) {this._do(this._last);} break;
             case 'reset': this._apply(this._scene, {force:true}); break;
+            case 'textures': this._texQ = (this._texQ ?? Promise.resolve()).then(()=>this._reloadTex()).catch(e=>this._send({sb:'error', msg:`圖片清單補載失敗：${e.message}`})); break;
             case 'hit': this._puppet(m.key)?.anim_hit?.(null); break;
             case 'fxTick': this._puppet(m.key)?.fxTick?.(m.id); break;
             case 'time': this._setTime(m.t); break;       // 拖滑桿預覽（還沒寫檔）
