@@ -306,6 +306,17 @@ run('scene-tool', async t => {
         const tb = dlg.querySelector('.treebox'), btn = dlg.querySelector('.buttons button').getBoundingClientRect();
         const noScroll = (e) => e.scrollHeight <= e.clientHeight + 1;
         out.dlgFit = [noScroll(dlg), noScroll(dlg.querySelector('.body')), btn.bottom <= win.innerHeight, tb.clientHeight < 280, tb.clientHeight >= 80];
+        // 預設檔名：textures＝原名、原始路徑＝-copy；切模式沒改過才跟著換
+        const nameIn = dlg.querySelector('.body input:not([type])'), radio = (v) => dlg.querySelector(`input[name=exMode][value=${v}]`);
+        const setMode = (v) => {radio(v).checked = true; radio(v).dispatchEvent(new Event('change'));};
+        const ownBase = turl.split('/').pop().slice(0, -4);
+        setMode('tex');
+        const nTex = nameIn.value;
+        setMode('home');
+        const nHome = nameIn.value;
+        nameIn.value = 'mine';
+        setMode('tex');
+        out.defName = [nTex === ownBase, nHome === `${ownBase}-copy`, nameIn.value];
         dlg.close('cancel');
         ifr.style.height = oldH;
         await until(() => win.innerHeight > 360);
@@ -732,6 +743,7 @@ run('scene-tool', async t => {
     t.eq('存檔框的樹：子資料夾在前、只列 .png', JSON.stringify(r.ftree), JSON.stringify(['📁 images', '📁 scene', '📁 zz', '🖼 baked.png']));
     t.eq('存檔框的樹：點檔案＝所在資料夾＋檔名、原圖標灰、選起來', JSON.stringify(r.treePick), JSON.stringify([['images/scene', 'baked'], true, true]));
     t.eq('存檔框：視窗矮時外框／body 不捲、按鈕在畫面內、只有樹縮（≥80）', JSON.stringify(r.dlgFit), JSON.stringify([true, true, true, true, true]));
+    t.eq('存檔框預設檔名：textures＝原名、原始路徑＝-copy、改過切模式不換', JSON.stringify(r.defName), JSON.stringify([true, true, 'mine']));
     t.eq('畫面把手：選中的擺設 8 個', r.handles, 8);
     t.check('拉右邊（鎖 %＋等比）：sx/sy 一起變、左邊固定、底部（錨點）不動', r.dragR && r.dragR[0] === 2 && r.dragR[1] === 2 && r.dragR[2] === r.dragR[4] && r.dragR[3] === 200, JSON.stringify(r.dragR));
     t.check('拉下邊＋Shift（不等比）：只改 sy、邊吸到 16px', r.dragB && r.dragB[0] === 2 && r.dragB[1] === r.dragB[2], JSON.stringify(r.dragB));

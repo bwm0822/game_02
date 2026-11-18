@@ -1254,7 +1254,8 @@ async function exportProp(p)
     const base = src.split('/').pop().replace(/\.png$/i, '');
     let mode = ls.get(LS.exportMode) === 'home' ? 'home' : 'tex', path = '';
     const box = h('div', {class: 'treebox'}), shown = h('div', {class: 'dim', style: 'word-break: break-all'});
-    const name = h('input', {size: 28, value: `${base}-copy`});
+    const defName = (m) => (m === 'tex' ? base : `${base}-copy`);
+    const name = h('input', {size: 28, value: defName(mode)});
     const build = () => {
         const cur = mode === 'tex' ? (ls.get(LS.exportDir)?.startsWith(TEX) ? ls.get(LS.exportDir) : TEX) : home;
         path = cur;
@@ -1265,7 +1266,12 @@ async function exportProp(p)
             if (f != null) name.value = f;
         }, src).el);
     };
-    const radio = (v, t) => h('label', null, h('input', {type: 'radio', name: 'exMode', value: v, checked: mode === v, onchange: () => {mode = v; ls.set(LS.exportMode, v); build();}}), t);
+    const radio = (v, t) => h('label', null, h('input', {type: 'radio', name: 'exMode', value: v, checked: mode === v, onchange: () => {
+        if (name.value === defName(mode)) name.value = defName(v);
+        mode = v;
+        ls.set(LS.exportMode, v);
+        build();
+    }}), t);
     build();
     const k = (p.pct ?? 100) / 100, img = await loadImg(fileUrl(p.img));
     if (!img) return status(`讀不到 ${src}`);
