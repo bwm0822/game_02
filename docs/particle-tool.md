@@ -31,9 +31,9 @@
 
 ## 檢查（只警告）
 
-img 在 textures.json 找不到（內建跟 emoji 不查）、mode／depth 不認識、數字欄不是數字、一次噴還寫 duration／frequency、持續噴寫 count、持續噴 frequency −1、emoji 有 tint／color、blendMode 不認識、tint 不是 `#rrggbb`、漸變的 ease 不認識、emitZone／deathZone 不是物件／type 不認識／形狀認不得／deathZone 用線段、edge 沒寫 quantity。
+img 在 textures.json 找不到（內建跟 emoji 不查）、mode／depth 不認識、數字欄不是數字、一次噴還寫 duration／frequency、持續噴寫 count、持續噴 frequency −1、emoji 有 tint／color、blendMode 不認識、tint 不是 `#rrggbb`、漸變的 ease 不認識、emitZone／deathZone 不是物件／type 不認識／形狀認不得／deathZone 用線段、edge 沒寫 quantity、有 deathZone 沒勾 local（見下面陷阱）。
 
-**陷阱**：emitter 用 `startFollow` 跟著目標時（角色身上、拖尾，`local` 沒勾），粒子座標是世界座標，Phaser 的 deathZone 拿粒子座標判斷，所以 deathZone 會變成相對地圖原點而不是發射點；預覽一律照相對發射點畫。要在跟著走的粒子用 deathZone，得改 `src/core/particle.js`（目前沒有粒子用 deathZone）。
+**陷阱（規則：用 deathZone 就勾 `local`）**：emitter 用 `startFollow` 跟著目標時（prefab 粒子零件、場景分頁有 follow 的發射點、角色身上、拖尾，`local` 沒勾），粒子座標是世界座標，Phaser 的 deathZone 拿粒子座標判斷，所以 deathZone 會變成相對地圖原點而不是發射點（`onLeave` 一出生就全殺光）；預覽一律照相對發射點畫。勾 `local` 時 emitter 加進目標的 container、粒子是區域座標，deathZone 就相對發射點（代價：已噴出的粒子跟著物件走、深度跟著 container）。2026-11-21 決定不改 `src/core/particle.js`，改成 `validateDef()` 對「有 deathZone 沒勾 local」一律出 ⚠（粒子分頁、場景分頁發射點、prefab 零件都看得到，沒 follow 的情境算誤報），不自動勾 local。
 
 ## 程式結構
 

@@ -67,6 +67,7 @@ export function validateDef(p)
             if (k === 'emitZone' && one.type === 'edge' && one.quantity === undefined && one.stepRate === undefined) out.push('emitZone 沿邊緣噴要寫 quantity');
         }
     }
+    if (p.deathZone !== undefined && p.local !== true) out.push('deathZone 沒勾 local：跟著目標時（prefab、角色身上、拖尾…）粒子是世界座標，deathZone 會從地圖原點算、粒子一出生就被殺掉，要勾 local');
     return out;
 }
 

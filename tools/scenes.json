@@ -5,20 +5,20 @@
       {
         "key": "r1",
         "id": "wick",
-        "tx": 10,
-        "ty": 7,
+        "tx": 14,
+        "ty": 9,
         "equip": {
           "CAT_WEAPON": "sword-1"
         }
       }
     ],
-    "time": "23:46",
+    "time": "23:59",
     "prefabs": [
       {
         "key": "f1",
         "prefab": "forge",
-        "x": 416,
-        "y": 288
+        "x": 544,
+        "y": 352
       }
     ]
   }

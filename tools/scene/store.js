@@ -5,7 +5,7 @@ import * as SH from '../common/shell.js';
 
 export const FILE = 'scenes.json';
 export const PREFAB = 'prefab.json';
-export const PARTICLE = 'particle.json';    // 組成 prefab 時發射點自己那份另存／覆寫
+export const PARTICLE = 'particle.json';    // 發射點挑粒子用（場景分頁不寫它）
 export const EMPTY = '{}\n';
 export const newScene = () => ({map: 'sandbox'});
 

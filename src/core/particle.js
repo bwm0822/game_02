@@ -131,6 +131,7 @@ export function emitterConfig(def={}, {emoji=false}={})
 //  opts.count     : 蓋掉 def.count
 //  opts.area      : {w, h, cells}：發射範圍改成以發射點為中心的 w×h 矩形，quantity/count 乘 cells(區域特效用)
 //  opts.depth     : 數字，蓋掉預設深度
+//  opts.followDepth : true＝world 模式「最上層」＝target.depth+0.5 跟著更新(prefab 零件)，沒給＝Infinity
 //  opts.screen    : true＝跟著鏡頭(環境粒子：下雨…)，發射點在畫面上緣中間＋def.x/y，scrollFactor 0
 //--------------------------------------------------
 export function playParticle(scene, def, opts={})
@@ -172,11 +173,13 @@ export class ParticleFx
         if(opts.screen) {em.setScrollFactor(0);}
         this.target = target;
         this.under = def.depth==='under';
+        // followDepth：world 模式的「最上層」改成目標 depth+0.5(跟目標同層排序)，不是蓋過整個場景
+        this.dz = this.under ? -0.5 : opts.followDepth ? 0.5 : null;
         if(parent) {parent.add(em); if(this.under) {parent.sendToBack(em);}}
         else
         {
             if(target) {em.startFollow(target, dx, dy);}
-            em.setDepth(opts.depth ?? (this.under ? (target?.depth ?? 0) - 0.5 : Infinity));
+            em.setDepth(opts.depth ?? (this.dz!==null ? (target?.depth ?? 0) + this.dz : Infinity));
         }
 
         this.done = new Promise(res=>{this._resolve = res;});
@@ -202,7 +205,7 @@ export class ParticleFx
         if(!em?.active) {return;}
         const t = this.target;
         if(t && em.emitting && (!t.active || !t.scene)) {this.stop();}
-        else if(t && this.under && !em.parentContainer) {em.setDepth((t.depth ?? 0) - 0.5);}
+        else if(t && this.dz!==null && !em.parentContainer) {em.setDepth((t.depth ?? 0) + this.dz);}
         if(this._started && !em.emitting && em.getAliveParticleCount()===0) {em.destroy();}
     }
 

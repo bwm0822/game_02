@@ -17,21 +17,94 @@
         "img": "forge-forge-3"
       },
       {
-        "particle": "smoke",
         "x": -2,
-        "y": -44
+        "y": -44,
+        "def": {
+          "img": "p-square",
+          "speedY": {
+            "min": -25,
+            "max": -12
+          },
+          "speedX": {
+            "min": -6,
+            "max": 6
+          },
+          "lifespan": {
+            "min": 1500,
+            "max": 2500
+          },
+          "scale": {
+            "start": 0.4,
+            "end": 1.4
+          },
+          "alpha": {
+            "start": 0.35,
+            "end": 0
+          },
+          "tint": "#888888",
+          "frequency": 250,
+          "quantity": 1
+        }
       },
       {
-        "particle": "campfire",
         "x": -6,
-        "y": -3
+        "y": -4,
+        "def": {
+          "img": "p-square",
+          "emitZone": {
+            "type": "random",
+            "source": {
+              "x": -8,
+              "y": -3,
+              "w": 16,
+              "h": 6
+            }
+          },
+          "speedY": {
+            "min": 0,
+            "max": -35
+          },
+          "speedX": {
+            "min": -8,
+            "max": 8
+          },
+          "lifespan": {
+            "min": 300,
+            "max": 650
+          },
+          "scale": {
+            "start": 0.7,
+            "end": 0.1
+          },
+          "alpha": {
+            "start": 0.9,
+            "end": 0
+          },
+          "tint": {
+            "start": "#fff1a8",
+            "end": "#ff3a10"
+          },
+          "blendMode": "ADD",
+          "frequency": 100,
+          "quantity": 2,
+          "deathZone": {
+            "type": "onLeave",
+            "source": {
+              "x": -8,
+              "y": -7,
+              "w": 17,
+              "h": 10
+            }
+          },
+          "local": true
+        }
       }
     ],
     "thumb": {
-      "x": -33,
-      "y": -49,
-      "w": 66,
-      "h": 49
+      "x": -32,
+      "y": -48,
+      "w": 64,
+      "h": 48
     }
   }
 }

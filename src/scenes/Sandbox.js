@@ -359,6 +359,8 @@ export class Sandbox extends GameScene
                 if(pg.r) {g.lineStyle(1/z, 0x33ccff, a*0.6).strokeCircle(pg.x, pg.y, pg.r);}
             }
         });
+        const zs = this._pzSel();
+        for(const w of this._partZoneOwners()) {this._drawZoneList(g, z, w.c, w.zones, zs?.i===w.i ? zs.k : null);}
         const s = HANDLE/z;
         for(const hd of this._boxHandles().reverse())
         {
@@ -699,14 +701,19 @@ export class Sandbox extends GameScene
     {
         const o = this._zoneEm();
         if(!o) {return;}
-        const c = this._zoneOrigin(o);
+        this._drawZoneList(g, z, this._zoneOrigin(o), this._zones(o), this._zsel?.key===this._sel ? this._zsel.k : null);
+    }
+
+    // zones＝[{k, z, edit}]，c＝zone 座標的原點（世界），selK＝選中的那個 zone（畫把手）
+    _drawZoneList(g, z, c, zones, selK)
+    {
         const dash = (x1, y1, x2, y2, d)=>{
             const n = Math.max(1, Math.floor(Math.hypot(x2-x1, y2-y1)/d));
             for(let i=0; i<n; i+=2) {g.lineBetween(x1+(x2-x1)*i/n, y1+(y2-y1)*i/n, x1+(x2-x1)*Math.min(n, i+1)/n, y1+(y2-y1)*Math.min(n, i+1)/n);}
         };
-        for(const {k, z:zz, edit} of this._zones(o))
+        for(const {k, z:zz, edit} of zones)
         {
-            const death = k==='deathZone', sel = this._zsel?.key===this._sel && this._zsel.k===k, d = death ? 4/z : 0;
+            const death = k==='deathZone', sel = selK===k, d = death ? 4/z : 0;
             g.lineStyle(1.5/z, death ? 0xff5555 : 0x44dd66, sel ? 1 : 0.75);
             for(const one of [zz].flat())
             {
@@ -734,6 +741,66 @@ export class Sandbox extends GameScene
                     .lineStyle(1/z, death ? 0xff5555 : 0x44dd66, 1).strokeRect(c.x+q.x-hs/2, c.y+q.y-hs/2, hs, hs);
             }
         }
+    }
+
+    //------------------------------------------------------
+    //  選中 prefab 實例的 edit 粒子零件的 zone：畫法／拖法同發射點，放開送 partZone {key, i, k, z}（分頁寫草稿，共用的先複製成 def）
+    //  原點＝錨點＋零件 x/y＋粒子自己的 x/y；選中的 zone＝_pzsel {key, i, k}
+    //------------------------------------------------------
+    _partZoneOwners()
+    {
+        const o = this._inspected();
+        if(!o) {return [];}
+        const look = o.go.getLook?.() ?? null, d = this._drag;
+        return (DB.prefab(o.data.prefab)?.parts ?? []).flatMap((p, i)=>{
+            if(!(p.particle || p.def) || this._partMode(i)!=='edit' || (p.look && p.look!==look)) {return [];}
+            const def = p.def ?? DB.particle(p.particle), pg = def && this._partGeom(o, i);
+            if(!pg) {return [];}
+            const zones = ['emitZone', 'deathZone'].filter(k=>def[k]!==undefined).map(k=>{
+                const z = d?.pzone===k && d.i===i && d.cur ? d.cur : def[k];
+                return {k, z, edit:zoneEditable(k, z)};
+            });
+            return [{i, c:{x:pg.x + (def.x ?? 0), y:pg.y + (def.y ?? 0)}, zones}];
+        });
+    }
+
+    _pzSel() {return this._pzsel?.key===this._sel ? this._pzsel : null;}
+
+    _pzHandleAt(wx, wy)
+    {
+        const s = this._pzSel(), w = s && this._partZoneOwners().find(w=>w.i===s.i), sel = w?.zones.find(z=>z.k===s.k && z.edit);
+        if(!sel) {return null;}
+        const tol = (HANDLE/2 + 2)/this.cameras.main.zoom;
+        const d = (q)=>Math.max(Math.abs(w.c.x + q.x - wx), Math.abs(w.c.y + q.y - wy));
+        const hd = handlesOf(shapeOf(sel.z.source), sel.z.source).filter(q=>d(q)<=tol).sort((a, b)=>d(a) - d(b))[0];
+        return hd ? {w, k:sel.k, z:sel.z, part:hd.id} : null;
+    }
+
+    // edge＝所有 edit 粒子零件 zone 的框線內外 6px；不是 edge＝只算選中那個 zone 的框內（疊在一起挑面積小的）
+    _pzBodyAt(wx, wy, edge = false)
+    {
+        const s = this._pzSel(), tol = (edge ? 6 : 4)/this.cameras.main.zoom, f = edge ? edgeZone : hitZone;
+        const area = (h)=>zoneArea(shapeOf(h.z.source), h.z.source);
+        const hits = this._partZoneOwners().flatMap(w=>w.zones
+            .filter(z=>z.edit && (edge || (s?.i===w.i && s.k===z.k)) && f(shapeOf(z.z.source), z.z.source, wx - w.c.x, wy - w.c.y, tol))
+            .map(z=>({w, k:z.k, z:z.z, part:'move'}))).sort((a, b)=>area(a) - area(b));
+        return hits[0] ?? null;
+    }
+
+    _startPartZone(hit, p)
+    {
+        const c = hit.w.c;
+        this._pzsel = {key:this._sel, i:hit.w.i, k:hit.k};
+        this._drag = {pzone:hit.k, i:hit.w.i, key:this._sel, z0:structuredClone(hit.z), shape:shapeOf(hit.z.source), part:hit.part,
+            p0:{x:p.worldX - c.x, y:p.worldY - c.y}, cur:null};
+        if(this._inspect?.part!==hit.w.i) {this._send({sb:'part', key:this._sel, i:hit.w.i});}
+    }
+
+    _partZoneTo(d, p)
+    {
+        const w = this._partZoneOwners().find(w=>w.i===d.i);
+        if(!w) {return;}
+        d.cur = {...d.z0, source:dragZone(d.shape, d.z0.source, d.part, d.p0, {x:p.worldX - w.c.x, y:p.worldY - w.c.y}, p.event.shiftKey ? 4 : 1)};
     }
 
     // 記號畫不畫、點不點得到：👁 藏著＝不；工具列「光源記號／粒子記號」沒勾＝只有選中的那個
@@ -1075,7 +1142,7 @@ export class Sandbox extends GameScene
             case 'anchor': this._anchorOn = !!m.on; break;
             case 'icons': this._icons = {light:!!m.light, particle:!!m.particle}; break;
             case 'home': this._home(); break;
-            case 'inspect': this._inspect = m.inspect ?? null; break;
+            case 'inspect': if(m.inspect?.key!==this._inspect?.key) {this._pzsel = null;} this._inspect = m.inspect ?? null; break;
             case 'focus': {const go = this._insts?.[m.key]?.go; if(go) {this.cameras.main.pan(go.x, go.y, 250, 'Sine.easeInOut');} break;}
             case 'select': this._sel = m.key ?? null; this._size = {lock:m.lock ?? 'pct', ratio:m.ratio ?? true}; break;
             case 'arm': this._arm = m.act ?? null; this._drawSel(); this._cursor(); break;
@@ -1189,17 +1256,22 @@ export class Sandbox extends GameScene
                 this._drag = {box:bh.k, side:bh.side, inst:ins, key:this._sel, b0, cur:{...b0}};
                 return;
             }
-            // edit 粒子／光源點＞錨點＞edit png 圖框
+            // 選中 zone 的把手＞edit 粒子／光源點＞錨點＞zone 框線＞edit png 圖框＞選中 zone 的框內
+            const pzh = ins && this._pzHandleAt(p.worldX, p.worldY);
+            if(pzh) {this._startPartZone(pzh, p); return;}
             const ei = ins ? this._partAt(ins, p.worldX, p.worldY) : null;
             const pp = ei!==null && DB.prefab(ins.data.prefab).parts[ei];
-            const onA = ins && (!pp || pp.img) && this._instAt(p.worldX, p.worldY, this._sel);
-            if(onA) {this._drag = {inst:ins, key:this._sel, dx:ins.go.x-p.worldX, dy:ins.go.y-p.worldY, moved:false}; this._cursor(p); return;}
-            if(pp)
-            {
+            const dragPart = ()=>{
                 this._drag = {p:pp, part:ei, inst:ins, key:this._sel, x:pp.x ?? 0, y:pp.y ?? 0, ox:ins.go.x + (pp.x ?? 0) - p.worldX, oy:ins.go.y + (pp.y ?? 0) - p.worldY, moved:false};
                 this._cursor(p);
-                return;
-            }
+            };
+            if(pp && !pp.img) {dragPart(); return;}
+            if(ins && this._instAt(p.worldX, p.worldY, this._sel)) {this._drag = {inst:ins, key:this._sel, dx:ins.go.x-p.worldX, dy:ins.go.y-p.worldY, moved:false}; this._cursor(p); return;}
+            const pze = ins && this._pzBodyAt(p.worldX, p.worldY, true);
+            if(pze) {this._startPartZone(pze, p); this._cursor(p); return;}
+            if(pp) {dragPart(); return;}
+            const pzb = ins && this._pzBodyAt(p.worldX, p.worldY);
+            if(pzb) {this._startPartZone(pzb, p); this._cursor(p); return;}
             const hit = this._pickAt(p.worldX, p.worldY);
             if(p.rightButtonDown())
             {
@@ -1274,6 +1346,11 @@ export class Sandbox extends GameScene
                 if(!p.leftButtonDown()) {this._endDrag(); return;}
                 this._zoneTo(this._drag, p);
             }
+            else if(this._drag?.pzone)
+            {
+                if(!p.leftButtonDown()) {this._endDrag(); return;}
+                this._partZoneTo(this._drag, p);
+            }
             else if(this._drag?.prop || this._drag?.emitter || this._drag?.light || this._drag?.inst)
             {
                 if(!p.leftButtonDown()) {this._endDrag(); return;}
@@ -1309,7 +1386,7 @@ export class Sandbox extends GameScene
     _cursor(p = this.input.activePointer)
     {
         const d = this._drag;
-        if(d?.resize || d?.radius || d?.arc || d?.box || (d?.zone && d.part!=='move') || !this._props) {return;}
+        if(d?.resize || d?.radius || d?.arc || d?.box || ((d?.zone || d?.pzone) && d.part!=='move') || !this._props) {return;}
         let c = '';
         if(this._arm) {c = 'crosshair';}
         else if(d || this._pan) {c = 'grabbing';}
@@ -1317,10 +1394,12 @@ export class Sandbox extends GameScene
         {
             const hd = this._handleAt(p.worldX, p.worldY), zh = !hd && this._zoneHandleAt(p.worldX, p.worldY);
             const bh = !hd && !zh && this._inspected() && this._boxHandleAt(p.worldX, p.worldY);
-            const pk = !hd && !zh && !bh && this._pickAt(p.worldX, p.worldY);
+            const pz = !hd && !zh && !bh && this._inspected() && (this._pzHandleAt(p.worldX, p.worldY) || this._pzBodyAt(p.worldX, p.worldY, true));
+            const pk = !hd && !zh && !bh && !pz && this._pickAt(p.worldX, p.worldY);
             c = hd ?(!hd.hy ? 'ew-resize' : !hd.hx ? 'ns-resize' : hd.hx*hd.hy>0 ? 'nwse-resize' : 'nesw-resize')
                 : zh ? ZONE_CURSOR[zh.part]
                 : bh ? (bh.side==='l' || bh.side==='r' ? 'ew-resize' : 'ns-resize')
+                : pz ? ZONE_CURSOR[pz.part]
                 : this._radiusAt(p.worldX, p.worldY) || this._arcAt(p.worldX, p.worldY) ? 'pointer'
                 : !pk?.emitter && !pk?.light && this._zoneBodyAt(p.worldX, p.worldY, true) ? 'move'
                 : pk ? 'grab'
@@ -1369,6 +1448,11 @@ export class Sandbox extends GameScene
         if(d?.zone)
         {
             if(d.cur && JSON.stringify(d.cur)!==JSON.stringify(d.z0)) {this._send({sb:'zone', key:d.key, k:d.zone, z:d.cur});}
+            return;
+        }
+        if(d?.pzone)
+        {
+            if(d.cur && JSON.stringify(d.cur)!==JSON.stringify(d.z0)) {this._send({sb:'partZone', key:d.key, i:d.i, k:d.pzone, z:d.cur});}
             return;
         }
         if(d?.light)

@@ -9,15 +9,15 @@
  "spacing":0,
  "tilecount":1,
  "tiledversion":"1.11.0",
- "tileheight":49,
+ "tileheight":48,
  "tiles":[
         {
          "id":0,
          "image":"..\/textures\/prefabs\/prefab-forge.png",
-         "imagewidth":66,
-         "imageheight":49
+         "imagewidth":64,
+         "imageheight":48
         }],
- "tilewidth":66,
+ "tilewidth":64,
  "type":"tileset",
  "version":"1.10"
 }

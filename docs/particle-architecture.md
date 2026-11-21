@@ -15,7 +15,7 @@
 | `depth` | `'under'`＝畫在目標底下（目標 depth −0.5，每幀跟著更新）；預設 `Infinity` |
 | `x`, `y` | 發射點偏移 |
 
-友善寫法（`emitterConfig()` 轉換）：`tint`／`color` 可寫 `'#ff6600'`（單值、陣列、`{start,end}`、`{min,max}`、`{random:[]}` 都行）；`blendMode` 可寫 `'ADD'`；`emitZone`／`deathZone` 的 `source` 寫 `{x,y,w,h}`（沒寫 x/y＝置中）、`{x,y,r}`、`{x1,y1,x2,y2}`。emoji 粒子丟掉 `tint`／`color`（彩色字形染色會髒）。
+友善寫法（`emitterConfig()` 轉換）：`tint`／`color` 可寫 `'#ff6600'`（單值、陣列、`{start,end}`、`{min,max}`、`{random:[]}` 都行）；`blendMode` 可寫 `'ADD'`；`emitZone`／`deathZone` 的 `source` 寫 `{x,y,w,h}`（沒寫 x/y＝置中）、`{x,y,r}`、`{x1,y1,x2,y2}`；deathZone 要勾 `local` 才相對發射點（follow 模式粒子是世界座標，見 particle-tool.md 的陷阱）。emoji 粒子丟掉 `tint`／`color`（彩色字形染色會髒）。
 
 `p-` 開頭保留給內建形狀，`scripts/textures.js` 擋 `textures/` 裡 `p-` 開頭的檔名。
 
@@ -29,7 +29,7 @@ h.stop(true);      // 立刻清掉
 await h.done;      // 銷毀時 resolve（預設不等，粒子只是裝飾）
 ```
 
-`opts`：`x`/`y`（沒 target 時的世界座標）、`target`、`parent`（local 用，沒給＝target）、`ox`/`oy`、`duration`、`count`、`area:{w,h,cells}`（區域：發射範圍改成置中的 w×h 矩形，stream 的 `quantity`／burst 的 `count` 乘 `cells`）、`depth`。
+`opts`：`x`/`y`（沒 target 時的世界座標）、`target`、`parent`（local 用，沒給＝target）、`ox`/`oy`、`duration`、`count`、`area:{w,h,cells}`（區域：發射範圍改成置中的 w×h 矩形，stream 的 `quantity`／burst 的 `count` 乘 `cells`）、`depth`、`followDepth`（world 模式的「最上層」改成 target depth +0.5 每幀跟著，不是 `Infinity`；只有 prefab 粒子零件用，技能／狀態特效／Tiled 物件粒子照舊蓋過全場景）。
 
 生命週期：
 - follow 模式 emitter 放 (0,0)（Phaser 的 follow 是粒子出生在 target＋offset 再套 emitter transform）

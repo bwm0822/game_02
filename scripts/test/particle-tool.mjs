@@ -218,6 +218,14 @@ run('particle-tool', async t => {
         D.set('campfire', ['deathZone'], {source: {x1: 0, y1: 0, x2: 9, y2: 0}});
         out.lineWarn = pt.validate('campfire').some(w => w.includes('deathZone 不能用線段'));
         D.undo();
+        const localOld = S.data.campfire.local;
+        D.set('campfire', ['deathZone'], {source: {w: 9, h: 9}});
+        D.set('campfire', ['local'], false);
+        out.noLocalWarn = pt.validate('campfire').some(w => w.includes('deathZone 沒勾 local'));
+        D.set('campfire', ['local'], true);
+        out.localOk = !pt.validate('campfire').some(w => w.includes('deathZone 沒勾 local'));
+        D.undo(); D.undo(); D.undo();
+        out.localBack = S.data.campfire.local === localOld && S.data.campfire.deathZone === undefined;
         // 純函式
         const r = {x: -8, y: -2, w: 16, h: 4};
         out.dragMove = JSON.stringify(SC.dragZone('rect', r, 'move', {x: 0, y: 0}, {x: 5.4, y: 1.2}));
@@ -259,6 +267,9 @@ run('particle-tool', async t => {
     t.eq('deathZone 只有矩形／圓、type 預設 onLeave', `${z.deathShapes} ${z.deathType}`, 'rect,circle onLeave');
     t.check('陣列 zone 退回 JSON 框', z.arrJson);
     t.check('deathZone 用線段會警告', z.lineWarn);
+    t.check('deathZone 沒勾 local 會警告', z.noLocalWarn);
+    t.check('deathZone 勾了 local 不警告', z.localOk);
+    t.check('undo 回原狀（local／deathZone）', z.localBack);
     t.eq('拖曳移動：吸整數', z.dragMove, JSON.stringify({x: -3, y: -1, w: 16, h: 4}));
     t.eq('拖右下把手：Shift 吸 4、左上固定', z.dragSe, JSON.stringify({x: -8, y: -2, w: 20, h: 10}));
     t.eq('拖圓周把手改 r（游標到圓心的距離）', z.dragR, 12);
