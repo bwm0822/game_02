@@ -172,7 +172,7 @@ async function deleteScene(name, sure)
 
 function select(name, sync = true)
 {
-    if (name !== S.sel) {S.pick = null; S.part = null; S.hidden.clear();}
+    if (name !== S.sel) {S.pick = null; S.part = null; S.am = null; S.hidden.clear();}
     S.sel = name;
     ls.set(LS.sel, name ?? '');
     if (sync) refresh();
@@ -541,6 +541,7 @@ function movePart(id, i, d)
     else if (S.part === i + d) S.part = i;
     const pm = pmOf(id);
     [pm[i], pm[i + d]] = [pm[i + d], pm[i]];
+    if (opened?.id === id) opened.i = opened.i === i ? i + d : opened.i === i + d ? i : opened.i;
     return editPf(id, pf => {const a = pf.parts; [a[i], a[i + d]] = [a[i + d], a[i]];});
 }
 
@@ -551,6 +552,7 @@ function delPart(id, i)
     return editPf(id, pf => {
         if (!pf.parts?.[i]) return false;
         pmOf(id).splice(i, 1);
+        if (opened?.id === id) opened = opened.i === i ? null : opened.i > i ? {id, i: opened.i - 1} : opened;
         pf.parts.splice(i, 1);
         if (!pf.parts.length) delete pf.parts;
     });
@@ -567,12 +569,13 @@ function openPart(i)
 // 選中的實例在 sandbox 畫占地方塊、edit 零件外框、藏 hide 零件（照草稿＋各自的模式）
 function inspectMsg()
 {
+    syncOpen();
     const o = instOf(S.pick), pf = o && pfOf(o.prefab);
     if (!pf) return {sb: 'inspect', inspect: null};
     const pm = pmOf(o.prefab);
     return {sb: 'inspect', inspect: {key: o.key, boxes: Object.fromEntries(BOXES.map(([k]) => [k, pf[k] ?? null])),
         boxMode: Object.fromEntries(BOXES.map(([k]) => [k, boxMode[k] ?? 'hide'])),
-        partMode: (pf.parts ?? []).map((_, i) => pm[i] ?? 'show'), part: S.part}};
+        partMode: (pf.parts ?? []).map((_, i) => pm[i] ?? 'show'), anchorMode: amOf(), part: S.part}};
 }
 
 // 展開的零件：方向鍵移（草稿）
@@ -710,19 +713,34 @@ const noZone = (pf) => !pf?.zone && Object.keys(pf?.acts ?? {}).length > 0;
 
 // 占地方塊／零件在 sandbox 的畫法（只管 sandbox、不寫 prefab.json）：
 //  方塊 hide 不畫、show 半透明唯讀、edit 可拖邊，全部 prefab 共用一組記 localStorage（預設 hide）
-//  零件 hide 藏零件本身、show 照常（沒外框、點不到）、edit 外框＋可點可拖，只作用在選中的實例；照 prefab 記在記憶體、跟著 ↑↓／✕ 搬（預設 show）
+//  零件 hide 藏零件本身、show 照常（沒外框、點不到）、edit 外框＋可點可拖，只作用在選中的實例；照 prefab 記在記憶體、跟著 ↑↓／✕ 搬（預設 show、展開＝edit）
 const MODES = ['hide', 'show', 'edit'], MODE_ICON = {hide: '◌', show: '👁', edit: '✎'};
 const BOX_TIP = '◌ 隱藏／👁 顯示（半透明唯讀）／✎ 編輯（可拖邊）';
 const PART_TIP = '◌ 藏起來／👁 顯示（點不到）／✎ 編輯（外框、可點可拖）';
 const boxMode = (() => {try {return JSON.parse(ls.get(LS.boxMode) ?? '{}') ?? {};} catch {return {};}})();
 const partMode = {};
 const pmOf = (id) => (partMode[id] ??= []);
+// 錨點：hide 藏選中實例的黃點（點不到）、show 拖黃點＝拖實例、edit 拖黃點／方向鍵＝只移錨點；只認設定時選中的那個實例，換選取就回 show
+const ANCHOR_TIP = '◌ 藏黃點（點不到）／👁 拖黃點＝拖實例／✎ 拖黃點、方向鍵＝只移錨點（畫面不動）；工具列錨點沒勾＝都看不到';
+const amOf = () => (S.am?.key === S.pick ? S.am.mode : 'show');
 
-function modeBtn(mode, k, set, disabled)
+// 展開的零件自動 edit，收起（含換展開、取消選取／換實例）回 show；opened＝上次套用的 {id, i}，↑↓／✕ 跟著搬
+let opened = null;
+function syncOpen()
+{
+    const id = instOf(S.pick)?.prefab;
+    const now = id && S.part !== null && S.part !== undefined ? {id, i: S.part} : null;
+    if (opened?.id === now?.id && opened?.i === now?.i) return;
+    if (opened && opened.i < (pfOf(opened.id)?.parts?.length ?? 0)) pmOf(opened.id)[opened.i] = 'show';
+    if (now) pmOf(now.id)[now.i] = 'edit';
+    opened = now;
+}
+
+function modeBtn(mode, k, set, disabled, tip)
 {
     const part = k.startsWith('part');
     mode ??= part ? 'show' : 'hide';
-    const sel = h('select', {class: `mode ${mode}`, dataset: {k}, disabled, title: part ? PART_TIP : BOX_TIP, style: disabled ? 'visibility:hidden' : '',
+    const sel = h('select', {class: `mode ${mode}`, dataset: {k}, disabled, title: tip ?? (part ? PART_TIP : BOX_TIP), style: disabled ? 'visibility:hidden' : '',
         onclick: (e) => e.stopPropagation(), onchange: () => set(sel.value)}, MODES.map(m => h('option', {value: m}, MODE_ICON[m])));
     sel.value = mode;
     return sel;
@@ -745,7 +763,12 @@ function dragLive(m)
     const q = (sel) => document.querySelector(`#right ${sel}`);
     if (m.end) {document.querySelectorAll('#right input.live').forEach(e => e.classList.remove('live')); return;}
     let cells;
-    if (m.k)
+    if (m.anchor)
+    {
+        if (m.start && isFolded('right.props')) toggleFold('right.props');
+        cells = [[q('[data-k="anchorDx"]'), m.dx, true], [q('[data-k="anchorDy"]'), m.dy, true]];
+    }
+    else if (m.k)
     {
         if (m.start && isFolded('right.props')) toggleFold('right.props');
         cells = ['x', 'y', 'w', 'h'].map(f => [q(`[data-k="${m.k}.${f}"]`), m.box[f], LIVE_SIDE[m.side]?.includes(f)]);
@@ -761,11 +784,11 @@ function dragLive(m)
         el.value = v;
         el.classList.toggle('live', live);
     }
-    if (m.start) cells.find(([el, , live]) => el && live)?.[0].scrollIntoView({block: 'nearest'});
-}
+    if (m.start) cells.find(([el, , live]) => el && live)?.[0].scrollIntoView({block: 'nearest'});}
 
 const setBoxMode = (k, v) => setMode(() => {boxMode[k] = v; ls.set(LS.boxMode, JSON.stringify(boxMode));});
 const setPartMode = (id, i, v) => setMode(() => {pmOf(id)[i] = v;});
+const setAnchorMode = (v) => setMode(() => {S.am = {key: S.pick, mode: v};});
 
 function prefabPanel(id)
 {
@@ -817,14 +840,14 @@ function prefabPanel(id)
     ];
 }
 
-// 移動錨點：輸入位移按套用（畫面不動，零件、方塊反向挪）
+// 移動錨點：模式下拉（✎＝畫面上拖黃點／方向鍵）＋輸入位移按套用（畫面不動，零件、方塊反向挪）
 function anchorRow(id)
 {
     const d = draftOf(id);
     const dx = h('input', {type: 'number', step: 1, value: 0, class: 'n', dataset: {k: 'anchorDx'}});
     const dy = h('input', {type: 'number', step: 1, value: 0, class: 'n', dataset: {k: 'anchorDy'}});
     return h('div', null,
-        h('div', {class: 'sec'}, '移動錨點', h('span', {class: 'dim'}, '（畫面不動；別處放好的實例圖會挪）')),
+        h('div', {class: 'sec'}, modeBtn(amOf(), 'anchor.mode', setAnchorMode, false, ANCHOR_TIP), ' 移動錨點', h('span', {class: 'dim'}, '（畫面不動；別處放好的實例圖會挪）')),
         h('div', {class: 'row2'}, 'x ', dx, ' y ', dy,
             h('button', {dataset: {k: 'anchorApply'}, title: '錨點往右下移 (x, y)：零件、占地方塊反向挪，這個實例跟著補償', onclick: () => moveAnchor(id, +dx.value || 0, +dy.value || 0)}, '套用'),
             d && (d.dx || d.dy) ? h('span', {class: 'dim'}, `草稿裡已移 ${d.dx}, ${d.dy}`) : null));
@@ -1618,7 +1641,7 @@ function pickRole(key)
 {
     if (S.draft && key !== S.draft.key) {leaveDraft().then(ok => (ok ? pickRole(key) : toGame(selMsg()))); return;}
     if (S.arm && S.arm.key !== key) {S.arm = null; toGame({sb: 'arm', act: null});}
-    if (key !== S.pick) S.part = null;
+    if (key !== S.pick) {S.part = null; S.am = null;}
     S.pick = key;
     toGame(selMsg());
     toGame(inspectMsg());
@@ -1809,6 +1832,7 @@ function renderRight()
 
 function drawRight()
 {
+    syncOpen();
     const r = roleOf(S.pick);
     // replaceChildren 不像 h() 會濾掉 `cond && …` 留下的 false
     const put = (...kids) => $('right').replaceChildren(...kids.flat(Infinity).filter(c => c !== null && c !== undefined && c !== false));
@@ -1867,7 +1891,7 @@ function actPanel(r)
 function refresh()
 {
     if (S.sel !== null && !(S.sel in S.data)) select(null, false);
-    if (S.pick &&!roleOf(S.pick) && !propOf(S.pick) && !emOf(S.pick) && !lightOf(S.pick) && !instOf(S.pick)) S.pick = null;
+    if (S.pick &&!roleOf(S.pick) && !propOf(S.pick) && !emOf(S.pick) && !lightOf(S.pick) && !instOf(S.pick)) {S.pick = null; S.am = null;}
     if (S.draft && (S.pick !== S.draft.key || instOf(S.pick)?.prefab !== S.draft.id)) {status(`prefab ${S.draft.id} 的實例不見了，草稿丟掉`); S.draft = null;}
     if (S.part !== null && !(S.part < (pfOf(instOf(S.pick)?.prefab)?.parts?.length ?? 0))) S.part = null;
     renderLib();
@@ -1960,7 +1984,14 @@ function onKey(k)
     else if (k.key.startsWith('Arrow') && (propOf(S.pick) || emOf(S.pick) || lightOf(S.pick) || instOf(S.pick)))
     {
         const d = k.shift ? 32 : 1, dx = {ArrowLeft: -d, ArrowRight: d}[k.key] ?? 0, dy = {ArrowUp: -d, ArrowDown: d}[k.key] ?? 0;
-        if (S.part !== null && instOf(S.pick)) nudgePart(dx, dy); else nudge(dx, dy);
+        if (S.part !== null && instOf(S.pick)) nudgePart(dx, dy);
+        else if (instOf(S.pick) && amOf() === 'edit')
+        {
+            const a = k.shift ? 16 : 1;
+            H.arrow('anchor.nudge');
+            moveAnchor(instOf(S.pick).prefab, Math.sign(dx) * a, Math.sign(dy) * a);
+        }
+        else nudge(dx, dy);
     }
     else if (k.key === ' ') toGame({sb: 'replay'});
     else if (k.key === 'Escape' && S.arm) arm(false);
@@ -1990,6 +2021,7 @@ addEventListener('message', (e) => {
     else if (m.sb === 'part' && m.key === S.pick) openPart(m.i);
     else if (m.sb === 'movePart' && instOf(m.key)) setPart(instOf(m.key).prefab, m.i, {x: m.x || undefined, y: m.y || undefined});
     else if (m.sb === 'dragLive') dragLive(m);
+    else if (m.sb === 'moveAnchor' && m.key === S.pick && instOf(m.key)) moveAnchor(instOf(m.key).prefab, m.dx, m.dy);
     else if (m.sb === 'box' && instOf(m.key) && BOXES.some(([k]) => k === m.k)) setPf(instOf(m.key).prefab, {[m.k]: m.box});
     else if (m.sb === 'moveInst')
     {
@@ -2136,5 +2168,5 @@ refresh();
 
 // 給無頭測試用
 window.__sc = {S, setProject, addScene, dupScene, renameScene, deleteScene, select, undo, redo, addRole, setRole, setEquip, deleteRole, pickRole, toggleHide, arm, toGame, addProp, setProp, deleteObj, nudge, bakeProp, folderTree, exportProp: (key) => exportProp(propOf(key)), srcSize, addLight, setLight, addEmitter, setEmitter, setField, setPlaying,
-               addInst, setInst, newPrefab, deletePrefab, toggleFold, setPf, setPart, addPart, movePart, delPart, openPart, pickPrefab, saveDraft, dropDraft, moveAnchor, composePrefab, renamePrefab, dupPrefab, setBoxMode, setPartMode,
+               addInst, setInst, newPrefab, deletePrefab, toggleFold, setPf, setPart, addPart, movePart, delPart, openPart, pickPrefab, saveDraft, dropDraft, moveAnchor, composePrefab, renamePrefab, dupPrefab, setBoxMode, setPartMode, setAnchorMode,
                flush: () => S.q};

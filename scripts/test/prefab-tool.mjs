@@ -151,7 +151,7 @@ run('prefab-tool', async t => {
         await sc.setInst('f1', {x: 400, y: 288, look: undefined});
         sc.pickRole('f1');
         const partRows = () => [...doc.querySelectorAll('#right .part')].map(e => [+e.dataset.part, e.classList.contains('off')]);
-        const secs = () => [...doc.querySelectorAll('#right .sec')].map(e => e.firstChild.textContent);
+        const secs = () => [...doc.querySelectorAll('#right .sec')].map(e => [...e.childNodes].find(n => n.nodeType === 3 && n.textContent.trim())?.textContent.trim());
         out.panel0 = [partRows(), secs()];
         // 右欄摺疊：屬性／零件／實例各自收起、記 localStorage；草稿列那條不摺
         const fold = (k) => doc.querySelector(`#right .head[data-fold="${k}"] .tw`)?.textContent;
@@ -324,6 +324,62 @@ run('prefab-tool', async t => {
         await until(() => ins());
         const go = ins().go;
         const holder0 = () => ins().go.view._parts.find(e => e.i === 0)?.holder;
+        // 展開＝自動 edit（hide 的也是）、收起／換展開／取消選取＝回 show
+        const pmNow = () => JSON.stringify(sb()._inspect?.partMode);
+        const selIcon = (i) => {const s = doc.querySelector(`#right select[data-k="part${i}.mode"]`); return s?.options[s.selectedIndex].textContent;};
+        sc.openPart(null);
+        await until(() => pmNow() === '["show","show"]');
+        sc.setPartMode('fire_pit', 1, 'hide');
+        sc.openPart(1);
+        out.autoOpen = [await until(() => pmNow() === '["show","edit"]') && pmNow(), selIcon(1)];
+        sc.openPart(0);
+        out.autoSwap = await until(() => pmNow() === '["edit","show"]') && pmNow();
+        sc.openPart(null);
+        out.autoClose = await until(() => pmNow() === '["show","show"]') && pmNow();
+        sc.openPart(1);
+        await until(() => pmNow() === '["show","edit"]');
+        sc.pickRole(null);
+        await until(() => !sb()._inspected());
+        sc.pickRole('f1');
+        out.autoDeselect = await until(() => ins() && pmNow() === '["show","show"]') && [pmNow(), sc.S.part];
+
+        // 錨點模式：hide 藏黃點點不到、edit 拖黃點＝只移錨點（草稿、畫面不動）、Shift 吸 16、方向鍵、換選取回 show
+        const amFk = (x, y, shift = false) => ({leftButtonDown: () => true, rightButtonDown: () => false, middleButtonDown: () => false, worldX: x, worldY: y, x, y, event: {shiftKey: shift, clientX: 0, clientY: 0}});
+        const amSel = () => doc.querySelector('#right select[data-k="anchor.mode"]');
+        const gx = ins().go.x, gy = ins().go.y, px0 = sc.S.prefabs.fire_pit.parts[0].x ?? 0;
+        out.amDefault = [amSel()?.value, sb()._inspect.anchorMode];
+        sc.setAnchorMode('hide');
+        await until(() => sb()._inspect?.anchorMode === 'hide');
+        out.amHide = [sb()._anchorPt(), sb()._instAt(gx, gy), sb()._pickAt(gx - 2, gy - 8)?.key ?? null];
+        sc.setAnchorMode('edit');
+        await until(() => sb()._inspect?.anchorMode === 'edit');
+        sb().input.emit('pointerdown', amFk(gx, gy));
+        sb().input.emit('pointermove', amFk(gx + 5.3, gy - 3));
+        await until(() => doc.querySelector('#right [data-k="anchorDx"]')?.value === '5');
+        const adx = doc.querySelector('#right [data-k="anchorDx"]');
+        out.amDrag = [sb()._anchorPt().x - gx, sb()._anchorPt().y - gy, ins().go.x - gx, adx.classList.contains('live'), doc.querySelector('#right [data-k="anchorDy"]').value, sc.S.draft];
+        sb().input.emit('pointerup', amFk(gx + 5.3, gy - 3));
+        out.amDrop = await until(() => sc.S.draft?.dx === 5 && sb()._insts.f1?.go?.x === gx + 5) && [sc.S.draft.dx, sc.S.draft.dy, sc.S.draft.pf.parts[0].x ?? 0, px0,
+            sb()._insts.f1.go.x, (await cDisk()).prefabs[0].x, doc.querySelectorAll('#right input.live').length, sc.S.am?.mode];
+        sb().input.emit('pointerdown', amFk(gx + 5, gy - 3));
+        sb().input.emit('pointermove', amFk(gx + 5 + 9, gy - 3 + 4, true));
+        const sp = sb()._anchorPt();
+        out.amSnap = [sp.x % 16, sp.y % 16];
+        sb().input.emit('pointerup', amFk(gx + 14, gy + 1, true));
+        out.amSnapDrop = await until(() => sc.S.draft?.dx === sp.x - gx) && [sc.S.draft.dx, sc.S.draft.dy];
+        const kd = (k, shift = false) => {doc.body.dispatchEvent(new win.KeyboardEvent('keydown', {key: k, shiftKey: shift, bubbles: true})); return sc.flush();};
+        const dx1 = sc.S.draft.dx, un = sc.S.draft.undo.length;
+        await kd('ArrowRight');
+        await kd('ArrowRight');
+        await kd('ArrowDown', true);
+        out.amKey = [sc.S.draft.dx - dx1, sc.S.draft.dy - out.amSnapDrop[1], sc.S.draft.undo.length - un];
+        sc.dropDraft();
+        await until(() => !sc.S.draft && sb()._insts.f1?.go?.x === gx);
+        const amKept = sc.S.am?.mode;
+        sc.pickRole(null);
+        await until(() => !sb()._inspected());
+        sc.pickRole('f1');
+        out.amReset = await until(() => ins() && sb()._inspect?.anchorMode === 'show') && [amKept, amSel()?.value, sc.S.am];
         out.partShow = [sb()._inspect.partMode, sb()._partAt(ins(), go.x - 10, go.y - 5), holder0().visible];
         sc.setPartMode('fire_pit', 0, 'hide');
         out.partHide = await until(() => !holder0().visible) && [holder0().visible, sb()._insts.f1 === ins()];
@@ -365,6 +421,8 @@ run('prefab-tool', async t => {
         out.boxDrag = [sc.S.draft.pf.grid, bl.cur, (await pfDisk()).fire_pit.grid];
         await sc.undo();
         out.boxUndo = sc.S.draft.pf.grid.w;
+        sc.openPart(null);
+        await until(() => sb()._inspect?.partMode?.[0] === 'show');
         out.editPart = [sb()._partAt(ins(), go.x - 10, go.y - 5, ['edit']), (sc.setPartMode('fire_pit', 0, 'edit'), await until(() => sb()._inspect?.partMode?.[0] === 'edit')) && sb()._partAt(ins(), go.x - 10, go.y - 5, ['edit'])];
 
         const fake = (x, y) => ({leftButtonDown: () => true, rightButtonDown: () => false, middleButtonDown: () => false, worldX: x, worldY: y, x, y, event: {shiftKey: false, clientX: 0, clientY: 0}});
@@ -539,6 +597,19 @@ run('prefab-tool', async t => {
          JSON.stringify([[[-10, 0], [-10, -30]], -26, 230, -10, null, true]));
 
     // 畫面互動
+    t.eq('展開零件：自動 edit（hide 的也是）、下拉跟著變 ✎', JSON.stringify(r.autoOpen), JSON.stringify(['["show","edit"]', '✎']));
+    t.eq('換展開別的零件：舊的回 show、新的 edit', r.autoSwap, '["edit","show"]');
+    t.eq('收起零件：回 show', r.autoClose, '["show","show"]');
+    t.eq('取消選取再選回來：展開的回 show、沒有展開', JSON.stringify(r.autoDeselect), JSON.stringify(['["show","show"]', null]));
+    t.eq('錨點模式預設 show（右欄下拉＋sandbox）', JSON.stringify(r.amDefault), JSON.stringify(['show', 'show']));
+    t.eq('錨點 hide：黃點不畫、點不到，點選框照樣選得到', JSON.stringify(r.amHide), JSON.stringify([null, null, 'f1']));
+    t.eq('錨點 edit 拖曳中：只有黃點動、x/y 即時＋黃框、草稿還沒寫', JSON.stringify(r.amDrag), JSON.stringify([5, -3, 0, true, '-3', null]));
+    t.eq('錨點 edit 放開：草稿位移 5,-3、零件反向挪、實例存檔位置不動、畫面在新錨點、黃框拿掉、還在 edit', JSON.stringify(r.amDrop?.slice(0, 3).concat(r.amDrop?.slice(6))),
+         JSON.stringify([5, -3, (r.amDrop?.[3] ?? 0) - 5, 0, 'edit']));
+    t.eq('錨點 edit Shift：吸世界 16px 格點', JSON.stringify(r.amSnap), JSON.stringify([0, 0]));
+    t.check('錨點 edit Shift 放開：草稿位移＝格點－原錨點', !!r.amSnapDrop, JSON.stringify(r.amSnapDrop));
+    t.eq('錨點 edit 方向鍵：1px、Shift 16px，連按併一步 undo', JSON.stringify(r.amKey), JSON.stringify([2, 16, 1]));
+    t.eq('放棄草稿還在 edit；換選取再選回來：錨點模式回 show', JSON.stringify(r.amReset), JSON.stringify(['edit', 'show', null]));
     t.eq('零件預設 show：照常顯示、點不到', JSON.stringify(r.partShow), JSON.stringify([['show', 'show'], null, true]));
     t.eq('零件 hide：選中的實例藏零件本身', JSON.stringify(r.partHide), JSON.stringify([false, true]));
     t.eq('png 藏掉：點選框退回粒子點、最少 32×32', JSON.stringify(r.boxNoPng), JSON.stringify([32, 32, 0, 0]));
