@@ -1,4 +1,5 @@
 import {astar, Graph} from '../core/astar.js';
+import {thumbOf} from '../core/prefab.js';
 
 // 路網的格子權重＋A*：scripts/navgraph.js（node）跟角色分頁的作息地圖（瀏覽器）共用
 // 規則要跟遊戲的 Map._createGraph()／View 物件登記一致；不碰 fs，讀檔由呼叫端傳 readJson(相對 assets 的路徑)
@@ -61,14 +62,27 @@ export function placeObject(o)
 
     const gh = resolveAxis(num(p.gl), num(p.gr), num(p.gw), w);
     const gv = resolveAxis(num(p.gt), num(p.gb), num(p.gh), h);
-    const grid = {w:gh.size, h:gv.size};
-    const posG = {x:cen.x - w/2 + gh.a + gh.size/2, y:cen.y - h/2 + gv.a + gv.size/2};
+    let grid = {w:gh.size, h:gv.size};
+    let posG = {x:cen.x - w/2 + gh.a + gh.size/2, y:cen.y - h/2 + gv.a + gv.size/2};
 
     // 錨點：al/ar/at/ab 量圖片的邊，沒寫的軸＝中心(同 View._setAnchor)
     let ax = 0, ay = 0;
     if(p.al!=null) {ax = -w/2 + num(p.al);} else if(p.ar!=null) {ax = w/2 - num(p.ar);}
     if(p.at!=null) {ay = -h/2 + num(p.at);} else if(p.ab!=null) {ay = h/2 - num(p.ab);}
-    const pos = {x:cen.x + ax, y:cen.y + ay};
+    let pos = {x:cen.x + ax, y:cen.y + ay};
+
+    // prefab(同 ItemView)：錨點＝縮圖中心往回挪 thumb 中心；grid 相對錨點、沒寫＝不佔格，Tiled 寫了量邊 gl… 才照上面量縮圖
+    if(o.pf)
+    {
+        const t = thumbOf(o.pf);
+        pos = {x:cen.x - t.x - t.w/2, y:cen.y - t.y - t.h/2};
+        if(!['gl','gr','gw','gt','gb','gh'].some(k=>p[k]!=null))
+        {
+            const g = o.pf.grid;
+            grid = g ? {w:g.w, h:g.h} : {w:0, h:0};
+            posG = g ? {x:pos.x + g.x + g.w/2, y:pos.y + g.y + g.h/2} : pos;
+        }
+    }
 
     const pts = p.json_pts ? JSON.parse(p.json_pts).map(d=>({x:pos.x+d.x, y:pos.y+d.y})) : [posG];
     return {cen, posG, grid, pts};
@@ -140,6 +154,7 @@ export function buildGrid(map, tilesets, objs)
         const wei = objectWeight(o);
         if(!wei) {continue;}
         const {posG, grid:g} = placeObject(o);
+        if(!g.w || !g.h) {continue;}
         let tiles;
         if(g.w>tw || g.h>th)
         {
@@ -199,7 +214,7 @@ export function bestPath(grid, sp, eps)
 export async function loadMap(mapName, readJson)
 {
     const file = `maps/${mapName}.json`;
-    const map = await readJson(file);
+    let map = await readJson(file);
     if(!map) {return null;}
     const dir = dirOf(file);
     const tpls = {};
@@ -210,8 +225,28 @@ export async function loadMap(mapName, readJson)
     }
     const tilesets = [];
     for(const ts of map.tilesets) {tilesets.push(ts.source ? await readJson(joinPath(dir, ts.source)) : ts);}
+    // Tiled 放 template 時不會把 template 的 tileset 加進地圖：沒有的接在最後面(同遊戲的 TileMap._preload_TemplateTileset)，map 換成淺拷貝不動原物件
+    const have = new Set(map.tilesets.filter(t=>t.source).map(t=>joinPath(dir, t.source)));
+    const span = (ts)=>ts?.tiles?.length && !ts.image ? Math.max(...ts.tiles.map(t=>t.id)) + 1 : (ts?.tilecount ?? 0);
+    const up = '../'.repeat(dir.split('/').length);
+    for(const [path, tpl] of Object.entries(tpls))
+    {
+        if(!tpl?.tileset) {continue;}
+        const src = joinPath(dirOf(joinPath(dir, path)), tpl.tileset.source);
+        if(have.has(src)) {continue;}
+        have.add(src);
+        const firstgid = Math.max(1, ...map.tilesets.map((t,i)=>t.firstgid + span(tilesets[i])));
+        map = {...map, tilesets:[...map.tilesets, {firstgid, source:up + src}]};
+        tilesets.push(await readJson(src));
+    }
     const objs = map.layers
         .filter(l=>l.type==='objectgroup')
         .flatMap(l=>l.objects.map(o=>resolveObject(o, tpls[o.template])));
+    // prefab 物件掛上 prefab.json 那筆(placeObject 照它算錨點／grid)；查不到交給 mapcheck 報錯
+    if(objs.some(o=>o.props.prefab))
+    {
+        const prefabs = await readJson('json/prefab.json') ?? {};
+        for(const o of objs) {if(o.props.prefab) {o.pf = prefabs[o.props.prefab] ?? null;}}
+    }
     return {map, tilesets, objs, tpls};
 }

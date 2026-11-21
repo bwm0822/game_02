@@ -156,6 +156,12 @@
                  "template":"..\/..\/templates\/buildings\/house-1.tj",
                  "x":2000,
                  "y":1872
+                }, 
+                {
+                 "id":190,
+                 "template":"..\/..\/templates\/prefabs\/forge.tj",
+                 "x":1312,
+                 "y":1664
                 }],
          "opacity":1,
          "properties":[
@@ -728,7 +734,7 @@
          "y":0
         }],
  "nextlayerid":6,
- "nextobjectid":190,
+ "nextobjectid":191,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",

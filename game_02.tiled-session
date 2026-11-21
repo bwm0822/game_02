@@ -374,7 +374,7 @@
             "scale": 0.33,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 1600,
+                "x": 4975.757575757576,
                 "y": 1603.030303030303
             }
         },
@@ -536,7 +536,7 @@
             "scale": 1.1518749999999998,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 239.60933260987525,
+                "x": 223.98263700488337,
                 "y": 240.04340748779168
             }
         },
@@ -865,27 +865,35 @@
             "scaleInEditor": 1
         },
         "public/assets/tilesets/32x32GridItemsAll.tsj": {
+            "dynamicWrapping": false,
             "scaleInDock": 1
         },
         "public/assets/tilesets/buildings.tsj": {
+            "dynamicWrapping": true,
             "scaleInDock": 1
         },
         "public/assets/tilesets/free_items.tsj": {
+            "dynamicWrapping": true,
             "scaleInDock": 1
         },
         "public/assets/tilesets/icons.tsj": {
+            "dynamicWrapping": false,
             "scaleInDock": 1
         },
         "public/assets/tilesets/interior.tsj": {
+            "dynamicWrapping": false,
             "scaleInDock": 1
         },
         "public/assets/tilesets/npcs.tsj": {
+            "dynamicWrapping": true,
             "scaleInDock": 1
         },
         "public/assets/tilesets/props.tsj": {
+            "dynamicWrapping": true,
             "scaleInDock": 1
         },
         "public/assets/tilesets/spr_fencePost.tsj": {
+            "dynamicWrapping": false,
             "scaleInDock": 1
         },
         "public/assets/tilesets/terrain_tiles_v2.tsj": {

@@ -17,6 +17,7 @@ run('prefab', async t => {
                 {img: 'Crate', y: -20, look: 'off', sx: 0.5, sy: 0.5},
                 {particle: 'campfire', y: -30, look: 'on'},
                 {light: {r: 100, color: '#ff8800'}, y: -16, look: 'on'},
+                {def: {img: 'p-dot', mode: 'stream', frequency: 100, lifespan: 300}, y: -10, look: 'on'},
             ],
         };
         const p = d.GM.player;
@@ -49,6 +50,7 @@ run('prefab', async t => {
         out.on = vis(go);
         out.onLights = nLights() - L0;
         out.onEm = go.view._parts.filter(e => e.em).length;
+        out.defEm = (() => {const e = go.view._parts.find(e => e.p.def); return [!!e?.em, e?.em?.frequency ?? e?.em?.emitter?.frequency ?? null];})();
         out.lightPos = (() => {const l = go.view._parts.find(e => e.light).light; return [l.x - go.x, l.y - go.y];})();
 
         go.save();
@@ -81,7 +83,8 @@ run('prefab', async t => {
     t.eq('off：底座＋小箱子，火焰藏', JSON.stringify(r.off), '[true,true,false]');
     t.check('off：沒光源、沒粒子', r.offLights === 0 && r.offEm === 0, JSON.stringify(r));
     t.eq('on：底座＋火焰，小箱子藏', JSON.stringify(r.on), '[true,false,true]');
-    t.check('on：一盞光、一個粒子', r.onLights === 1 && r.onEm === 1, JSON.stringify(r));
+    t.check('on：一盞光、兩個粒子（參照 particle.json＋零件自己的 def）', r.onLights === 1 && r.onEm === 2, JSON.stringify(r));
+    t.eq('零件自己的 def：照 def 噴（frequency 100）', JSON.stringify(r.defEm), JSON.stringify([true, 100]));
     t.eq('光源在錨點＋(0,-16)', JSON.stringify(r.lightPos), '[0,-16]');
     t.eq('存檔記 look', JSON.stringify(r.saved), '{"look":"on"}');
     t.eq('移除後光源拿掉', r.afterRemoveLights, 0);
@@ -90,6 +93,45 @@ run('prefab', async t => {
     t.eq('切走時火焰先播 fx 的 end（還看得到）', JSON.stringify(r.ending), '[true,false,true]');
     t.eq('不存在的狀態：end 播完只剩沒寫 look 的', JSON.stringify(r.bad), '[true,false,false]');
     t.eq('不存在的狀態：光源關掉', r.badLights, 0);
+
+    // 粒子零件的前後：local 放進 _shape 照零件 depth 跟 png 排（切 look 才出現的也一樣、不管 def.depth）；world 跟著 root depth
+    const z = await t.eval(async d => {
+        const gs = d.game.scene.getScene('GameScene');
+        const {default: Item} = await import('/src/items/item.js');
+        const pd = {img: 'p-dot', mode: 'stream', frequency: 100, lifespan: 300};
+        d.DB._prefabDB.t_layer = {
+            look: 'off',
+            parts: [
+                {img: 'Crate', depth: 2},
+                {def: {...pd, local: true, depth: 'under'}, depth: 1},
+                {img: 'Barrel'},
+                {def: {...pd, local: true}, depth: 1.5, look: 'on'},
+                {def: pd},
+                {def: {...pd, depth: 'under'}},
+            ],
+        };
+        const p = d.GM.player;
+        const go = new Item(gs, p.x + 96, p.y);
+        go.uid = 987658;
+        go.bb.prefab = 't_layer';
+        go.init_prefab();
+        const v = go.view;
+        const order = () => v._shape.list.map(o => o.type === 'ParticleEmitter' ? `p${v._parts.find(e => e.em?.emitter === o)?.i}` : `i${v._parts.find(e => e.holder === o)?.i}`).join(',');
+        const out = {};
+        out.off = order();
+        go.setLook('on');
+        out.on = order();
+        await new Promise(res => setTimeout(res, 50));
+        const w = i => v._parts.find(e => e.i === i).em.emitter;
+        out.world = [w(4).parentContainer ? 'in' : 'out', w(4).depth - go.depth, w(5).depth - go.depth];
+        go.emit('remove');
+        delete d.Record.game.scenes?.[gs._data.map]?.prefab?.[987658];
+        delete d.DB._prefabDB.t_layer;
+        return out;
+    });
+    t.eq('local 粒子照零件 depth 插在 png 中間（不管 def 的 under）', z.off, 'i2,p1,i0');
+    t.eq('切 look 才出現的 local 粒子也照 depth 排', z.on, 'i2,p1,p3,i0');
+    t.eq('world 粒子：不進 _shape、最上層＝root+0.5、under＝root−0.5', JSON.stringify(z.world), '["out",0.5,-0.5]');
 
     // acts／defAct／動態選單按鈕／燈交給 prefab
     const a = await t.eval(async d => {
@@ -211,4 +253,41 @@ run('prefab', async t => {
     t.eq('runtime 生出來：位置就是錨點、預設 off', JSON.stringify(p.pos), JSON.stringify([0, 16, 'off', 2]));
     t.eq('存檔：runtime 記錨點跟 look', JSON.stringify(p.saved), JSON.stringify(['pot', 't_potitem', 0, 16, 'on']));
     t.eq('照存檔重建：位置不漂移、狀態 on', JSON.stringify(p.reload), JSON.stringify([0, 16, 'on']));
+
+    // Tiled 地圖 m/m_04x05 用 template 放的 forge（Tiled 存縮圖左下角 1312,1664 → 錨點＝底邊正中）
+    const m = await t.eval(async d => {
+        const gs = d.game.scene.getScene('GameScene');
+        const gos = d.objs().filter(o => o.bb?.prefab === 'forge' || o.view?.prefab === 'forge');
+        const go = gos[0];
+        if (!go) return {n: 0, map: gs._data.map};
+        const v = go.view;
+        const pf = d.DB.prefab('forge');
+        return {
+            n: gos.length, uid: go.uid, pos: [go.x, go.y],
+            pngs: v._shape.list.filter(o => o.type !== 'ParticleEmitter').length,
+            ems: v._parts.filter(e => e.em).length,
+            grid: v._grid && [v._grid.x, v._grid.y, v._grid.w, v._grid.h],
+            zone: v.zoneBox ?? null,
+            key: [v.key ?? null, v.frame ?? null],
+            interactive: !!v._zone,
+            tiles: JSON.stringify(gs.map.gridTiles(go.posG, go.gridBB)),
+            tool: await (async () => {
+                const nav = await import('/src/data/navgrid.js');
+                const read = p => fetch(`/assets/${p}`).then(r => r.ok ? r.json() : null);
+                const dm = await nav.loadMap('m/m_04x05', read);
+                const o = dm.objs.find(o => o.props.prefab === 'forge');
+                const {posG, grid} = nav.placeObject(o);
+                return {posG: [posG.x - go.posG.x, posG.y - go.posG.y], grid: [grid.w, grid.h], tiles: JSON.stringify(gs.map.gridTiles(posG, grid))};
+            })(),
+        };
+    });
+    t.eq('m_04x05 有一個 forge', m.n, 1);
+    t.eq('錨點＝Tiled 左下角＋(32,0)', JSON.stringify(m.pos), '[1344,1664]');
+    t.eq('只有 1 張 png（沒多畫縮圖）', m.pngs, 1);
+    t.eq('2 個粒子在跑', m.ems, 2);
+    t.check('純裝飾（type item、沒 acts）點不到', !m.interactive && m.zone === null, JSON.stringify(m));
+    t.eq('grid 照 prefab（中心相對錨點）', JSON.stringify(m.grid), '[-8,-8,32,16]');
+    t.eq('地圖沒列 prefabs.tsj 也換對 gid（縮圖 key）', JSON.stringify(m.key), '["prefab-forge",null]');
+    t.eq('路網／工具（navgrid.placeObject）的佔格中心跟大小＝遊戲', JSON.stringify([m.tool.posG, m.tool.grid]), '[[0,0],[32,16]]');
+    t.eq('佔的格子跟遊戲一樣', m.tool.tiles, m.tiles);
 });

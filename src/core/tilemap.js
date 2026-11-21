@@ -90,7 +90,47 @@ export default class TileMap
         });
     }
 
-    static _preload(scene, mapName)   
+    // tileset 佔用的 gid 數：集合型的 tile id 可能跳號，取最大 id+1
+    static _span(scene, ts)
+    {
+        const json = ts.source ? scene.cache.json.get(ts.source) : ts;
+        if(json?.tiles?.length && !json.image) {return Math.max(...json.tiles.map(t=>t.id)) + 1;}
+        return json?.tilecount ?? 0;
+    }
+
+    // Tiled 放 template 時不會把 template 的 tileset 加進地圖，地圖沒有的接在最後面
+    static _preload_TemplateTileset(scene, mapName)
+    {
+        return new Promise((resolve)=>{
+            const map = scene.cache.tilemap.get(mapName);
+            const sets = map.data.tilesets;
+            const miss = new Set();
+            map.data.layers.forEach((layer) => {
+                if(layer.type!='objectgroup') {return;}
+                layer.objects.forEach((obj) => {
+                    const ts = obj.template && scene.cache.json.get(obj.template)?.tileset;
+                    if(!ts) {return;}
+                    const src = this._resolve(obj.template, ts.source);
+                    if(sets.some(t=>t.source===src)) {return;}
+                    miss.add(src);
+                    if(this._isLoaded(src)) {return;}
+                    dlog(T.MAP)(`load[${src}] (template)`);
+                    scene.load.json(src, src);
+                });
+            });
+            scene.load.once('complete', ()=>{
+                for(const src of miss)
+                {
+                    const firstgid = Math.max(1, ...sets.map(t=>t.firstgid + this._span(scene, t)));
+                    sets.push({firstgid, source:src});
+                }
+                resolve();
+            });
+            scene.load.start();
+        });
+    }
+
+    static _preload(scene, mapName)
     {
         return new Promise((resolve)=>{
             dlog(T.MAP)('preload');
@@ -122,13 +162,13 @@ export default class TileMap
                         // 將 template(*.tj) 的資料取出來，放到 object 裡
                         let template = scene.cache.json.get(obj.template);
                         let object = Utility.deepClone(template.object);
-                        // 從 tileset 裡找到對應的 tileset，並將 gid 轉換成正確的 gid
-                        map.data.tilesets.forEach(element => {
-                            if(template.tileset?.source.includes(element.source))
-                            {
-                                object.gid = element.firstgid + object.gid - 1;
-                            }   
-                        }); 
+                        // gid 是相對 template 自己的 tileset，換成這張地圖的(_preload_TemplateTileset 保證地圖有這個 tileset)
+                        if(template.tileset)
+                        {
+                            const src = this._resolve(obj.template, template.tileset.source);
+                            const ts = map.data.tilesets.find(t=>t.source===src);
+                            object.gid = ts.firstgid + object.gid - template.tileset.firstgid;
+                        }
                         delete obj.template;
                         //將 obj.properties 的值 覆蓋到 object.properties 上
                         if(obj.properties)
@@ -232,6 +272,7 @@ export default class TileMap
         if(this._isMaploaded(mapName)) {return;}
         await this._loadTileMap(scene, mapName);
         await this._preload(scene, mapName);
+        await this._preload_TemplateTileset(scene, mapName);
         await this._preprocess(scene, mapName);
     }
 
