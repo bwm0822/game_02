@@ -270,6 +270,8 @@ run('prefab', async t => {
             zone: v.zoneBox ?? null,
             key: [v.key ?? null, v.frame ?? null],
             interactive: !!v._zone,
+            pfEms: pf.parts.filter(p => (p.def || p.particle) && (!p.look || p.look === (pf.look ?? null))).length,
+            pfGrid: [pf.grid.x + pf.grid.w / 2, pf.grid.y + pf.grid.h / 2, pf.grid.w, pf.grid.h],
             tiles: JSON.stringify(gs.map.gridTiles(go.posG, go.gridBB)),
             tool: await (async () => {
                 const nav = await import('/src/data/navgrid.js');
@@ -284,10 +286,87 @@ run('prefab', async t => {
     t.eq('m_04x05 有一個 forge', m.n, 1);
     t.eq('錨點＝Tiled 左下角＋(32,0)', JSON.stringify(m.pos), '[1344,1664]');
     t.eq('只有 1 張 png（沒多畫縮圖）', m.pngs, 1);
-    t.eq('2 個粒子在跑', m.ems, 2);
-    t.check('純裝飾（type item、沒 acts）點不到', !m.interactive && m.zone === null, JSON.stringify(m));
-    t.eq('grid 照 prefab（中心相對錨點）', JSON.stringify(m.grid), '[-8,-8,32,16]');
+    t.eq('預設狀態該有的粒子在跑', m.ems, m.pfEms);
+    t.eq('grid 照 prefab（中心相對錨點）', JSON.stringify(m.grid), JSON.stringify(m.pfGrid));
     t.eq('地圖沒列 prefabs.tsj 也換對 gid（縮圖 key）', JSON.stringify(m.key), '["prefab-forge",null]');
-    t.eq('路網／工具（navgrid.placeObject）的佔格中心跟大小＝遊戲', JSON.stringify([m.tool.posG, m.tool.grid]), '[[0,0],[32,16]]');
+    t.eq('路網／工具（navgrid.placeObject）的佔格中心跟大小＝遊戲', JSON.stringify([m.tool.posG, m.tool.grid]), JSON.stringify([[0, 0], m.pfGrid.slice(2)]));
     t.eq('佔的格子跟遊戲一樣', m.tool.tiles, m.tiles);
+
+    // forge.tj 是 stove：外觀照 prefab（點火／熄火切粒子）、行為照 type（烹飪），兩者的存檔不互相蓋掉
+    const forge = 'd.objs().find(o => o.bb?.prefab === "forge")';
+    const s = await t.eval(async (d, forge) => {
+        const go = eval(forge);
+        const {default: Stove} = await import('/src/items/stove.js');
+        const Ui = d.Ui;
+        const st = a => a === d.GM.EN ? 'en' : a === d.GM.HIDE ? 'hide' : a === undefined ? '-' : String(a);
+        const acts = () => ['cook', 'fire_on', 'fire_off'].map(k => `${k}:${st(go.acts[k])}`).join(' ');
+        const ems = () => go.view._parts.filter(e => e.em).length;
+        const out = {};
+        out.cls = go instanceof Stove;
+        out.isBlock = go.view.isBlock;
+        out.zone = !!go.view._zone;
+        out.dflt = [go.getLook(), d.DB.prefab('forge').look];
+        if (go.getLook() !== 'on') {await go.aEmit('fire_on', d.GM.player); await new Promise(r => setTimeout(r, 300));}
+        out.look0 = go.getLook();
+        out.ems0 = ems();
+        out.pngs0 = go.view._shape.list.filter(o => o.type !== 'ParticleEmitter' && o.visible).length;
+        out.acts0 = acts();
+        out.def0 = go.act;
+        await go.aEmit('fire_off', d.GM.player);
+        await new Promise(r => setTimeout(r, 300));
+        out.look1 = go.getLook();
+        out.ems1 = ems();
+        out.pngs1 = go.view._shape.list.filter(o => o.type !== 'ParticleEmitter' && o.visible).length;
+        out.acts1 = acts();
+        out.def1 = go.act;
+        let opened = null;
+        const on = Ui.on;
+        Ui.on = (tag, owner) => {opened = [tag, owner === go];};
+        go.emit(d.GM.COOK);
+        Ui.on = on;
+        out.cook = opened && [opened[0] === d.UI.TAG.MANUFACTURE, opened[1]];
+        go.storage.items[0] = {id: 'iron', count: 3};
+        out.uid = go.uid;
+        return out;
+    }, forge);
+    t.check('forge 建成 Stove、isBlock、有 zone', s.cls && s.isBlock && s.zone, JSON.stringify(s));
+    t.eq('一開始＝prefab 的預設狀態', s.dflt[0], s.dflt[1]);
+    t.eq('on：png＋2 個粒子', JSON.stringify([s.look0, s.pngs0, s.ems0]), '["on",1,2]');
+    t.eq('on：烹飪＋熄火（點火藏）', s.acts0, 'cook:en fire_on:hide fire_off:en');
+    t.eq('左鍵＝烹飪', s.def0, 'cook');
+    t.eq('熄火 → off：png 還在、粒子停', JSON.stringify([s.look1, s.pngs1, s.ems1]), '["off",1,0]');
+    t.eq('off：烹飪＋點火', s.acts1, 'cook:en fire_on:en fire_off:hide');
+    t.eq('off 左鍵還是烹飪', s.def1, 'cook');
+    t.eq('烹飪開製造介面（owner＝forge）', JSON.stringify(s.cook), '[true,true]');
+
+    await t.gotoMap('m_04x05/house-01');
+    await t.gotoMap('m/m_04x05');
+    const s2 = await t.eval((d, forge) => {
+        const go = eval(forge);
+        return {look: go.getLook(), ems: go.view._parts.filter(e => e.em).length, slot: go.storage.items[0], acts: go.acts.fire_on === d.GM.EN};
+    }, forge);
+    t.eq('離開再回來：狀態 off、粒子沒開', JSON.stringify([s2.look, s2.ems]), '["off",0]');
+    t.eq('製造台的東西還在（look 跟 manu 存檔不互蓋）', JSON.stringify(s2.slot), '{"id":"iron","count":3}');
+    t.check('回來後點火還能用', s2.acts);
+
+    // hover 著點火：外框（postFX）合成時沿用最後畫的 ADD 火星會整塊變白（src/core/postfxblend.js）
+    const w = await t.eval(async (d, forge) => {
+        const go = eval(forge), v = go.view;
+        const gs = d.game.scene.getScene('GameScene'), cam = gs.cameras.main;
+        cam.stopFollow?.();
+        cam.centerOn(go.x, go.y - 24);
+        const wait = ms => new Promise(r => setTimeout(r, ms));
+        const px = (x, y) => new Promise(res => d.game.renderer.snapshotPixel(Math.round(go.x + x - cam.worldView.x), Math.round(go.y + y - cam.worldView.y), c => res([c.r, c.g, c.b])));
+        const sample = async () => {await wait(250); return [await px(0, -24), await px(20, -10)];};
+        v._setOutline(true);
+        const off = await sample();
+        await go.aEmit('fire_on', d.GM.player);
+        const on = await sample();
+        v._setOutline(false);
+        cam.startFollow?.(d.GM.player);
+        return {off, on, last: v._shape.list.at(-1)?.type};
+    }, forge);
+    t.eq('（前提）點火後 _shape 最後一個是粒子', w.last, 'ParticleEmitter');
+    t.check('hover 著點火不會整塊變白', w.on.every(c => !c.every(x => x >= 250)), JSON.stringify(w));
+    t.eq('hover 著點火的 png 顏色＝熄火時', JSON.stringify(w.on), JSON.stringify(w.off));
 });

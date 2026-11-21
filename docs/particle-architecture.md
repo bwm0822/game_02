@@ -37,6 +37,8 @@ await h.done;      // 銷毀時 resolve（預設不等，粒子只是裝飾）
 - emitter 自己的 `destroy`（parent container 被砍、場景關閉）→ 拿掉 update 監聽、resolve `done`
 - 不存檔
 
+ADD 粒子放進掛了 postFX（hover 外框 rexOutline）的 container：Phaser 的 `PostFXPipeline.bindAndDraw()` 合成時不設混色，container 最後畫的是 ADD 就整塊被 ADD 到背景上變白（prefab 的 local 火星，hover 著點火最容易遇到）。`src/core/postfxblend.js` 在 `postBoot` 把它包一層、合成前換回 NORMAL，`prefab.mjs` 最後一段驗。
+
 ## 使用端（規劃，見計畫順序）
 
 - 技能（已完成，`com_action.js`）：`cast`／`travel`／`fx` 物件內的 `particle`
