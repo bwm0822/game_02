@@ -11,6 +11,10 @@ run('prefab-tool', async t => {
         const win = T.S.frames.scene.contentWindow, sc = win.__sc, doc = win.document;
         const game = () => doc.getElementById('game').contentWindow;
         const sb = () => game().__sb;
+        const Phaser_intersect = (a, b) => {
+            const l = Math.max(a.x, b.x), t = Math.max(a.y, b.y), r = Math.min(a.right, b.right), bt = Math.min(a.bottom, b.bottom);
+            return l < r && t < bt ? {x: (l + r) / 2, y: (t + bt) / 2} : null;
+        };
 
         const opfs = await navigator.storage.getDirectory();
         for await (const name of opfs.keys()) await opfs.removeEntry(name, {recursive: true});
@@ -19,6 +23,7 @@ run('prefab-tool', async t => {
         const proj = await dir(opfs, 'game');
         const json = await dir(proj, 'public', 'assets', 'json');
         await write(json, 'item.json', '{}');
+        await write(json, 'role.json', await (await fetch('/assets/json/role.json')).text());
         // sandbox 的 DB 讀的是真的 particle.json：用遊戲裡有的 id（fire-charge 的 emitZone 是圓 (0,-16) r18）
         await write(json, 'particle.json', JSON.stringify({'fire-charge': {img: 'p-dot', mode: 'stream', emitZone: {type: 'edge', source: {x: 0, y: -16, r: 18}, quantity: 12}}}));
         const read = async (d, name) => {await sc.flush(); const fh = await d.getFileHandle(name).catch(() => null); return fh ? JSON.parse(await (await fh.getFile()).text()) : null;};
@@ -56,9 +61,12 @@ run('prefab-tool', async t => {
         // 點選：sandbox 點得到、右欄
         const g = inst().go;
         out.pick = sb()._pickAt(g.x, g.y - 3)?.key;
-        out.pickThumb = sb()._pickAt(g.x, g.y - 24)?.key ?? null;
+        // 點選框＝目前看得見的 png（off：只有 Barrel 17×22，origin 底部中間）
+        const bx = sb()._instBox(inst());
+        out.box = [bx.x - g.x, bx.y - g.y, bx.width, bx.height];
+        out.pickThumb = [sb()._pickAt(g.x + 7, g.y - 20)?.key ?? null, sb()._pickAt(g.x, g.y - 24)?.key ?? null];
         doc.getElementById('chkAnchor').click();
-        out.pickOff = await until(() => sb()._anchorOn === false) && [sb()._pickAt(g.x, g.y)?.key ?? null, sb()._anchorPt()];
+        out.pickOff = await until(() => sb()._anchorOn === false) && [sb()._instAt(g.x, g.y), sb()._pickAt(g.x + 7, g.y - 20)?.key ?? null, sb()._anchorPt()];
         doc.getElementById('chkAnchor').click();
         await until(() => sb()._anchorOn === true);
         sc.pickRole('f1');
@@ -69,6 +77,27 @@ run('prefab-tool', async t => {
         sb().input.emit('pointermove', fk(x0 + 7, y0 - 2));
         sb().input.emit('pointerup', fk(x0 + 7, y0 - 2));
         out.anchorDragInst = await until(async () => (await scDisk()).prefabs[0].x === x0 + 5) && [(await scDisk()).prefabs[0].x - x0, (await scDisk()).prefabs[0].y - y0];
+        // 沒選中時從點選框按下去：一下選取＋拖
+        sc.pickRole(null);
+        await until(() => sb()._sel === null && inst()?.go?.active && inst().go.x === x0 + 5);
+        const g2 = inst().go, x1 = g2.x, y1 = g2.y;
+        sb().input.emit('pointerdown', fk(x1 + 7, y1 - 20));
+        const selBox = sb()._sel;
+        sb().input.emit('pointermove', fk(x1 + 10, y1 - 20));
+        sb().input.emit('pointerup', fk(x1 + 10, y1 - 20));
+        out.boxDragInst = await until(async () => (await scDisk()).prefabs[0].x === x1 + 3 && sc.S.pick === 'f1') && [selBox, (await scDisk()).prefabs[0].x - x1, sc.S.pick];
+        // 角色疊在點選框上：角色優先
+        const g3 = await until(() => inst()?.go?.active && inst().go.x === x1 + 3) && inst().go;
+        const [rtx, rty] = sb().map.worldToTile(g3.x, g3.y);
+        await sc.addRole('mary', rtx, rty);
+        const role = await until(() => sb().roles.find(p => p.visible && p.getShapeRect));
+        // 錨點（8 螢幕 px）照舊優先於角色，點框裡離錨點最遠的那一排
+        const rr = role.getShapeRect(), ib = sb()._instBox(inst());
+        const ir = Phaser_intersect(rr, ib) && {x: Phaser_intersect(rr, ib).x, y: Math.max(rr.y, ib.y) + 1};
+        out.rolePrio = ir && [sb()._instBoxAt(ir.x, ir.y)?.[0] === 'f1' && !sb()._instAt(ir.x, ir.y) && sb()._pickAt(ir.x, ir.y)?.key === role.key];
+        await sc.undo();
+        await until(() => !sb().roles.some(p => p.visible));
+        sc.pickRole('f1');
         out.right = doc.querySelector('#right .sec').textContent;
         out.lookOpts = [...doc.querySelectorAll('#right [data-k="instLook"] option')].map(o => o.value);
 
@@ -298,6 +327,9 @@ run('prefab-tool', async t => {
         out.partShow = [sb()._inspect.partMode, sb()._partAt(ins(), go.x - 10, go.y - 5), holder0().visible];
         sc.setPartMode('fire_pit', 0, 'hide');
         out.partHide = await until(() => !holder0().visible) && [holder0().visible, sb()._insts.f1 === ins()];
+        // png 藏掉＝點選框退回粒子點（外擴 16、最少 32×32）
+        const pg = sb()._partGeom(ins(), 1), nb = sb()._instBox(ins());
+        out.boxNoPng = [nb.width, nb.height, nb.centerX - pg.x, nb.centerY - pg.y];
         sc.setPartMode('fire_pit', 0, 'edit');
         sc.setPartMode('fire_pit', 1, 'edit');
         await until(() => sb()._inspect?.partMode?.[1] === 'edit');
@@ -426,9 +458,12 @@ run('prefab-tool', async t => {
     t.eq('別處改 prefab.json：sandbox 照新內容建成 Item、預設 off', JSON.stringify(r.built), JSON.stringify(['Item', 'forge', 'off', [true, false]]));
     t.eq('prefab 庫列出、可拖', JSON.stringify(r.libRow), JSON.stringify([['forge', true]]));
     t.eq('sandbox 點錨點選得到實例', r.pick, 'f1');
-    t.eq('點縮圖裡錨點以外的地方選不到', r.pickThumb, null);
-    t.eq('工具列錨點沒勾：錨點不畫、點不到', JSON.stringify(r.pickOff), JSON.stringify([null, null]));
+    t.eq('點選框＝目前看得見的 png 外框（Barrel 17×22）', JSON.stringify(r.box), JSON.stringify([-8.5, -22, 17, 22]));
+    t.eq('點選框裡錨點以外選得到、框外選不到', JSON.stringify(r.pickThumb), JSON.stringify(['f1', null]));
+    t.eq('工具列錨點沒勾：錨點不畫、點不到，點選框照樣選得到', JSON.stringify(r.pickOff), JSON.stringify([null, 'f1', null]));
     t.eq('從錨點拖：移動實例、寫檔', JSON.stringify(r.anchorDragInst), JSON.stringify([5, 0]));
+    t.eq('沒選中時從點選框按下：選起來＋拖、寫檔', JSON.stringify(r.boxDragInst), JSON.stringify(['f1', 3, 'f1']));
+    t.eq('角色疊在點選框上：角色優先', JSON.stringify(r.rolePrio), JSON.stringify([true]));
     t.eq('右欄：實例面板', r.right, '實例 f1');
     t.eq('狀態下拉：預設＋零件／acts 的狀態', JSON.stringify(r.lookOpts), JSON.stringify(['', 'off', 'on']));
     t.eq('改狀態：寫檔、sandbox 重建成 on（Crate 出現、一盞光）', JSON.stringify(r.look), JSON.stringify(['on', [true, true], 1]));
@@ -506,6 +541,7 @@ run('prefab-tool', async t => {
     // 畫面互動
     t.eq('零件預設 show：照常顯示、點不到', JSON.stringify(r.partShow), JSON.stringify([['show', 'show'], null, true]));
     t.eq('零件 hide：選中的實例藏零件本身', JSON.stringify(r.partHide), JSON.stringify([false, true]));
+    t.eq('png 藏掉：點選框退回粒子點、最少 32×32', JSON.stringify(r.boxNoPng), JSON.stringify([32, 32, 0, 0]));
     t.eq('edit 零件點得到：png 照外框、粒子照點、外面＝沒有', JSON.stringify(r.partAt), JSON.stringify([true, 0, 1, null]));
     t.eq('sandbox 回報點到零件：右欄展開、sandbox 畫外框＋占地方塊', JSON.stringify(r.inspect), JSON.stringify([0, {x: -26, y: -16, w: 32, h: 16}, true]));
     t.eq('拖展開的零件＋方向鍵：寫草稿（相對錨點）、prefab.json 不動', JSON.stringify(r.dragPart), JSON.stringify([{img: 'Barrel', x: -5, y: 2}, {img: 'Barrel', x: -10}]));

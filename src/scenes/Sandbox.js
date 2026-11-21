@@ -947,8 +947,65 @@ export class Sandbox extends GameScene
             ...Object.entries(this._props).filter(([, o])=>o.sp.visible && o.sp.getBounds().contains(wx, wy)).map(([key, prop])=>({key, prop, depth:prop.sp.depth})),
         ];
         if(hits.length) {return hits.reduce((a, b)=>(b.depth>a.depth ? b : a));}
+        const fb = this._instBoxAt(wx, wy);
+        if(fb) {return {key:fb[0], inst:fb[1]};}
         const role = this._roleAt(wx, wy);
         return role ? {key:role.key, role} : null;
+    }
+
+    // prefab 實例的點選框（世界座標，只給場景分頁點選／拖曳，不是 zone）：目前看得見的 png 外接框（含角度）；
+    // 沒有＝看得見的粒子／光源點外擴 16、最少 32×32；連點都沒有＝錨點正中 32×32
+    _instBox(o)
+    {
+        const parts = DB.prefab(o.data.prefab)?.parts ?? [], look = o.go.getLook?.() ?? null, ins = this._inspected()===o;
+        const img = [], pts = [];
+        parts.forEach((p, i)=>{
+            if((p.look && p.look!==look) || (ins && this._partMode(i)==='hide')) {return;}
+            const g = this._partGeom(o, i);
+            if(!g) {return;}
+            if(g.rect)
+            {
+                const a = (p.angle ?? 0)*Math.PI/180, c = Math.cos(a), s = Math.sin(a), r = g.rect;
+                for(const [px, py] of [[r.left, r.top], [r.right, r.top], [r.left, r.bottom], [r.right, r.bottom]])
+                {
+                    img.push({x:g.x + (px-g.x)*c - (py-g.y)*s, y:g.y + (px-g.x)*s + (py-g.y)*c});
+                }
+            }
+            else if(!p.img) {pts.push(g);}
+        });
+        const bound = (ps, pad)=>{
+            const xs = ps.map(q=>q.x), ys = ps.map(q=>q.y);
+            return {l:Math.min(...xs)-pad, t:Math.min(...ys)-pad, r:Math.max(...xs)+pad, b:Math.max(...ys)+pad};
+        };
+        if(img.length) {const b = bound(img, 0); return new Phaser.Geom.Rectangle(b.l, b.t, b.r-b.l, b.b-b.t);}
+        const b = pts.length ? bound(pts, 16) : {l:o.go.x, t:o.go.y, r:o.go.x, b:o.go.y};
+        const w = Math.max(32, b.r-b.l), h = Math.max(32, b.b-b.t), cx = (b.l+b.r)/2, cy = (b.t+b.b)/2;
+        return new Phaser.Geom.Rectangle(cx - w/2, cy - h/2, w, h);
+    }
+
+    // 點到的 prefab 實例點選框（重疊取 depth 最高）；跟工具列「錨點」無關
+    _instBoxAt(wx, wy)
+    {
+        const hits = Object.entries(this._insts ?? {}).filter(([, o])=>o.go.active && this._instBox(o).contains(wx, wy));
+        return hits.length ? hits.reduce((a, b)=>(b[1].go.depth>a[1].go.depth ? b : a)) : null;
+    }
+
+    // hover 的 prefab 實例畫淡淡的虛線點選框（沒 png 的 prefab 才看得出哪裡點得到）
+    _drawInstHover(g, z)
+    {
+        const ptr = this.input.activePointer;
+        const moving = this._drag?.inst && this._drag.dx!==undefined;
+        if(this._arm || this._pan || (this._drag && !moving) || !this.input.isOver || !this.map?.map) {return;}
+        const hk = moving ? [this._drag.key, this._drag.inst] : (()=>{const h = this._pickAt(ptr.worldX, ptr.worldY); return h?.inst ? [h.key, h.inst] : null;})();
+        if(!hk) {return;}
+        const r = this._instBox(hk[1]), d = 4/z;
+        const dash = (x1, y1, x2, y2)=>{
+            const n = Math.max(1, Math.floor(Math.hypot(x2-x1, y2-y1)/d));
+            for(let i=0; i<n; i+=2) {g.lineBetween(x1+(x2-x1)*i/n, y1+(y2-y1)*i/n, x1+(x2-x1)*Math.min(n, i+1)/n, y1+(y2-y1)*Math.min(n, i+1)/n);}
+        };
+        g.lineStyle(1/z, 0xffffff, 0.6);
+        dash(r.left, r.top, r.right, r.top); dash(r.right, r.top, r.right, r.bottom);
+        dash(r.right, r.bottom, r.left, r.bottom); dash(r.left, r.bottom, r.left, r.top);
     }
 
     _drawSel()
@@ -1008,11 +1065,12 @@ export class Sandbox extends GameScene
             g.lineStyle(2/z, SEL_COLOR, 1).strokeRect(r.x, r.y, r.width, r.height);
             for(const hd of this._handles()) {g.fillStyle(0xffffff, 1).fillRect(hd.x-s/2, hd.y-s/2, s, s).lineStyle(1/z, 0x000000, 1).strokeRect(hd.x-s/2, hd.y-s/2, s, s);}
         }
-        // prefab 實例沒有選取框，錨點就是點選的地方：每個都畫（沒選中的半透明）
+        // prefab 實例沒有選取框：錨點每個都畫（沒選中的半透明），點選框只在 hover 時畫
         if(this._anchorOn!==false)
         {
             for(const [k, fi] of Object.entries(this._insts ?? {})) {if(fi.go.active && k!==this._sel) {this._drawAnchor(g, z, fi.go, 0.5);}}
         }
+        this._drawInstHover(g, z);
         const a = this._anchorPt();
         if(a) {this._drawAnchor(g, z, a, 1);}
         this._drawInspect(g, z);   // 占地方塊畫在選取框上面，重疊的邊才看得到
@@ -1402,6 +1460,7 @@ export class Sandbox extends GameScene
                 : pz ? ZONE_CURSOR[pz.part]
                 : this._radiusAt(p.worldX, p.worldY) || this._arcAt(p.worldX, p.worldY) ? 'pointer'
                 : !pk?.emitter && !pk?.light && this._zoneBodyAt(p.worldX, p.worldY, true) ? 'move'
+                : pk?.inst ? 'move'
                 : pk ? 'grab'
                 : this._zoneBodyAt(p.worldX, p.worldY) ? 'move' : '';
         }
