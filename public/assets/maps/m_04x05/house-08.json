@@ -41,18 +41,18 @@
                  "template":"..\/..\/templates\/items\/bed.tj",
                  "x":32,
                  "y":128
-                },
+                }, 
                 {
                  "height":32,
                  "id":12,
-                 "name":"guard-room-p1",
+                 "name":"p1",
                  "rotation":0,
                  "type":"point",
                  "visible":true,
                  "width":32,
-                 "x":192,
-                 "y":96
-                },
+                 "x":64,
+                 "y":192
+                }, 
                 {
                  "id":5,
                  "name":"door",
@@ -65,11 +65,18 @@
                         {
                          "name":"port",
                          "type":"string",
-                         "value":"house-08"
+                         "value":"guard-room"
                         }],
                  "template":"..\/..\/templates\/exit_door.tj",
                  "x":128,
                  "y":320
+                }, 
+                {
+                 "id":13,
+                 "name":"p2",
+                 "template":"..\/..\/templates\/point.tj",
+                 "x":224,
+                 "y":192
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -78,7 +85,7 @@
          "y":0
         }],
  "nextlayerid":4,
- "nextobjectid":13,
+ "nextobjectid":14,
  "orientation":"orthogonal",
  "properties":[
         {

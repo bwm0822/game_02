@@ -89,11 +89,11 @@ run('部位 pool', async t => {
         sp.forEach(s => s.destroy());
         return n;
     }), 1);
-    t.eq('rig＝body 的 x/y、身體圖在 rig 的 0,0、支點跟衣服掛在 rig 上', await t.eval(d => {
+    t.eq('rig＝body 的 x/y（相對錨點：shape 在支點、rig 反向挪回）、身體圖在 rig 的 0,0、支點跟衣服掛在 rig 上', await t.eval(d => {
         const v = Object.values(d.GM.player._coms).find(c => c?._rig), b = v._rig.list.find(c => c.texture?.key === 'body-woman');
-        const cloth = v._rig.list.find(c => c.texture?.key === 'body-man');
-        return [v._rig.parentContainer === v._shape, v._rig.x, v._rig.y, b.x, b.y, v._nodes.neck.parentContainer === v._rig, !!cloth].join();
-    }), 'true,0,32,0,0,true,true');
+        const cloth = v._rig.list.find(c => c.texture?.key === 'body-man'), body = d.DB.rolePart(d.GM.player.bb.meta, 'body');
+        return [v._rig.parentContainer === v._shape, v._shape.x + v._rig.x === (body.x ?? 0), v._shape.y + v._rig.y === body.y, b.x, b.y, v._nodes.neck.parentContainer === v._rig, !!cloth].join();
+    }), 'true,true,true,0,0,true,true');
     t.eq('支點的 a＝節點靜止角度', await t.eval(d => Object.values(d.GM.player._coms).find(c => c?._nodes)._nodes.neck.angle), 30);
     t.eq('帽子掛 neck、前片深度同頭盔、後片在頭後面', JSON.stringify([has('head-karen', 'neck')?.[1], has('hair-karen', 'neck')?.[1]]), JSON.stringify([3, 1.5]));
     t.eq('帽子 hideHair 藏頭髮（遊戲）', await t.eval(d => {

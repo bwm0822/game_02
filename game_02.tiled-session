@@ -3,16 +3,18 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/maps/m/m_04x05.json",
+    "activeFile": "public/assets/maps/m/m_03x05.json",
     "expandedProjectPaths": [
-        "public/assets/maps/m/m_04x05",
-        ".",
-        "public/assets/maps",
-        "public/assets/tiles",
-        "public",
-        "public/assets/maps/m_04x05",
+        "public/assets/templates",
         "public/assets/maps/m",
-        "public/assets"
+        "public/assets",
+        "public/assets/maps/m_04x05",
+        ".",
+        "public/assets/templates/animals",
+        "public/assets/tiles",
+        "public/assets/maps/m/m_04x05",
+        "public/assets/maps",
+        "public"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -373,19 +375,19 @@
             "selectedLayer": 2,
             "viewCenter": {
                 "x": 1600,
-                "y": 1601.5151515151515
+                "y": 1603.030303030303
             }
         },
         "public/assets/maps/m/m_04x05.json": {
             "expandedObjectLayers": [
-                3,
-                5
+                5,
+                3
             ],
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 1532.5,
-                "y": 2212
+                "x": 1577,
+                "y": 1962
             }
         },
         "public/assets/maps/m00x00.json": {
@@ -969,7 +971,6 @@
     "map.tileWidth": 32,
     "map.width": 20,
     "openFiles": [
-        "public/assets/maps/m/m_04x05.json",
         "public/assets/maps/m/m_03x05.json",
         "public/assets/maps/m_04x05/trump-inn-f2.json"
     ],

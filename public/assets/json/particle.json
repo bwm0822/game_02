@@ -111,7 +111,7 @@
     "quantity": 1
   },
   "campfire": {
-    "img": "p-soft",
+    "img": "p-dot",
     "emitZone": {
       "type": "random",
       "source": {

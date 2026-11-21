@@ -294,7 +294,7 @@ function renderPreview(id, it)
 {
     const sx = SC.SEXES.includes(it.sex) ? it.sex : S.sex;
     const [rid, r] = dollOf(sx) ?? [];
-    const doll = {...(r ?? {w: 32, h: 64, anchor: {x: 0, y: 16}, sex: sx, body: DOLL[sx]}), inv: {equips: [id]}};
+    const doll = {...(r ?? {sex: sx, body: DOLL[sx]}), inv: {equips: [id]}};
     const note = !isObj(it.equip) ? h('span', {class: 'warn'}, '（沒有 equip，不能裝備）')
         : it.sex ? `，${SC.FIELDS.sex.names[it.sex] ?? it.sex}（用基準數字）`
         : sx === 'f' && (isObj(it.equip.f) ? '，用女版 f' : '（沒有 f，用基準數字）');

@@ -1,0 +1,23 @@
+{ "columns":0,
+ "grid":{
+         "height":1,
+         "orientation":"orthogonal",
+         "width":1
+        },
+ "margin":0,
+ "name":"prefabs",
+ "spacing":0,
+ "tilecount":1,
+ "tiledversion":"1.11.0",
+ "tileheight":49,
+ "tiles":[
+        {
+         "id":0,
+         "image":"..\/textures\/prefabs\/prefab-forge.png",
+         "imagewidth":66,
+         "imageheight":49
+        }],
+ "tilewidth":66,
+ "type":"tileset",
+ "version":"1.10"
+}

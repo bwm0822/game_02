@@ -1,6 +1,7 @@
-// 靜態合成預覽：照 RoleView 的規則畫（view 中心 = 錨點 −anchor；部件在 view 中心 +(x,y)、origin (ox??0.5, oy??1)、依 depth 疊）
-// 框：物理 b（紅）、佔格 g（綠）、互動區 z（藍），算法同 View._resolveAxis
+// 靜態合成預覽：照 RoleView 的規則畫（部件在錨點 +(x,y)、origin (ox??0.5, oy??1)、依 depth 疊）
+// 畫布的世界原點＝角色大概範圍（FIG）的中心，錨點在 ANCHOR；框：佔格 grid（綠）、互動區 zone（藍），相對錨點的 {x,y,w,h}
 import {h} from '../common/dom.js';
+import {FIG} from '../../src/data/mapcheck.js';
 import {isObj} from '../common/obj.js';
 import * as IC from '../common/icons.js';
 import * as HD from '../common/handles.js';
@@ -11,7 +12,9 @@ import {DEPTH, BACK_DEPTH, REAR_DEPTH, CAT, nodeOf, depthOf} from './schema.js';
 import {equipFor, partFor, hiddenParts, weaponOf, ROLE_PARTS, PIVOTS, pivotOf, atPivot, fromPivot, rigOf, flatPart} from '../../src/core/equip.js';
 
 const P = {equips: true, flip: false, bg: null};   // 開關跨角色保留；bg null＝棋盤格；view／錨點／框／支點看 showmenu.js 的 show；倍率／位置看 panzoom.js
-const COLOR = {b: '#ff5555', g: '#55dd55', z: '#5599ff'};
+const COLOR = {grid: '#55dd55', zone: '#5599ff'};
+// 錨點在畫布世界座標的位置（原點＝FIG 的中心）
+export const ANCHOR = {x: 0, y: -FIG.cy};
 export const BG = ['#1b1c1f', '#222428'];   // 棋盤格兩色
 const BG_KEY = 'tools.preview.bg';
 try {P.bg = localStorage.getItem(BG_KEY);} catch {}
@@ -29,12 +32,6 @@ function setBg(c, store)
         pv.querySelector('.bgchk').disabled = !c;
         redraws.get(pv)?.();
     }
-}
-
-function axis(a, b, total)
-{
-    a ??= 0; b ??= 0;
-    return {a, size: total - a - b};
 }
 
 // 回傳要畫的部件，照遊戲的順序（部位、裝備）再依 depth 穩定排序；被裝備藏掉的部位（hiddenParts）不畫
@@ -64,8 +61,32 @@ export function partsOf(r, items, parts)
     return out.sort((a, b) => a.d - b.d);
 }
 
-// 置中要裝下的範圍（世界單位，以 view 中心為中心）
-export const frameOf = (r) => ({w: Math.max(r.w ?? 32, 64) + 48, h: Math.max(r.h ?? 64, 64) + 48});
+// 置中要裝下的範圍（世界單位，以 FIG 的中心為中心）
+export const frameOf = (r) => ({w: Math.max(FIG.w, 64) + 48, h: Math.max(FIG.h, 64) + 48});
+
+// 相對錨點的方塊（grid／zone）
+export function drawBoxes(g, r, K, at = ANCHOR)
+{
+    for (const k of ['grid', 'zone'])
+    {
+        const b = r[k];
+        if (!show[k] || !isObj(b)) continue;
+        g.strokeStyle = COLOR[k];
+        g.lineWidth = 2 / K;
+        g.strokeRect(at.x + (b.x ?? 0), at.y + (b.y ?? 0), b.w ?? 0, b.h ?? 0);
+    }
+}
+
+export function drawAnchor(g, K, at = ANCHOR)
+{
+    if (!show.anchor) return;
+    g.strokeStyle = '#ffd700';
+    g.lineWidth = 2 / K;
+    g.beginPath();
+    g.moveTo(at.x - 4, at.y); g.lineTo(at.x + 4, at.y);
+    g.moveTo(at.x, at.y - 4); g.lineTo(at.x, at.y + 4);
+    g.stroke();
+}
 
 // 底色：純色或棋盤格（螢幕座標，格子大小不跟著縮放）
 export function fillBg(g, cw, ch, bg)
@@ -78,7 +99,6 @@ export function fillBg(g, cw, ch, bg)
 
 async function draw(cv, r, items, pdb, st)
 {
-    const w = r.w ?? 32, hh = r.h ?? 64, ax = r.anchor?.x ?? 0, ay = r.anchor?.y ?? 0;
     const parts = partsOf(r, items, pdb).filter(pt => st.noHide || !hidden(pt.k));
     const frames = await Promise.all(parts.map(p => IC.frameOf(p.sprite)));
     if (!cv.isConnected) return;
@@ -86,16 +106,7 @@ async function draw(cv, r, items, pdb, st)
     const {K, o} = st.pz.begin(g, (g, cw, ch) => fillBg(g, cw, ch, P.bg));
     g.imageSmoothingEnabled = false;
 
-    const vc = {x: 0, y: 0}, root = {x: ax, y: ay};
-    if (show.view)
-    {
-        g.lineWidth = 1 / K;
-        g.setLineDash([3 / K, 3 / K]);
-        g.strokeStyle = '#888';
-        g.strokeRect(vc.x - w / 2, vc.y - hh / 2, w, hh);
-        g.setLineDash([]);
-    }
-
+    const vc = ANCHOR;
     let n = 0;
     parts.forEach((pt, i) => {
         const fr = frames[i];
@@ -122,28 +133,12 @@ async function draw(cv, r, items, pdb, st)
         if (P.flip) g.scale(-1, 1);
         for (const k of PIVOTS) if (show[k]) HD.drawCross(g, k, pts[k], 1 / K, {on: st.live?.k === k});
         g.restore();
-        // vc：畫布上的原點換成世界單位（clientX = rc.left + (vc.x + x) * K，同以前畫布從左上角開始畫）
-        st.geo = {vc: {x: o.x / K, y: o.y / K}, K, flip: P.flip, pts, rig};
+        // vc：錨點在畫布上的位置換成世界單位（clientX = rc.left + (vc.x + x) * K，同以前畫布從左上角開始畫）
+        st.geo = {vc: {x: o.x / K + vc.x, y: o.y / K + vc.y}, K, flip: P.flip, pts, rig};
     }
 
-    for (const k of ['g', 'z', 'b'])
-    {
-        if (!show[k] || !isObj(r[k])) continue;
-        const x = axis(r[k].l, r[k].r, w), y = axis(r[k].t, r[k].b, hh);
-        g.strokeStyle = COLOR[k];
-        g.lineWidth = 2 / K;
-        g.strokeRect(vc.x - w / 2 + x.a, vc.y - hh / 2 + y.a, x.size, y.size);
-    }
-
-    if (show.anchor)
-    {
-        g.strokeStyle = '#ffd700';
-        g.lineWidth = 2 / K;
-        g.beginPath();
-        g.moveTo(root.x - 4, root.y); g.lineTo(root.x + 4, root.y);
-        g.moveTo(root.x, root.y - 4); g.lineTo(root.x, root.y + 4);
-        g.stroke();
-    }
+    drawBoxes(g, r, K);
+    drawAnchor(g, K);
     cv.dataset.drawn = n;
 }
 
@@ -155,7 +150,7 @@ function editable(cv, st, redraw)
 {
     const ed = st.pivots;
     const toLocal = (e) => {
-        const {x, y} = st.pz.toWorld(e);
+        const w = st.pz.toWorld(e), x = w.x - ANCHOR.x, y = w.y - ANCHOR.y;
         return {x: st.geo.flip ? -x : x, y};
     };
     // {rot: 白點？, k: 支點}；白點優先；沒勾顯示的不能拖
@@ -212,7 +207,7 @@ function editable(cv, st, redraw)
 // 畫布鋪滿 .cvbox，縮放平移見 panzoom.js（同頁的預覽共用一組 view）
 export function previewEl(r, items, parts, opt = {})
 {
-    const cv = h('canvas', {title: '虛線：view（w×h）　黃十字：錨點（角色位置）\n滾輪縮放、按住中鍵拖曳平移'});
+    const cv = h('canvas', {title: '黃十字：錨點（角色位置）\n滾輪縮放、按住中鍵拖曳平移'});
     const st = {pivots: opt.pivots, alpha: opt.alpha, noHide: opt.noHide, live: null, drag: null, geo: null};
     const redraw = () => draw(cv, r, items, parts, st);
     st.pz = PZ.panzoom(cv, {frame: () => frameOf(r), redraw});

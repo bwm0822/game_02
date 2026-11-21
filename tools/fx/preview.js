@@ -1,5 +1,5 @@
 // Phaser 預覽：直接跑遊戲的 FxCell／attachCell／bodyTween（src/core/fxcell.js），角色照角色編輯器的合成規則（partsOf）畫成一張貼圖當 view.shape
-// root(角色位置) → view(在 -anchor) → shape(view 中心)，跟 RoleView 一樣，cell.align／body 的支點才會跟遊戲一致
+// root(角色位置＝錨點) → view(在錨點) → shape(在支點)，跟 RoleView 一樣，cell.align／body 的支點才會跟遊戲一致
 // 區域特效（技能 zoneFx 引用的）不放角色，照 ZoneView 排 w×h 格，spawn 先後用 zoneDelays，tick 隨機挑一格（遊戲是角色站的那格）
 import Phaser from 'phaser';
 import BBCodeTextPlugin from 'phaser3-rex-plugins/plugins/bbcodetext-plugin.js';

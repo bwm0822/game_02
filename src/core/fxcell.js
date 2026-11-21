@@ -100,7 +100,7 @@ export function zoneDelays(cells, stagger=0, from='center', dist=null)
     return cells.map(c=>(Math.abs(c.gx)+Math.abs(c.gy))*stagger);
 }
 
-// 持續效果的特效格掛在角色 root 上(COM_Disp 跟特效工具共用)：cell.align='bottom'('top'|'center'|'bottom') 決定基準位置(view 的上緣/中間/下緣)，ox/oy 是額外偏移；沒有 img 的特效不要呼叫
+// 持續效果的特效格掛在角色 root 上(COM_Disp 跟特效工具共用)：cell.align='bottom'('top'|'center'|'bottom') 決定基準位置(圖範圍 view.rect 的上緣/中間/下緣)，ox/oy 是額外偏移；沒有 img 的特效不要呼叫
 export function attachCell(scene, root, cfg)
 {
     const {x, y} = cellPos(root, cfg);
@@ -111,18 +111,21 @@ export function attachCell(scene, root, cfg)
 export function cellPos(root, cfg)
 {
     const {align='bottom', ox=0, oy=0} = cfg.cell ?? {};
-    const [top, bottom] = [root.view?.Min.y ?? 0, root.view?.Max.y ?? 0];
+    const r = root.view?.rect;
+    const [top, bottom] = r ? [r.y, r.y + r.h] : [0, 0];
     const y = {top, center:(top+bottom)/2}[align] ?? bottom;
     return {x:ox, y:y+oy};
 }
 
-// body 是套在角色身體(view.shape)上的 tween；shape 原點是 view 中心，要以底部為支點轉就得同步補償 x/y；特效圖示(holder，掛在 root 上)也繞同一個支點跟著轉
+// body 是套在角色身體(view.shape)上的 tween；shape 原點是支點(view.pivot，身體中心)，要以底部(圖範圍 view.rect 的下緣)為支點轉就得同步補償 x/y；
+// 特效圖示(holder，掛在 root 上)也繞同一個支點跟著轉
 // 補償只加差值不寫絕對值，被打時的擊退位移(COM_Anim._offset)、圖示的 spawn/tick 才不會被蓋掉
 export function bodyTween(scene, view, holder, cfg)
 {
     const shape = view.shape;
     const base = {x:shape.x, y:shape.y};
-    const [px, py] = [base.x, base.y + view.max.y];
+    const r = view.rect;
+    const [px, py] = [base.x, base.y - view.pivot.y + r.y + r.h];
     const orbit = (obj, px, py, spin)=>{
         const d = {x:obj.x-px, y:obj.y-py};
         let off = {x:0, y:0, a:0};

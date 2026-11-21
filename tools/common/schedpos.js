@@ -6,6 +6,7 @@ import {bestPath} from '../../src/data/navgrid.js';
 import {whereAt} from '../role/schedbar.js';
 import {spotOf, gridOf} from './mapview.js';
 import {SPRITE_HALF} from '../map/roles.js';
+import {FIG} from '../../src/data/mapcheck.js';
 
 const keyMap = (k) => k.slice(0, k.indexOf(':')), keyName = (k) => k.slice(k.indexOf(':') + 1);
 
@@ -80,20 +81,19 @@ export function npcsOn(cache, d, name, plans, t, edges)
     return out;
 }
 
-// 站的位置（point 中心＝站的格子；走路中＝路上那格）減角色錨點，同一點好幾個往右排開 24px
+// 站的位置（point 中心＝站的格子＝錨點；走路中＝路上那格）的大概範圍（FIG）中心，同一點好幾個往右排開 24px
 export function npcCen(x, roles)
 {
-    const a = roles?.[x.id]?.anchor;
-    return {x: x.n.cen.x - (a?.x ?? 0) + x.k * 24, y: x.n.cen.y - (a?.y ?? 0)};
+    return {x: x.n.cen.x + x.k * 24, y: x.n.cen.y + FIG.cy};
 }
 
-// 滑鼠 p 底下的那個（框照角色 w/h）
+// 滑鼠 p 底下的那個（框照 FIG）
 export function npcAt(npcs, p, roles)
 {
     for (const x of npcs ?? [])
     {
-        const c = npcCen(x, roles), r = roles?.[x.id];
-        if (Math.abs(p.x - c.x) <= (r?.w ?? 32) / 2 && Math.abs(p.y - c.y) <= (r?.h ?? 64) / 2) return x;
+        const c = npcCen(x, roles);
+        if (Math.abs(p.x - c.x) <= FIG.w / 2 && Math.abs(p.y - c.y) <= FIG.h / 2) return x;
     }
     return null;
 }
@@ -121,7 +121,7 @@ export function drawNpcs(g, K, npcs, roles, {sprites = new Map(), hover = null, 
 {
     for (const x of npcs ?? [])
     {
-        const c = npcCen(x, roles), sp = sprites.get(x.id), r = roles?.[x.id], col = x.id === mine ? ORANGE : BLUE;
+        const c = npcCen(x, roles), sp = sprites.get(x.id), r = FIG, col = x.id === mine ? ORANGE : BLUE;
         g.globalAlpha = 0.8;
         if (sp) g.drawImage(sp, c.x - SPRITE_HALF, c.y - SPRITE_HALF);
         g.globalAlpha = 1;
@@ -129,13 +129,13 @@ export function drawNpcs(g, K, npcs, roles, {sprites = new Map(), hover = null, 
         g.setLineDash(x.at.kind === 'walk' ? [4 / K, 3 / K] : []);
         g.strokeStyle = on ? '#fff' : col.line;
         g.lineWidth = (on ? 2 : 1) / K;
-        g.strokeRect(c.x - (r?.w ?? 32) / 2, c.y - (r?.h ?? 64) / 2, r?.w ?? 32, r?.h ?? 64);
+        g.strokeRect(c.x - r.w / 2, c.y - r.h / 2, r.w, r.h);
         g.setLineDash([]);
         const txt = x.at.kind === 'walk' ? `${x.id} → ${x.at.go}` : x.id;
         g.font = `${12 / K}px sans-serif`;
         g.textAlign = 'center';
         g.textBaseline = 'middle';
-        const tw = g.measureText(txt).width + 6 / K, ty = c.y + (r?.h ?? 64) / 2 + 8 / K;
+        const tw = g.measureText(txt).width + 6 / K, ty = c.y + r.h / 2 + 8 / K;
         g.fillStyle = col.tag;
         g.fillRect(c.x - tw / 2, ty - 7 / K, tw, 14 / K);
         g.fillStyle = '#fff';

@@ -3,21 +3,23 @@
     "kind": "body",
     "sprite": "animals:42",
     "scale": 2,
-    "y": 32,
-    "name": "狼"
+    "y": 16,
+    "name": "狼",
+    "x": 16
   },
   "animals-82": {
     "kind": "body",
     "sprite": "animals:82",
     "scale": 2,
-    "y": 32,
-    "name": "馬"
+    "y": 16,
+    "name": "馬",
+    "x": 16
   },
   "body-man": {
     "kind": "body",
     "sprite": "body-man",
     "scale": 0.25,
-    "y": 32,
+    "y": 16,
     "neck": {
       "x": 0,
       "y": -32
@@ -40,7 +42,7 @@
     "kind": "body",
     "sprite": "body-woman",
     "scale": 0.25,
-    "y": 32,
+    "y": 16,
     "neck": {
       "x": 0,
       "y": -32,
@@ -64,35 +66,36 @@
     "kind": "body",
     "sprite": "macron",
     "scale": 0.25,
-    "y": 32,
+    "y": 16,
     "name": "馬克宏"
   },
   "melanie": {
     "kind": "body",
     "sprite": "melanie",
     "scale": 0.25,
-    "y": 32,
+    "y": 16,
     "name": "梅蘭妮"
   },
   "monsters-0": {
     "kind": "body",
     "sprite": "monsters:0",
     "scale": 2,
-    "y": 32,
-    "name": "獸人"
+    "y": 16,
+    "name": "獸人",
+    "x": 16
   },
   "musk": {
     "kind": "body",
     "sprite": "musk",
     "scale": 0.25,
-    "y": 32,
+    "y": 16,
     "name": "馬斯克（舊全身圖）"
   },
   "rogue": {
     "kind": "body",
     "sprite": "rogue",
     "scale": 0.25,
-    "y": 32,
+    "y": 16,
     "neck": {
       "x": 1.5,
       "y": -32
@@ -111,14 +114,14 @@
     "kind": "body",
     "sprite": "trump",
     "scale": 0.25,
-    "y": 32,
+    "y": 16,
     "name": "川普（舊全身圖）"
   },
   "xi": {
     "kind": "body",
     "sprite": "xi",
     "scale": 0.25,
-    "y": 32,
+    "y": 16,
     "name": "習近平"
   },
   "hand-man": {

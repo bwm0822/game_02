@@ -36,8 +36,8 @@
 ## 角色怎麼畫（`tools/map/roles.js`）
 
 - 角色物件＝navgrid `resolveObject()` 後 `type==='npc'` 且有 `props.id`（template 裡寫的也算）。
-- 位置照遊戲：Phaser `createFromObjects` 把物件放在視覺中心（tile 物件 `(x+w/2, y−h/2)`、其他 `(x+w/2, y+h/2)`、點物件寬高 0＝`(x, y)`），`RoleView` 再把 root 移到 中心＋`role.anchor`＝站的那格。例：狼 template 64×64 在 (512,224) → 中心 (544,192) → root (528,208)＝格 16,6。
-- 外觀用角色分頁的 `partsOf()`，每個角色烤一張 256×256 小圖（view 中心在正中）快取，role／item／part.json 存檔或圖片清單重載時丟掉。找不到角色畫紅框。
+- 位置照遊戲（`RoleView._setAnchor()`、`mapcheck.js` 的 `placeOf()`，見 [anchor.md](anchor.md)）：有大小的物件＝左下角那一格的中心（tile 物件左下＝`(x, y)`、矩形＝`(x, y+h)`），點物件＝`(x, y)`。例：狼 template 64×64 在 (512,224) → root (528,208)＝格 16,6。
+- 外觀用角色分頁的 `partsOf()`，每個角色烤一張 256×256 小圖（大概範圍 `FIG` 的中心在正中、錨點在它下面 16）快取，role／item／part.json 存檔或圖片清單重載時丟掉。找不到角色畫紅框。
 - 疊放：底圖 → 格子 → 淡色 point → 角色（照 root 的 y）→ 選取（藍框＋站的格子）／滑過（白虛線）→ 名稱。
 
 ## 互動
@@ -68,7 +68,7 @@
 
 - **右欄調色盤**：role.json 除了 `player` 的全部，種類分頁（全部／動物／怪物／首領／土匪／NPC／其他，只列有的，記 `tools.map.kind`）＋搜尋；具名 NPC（`kind:"npc"`）標 ⚠。點一個＝放置模式（地圖上方綠色提示列、滑過顯示半透明鬼影＋綠框），**點格子放一個就結束、Shift＋點連放**，右鍵／Esc／再點同一個結束。放完選到新的那個。
 - **目標層**：右欄「圖層／群組」點一列＝放到那裡（綠框，`S.target`；換到沒有那層的地圖就回常駐）。常駐＝`roles` 物件層，沒有就建在最後（`nextlayerid`+1）。
-- **格式**（`tools/map/edit.js`）：啟動時掃 `templates/` 底下 `type:"npc"`＋屬性 `id` 的 `.tj`（`scanTemplates()`，同一角色多個取路徑排第一的）。有 template 寫 `{id, template: <相對地圖的路徑>, x, y}`；沒有寫點物件 `{height:0, id, name:'', point:true, properties:[{id}], rotation:0, type:'npc', visible:true, width:0, x, y}`。x/y 從「站的格子」反推：格子中心 −anchor ＝ view 中心，再換回 Tiled 原點（圖塊物件左下 `(cx−w/2, cy+h/2)`、矩形左上、點物件就是中心）。物件 key 照字母排、properties 照名稱排（同 Tiled），排版走 `tiledjson.js`。
+- **格式**（`tools/map/edit.js`）：啟動時掃 `templates/` 底下 `type:"npc"`＋屬性 `id` 的 `.tj`（`scanTemplates()`，同一角色多個取路徑排第一的）。有 template 寫 `{id, template: <相對地圖的路徑>, x, y}`；沒有寫點物件 `{height:0, id, name:'', point:true, properties:[{id}], rotation:0, type:'npc', visible:true, width:0, x, y}`。x/y 從「站的格子」反推：格子中心＝錨點，有大小的 template 左下角那一格就是它（圖塊物件左下 `(cx−16, cy+16)`、矩形左上 `(cx−16, cy+16−h)`），點物件就是格子中心。物件 key 照字母排、properties 照名稱排（同 Tiled），排版走 `tiledjson.js`。
 - **選取的角色**（右欄）：角色下拉＝換成別的角色（`replaceRole()`：站的格子、物件 id 不變，格式照新角色，物件自己的其他屬性保留）、圖層下拉、站的格子、格式、重生（`respawn`，int，空白＝拿掉，template 給的標灰）、物件自己的屬性（改值／✕ 拿掉）、template 給的屬性（灰、唯讀）、加屬性（名稱＋型別 string/int/float/bool＋值；`id` 不行）、刪除。
 - **寫檔**：每個動作 `editMap()` 現讀硬碟上的地圖 → 改 → 寫回，所以別的分頁（角色分頁寫 point）的修改不會被蓋（`writeFiles()` 也能一次寫好幾個檔，如 point 改名連 role.json）；寫完 `forget()`、廣播 `maps/<地圖>.json`、重算徽章、狀態列提醒「Tiled 開著這張圖要重新載入」。具名 NPC 放下去狀態列加 ⚠，不擋。
 - **undo／redo**（左欄 ↶↷、Ctrl+Z／Ctrl+Y）：每步記地圖前後全文，復原時現在的檔案要等於「後」才寫回「前」（不然是別處改過，擋下來、狀態列說明），跨地圖也行（會切過去）。只在記憶體、重開分頁就沒了。

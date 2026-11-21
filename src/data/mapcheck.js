@@ -1,6 +1,9 @@
 // 地圖上的角色物件檢查（工具的地圖分頁、scripts/maps.js 共用）：type npc＋屬性 id 的物件
-// 位置照 Phaser createFromObjects＋RoleView 的錨點：view 中心（tile 物件以左下為原點、其他以左上、點物件寬高 0）＋role.anchor＝root（站的那格）
+// 位置照 RoleView._setAnchor()：有大小的物件（tile 物件以左下為原點、其他以左上）＝左下角那一格的中心，點物件＝點本身＝root（站的那格）
 import {buildGrid} from './navgrid.js';
+
+// 工具畫角色、點選用的大概範圍：寬 FIG.w、高 FIG.h，中心在錨點＋(0, FIG.cy)（站在錨點那格、往上兩格高）
+export const FIG = {w: 32, h: 64, cy: -16};
 
 export const isRoleObj = (o) => o.type === 'npc' && o.props?.id != null && o.props.id !== '';
 // 門＝type port＋屬性 map（要去的地圖，相對 maps/）、port（落腳點＝那張圖上同名的物件）
@@ -16,12 +19,13 @@ export function portIssue(o, namesOf)
     return null;
 }
 
-export function placeOf(o, r)
+// root＝錨點（站的那格的中心）；cen／w／h＝工具畫角色的大概範圍（FIG）
+export function placeOf(o, tw = 32, th = 32)
 {
     const w = o.width ?? 0, hh = o.height ?? 0;
-    const cen = {x: o.x + w / 2, y: o.gid ? o.y - hh / 2 : o.y + hh / 2};
-    const root = {x: cen.x + (r?.anchor?.x ?? 0), y: cen.y + (r?.anchor?.y ?? 0)};
-    return {cen, root, w: r?.w ?? 32, h: r?.h ?? 64};
+    const bottom = o.gid ? o.y : o.y + hh;
+    const root = w > 0 ? {x: o.x + tw / 2, y: bottom - th / 2} : {x: o.x, y: o.y};
+    return {root, cen: {x: root.x, y: root.y + FIG.cy}, w: FIG.w, h: FIG.h};
 }
 
 // 不用格子就能查的：角色不存在（error）、玩家角色（error）、具名 NPC（warn，作息也會生出來）
@@ -50,7 +54,7 @@ export function checkMapRoles(d, roles, grid = null)
     for (const o of d.objs)
     {
         if (!isRoleObj(o)) continue;
-        const rid = String(o.props.id), {root} = placeOf(o, roles[rid]);
+        const rid = String(o.props.id), {root} = placeOf(o, tw, th);
         const tile = [Math.floor(root.x / tw), Math.floor(root.y / th)];
         const add = (level, msg) => out.push({level, oid: o.id, rid, tile, msg});
         for (const x of roleIssues(rid, roles)) add(x.level, x.msg);

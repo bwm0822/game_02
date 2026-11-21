@@ -85,7 +85,7 @@
                  "name":"door",
                  "properties":[
                         {
-                         "name":"anchorY",
+                         "name":"ab",
                          "type":"int",
                          "value":16
                         }, 
@@ -185,9 +185,9 @@
                  "name":"sit-1",
                  "properties":[
                         {
-                         "name":"anchorY",
+                         "name":"at",
                          "type":"int",
-                         "value":-8
+                         "value":8
                         }],
                  "template":"..\/..\/templates\/items\/chair.tj",
                  "x":192,

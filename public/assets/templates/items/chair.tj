@@ -6,9 +6,9 @@
      "name":"",
      "properties":[
             {
-             "name":"anchorY",
+             "name":"at",
              "type":"int",
-             "value":-8
+             "value":8
             }, 
             {
              "name":"gt",

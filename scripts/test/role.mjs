@@ -65,7 +65,7 @@ run('role', async t => {
         out.foldAdd = [secs().find(s => s.textContent.includes('外觀')).textContent.startsWith('▼'), secs().find(s => s.textContent.includes('物品')).textContent.startsWith('▶')];
         re.undo();
         const add2 = [...document.querySelectorAll('#view .form > .fields > select')].at(-1);
-        const fk = [...add2.options].map(o => o.value).find(v => v && !['attrs', 'anchor', 'b', 'g', 'z', 'corpse', 'inv', 'schedule'].includes(v));
+        const fk = [...add2.options].map(o => o.value).find(v => v && !['attrs', 'grid', 'zone', 'corpse', 'inv', 'schedule'].includes(v));
         add2.value = fk; add2.dispatchEvent(new Event('change'));
         const drop = document.querySelector(`#view button[data-drop="${fk}"]`), before = JSON.stringify(S.data);
         drop?.click();
@@ -191,7 +191,7 @@ run('role', async t => {
         const k2 = Object.keys(S.data);
         out.add = [k2.indexOf('npc_new') === k2.indexOf(lastNpc) + 1, S.data.npc_new.kind, S.sel, Array.isArray(S.data.npc_new.schedule), re.validate('npc_new').length];
         re.add('wolf2', 'animal');
-        out.addAnimal = [S.data.wolf2.animal, S.data.wolf2.w];
+        out.addAnimal = [S.data.wolf2.animal, S.data.wolf2.grid?.w];
         re.add('bad id', 'npc');
         out.badId = 'bad id' in S.data;
 
@@ -300,12 +300,12 @@ run('role', async t => {
         const seen = await save('save');
         out.saved = [seen.length, JSON.parse(await disk()).npc_new?.kind, $('dirty').hidden];
         const ext = JSON.parse(await disk());
-        ext.wick.anchor.y = 30;
+        ext.wick.grid.y = 30;
         await write(json, 'role.json', JSON.stringify(ext, null, 2));
         re.set('trump', ['gold'], 300);
         await save('merge', 'save');
         const after = JSON.parse(await disk());
-        out.merge = [after.wick.anchor.y, after.trump.gold];
+        out.merge = [after.wick.grid.y, after.trump.gold];
         return out;
     });
 

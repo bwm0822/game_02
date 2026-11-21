@@ -2,7 +2,7 @@
 // 外觀照角色分頁的合成預覽（partsOf），每個角色烤一張小圖快取
 import {partsOf} from '../role/preview.js';
 import * as IC from '../common/icons.js';
-import {isRoleObj} from '../../src/data/mapcheck.js';
+import {isRoleObj, FIG} from '../../src/data/mapcheck.js';
 export {isRoleObj, placeOf} from '../../src/data/mapcheck.js';
 
 // 地圖裡的角色：[{o（navgrid 解析過的物件）, layer（圖層名）, rid}]
@@ -23,7 +23,7 @@ export function roleObjs(d)
 }
 
 const SZ = 256;
-const cache = new Map();    // rid → Promise<canvas|null>（view 中心在 (SZ/2, SZ/2)）
+const cache = new Map();    // rid → Promise<canvas|null>（大概範圍 FIG 的中心在 (SZ/2, SZ/2)，錨點在它下面 -FIG.cy）
 export const forgetSprites = () => cache.clear();
 
 export function spriteOf(rid, refs)
@@ -43,7 +43,7 @@ export function spriteOf(rid, refs)
             if (!fr) return;
             const {p} = pt, {img, f} = fr;
             g.save();
-            g.translate(SZ / 2 + (p.x ?? 0), SZ / 2 + (p.y ?? 0));
+            g.translate(SZ / 2 + (p.x ?? 0), SZ / 2 - FIG.cy + (p.y ?? 0));
             g.rotate((p.a ?? 0) * Math.PI / 180);
             g.scale(p.scale ?? 1, p.scale ?? 1);
             g.drawImage(img, f.x, f.y, f.w, f.h, -(p.ox ?? 0.5) * f.w, -(p.oy ?? 1) * f.h, f.w, f.h);

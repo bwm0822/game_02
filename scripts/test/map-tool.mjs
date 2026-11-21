@@ -108,12 +108,10 @@ run('map-tool', async t => {
         const c35 = cells().find(c => c.w.name === 'm/m_03x05');
         const hitsOf = (kind, map) => wst().hits.filter(x => x.kind === kind && (!map || x.map === map));
         out.dots = hitsOf('dot', 'm/m_03x05').map(x => x.d.layer).sort().join();
-        // 第一隻狼的位置照地圖檔算：tile 物件中心（y 是底部）＋role.anchor
+        // 第一隻狼的位置照地圖檔算：tile 物件（y 是底部）左下角那一格的中心
         const m35src = await (await fetch('/scripts/test/fixtures/m_03x05.json', {cache: 'no-store'})).json();
         const w0 = m35src.layers.find(l => l.name === '@wolves').objects[0];
-        const tj = (await (await fetch(new URL(w0.template, `${location.origin}/assets/maps/m/`).href, {cache: 'no-store'})).json()).object;
-        const an = S.roles.wolf.anchor ?? {x: 0, y: 0};
-        const W0 = {o: [w0.x, w0.y], root: [w0.x + tj.width / 2 + an.x, w0.y - tj.height / 2 + an.y]};
+        const W0 = {o: [w0.x, w0.y], root: [w0.x + 16, w0.y - 16]};
         out.W0 = W0;
         const wolfDot = hitsOf('dot', 'm/m_03x05').find(x => x.d.rid === 'wolf' && x.d.x === W0.root[0] && x.d.y === W0.root[1]);
         out.dotPos = wolfDot && [Math.abs(wolfDot.x + wolfDot.w / 2 - (c35.x + W0.root[0] * wst().geo.unit)) < 0.01, Math.abs(wolfDot.y + wolfDot.h / 2 - (c35.y + W0.root[1] * wst().geo.unit)) < 0.01];
@@ -527,7 +525,7 @@ run('map-tool', async t => {
         const tx = cv().st.npcs.find(x => x.id === 'trump');
         if (tx)
         {
-            const b = cv().getBoundingClientRect(), s = cv().st, c = {x: tx.n.cen.x - (S.roles.trump.anchor?.x ?? 0), y: tx.n.cen.y - (S.roles.trump.anchor?.y ?? 0)};
+            const b = cv().getBoundingClientRect(), s = cv().st, c = {x: tx.n.cen.x, y: tx.n.cen.y};
             cv().dispatchEvent(new PointerEvent('pointermove', {bubbles: true, clientX: b.left + s.pz.o.x + (c.x - s.data.W / 2) * s.pz.K, clientY: b.top + s.pz.o.y + (c.y - s.data.H / 2) * s.pz.K}));
             out.ttip = [...document.querySelectorAll('#view .tip > div')].map(e => e.textContent).join(' | ');
         }
@@ -919,7 +917,7 @@ run('map-tool', async t => {
     t.check('點格子：選那張、記住', r.sel[0] === 'm/m_03x05' && r.sel[1] === 'm/m_03x05', r.sel.join());
     t.check('地圖 100×100 格', r.size.join() === '3200,3200', r.size.join());
     t.check('角色：三隻狼在 @wolves、三個土匪在 @bandits', r.roles.join() === '@bandits:rogue-1,@bandits:rogue-1,@bandits:rogue-1,@wolves:wolf,@wolves:wolf,@wolves:wolf', r.roles.join());
-    t.check(`站的位置＝物件中心＋錨點（狼 ${r.W0.o} → ${r.W0.root}）`, r.wolfRoot?.join() === r.W0.root.join(), r.wolfRoot?.join());
+    t.check(`站的位置＝物件左下角那一格的中心（狼 ${r.W0.o} → ${r.W0.root}）`, r.wolfRoot?.join() === r.W0.root.join(), r.wolfRoot?.join());
     t.check('角色照 role.json 合成出圖', r.sprites.every(Boolean), r.sprites.join());
     t.check('角色不烤進底圖', r.skipBake > 20, r.skipBake);
     t.check('右欄圖層：常駐 0、@wolves 3、@bandits 3', r.layers.join() === '=0,@wolves=3,@bandits=3', r.layers.join());
@@ -943,8 +941,8 @@ run('map-tool', async t => {
     t.eq('畫面上狼站在 3,3', r.placedRoot, 'wolf@3,3');
     t.check('寫完廣播 maps/<地圖>.json、徽章跟著更新', r.saved1 && r.badge3 === 1, `${r.saved1} ${r.badge3}`);
     t.check('照 Tiled 排版（\\/ 跳脫、物件陣列縮排）', r.text.includes('"template":"..\\/..\\/templates\\/animals\\/wolf.tj"') && r.text.includes('"name":"roles"'));
-    const orcObj = (id, x) => JSON.stringify({height: 0, id, name: '', point: true, properties: [{name: 'id', type: 'string', value: 'orc'}], rotation: 0, type: 'npc', visible: true, width: 0, x, y: 96});
-    t.check('沒 template：點物件（x/y＝格子中心−anchor）', r.orcs.length === 2 && r.orcs[0] === orcObj(JSON.parse(r.orcs[0]).id, 192) && r.orcs[1] === orcObj(JSON.parse(r.orcs[1]).id, 224), r.orcs.join('\n    '));
+    const orcObj = (id, x) => JSON.stringify({height: 0, id, name: '', point: true, properties: [{name: 'id', type: 'string', value: 'orc'}], rotation: 0, type: 'npc', visible: true, width: 0, x, y: 112});
+    t.check('沒 template：點物件（x/y＝格子中心＝錨點）', r.orcs.length === 2 && r.orcs[0] === orcObj(JSON.parse(r.orcs[0]).id, 176) && r.orcs[1] === orcObj(JSON.parse(r.orcs[1]).id, 208), r.orcs.join('\n    '));
     t.check('Shift＋點連放、Esc 結束', r.orcPlace === 'orc' && r.esc === null, `${r.orcPlace} ${r.esc}`);
     t.eq('三個角色站的格子', r.roots, 'orc@5,3,orc@6,3,wolf@3,3');
     t.check('拖曳：鬼影跟著、整格移動寫檔', r.dragGhost === '4,5' && r.dragged.join() === '128,192,', `${r.dragGhost} ${r.dragged.join()}`);

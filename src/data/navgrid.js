@@ -52,7 +52,7 @@ function resolveAxis(a, b, size, total)
     return {a, size:total-a-b};
 }
 
-// 依 Phaser createFromObjects + View(_addGrid/_setAnchor) 的規則，算出物件在世界座標的各個位置
+// 依 Phaser createFromObjects + View(_addGrid/_setAnchor) 的規則，算出單張圖物件在世界座標的各個位置(grid 量圖片的邊，沒寫＝整張圖)
 export function placeObject(o)
 {
     const w = o.width, h = o.height, p = o.props;
@@ -64,7 +64,8 @@ export function placeObject(o)
     const grid = {w:gh.size, h:gv.size};
     const posG = {x:cen.x - w/2 + gh.a + gh.size/2, y:cen.y - h/2 + gv.a + gv.size/2};
 
-    let ax = num(p.anchorX) ?? 0, ay = num(p.anchorY) ?? 0;
+    // 錨點：al/ar/at/ab 量圖片的邊，沒寫的軸＝中心(同 View._setAnchor)
+    let ax = 0, ay = 0;
     if(p.al!=null) {ax = -w/2 + num(p.al);} else if(p.ar!=null) {ax = w/2 - num(p.ar);}
     if(p.at!=null) {ay = -h/2 + num(p.at);} else if(p.ab!=null) {ay = h/2 - num(p.ab);}
     const pos = {x:cen.x + ax, y:cen.y + ay};

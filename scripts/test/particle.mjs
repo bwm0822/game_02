@@ -162,7 +162,7 @@ run('粒子特效', async t => {
         });
         p.fxOn('t-flash');
         const on = made[0];
-        out.fxOn = [made.map(m => m.key).join(), on?.em.follow === p, on?.em.followOffset.y === p.view.Min.y];
+        out.fxOn = [made.map(m => m.key).join(), on?.em.follow === p, on?.em.followOffset.y === p.view.rect.y];
         p.fxTick('t-flash');
         out.fxTick = made.map(m => `${m.key}${m.burst ? ':burst' : ''}`).join();
         p.fxOff('t-flash');

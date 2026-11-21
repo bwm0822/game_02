@@ -110,8 +110,8 @@ run('fx-tool', async t => {
         await until(() => st.fx?.img === '💫' && st.root);
         out.pvRole = st.ext.roles[PV.P.role]?.kind;
         PV.replay();
-        // stun：align top → 掛在 view 上緣；有 body → 身體會擺
-        out.stunCell = [!!st.cur, st.cur?.cell.holder.y === st.view.Min.y, !!st.cur?.body];
+        // stun：align top → 掛在圖範圍（view.rect）上緣；有 body → 身體會擺
+        out.stunCell = [!!st.cur, st.cur?.cell.holder.y === st.view.rect.y, !!st.cur?.body];
         await sleep(200);
         out.bodySwing = st.view.shape.angle !== 0;
         PV.off();
@@ -121,7 +121,7 @@ run('fx-tool', async t => {
         // body 會讓圖示繞腳底轉，比位置前先拿掉
         D.commit(() => {S.data.stun.cell.align = 'bottom'; delete S.data.stun.body;});
         await until(() => st.fx?.cell.align === 'bottom');
-        out.rerender = [q('#view .pv .stage canvas') === cv, st.cur?.cell.holder.y === st.view.Max.y];
+        out.rerender = [q('#view .pv .stage canvas') === cv, st.cur?.cell.holder.y === st.view.rect.y + st.view.rect.h];
         D.undo();
         // burn：閃一下，不常駐，播完自己消失
         S.sel = 'burn'; fx.render();

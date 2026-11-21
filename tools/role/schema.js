@@ -16,8 +16,7 @@ export const JOBS = ['ranger', 'innkeeper', 'smith', 'trader', 'butcher', 'merch
 export const STATS = ['str', 'dex', 'con', 'int', 'luk', 'hpMax', 'atk', 'def', 'range', 'acc', 'eva', 'cri', 'crd', 'pen',
                       'phy_res', 'fire_res', 'ice_res', 'poison_res'];
 
-const XY = {x: {label: 'x', type: 'num'}, y: {label: 'y', type: 'num'}};
-const LRTB = {l: {label: '左 l', type: 'num'}, r: {label: '右 r', type: 'num'}, t: {label: '上 t', type: 'num'}, b: {label: '下 b', type: 'num'}};
+const XYWH = {x: {label: '左 x', type: 'num'}, y: {label: '上 y', type: 'num'}, w: {label: '寬 w', type: 'num'}, h: {label: '高 h', type: 'num'}};
 const PART = {
     sprite: {label: 'sprite', type: 'sprite'},
     scale: {label: 'scale', type: 'num'},
@@ -50,12 +49,9 @@ export const FIELDS = {
     fall: {label: '倒地角度', type: 'int'},
     faceR: {label: '圖朝右', type: 'bool'},
     sex: {label: '性別', type: 'enum', options: ['', 'm', 'f'], names: {'': '男（預設）', m: '男', f: '女'}},
-    w: {label: '寬 w', type: 'int'},
-    h: {label: '高 h', type: 'int'},
-    anchor: {label: '錨點', type: 'obj', fields: XY},
-    b: {label: '物理 b', type: 'obj', fields: LRTB},
-    g: {label: '佔格 g', type: 'obj', fields: LRTB},
-    z: {label: '互動區 z', type: 'obj', fields: LRTB},
+    // 相對錨點（角色位置）的左上角＋寬高；沒寫＝沒有（沒 grid＝不佔格、沒 zone＝點不到）
+    grid: {label: '佔格 grid', type: 'obj', fields: XYWH},
+    zone: {label: '互動區 zone', type: 'obj', fields: XYWH},
     // 部位：part.json 的 id，用 pool 選圖器挑
     body: {label: '身體', type: 'part', part: true},
     head: {label: '頭', type: 'part', part: true},
@@ -71,17 +67,17 @@ export const FIELDS = {
 };
 
 // 遊戲畫角色一定要有的（RoleView 直接讀，沒有會出錯）
-export const REQUIRED = ['w', 'h', 'anchor'];
+export const REQUIRED = [];
 
 export const SECTIONS = [
     {title: '基本', keys: ['kind', 'grp','lab', 'des', 'icon', 'job', 'gold', 'style', 'trade', 'unique', 'survival', 'animal']},
     {title: '戰鬥', keys: ['attrs', 'abilities', 'meat', 'skin', 'fall']},
-    {title: '外觀', keys: ['faceR', 'sex','w', 'h', 'anchor', 'b', 'g', 'z', 'body', 'head', 'hair', 'hat', 'handF', 'handB', 'cloth', 'shoes', 'corpse']},
+    {title: '外觀', keys: ['faceR', 'sex', 'grid', 'zone', 'body', 'head', 'hair', 'hat', 'handF', 'handB', 'cloth', 'shoes', 'corpse']},
     {title: '物品', keys: ['inv']},
     {title: '作息', keys: ['schedule']},
 ];
 
-const BASE = ['kind', 'grp', 'lab', 'des', 'icon', 'faceR', 'w', 'h', 'anchor', 'b', 'g', 'z', 'body'];
+const BASE = ['kind', 'grp', 'lab', 'des', 'icon', 'faceR', 'grid', 'zone', 'body'];
 const FIGHTER = ['job', 'gold', 'style', 'attrs', 'inv'];
 export const KIND_FIELDS = {
     player: ['sex', 'job', 'gold', 'survival', 'inv', 'handF', 'handB', 'head', 'hair'],
@@ -172,13 +168,14 @@ export function roleTree(data, ids, o = {})
 export const colDef =(c) => {const [a, b] = c.split('.'); return b ? FIELDS[a]?.fields?.[b] : FIELDS[a];};
 
 // ---------- 新角色 ----------
-const box = () => ({l: 0, r: 0, t: 32, b: 0});
+// 方塊相對錨點：人形佔錨點那一格、野獸往右多一格
+const box = (w = 32) => ({x: -16, y: -16, w, h: 32});
 export const HUMAN_KINDS = ['player', 'npc', 'rogue'];
 export const stdBody = (sex) => (sex === 'f' ? 'body-woman' : 'body-man');
 export const isStdBody = (body) => body === stdBody('m') || body === stdBody('f');
-const HUMAN = (sex) => ({...(sex === 'f' && {sex}), faceR: true, anchor: {x: 0, y: 16}, w: 32, h: 64, b: box(), g: box(), z: box(),
+const HUMAN = (sex) => ({...(sex === 'f' && {sex}), faceR: true, grid: box(), zone: box(),
                          body: stdBody(sex), handF: 'handF', handB: 'handB'});
-const BEAST = () => ({faceR: false, anchor: {x: -16, y: 16}, w: 64, h: 64, b: box(), g: box(), z: box(),
+const BEAST = () => ({faceR: false, grid: box(64), zone: box(64),
                       body: 'animals-42', fall: 180});
 const ATTRS = () => ({attrs: {atk: 5, def: 0}});
 

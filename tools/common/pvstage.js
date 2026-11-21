@@ -1,6 +1,7 @@
 // 工具的 Phaser 預覽共用（特效、粒子分頁）：角色照角色編輯器的 partsOf() 合成一張貼圖，root／view／shape 的關係跟 RoleView 一樣；textures 的圖切成單張貼圖
 import * as IC from './icons.js';
 import {partsOf} from '../role/preview.js';
+import {FIG} from '../../src/data/mapcheck.js';
 
 const ROLE_CV = 160;
 
@@ -48,20 +49,22 @@ export function resizeStage(game, gw, gh)
 // 預設欄寬：畫布放大後＋欄位的 padding／border
 export const panelWidth = (W, zoom) => W * zoom + 2 * 8 + 2;
 
-// root 在 (x, y)＝角色腳底；灰線是地面（寬 ground）、灰框是 view（w×h）；view 帶 shape／max／Min／Max（fxcell 的 attachCell、bodyTween 要用）
+// root 在 (x, y)＝錨點；灰線是地面（寬 ground）、灰框是角色的大概範圍（FIG）；view 帶 shape／rect／pivot（fxcell 的 attachCell、bodyTween 要用）
+// shape（合成貼圖，貼圖中心＝錨點）放在支點（FIG 的中心，同遊戲 RoleView 的身體中心），繞它轉
 export function addRole(scene, r, texKey, x, y, ground)
 {
-    const w = r.w ?? 32, hh = r.h ?? 64, ax = r.anchor?.x ?? 0, ay = r.anchor?.y ?? 0;
     const root = scene.add.container(x, y);
-    const view = scene.add.container(-ax, -ay);
-    const shape = scene.add.image(0, 0, texKey);
+    const view = scene.add.container(0, 0);
+    const pivot = {x: 0, y: FIG.cy};
+    const shape = scene.add.image(pivot.x, pivot.y, texKey).setOrigin(0.5, (ROLE_CV / 2 + FIG.cy) / ROLE_CV);
     view.add(shape);
     root.add(view);
+    const rect = {x: -FIG.w / 2, y: FIG.cy - FIG.h / 2, w: FIG.w, h: FIG.h};
     const g = scene.add.graphics();
     g.lineStyle(1, 0x444444).lineBetween(-ground / 2, 0, ground / 2, 0);
-    g.lineStyle(1, 0x555555).strokeRect(-ax - w / 2, -ay - hh / 2, w, hh);
+    g.lineStyle(1, 0x555555).strokeRect(rect.x, rect.y, rect.w, rect.h);
     root.addAt(g, 0);
-    Object.assign(view, {shape, max: {x: w / 2, y: hh / 2}, Min: {x: -ax - w / 2, y: -ay - hh / 2}, Max: {x: -ax + w / 2, y: -ay + hh / 2}});
+    Object.assign(view, {shape, rect, pivot});
     root.view = view;
     return {root, view, base: {x: shape.x, y: shape.y}};
 }

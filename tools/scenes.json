@@ -1,0 +1,25 @@
+{
+  "場景": {
+    "map": "sandbox",
+    "roles": [
+      {
+        "key": "r1",
+        "id": "wick",
+        "tx": 10,
+        "ty": 7,
+        "equip": {
+          "CAT_WEAPON": "sword-1"
+        }
+      }
+    ],
+    "time": "23:46",
+    "prefabs": [
+      {
+        "key": "f1",
+        "prefab": "forge",
+        "x": 416,
+        "y": 288
+      }
+    ]
+  }
+}

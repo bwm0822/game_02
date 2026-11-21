@@ -6,15 +6,10 @@
      "name":"",
      "properties":[
             {
-             "name":"anchorY",
+             "name":"ab",
              "type":"int",
              "value":16
-            }, 
-            {
-             "name":"bt",
-             "type":"int",
-             "value":32
-            }, 
+            },
             {
              "name":"door_close",
              "type":"string",

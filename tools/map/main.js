@@ -23,7 +23,7 @@ import * as TP from '../common/schedpos.js';
 import * as RT from '../common/schedroute.js';
 import {spotsOn, clashOf, occupyEl} from '../role/occupy.js';
 import {isRoleObj, roleObjs, placeOf, spriteOf, forgetSprites, SPRITE_HALF} from './roles.js';
-import {roleIssues, checkMapRoles, isPortObj, portIssue, isPrefabObj, prefabIssue} from '../../src/data/mapcheck.js';
+import {roleIssues, checkMapRoles, isPortObj, portIssue, isPrefabObj, prefabIssue, FIG} from '../../src/data/mapcheck.js';
 import {buildPlan, hhmm, mod, parseAt} from '../../src/data/schedplan.js';
 import {daySegs} from '../role/schedbar.js';
 import '../common/splitter.js';
@@ -299,7 +299,7 @@ async function summarize(name)
             }
             if (!isRoleObj(o)) continue;
             roles++;
-            const rid = String(o.props.id), xs = roleIssues(rid, S.roles), {root} = placeOf(o, S.roles[rid]);
+            const rid = String(o.props.id), xs = roleIssues(rid, S.roles), {root} = placeOf(o, map.tilewidth, map.tileheight);
             for (const x of xs) issues.push(x.msg);
             dots.push({oid: o.id, rid, layer: l.name, x: root.x, y: root.y, level: xs.some(x => x.level === 'error') ? 'error' : xs.length ? 'warn' : null});
         }
@@ -697,14 +697,13 @@ const tileOfPt = (d, p) => [Math.floor(p.x / d.map.tilewidth), Math.floor(p.y / 
 const rootTile = (d, it) => tileOfPt(d, it.at.root);
 const inMap = (d, [tx, ty]) => tx >= 0 && ty >= 0 && tx < d.map.width && ty < d.map.height;
 
-// 角色 rid 站在格子 tile 時的 view 中心
+// 角色站在格子 tile 時的大概範圍中心（FIG；角色小圖的中心）
 function cenAt(d, rid, [tx, ty])
 {
-    const a = S.roles[rid]?.anchor;
-    return {x: tx * d.map.tilewidth + d.map.tilewidth / 2 - (a?.x ?? 0), y: ty * d.map.tileheight + d.map.tileheight / 2 - (a?.y ?? 0)};
+    return {x: tx * d.map.tilewidth + d.map.tilewidth / 2, y: ty * d.map.tileheight + d.map.tileheight / 2 + FIG.cy};
 }
 
-// 半透明的角色＋格子框（放置模式滑過、拖曳中）
+// 半透明的角色＋格子框（放置模式滑過、拖曳中）；角色小圖的中心＝FIG 的中心
 function drawGhost(g, d, K, rid, tile, sprites)
 {
     const tw = d.map.tilewidth, th = d.map.tileheight, c = cenAt(d, rid, tile), sp = sprites.get(rid);
@@ -872,7 +871,7 @@ async function loadMapState(st)
     const d = await mapDataOf(st.name);
     st.data = d;
     if (!d) return;
-    st.all = roleObjs(d).map(it => ({...it, at: placeOf(it.o, S.roles[it.rid])})).sort((a, b) => a.at.root.y - b.at.root.y);
+    st.all = roleObjs(d).map(it => ({...it, at: placeOf(it.o, d.map.tilewidth, d.map.tileheight)})).sort((a, b) => a.at.root.y - b.at.root.y);
     applyHide(st);
     st.issues = new Map();
     for (const x of checkMapRoles(d, S.roles, MV.gridOf(d))) (st.issues.get(x.oid) ?? st.issues.set(x.oid, []).get(x.oid)).push(x);

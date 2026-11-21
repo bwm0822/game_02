@@ -76,7 +76,7 @@ export default class Dummy extends Role
 
     save() {super.save({class:'dummy'});}
 
-    // 跟 RoleView._addPart 同樣的組法，view 會被 anchor 往回偏移，所以 y 要扣 anchor.y
+    // 跟 RoleView._addPart 同樣的組法，部位相對錨點(container 原點)
     static ghost(scene, obj)
     {
         const meta = DB.role(obj.id);
@@ -87,7 +87,7 @@ export default class Dummy extends Role
             const depth = flatDepth(ROLE_PART[k]);
             return [[p.sprite, depth.sprite], [p.back, depth.back]].filter(([s])=>s).map(([s, d])=>{
                 const [key, frame] = s.split(':');
-                return scene.add.sprite(p.x??0, (p.y??0)-meta.anchor.y, key, frame)
+                return scene.add.sprite(p.x??0, p.y??0, key, frame)
                     .setScale(p.scale).setOrigin(p.ox??0.5, p.oy??1).setAngle(p.a??0).setDepth(d);
             });
         });

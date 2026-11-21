@@ -55,7 +55,8 @@ export class COM_Bed extends Com
     _sprite(bb)
     {
         const [key,frame]=bb.blanket.split(':');
-        const sp = this.scene.add.sprite(0,0,key,frame);
+        const r = this.root.view?.rect;   // 蓋在床的圖上(相對錨點)
+        const sp = this.scene.add.sprite(r ? r.x + r.w/2 : 0, r ? r.y + r.h/2 : 0, key, frame);
         sp.setPipeline('Light2D');
         sp.displayWidth = bb.wid;
         sp.displayHeight = bb.hei;

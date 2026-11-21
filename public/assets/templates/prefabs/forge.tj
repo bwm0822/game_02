@@ -1,0 +1,22 @@
+{ "object":{
+         "id":1,
+         "name":"",
+         "type":"item",
+         "rotation":0,
+         "visible":true,
+         "gid":1,
+         "width":66,
+         "height":49,
+         "properties":[
+                {
+                 "name":"prefab",
+                 "type":"string",
+                 "value":"forge"
+                }]
+        },
+ "tileset":{
+         "firstgid":1,
+         "source":"..\/..\/tilesets\/prefabs.tsj"
+        },
+ "type":"template"
+}

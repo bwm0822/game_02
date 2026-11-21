@@ -1,5 +1,5 @@
 // 預覽的「顯示 ▾」下拉：一組勾選（記在 localStorage）＋按鈕；createShowMenu() 產生一組
-// 預設那組＝虛線 view、錨點、b/g/z 框、三個支點十字，試穿、角色、部位分頁共用；角色分頁的作息地圖自己一組
+// 預設那組＝錨點、grid/zone 框、三個支點十字，試穿、角色、部位分頁共用；角色分頁的作息地圖自己一組
 import {h} from './dom.js';
 import {PIVOT_NAMES, PIVOT_COLOR} from './handles.js';
 
@@ -95,8 +95,8 @@ export function createShowMenu(key, items, defaults = {})
 }
 
 // 預設全部不勾
-const PREVIEW = createShowMenu('tools.preview.show', [['view', '虛線 view', '#aaa'], ['anchor', '錨點', '#ffd700'],
-    ['b', '物理 b', '#ff5555'], ['g', '佔格 g', '#55dd55'], ['z', '互動 z', '#5599ff'], null,
+const PREVIEW = createShowMenu('tools.preview.show', [['anchor', '錨點', '#ffd700'],
+    ['grid', '佔格 grid', '#55dd55'], ['zone', '互動 zone', '#5599ff'], null,
     ...Object.keys(PIVOT_NAMES).map(k => [k, PIVOT_NAMES[k], PIVOT_COLOR[k]])]);
 export const show = PREVIEW.show;
 export const showMenu = PREVIEW.showMenu;

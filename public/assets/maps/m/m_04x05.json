@@ -575,7 +575,7 @@
                 }, 
                 {
                  "id":145,
-                 "name":"house-08",
+                 "name":"guard-room",
                  "properties":[
                         {
                          "name":"ambient",
@@ -697,15 +697,15 @@
                  "id":186,
                  "name":"guard-p6",
                  "template":"..\/..\/templates\/point.tj",
-                 "x":2016,
-                 "y":1312
+                 "x":2272,
+                 "y":1280
                 }, 
                 {
                  "id":187,
                  "name":"guard-p7",
                  "template":"..\/..\/templates\/point.tj",
                  "x":1600,
-                 "y":1632
+                 "y":1440
                 }, 
                 {
                  "id":188,

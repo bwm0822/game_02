@@ -6,11 +6,6 @@
      "name":"",
      "properties":[
             {
-             "name":"bt",
-             "type":"int",
-             "value":64
-            }, 
-            {
              "name":"gt",
              "type":"int",
              "value":64

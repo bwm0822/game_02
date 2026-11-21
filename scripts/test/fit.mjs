@@ -64,7 +64,7 @@ run('fit', async t => {
 
         // 選角色不帶裝備，「穿原裝」才帶入
         F.select('guard-1');
-        // 「顯示 ▾」：點開跳面板、八項預設不勾、點外面收起來
+        // 「顯示 ▾」：點開跳面板、六項預設不勾、點外面收起來
         const menu = () => {document.querySelector('#pv .showbtn').click(); return document.querySelector('.showpop');};
         const outside = () => document.body.dispatchEvent(new PointerEvent('pointerdown', {bubbles: true}));
         out.opts = [document.querySelector('#pv .showbtn').textContent, [...menu().querySelectorAll('input')].map(c => c.checked)];
@@ -640,7 +640,7 @@ run('fit', async t => {
     t.eq('一打開不選角色、左欄全部摺起來', JSON.stringify(r.defFold), JSON.stringify([null, 0]));
     t.check('清單只列紙娃娃型角色', r.list[0] === r.list[1], JSON.stringify(r.list));
     t.eq('樹同角色分頁：kind ▸ 子分類、沒有右鍵選單', JSON.stringify(r.tree), JSON.stringify([true, true, true]));
-    t.eq('「顯示 ▾」八項預設不勾、點外面收起來', JSON.stringify(r.opts), JSON.stringify(['顯示（0）▾', Array(8).fill(false), true]));
+    t.eq('「顯示 ▾」六項預設不勾、點外面收起來', JSON.stringify(r.opts), JSON.stringify(['顯示（0）▾', Array(6).fill(false), true]));
     t.eq('支點沒勾顯示拖不動；勾三個記住', JSON.stringify(r.hiddenPivot), JSON.stringify([false, '顯示（3）▾', '{"neck":true,"wristF":true,"wristB":true}']));
     t.eq('選角色不帶原裝', r.slots0, '{}');
     t.eq('穿原裝', r.slots, JSON.stringify({CAT_WEAPON: 'sword-1', CAT_HELMET: 'helmet_01', CAT_CHESTPLATE: 'chest_01'}));

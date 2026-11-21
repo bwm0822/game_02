@@ -59,6 +59,13 @@
                  "template":"..\/..\/templates\/exit_door.tj",
                  "x":128,
                  "y":320
+                }, 
+                {
+                 "id":6,
+                 "name":"p",
+                 "template":"..\/..\/templates\/point.tj",
+                 "x":192,
+                 "y":128
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -67,7 +74,7 @@
          "y":0
         }],
  "nextlayerid":4,
- "nextobjectid":6,
+ "nextobjectid":7,
  "orientation":"orthogonal",
  "properties":[
         {

@@ -35,7 +35,10 @@ run('prefab', async t => {
         const out = {};
         out.anchorY = go.y - p.y;
         out.wid = [go.view.wid, go.view.hei];
-        out.grid = [go.view.gl, go.view.gt, go.view.gw, go.view.gh];
+        out.rect = go.view.rect;
+        out.grid = go.view._grid;
+        out.posG = [go.posG.x - go.x, go.posG.y - go.y];
+        out.zone = go.view.zoneBox ?? null;
         out.count = go.view._shape.list.length;
         out.off = vis(go);
         out.offLights = nLights() - L0;
@@ -69,7 +72,10 @@ run('prefab', async t => {
 
     t.eq('錨點＝縮圖中心往下 20（thumb.y＋h/2）', r.anchorY, 20);
     t.eq('view 大小＝縮圖', JSON.stringify(r.wid), '[40,40]');
-    t.eq('grid 方塊換成 View 欄位（相對縮圖左上）', JSON.stringify(r.grid), '[4,24,32,16]');
+    t.eq('圖的範圍＝縮圖外框（相對錨點）', JSON.stringify(r.rect), '{"x":-20,"y":-40,"w":40,"h":40}');
+    t.eq('grid 方塊相對錨點（中心＋寬高）', JSON.stringify([r.grid.x, r.grid.y, r.grid.w, r.grid.h]), '[0,-8,32,16]');
+    t.eq('posG＝錨點＋grid 中心', JSON.stringify(r.posG), '[0,-8]');
+    t.eq('沒寫 zone＝沒有', r.zone, null);
     t.eq('三張 png 零件', r.count, 3);
     t.eq('預設 look＝off', r.look0, 'off');
     t.eq('off：底座＋小箱子，火焰藏', JSON.stringify(r.off), '[true,true,false]');
@@ -92,9 +98,10 @@ run('prefab', async t => {
         const {default: Lamp} = await import('/src/items/lamp.js');
         const {default: UiOption} = await import('/src/ui/uioption.js');
         d.DB._prefabDB.t_brazier = {
-            look: 'off', acts: {t_fan: 'on', t_douse: 'off'}, defAct: 't_fan',
+            look: 'off', acts: {t_fan: 'on', t_douse: 'off'}, defAct: 't_fan', zone: {x: -16, y: -32, w: 32, h: 32},
             parts: [{img: 'Barrel'}, {light: {r: 80}, look: 'on'}],
         };
+        d.DB._prefabDB.t_nozone = {acts: {t_fan: 'on'}, parts: [{img: 'Barrel'}]};
         d.DB._prefabDB.t_lamp = {
             look: 'off', acts: {turn_on: 'on', turn_off: 'off'},
             parts: [{img: 'Barrel'}, {light: {r: 80}, look: 'on'}],
@@ -110,6 +117,13 @@ run('prefab', async t => {
         go.init_prefab();
         const acts = () => Object.fromEntries(Object.entries(go.acts).map(([k, v]) => [k, v === d.GM.EN ? 'en' : v === d.GM.HIDE ? 'hide' : v]));
         out.interactive = !!go.view._zone;
+        out.zone = go.view.zoneBox;
+        const nz = new Item(gs, p.x + 128, p.y);
+        nz.uid = 987657;
+        nz.bb.prefab = 't_nozone';
+        nz.init_prefab();
+        out.noZone = [nz.view.interactive, nz.view._zone ?? null];
+        nz.emit('remove');
         out.acts0 = acts();
         out.def0 = go.act;
         await go.aEmit('t_fan', p);
@@ -136,12 +150,15 @@ run('prefab', async t => {
         out.lampLook = lamp.getLook();
         lamp.emit('remove');
 
-        for (const id of [987655, 987656]) delete d.Record.game.scenes?.[gs._data.map]?.prefab?.[id];
+        for (const id of [987655, 987656, 987657]) delete d.Record.game.scenes?.[gs._data.map]?.prefab?.[id];
         delete d.DB._prefabDB.t_brazier;
+        delete d.DB._prefabDB.t_nozone;
         delete d.DB._prefabDB.t_lamp;
         return out;
     });
     t.check('有 acts 的 item 變成可互動', a.interactive);
+    t.eq('zone 照 prefab 寫的（相對錨點）', JSON.stringify(a.zone), '{"x":-16,"y":-32,"w":32,"h":32}');
+    t.eq('有 acts 沒 zone：可互動但沒有 zone（點不到）', JSON.stringify(a.noZone), '[true,null]');
     t.eq('off：只出 t_fan', JSON.stringify(a.acts0), '{"t_fan":"en","t_douse":"hide"}');
     t.eq('左鍵＝defAct', a.def0, 't_fan');
     t.eq('觸發 t_fan → on', a.look1, 'on');

@@ -1848,9 +1848,6 @@
   "tree": {
     "bb": {
       "ab": 32,
-      "bl": 16,
-      "bw": 32,
-      "bh": 32,
       "gl": 16,
       "gw": 32,
       "gh": 32,
@@ -1863,7 +1860,7 @@
       "tool": "axe",
       "harvest_tex": {
         "sprite": "free_012",
-        "y": 40
+        "y": 8
       },
       "full_tex": {
         "sprite": "free_001"

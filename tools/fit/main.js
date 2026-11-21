@@ -15,7 +15,7 @@ import * as PT from '../common/part.js';
 import {show, showMenu} from '../common/showmenu.js';
 import * as PZ from '../common/panzoom.js';
 import {hidden, hideChecks} from '../common/headhide.js';
-import {fillBg} from '../role/preview.js';
+import {fillBg, ANCHOR, drawBoxes, drawAnchor} from '../role/preview.js';
 import {DEPTH, BACK_DEPTH, REAR_DEPTH, BACK_NODE, CAT, roleTree, nodeOf, depthOf, ANIM_LIFT} from '../role/schema.js';
 import {treeEls} from '../common/views.js';
 import {EASE, dirTo, animTrack, animEnd, poseAt as trackPose, trackEnd, weaponAnim as animOf} from '../../src/core/pose.js';
@@ -27,7 +27,6 @@ const PARTS = [['body', '身體'], ['shoes', '鞋子'], ['cloth', '衣服'], ['h
 const SLOTS = [['CAT_WEAPON', '武器', 'icons:80'], ['CAT_HELMET', '頭盔', 'icons:113'], ['CAT_CHESTPLATE', '護甲', 'icons:119'], ['CAT_GLOVES', '手套', 'icons:128'], ['CAT_BOOTS', '靴子', 'icons:130']];
 const NUMS = [['scale', '1'], ['x', '0'], ['y', '0'], ['a', '0'], ['ox', '0.5'], ['oy', '1']];
 const {PIVOT_NAMES, PIVOT_COLOR} = HD;
-const FRAME_COLOR = {b: '#ff5555', g: '#55dd55', z: '#5599ff'};
 // 顯示選項（view、錨點、b/g/z、支點）在 showmenu.js 的 show，跟角色／部位分頁共用
 // 預覽播放時 ready 停一下（模擬前撲）、hold 停一下（模擬等箭飛）
 const PAUSE = {ready: 100, hold: 300};
@@ -693,7 +692,7 @@ function animView(slots)
 // ---------- 預覽 ----------
 const gameZoom = () => Math.round(Math.min(screen.width / 1024, screen.height / 768) * 100) / 100;
 // 置中要裝下的範圍：動畫分頁留大一點給武器揮
-const frameOf = (r) => {const pad = S.mode === 'anim' ? 112 : 48; return {w: Math.max(r.w ?? 32, 64) + pad, h: Math.max(r.h ?? 64, 64) + pad};};
+const frameOf = () => {const pad = S.mode === 'anim' ? 112 : 48; return {w: 64 + pad, h: 64 + pad};};
 
 const hiddenNow = () => hiddenParts(SLOTS.map(([cat]) => items()[S.slots[cat]]), CAT, partFor(parts(), role(), 'hat'));
 
@@ -752,7 +751,6 @@ async function drawPreview()
     if (!cv?.pz || !r) return;
     const token = ++drawing;
     const isAnim = S.mode === 'anim';
-    const w = r.w ?? 32, hh = r.h ?? 64, ax = r.anchor?.x ?? 0, ay = r.anchor?.y ?? 0;
     const tr = isAnim ? trackOf() : null;
     const parts = partsOf(r, liftNow(tr)).filter(pt => !hidden(pt.k));
     const frames = await Promise.all(parts.map(p => IC.frameOf(p.sprite)));
@@ -764,16 +762,8 @@ async function drawPreview()
     g.imageSmoothingEnabled = true;
     g.imageSmoothingQuality = 'low';
 
-    // vc：畫的時候是世界原點；給 hit-test 的 geo.vc 是原點在畫布上的位置換成世界單位（toLocal 照舊）
-    const vc = {x: 0, y: 0}, root = {x: ax, y: ay}, gvc = {x: o.x / K, y: o.y / K};
-    if (show.view)
-    {
-        g.lineWidth = px;
-        g.setLineDash([3 * px, 3 * px]);
-        g.strokeStyle = '#888';
-        g.strokeRect(vc.x - w / 2, vc.y - hh / 2, w, hh);
-        g.setLineDash([]);
-    }
+    // vc：錨點在世界座標的位置（世界原點＝FIG 的中心）；給 hit-test 的 geo.vc 是錨點在畫布上的位置換成世界單位（toLocal 照舊）
+    const vc = ANCHOR, gvc = {x: o.x / K + vc.x, y: o.y / K + vc.y};
 
     // 部位、支點、手腕姿勢、動畫影格都是 rig 座標（rig＝body 的 x/y/a）
     const rig = rigNow();
@@ -861,24 +851,8 @@ async function drawPreview()
     }
     else geo = null;
 
-    for (const k of ['g', 'z', 'b'])
-    {
-        if (!show[k] || !isObj(r[k])) continue;
-        const l = r[k].l ?? 0, rr = r[k].r ?? 0, t = r[k].t ?? 0, b = r[k].b ?? 0;
-        g.strokeStyle = FRAME_COLOR[k];
-        g.lineWidth = 2 * px;
-        g.strokeRect(vc.x - w / 2 + l, vc.y - hh / 2 + t, w - l - rr, hh - t - b);
-    }
-
-    if (show.anchor)
-    {
-        g.strokeStyle = '#ffd700';
-        g.lineWidth = 2 * px;
-        g.beginPath();
-        g.moveTo(root.x - 4, root.y); g.lineTo(root.x + 4, root.y);
-        g.moveTo(root.x, root.y - 4); g.lineTo(root.x, root.y + 4);
-        g.stroke();
-    }
+    drawBoxes(g, r, K);
+    drawAnchor(g, K);
     cv.dataset.drawn = n;
 }
 
@@ -1088,7 +1062,7 @@ function drawPv()
     const isAnim = S.mode === 'anim', tr = isAnim ? trackOf() : null;
     const check = (k, text, color, disabled) => h('label', {style: color && `color:${color}`},
         h('input', {type: 'checkbox', checked: S[k], disabled, onchange: e => {S[k] = e.target.checked; drawPreview();}}), text);
-    const cv = h('canvas', {title: '虛線：view（w×h）　黃十字：錨點（角色位置）\n滾輪縮放、按住中鍵拖曳平移', onpointerdown: onDown, onpointermove: onMove, onpointerup: onUp, onpointerleave: onLeave});
+    const cv = h('canvas', {title: '黃十字：錨點（角色位置）\n滾輪縮放、按住中鍵拖曳平移', onpointerdown: onDown, onpointermove: onMove, onpointerup: onUp, onpointerleave: onLeave});
     cv.pz = PZ.panzoom(cv, {frame: () => frameOf(role()), redraw: drawPreview});
     const total = tr ? trackEnd(tr) : 0;
     $('pv').replaceChildren(

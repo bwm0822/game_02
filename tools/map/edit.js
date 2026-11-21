@@ -1,5 +1,5 @@
 // 地圖分頁改 Tiled 地圖（角色物件、@群組圖層）跟 story.json 的 spawns：讀硬碟上的檔 → 改 → 寫回（地圖照 Tiled 排版）；每次寫回傳前後全文給 undo
-// 位置一律用「站的格子」：root＝物件中心＋role.anchor（同 roles.js 的 placeOf），換算回 Tiled 的 x/y 看物件格式（template 的圖塊物件／點物件）
+// 位置一律用「站的格子」：root＝有大小的物件左下角那一格的中心、點物件＝點本身（同 mapcheck.js 的 placeOf），換算回 Tiled 的 x/y 看物件格式（template 的圖塊物件／點物件）
 import * as FS from '../common/fs.js';
 import {stringify, eolOf} from '../common/tiledjson.js';
 import {resolveObject} from '../../src/data/navgrid.js';
@@ -126,14 +126,15 @@ const tileC = (data, [tx, ty]) => ({x: tx * data.tilewidth + data.tilewidth / 2,
 // 新角色物件：有 template 用 template（x/y 換回 Tiled 的左下／左上），沒有寫點物件
 export function makeRole(data, mapName, id, rid, tile, role, tpl)
 {
-    const c = tileC(data, tile), ax = role?.anchor?.x ?? 0, ay = role?.anchor?.y ?? 0;
-    if (tpl)
+    const c = tileC(data, tile), tw = data.tilewidth, th = data.tileheight;
+    if (tpl && (tpl.object.width ?? 0) > 0)
     {
-        const w = tpl.object.width ?? 0, hh = tpl.object.height ?? 0;
-        return {id, template: relFromMap(mapName, tpl.path), x: c.x - ax - w / 2, y: tpl.object.gid != null ? c.y - ay + hh / 2 : c.y - ay - hh / 2};
+        const hh = tpl.object.height ?? 0;
+        return {id, template: relFromMap(mapName, tpl.path), x: c.x - tw / 2, y: tpl.object.gid != null ? c.y + th / 2 : c.y + th / 2 - hh};
     }
+    if (tpl) return {id, template: relFromMap(mapName, tpl.path), x: c.x, y: c.y};
     return {height: 0, id, name: '', point: true, properties: [{name: 'id', type: 'string', value: rid}],
-        rotation: 0, type: 'npc', visible: true, width: 0, x: c.x - ax, y: c.y - ay};
+        rotation: 0, type: 'npc', visible: true, width: 0, x: c.x, y: c.y};
 }
 
 export function placeRole(data, mapName, layerName, rid, tile, role, tpl)
