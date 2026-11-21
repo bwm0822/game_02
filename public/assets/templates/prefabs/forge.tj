@@ -1,7 +1,7 @@
 { "object":{
          "id":1,
          "name":"",
-         "type":"item",
+         "type":"stove",
          "rotation":0,
          "visible":true,
          "gid":1,
@@ -12,6 +12,11 @@
                  "name":"prefab",
                  "type":"string",
                  "value":"forge"
+                }, 
+                {
+                 "name":"isBlock",
+                 "type":"bool",
+                 "value":true
                 }]
         },
  "tileset":{

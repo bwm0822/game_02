@@ -59,6 +59,8 @@
 
 路網／mapcheck（`navgrid.js` 的 `placeObject()`）照 ItemView 同規則算 prefab：`loadMap()` 讀 `json/prefab.json` 掛到物件的 `pf`，錨點＝縮圖中心往回挪 thumb 中心、grid 相對錨點、沒 grid＝不佔格，Tiled 寫了 `gl…` 才照縮圖量。改了 prefab 的 grid／thumb 要重跑路網。驗證：`scripts/test/prefab.mjs` 最後一段（`m/m_04x05` 的 forge）。
 
+外觀＋行為：template 的 `type` 決定 class（如 `forge.tj` 是 `stove`＋`isBlock`），prefab 的 `acts` 只切外觀、跟 class 的動作並列在右鍵選單，左鍵照 `ORDER`（forge＝烹飪）；狀態不限制別的動作（點火／熄火跟烹飪不綁，2026-11-21 決定，要綁是另一題）。`look` 跟 `COM_Manu` 的存檔並存不互蓋，`prefab.mjs` 有驗（熄火＋放東西 → 換地圖回來）。
+
 ## 場景分頁
 
 - 左欄（每段都可摺疊，記住）：

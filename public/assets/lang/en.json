@@ -260,6 +260,18 @@
       "r": "mt"
     }
   },
+  "ui.fire_on": {
+    "點火": {
+      "t": "Light",
+      "r": "mt"
+    }
+  },
+  "ui.fire_off": {
+    "熄火": {
+      "t": "Douse",
+      "r": "mt"
+    }
+  },
   "ui.open_door": {
     "打開": {
       "t": "Open",

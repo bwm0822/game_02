@@ -587,7 +587,7 @@
       },
       {
         "to": "m/m_04x05:macron-p1",
-        "cost": 8,
+        "cost": 9,
         "type": "walk"
       },
       {
@@ -3194,7 +3194,7 @@
       },
       {
         "to": "m/m_04x05:macron-home",
-        "cost": 8,
+        "cost": 9,
         "type": "walk"
       },
       {

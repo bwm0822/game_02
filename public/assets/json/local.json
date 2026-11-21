@@ -166,6 +166,14 @@
     "lab": "烹煮",
     "grp": "general"
   },
+  "fire_on": {
+    "lab": "點火",
+    "grp": "general"
+  },
+  "fire_off": {
+    "lab": "熄火",
+    "grp": "general"
+  },
   "open_door": {
     "lab": "打開",
     "grp": "general"
