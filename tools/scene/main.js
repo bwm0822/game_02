@@ -17,7 +17,7 @@ import * as ST from './store.js';
 import * as TL from './tiled.js';
 
 const LS = {sel: 'tools.scene.sel', grid: 'tools.scene.grid', role: 'tools.scene.lastRole', particle: 'tools.scene.lastParticle', prefab: 'tools.scene.lastPrefab', fold: 'tools.scene.fold',
-            anchor: 'tools.scene.anchor', lightIcon: 'tools.scene.lightIcon', particleIcon: 'tools.scene.particleIcon', sizeLock: 'tools.scene.sizeLock', exportMode: 'tools.scene.exportMode', exportDir: 'tools.scene.exportDir'};
+            boxMode: 'tools.scene.boxMode', anchor: 'tools.scene.anchor', lightIcon: 'tools.scene.lightIcon', particleIcon: 'tools.scene.particleIcon', sizeLock: 'tools.scene.sizeLock', exportMode: 'tools.scene.exportMode', exportDir: 'tools.scene.exportDir'};
 const ls = {
     get: (k) => {try {return localStorage.getItem(k);} catch {return null;}},
     set: (k, v) => {try {localStorage.setItem(k, v);} catch { /* 私密視窗 */ }},
@@ -536,6 +536,8 @@ function movePart(id, i, d)
     if (i + d < 0 || i + d >= n) return Promise.resolve();
     if (S.part === i) S.part = i + d;
     else if (S.part === i + d) S.part = i;
+    const pm = pmOf(id);
+    [pm[i], pm[i + d]] = [pm[i + d], pm[i]];
     return editPf(id, pf => {const a = pf.parts; [a[i], a[i + d]] = [a[i + d], a[i]];});
 }
 
@@ -545,6 +547,7 @@ function delPart(id, i)
     else if (S.part > i) S.part--;
     return editPf(id, pf => {
         if (!pf.parts?.[i]) return false;
+        pmOf(id).splice(i, 1);
         pf.parts.splice(i, 1);
         if (!pf.parts.length) delete pf.parts;
     });
@@ -558,11 +561,15 @@ function openPart(i)
     renderRight();
 }
 
-// 選中的實例在 sandbox 畫錨點十字、有勾的占地方塊、展開的零件外框（照草稿）
+// 選中的實例在 sandbox 畫占地方塊、edit 零件外框、藏 hide 零件（照草稿＋各自的模式）
 function inspectMsg()
 {
     const o = instOf(S.pick), pf = o && pfOf(o.prefab);
-    return {sb: 'inspect', inspect: pf ? {key: o.key, boxes: Object.fromEntries(BOXES.map(([k]) => [k, pf[k] ?? null])), part: S.part} : null};
+    if (!pf) return {sb: 'inspect', inspect: null};
+    const pm = pmOf(o.prefab);
+    return {sb: 'inspect', inspect: {key: o.key, boxes: Object.fromEntries(BOXES.map(([k]) => [k, pf[k] ?? null])),
+        boxMode: Object.fromEntries(BOXES.map(([k]) => [k, boxMode[k] ?? 'hide'])),
+        partMode: (pf.parts ?? []).map((_, i) => pm[i] ?? 'show'), part: S.part}};
 }
 
 // 展開的零件：方向鍵移（草稿）
@@ -617,7 +624,8 @@ async function finishEdit(id)
         for (const f of files)
         {
             const [pct, img] = [Number(f.split('|')[0]), f.slice(f.indexOf('|') + 1)];
-            const base = `${id}-${img.split('/').pop().replace(/\.png$/i, '')}`.replace(/[\\/:*?"<>|\s]+/g, '_');
+            // prefab-* 是 Tiled 縮圖（tiled.js 的 thumbKey）專用，烤圖不能進這個命名空間
+            const base = `${id}-${img.split('/').pop().replace(/\.png$/i, '')}`.replace(/[\\/:*?"<>|\s]+/g, '_').replace(/^prefab-/i, 'prefab_');
             let name = base;
             for (let i = 2; taken.has(name.toLowerCase()) || await findTexKey(await FS.resolveDir(S.root, TEX), name); i++) name = `${base}-${i}`;
             taken.add(name.toLowerCase());
@@ -693,7 +701,68 @@ function fxSelect(value, set)
     return sel;
 }
 
-const BOXES = [['body', '碰撞（body）'], ['grid', '占格（grid）'], ['zone', '可點（zone）']];
+const BOXES = [['grid', '占格（grid）'], ['zone', '可點（zone）']];
+// 有右鍵動作卻沒有 zone＝遊戲裡點不到
+const noZone = (pf) => !pf?.zone && Object.keys(pf?.acts ?? {}).length > 0;
+
+// 占地方塊／零件在 sandbox 的畫法（只管 sandbox、不寫 prefab.json）：
+//  方塊 hide 不畫、show 半透明唯讀、edit 可拖邊，全部 prefab 共用一組記 localStorage（預設 hide）
+//  零件 hide 藏零件本身、show 照常（沒外框、點不到）、edit 外框＋可點可拖，只作用在選中的實例；照 prefab 記在記憶體、跟著 ↑↓／✕ 搬（預設 show）
+const MODES = ['hide', 'show', 'edit'], MODE_ICON = {hide: '◌', show: '👁', edit: '✎'};
+const BOX_TIP = '◌ 隱藏／👁 顯示（半透明唯讀）／✎ 編輯（可拖邊）';
+const PART_TIP = '◌ 藏起來／👁 顯示（點不到）／✎ 編輯（外框、可點可拖）';
+const boxMode = (() => {try {return JSON.parse(ls.get(LS.boxMode) ?? '{}') ?? {};} catch {return {};}})();
+const partMode = {};
+const pmOf = (id) => (partMode[id] ??= []);
+
+function modeBtn(mode, k, set, disabled)
+{
+    const part = k.startsWith('part');
+    mode ??= part ? 'show' : 'hide';
+    const sel = h('select', {class: `mode ${mode}`, dataset: {k}, disabled, title: part ? PART_TIP : BOX_TIP, style: disabled ? 'visibility:hidden' : '',
+        onclick: (e) => e.stopPropagation(), onchange: () => set(sel.value)}, MODES.map(m => h('option', {value: m}, MODE_ICON[m])));
+    sel.value = mode;
+    return sel;
+}
+
+function setMode(fn)
+{
+    fn();
+    toGame(inspectMsg());
+    renderRight();
+}
+
+// sandbox 拖 edit 方塊／零件中：右欄欄位直接跟著變＋黃框（不寫草稿，放開才照 box／movePart 寫）；
+//  開始時自動打開屬性區／展開零件、捲到看得見；end＝拿掉黃框
+const LIVE_SIDE = {l: ['x', 'w'], r: ['w'], t: ['y', 'h'], b: ['h']};
+
+function dragLive(m)
+{
+    if (m.key !== S.pick) return;
+    const q = (sel) => document.querySelector(`#right ${sel}`);
+    if (m.end) {document.querySelectorAll('#right input.live').forEach(e => e.classList.remove('live')); return;}
+    let cells;
+    if (m.k)
+    {
+        if (m.start && isFolded('right.props')) toggleFold('right.props');
+        cells = ['x', 'y', 'w', 'h'].map(f => [q(`[data-k="${m.k}.${f}"]`), m.box[f], LIVE_SIDE[m.side]?.includes(f)]);
+    }
+    else
+    {
+        if (m.start && S.part !== m.part) openPart(m.part);
+        cells = [['x', m.x], ['y', m.y]].map(([f, v]) => [q(`.partform [data-k="${f}"]`), v, true]);
+    }
+    for (const [el, v, live] of cells)
+    {
+        if (!el) continue;
+        el.value = v;
+        el.classList.toggle('live', live);
+    }
+    if (m.start) cells.find(([el, , live]) => el && live)?.[0].scrollIntoView({block: 'nearest'});
+}
+
+const setBoxMode = (k, v) => setMode(() => {boxMode[k] = v; ls.set(LS.boxMode, JSON.stringify(boxMode));});
+const setPartMode = (id, i, v) => setMode(() => {pmOf(id)[i] = v;});
 
 function prefabPanel(id)
 {
@@ -717,17 +786,15 @@ function prefabPanel(id)
         const b = pf[k];
         const n = (f) => h('input', {type: 'number', step: 1, value: b?.[f] ?? '', class: 'n', dataset: {k: `${k}.${f}`}, disabled: !b,
             onchange: (e) => e.target.value !== '' && setPf1({[k]: {...b, [f]: +e.target.value}})});
-        return row(name, h('input', {type: 'checkbox', checked: !!b, dataset: {k: `${k}.on`}, title: '沒勾＝照 ItemView 預設（整個縮圖框）',
-            onchange: (e) => setPf1({[k]: e.target.checked ? {x: -16, y: -32, w: 32, h: 32} : undefined})}), ' ', n('x'), n('y'), ' ', n('w'), '×', n('h'));
+        const on = h('input', {type: 'checkbox', checked: !!b, dataset: {k: `${k}.on`}, title: '沒勾＝沒有（沒 grid＝不佔格、沒 zone＝點不到）',
+            onchange: (e) => setPf1({[k]: e.target.checked ? {x: -16, y: -32, w: 32, h: 32} : undefined})});
+        const zw = k === 'zone' && noZone(pf) && h('span', {class: 'warn', title: '有右鍵動作卻沒有 zone：遊戲裡點不到'}, ' ⚠');
+        return h('tr', null, h('td', {class: 'k'}, on, modeBtn(b && boxMode[k], `${k}.mode`, (v) => setBoxMode(k, v), !b), ' ', name, zw),
+            h('td', null, n('x'), n('y'), ' ', n('w'), '×', n('h')));
     };
     const d = draftOf(id), t = d ? d.thumb : pf.thumb;
-    const warn = acts.some(([a]) => !S.refs.local[a]) && h('span', {class: 'warn', title: '有動作 id 不在 local.json'}, ' ⚠');
+    const warn = (acts.some(([a]) => !S.refs.local[a]) || noZone(pf)) && h('span', {class: 'warn', title: '有動作 id 不在 local.json，或有右鍵動作卻沒有 zone'}, ' ⚠');
     return [
-        d ? h('div', {class: 'row2 draft', dataset: {k: 'draft'}}, h('span', {class: 'warn'}, '● 未存'),
-            h('button', {dataset: {k: 'saveDraft'}, title: '寫進 prefab.json（Ctrl+S）', onclick: () => saveDraft()}, '儲存'),
-            h('button', {dataset: {k: 'dropDraft'}, title: '丟掉沒存的改動', onclick: () => dropDraft()}, '放棄'),
-            h('span', {class: 'dim'}, 'Ctrl+Z 退草稿裡的步驟'))
-          : null,
         ...foldSec('right.props', ['屬性', warn], () => [
             h('table', {class: 'props'},
                 row('預設狀態', lookSelect(id, pf.look, (v) => setPf1({look: v}), '（沒有）')),
@@ -739,7 +806,7 @@ function prefabPanel(id)
                 for (let i = 2; acts.some(([a]) => a === n); i++) n = `act${i}`;
                 setActs([...acts, [n, pf.look ?? '']]);
             }}, '＋ 動作'), warn && h('button', {onclick: () => SH.gotoTab('local')}, '↗ 文字分頁')),
-            h('div', {class: 'sec'}, '占地方塊', h('span', {class: 'dim'}, '（相對錨點的左上角＋寬高；Tiled 物件有寫就蓋掉）')),
+            h('div', {class: 'sec'}, '占地方塊', h('span', {class: 'dim'}, '（相對錨點的左上角＋寬高；沒勾＝沒有；Tiled 物件有寫量邊的 gl/zt… 就蓋掉）')),
             h('table', {class: 'props'}, BOXES.map(boxRow)),
             anchorRow(id),
             h('div', {class: 'dim'}, t ? `縮圖外框 ${t.x},${t.y} ${t.w}×${t.h}（照預設狀態的 png 自動算）` : '縮圖外框：照預設狀態的 png 自動算'),
@@ -772,7 +839,7 @@ function partsPanel(o)
     return foldSec('right.parts', `零件（${parts.length}）`, () => [
         ...parts.flatMap((p, i) => [
             h('div', {class: `part${i === S.part ? ' sel' : ''}${p.look && p.look !== look ? ' off' : ''}`, dataset: {part: i}, onclick: () => openPart(i === S.part ? null : i)},
-                partIcon(p), h('span', {class: 'id'}, partName(p)), p.look && h('span', {class: 'lab'}, p.look), h('span', {class: 'grow'}),
+                modeBtn(pmOf(id)[i], `part${i}.mode`, (v) => setPartMode(id, i, v)), partIcon(p), h('span', {class: 'id'}, partName(p)), p.look && h('span', {class: 'lab'}, p.look), h('span', {class: 'grow'}),
                 btn('↑', '往前（同深度時畫在下面）', () => movePart(id, i, -1)), btn('↓', '往後', () => movePart(id, i, 1)), btn('✕', '拿掉這個零件', () => delPart(id, i))),
             i === S.part && h('div', {class: 'partform'}, ...partRows(id, i, p)),
         ]),
@@ -985,6 +1052,11 @@ function instPanel(o)
         h('option', {value: ''}, `（預設${pf?.look ? `：${pf.look}` : ''}）`), looks.map(v => h('option', {value: v}, v)));
     if (o.look && !looks.includes(o.look)) look.append(h('option', {value: o.look}, `⚠ ${o.look}`));
     look.value = o.look ?? '';
+    // 有草稿＝標題列右邊「● 未存［儲存］［放棄］」（摺著也在）
+    const d = draftOf(o.prefab);
+    const draft = d && h('span', {class: 'draft', dataset: {k: 'draft'}}, h('span', {class: 'warn'}, '● 未存 '),
+        h('button', {dataset: {k: 'saveDraft'}, title: '寫進 prefab.json（Ctrl+S）', onclick: () => saveDraft()}, '儲存'), ' ',
+        h('button', {dataset: {k: 'dropDraft'}, title: '丟掉沒存的改動', onclick: () => dropDraft()}, '放棄'));
     return foldSec('right.inst', [`實例 ${o.key}`, pf ? null : h('span', {class: 'warn'}, `　prefab.json 沒有 ${o.prefab}`)], () => [
         h('div', {class: 'row2'}, pfIcon(o.prefab, 48)),
         h('table', {class: 'props'},
@@ -992,7 +1064,7 @@ function instPanel(o)
             row('位置', n('x'), ' ', n('y')),
             row('狀態', look)),
         h('div', {class: 'acts'}, h('button', {onclick: () => deleteObj(o.key)}, '刪除實例（Del）')),
-    ]);
+    ], draft || null);
 }
 
 // ---------- 光源 ----------
@@ -1891,6 +1963,8 @@ addEventListener('message', (e) => {
     else if (m.sb === 'moveEmitter') setEmitter(m.key, {x: m.x, y: m.y}).then(syncGame);
     else if (m.sb === 'part' && m.key === S.pick) openPart(m.i);
     else if (m.sb === 'movePart' && instOf(m.key)) setPart(instOf(m.key).prefab, m.i, {x: m.x || undefined, y: m.y || undefined});
+    else if (m.sb === 'dragLive') dragLive(m);
+    else if (m.sb === 'box' && instOf(m.key) && BOXES.some(([k]) => k === m.k)) setPf(instOf(m.key).prefab, {[m.k]: m.box});
     else if (m.sb === 'moveInst')
     {
         // 畫面位置扣掉草稿的錨點位移＝存檔位置
@@ -2030,5 +2104,5 @@ refresh();
 
 // 給無頭測試用
 window.__sc = {S, setProject, addScene, dupScene, renameScene, deleteScene, select, undo, redo, addRole, setRole, setEquip, deleteRole, pickRole, toggleHide, arm, toGame, addProp, setProp, deleteObj, nudge, bakeProp, folderTree, exportProp: (key) => exportProp(propOf(key)), srcSize, addLight, setLight, addEmitter, setEmitter, setField, setPlaying,
-               addInst, setInst, newPrefab, deletePrefab, toggleFold, setPf, setPart, addPart, movePart, delPart, openPart, pickPrefab, saveDraft, dropDraft, moveAnchor, composePrefab, renamePrefab, dupPrefab,
+               addInst, setInst, newPrefab, deletePrefab, toggleFold, setPf, setPart, addPart, movePart, delPart, openPart, pickPrefab, saveDraft, dropDraft, moveAnchor, composePrefab, renamePrefab, dupPrefab, setBoxMode, setPartMode,
                flush: () => S.q};

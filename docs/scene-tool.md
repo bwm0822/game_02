@@ -49,7 +49,7 @@
 - 位置永遠在格子中心（遊戲的走路／擊退靠它）。
 - 木偶：`src/roles/puppet.js`（`Puppet`，照 `Dummy` 木樁的組法）掛 `RoleView`＋`COM_Inventory`＋`COM_Anim`＋`COM_Action`＋`COM_Nav`＋`COM_Stats`＋`COM_Disp`＋`COM_Ability`，不掛 AI／作息／感知、不進回合、不讀寫存檔、`bb.interactive=false`（點選是 sandbox 自己判斷：身體方塊包住游標的最上面那個，沒有就看站在那格的）；`bb.meta` 是 role.json 那筆的淺拷貝、`inv.equips` 換成套完覆寫的（`Puppet.equipsOf()`）。只在 Sandbox 用到，正式版一起被 tree-shake 掉。
 - sandbox 套場景時照 `key` 比對：那筆資料（JSON）沒變的角色留著，變了（換角色、格子、面向、裝備）或不見的就 `dismiss()` 重建（重新登記路網權重）。
-- 操作：畫面上左鍵點選（綠框）＋拖曳（跟著格子跳、放開才寫檔）、右鍵「在這裡放角色…」（挑角色對話框：照 kind／grp 分組、搜尋、雙擊確定、預設上次挑的 `tools.scene.lastRole`）／「刪除」；左欄角色清單（👁 暫藏只在這次開著時、不寫檔、藏著點不到；右鍵刪除；「＋」放在地圖中間）；右欄 角色（換 id）、格子、面向、裝備五格（下拉＝（原本：…）／（空）／那一類有 `equip` 的道具，限定性別不符的不列）、刪除；Del 刪選中的（分頁或 sandbox 有焦點都行）。
+- 操作：畫面上左鍵點選（白框）＋拖曳（跟著格子跳、放開才寫檔）、右鍵「在這裡放角色…」（挑角色對話框：照 kind／grp 分組、搜尋、雙擊確定、預設上次挑的 `tools.scene.lastRole`）／「刪除」；左欄角色清單（👁 暫藏只在這次開著時、不寫檔、藏著點不到；右鍵刪除；「＋」放在地圖中間）；右欄 角色（換 id）、格子、面向、裝備五格（下拉＝（原本：…）／（空）／那一類有 `equip` 的道具，限定性別不符的不列）、刪除；Del 刪選中的（分頁或 sandbox 有焦點都行）。
 
 ## 動作（表演，不進 undo、不改場景檔）
 
@@ -72,7 +72,7 @@
 ## 光源
 
 - `lights: [{key:'l<n>', x, y, r, color, i?, follow?, dir?, arc?, soft?}]`：Light2D 光源（擺設、角色、地形都是 Light2D）。`arc`（光錐全寬，度）有填且 <360＝聚光燈，`dir`＝方向（度，0 右、順時針）、`soft`＝錐邊淡出比例（0～1，預設 0.2），沒填＝點光源；`Light2D` 已換成 `src/core/spotlight.js` 的 pipeline（`light.spot`，sandbox `_lightSpot()` 寫）。跟著角色時資料＝角色朝右的樣子，角色 `faceDir()` 是 −1 就鏡像（x 偏移取負、方向 `180−dir`，`_mirror()`；拖曳／把手寫回的是鏡像前的數字），跟著擺設不翻。`i` 沒寫＝`GM.LIGHT`（1，同 `com_lamp`／`com_light`），寫了用它；強度不跟日夜變，天越亮燈越加不上去是 shader 的柔性壓縮做的（見下面）。新的預設 `{r:120, color:'#ffcc88'}`。擺設原本的 `light`（黏在圖上的發光）拿掉了，燈＝擺設＋跟著它的光源。
-- 畫面：每個光源一個光色圓點（黑框，選中綠框，固定 6 螢幕 px）；選中時畫虛線圈＝半徑、圈右邊一個白色把手拖 `r`（游標到圓心的距離，整數、最少 1，Shift 吸 16 的倍數，放開送 `radiusLight`）；聚光燈改畫扇形虛線（兩條邊＋弧，中線淡淡的），半徑把手在中線末端、拖它連 `dir` 一起改（Shift 吸 15°），弧兩端各一個把手拖 `arc`（＝兩倍的游標跟中線夾角，1～359，Shift 吸 15°，放開送 `arcLight`）。點選優先於角色／擺設（排在發射點後面）、拖曳（Shift 吸 16px）、方向鍵、Del、👁（藏＝強度 0、點不到）。右鍵「在這裡放光源」、左欄「光源（n）」＋（地圖中間），不問東西直接放。
+- 畫面：每個光源一個光色圓點（黑框，選中白框，固定 6 螢幕 px）；選中時畫虛線圈＝半徑、圈右邊一個白色把手拖 `r`（游標到圓心的距離，整數、最少 1，Shift 吸 16 的倍數，放開送 `radiusLight`）；聚光燈改畫扇形虛線（兩條邊＋弧，中線淡淡的），半徑把手在中線末端、拖它連 `dir` 一起改（Shift 吸 15°），弧兩端各一個把手拖 `arc`（＝兩倍的游標跟中線夾角，1～359，Shift 吸 15°，放開送 `arcLight`）。點選優先於角色／擺設（排在發射點後面）、拖曳（Shift 吸 16px）、方向鍵、Del、👁（藏＝強度 0、點不到）。右鍵「在這裡放光源」、左欄「光源（n）」＋（地圖中間），不問東西直接放。
 - 右欄：位置（跟著時是相對）、半徑、光錐／方向／柔和（光錐空白＝點光源，方向跟柔和反灰）、顏色、強度（空白＝自動）、跟著。
 - 遊戲裡 Tiled 的燈（`com_lamp`）照讀自訂屬性 `dir`／`arc`／`soft`（不能叫 `angle`：Phaser 會直接設到 Container 本身的 angle）；`com_light`（道具 `light`）還沒支援。shader 另外把「環境光＋燈光」每通道超過起壓點（0.8 跟環境光取大的）的部分柔性壓縮、不超過 1（疊燈不爆白、環境光本身不被壓暗、白天燈自然加不上去）；燈的強度因此固定 `GM.LIGHT`，不再照環境光算（舊的 `GM.LIGHT − 環境光.r`、`regTS`／`UPDATETIME` 重算都拿掉了）。
 
@@ -85,7 +85,7 @@
 - `follow` 可以是角色 key（相對 root＝站的格子中心，分頁換算用 `tx*32+16`）或擺設 key（相對擺設的錨點 x/y）。sandbox 用 `_target(key)`（木偶或擺設的 sprite）；擺設是非同步建的（外部圖要載），所以 `_apply()` 等擺設套完才套粒子跟光源，對象換了（重建）就跟著重建。跟著的光每幀在 `update()` 跟上（`_syncLights()`），粒子用 `playParticle` 的 `target`。
 - 右欄「跟著」下拉（`followSelect()`）：（不跟）／角色／擺設，換對象時位置換算（`refollow()`），畫面上不動。
 - 刪掉被跟的角色／擺設：跟著它的粒子、光源改成不跟、位置加回去變絕對（`deleteObj()`，同一筆 undo）。
-- 畫面上每個發射點畫一個橘色菱形（選中變綠，只在 sandbox 裡）：點選優先於角色／擺設、拖曳（同擺設，Shift 吸 16px）、方向鍵、Del、👁（藏粒子＋記號、點不到）。右鍵「在這裡放粒子…」、左欄「＋」（地圖中間；挑粒子對話框預設上次挑的 `tools.scene.lastParticle`）。
+- 畫面上每個發射點畫一個橘色菱形（選中變白，只在 sandbox 裡）：點選優先於角色／擺設、拖曳（同擺設，Shift 吸 16px）、方向鍵、Del、👁（藏粒子＋記號、點不到）。右鍵「在這裡放粒子…」、左欄「＋」（地圖中間；挑粒子對話框預設上次挑的 `tools.scene.lastParticle`）。
 - 區域（火牆等）走技能施放。
 
 ## 擺設
@@ -96,9 +96,9 @@
 - 大小（同紙娃娃兩段）：`sx`／`sy`＝擺放（預設 1、等於 1 不存），`pct`＝只有 `file:` 圖有、「存檔…」烤成原圖的幾 %（100 不存；換圖成 textures 圖時拿掉）；畫面＝原圖像素 × pct% × sx／sy（sandbox `setScale(k·sx, k·sy)`，不真的縮圖），`%` 跟 scale 不互相換算。面板三列：`%`（一格，說明在 title，右邊灰字「原圖 W×H」）、`scale`（☐ 等比：勾著＝sx＝sy 只有一格，狀態從資料推，sx＝sy 時取消勾選記在記憶體 `freeRatio`；勾回去 sy＝sx；右邊灰字 file 圖＝「縮放後 W×H」＝原圖×%（烤完那張的大小，還沒乘 scale）、textures 圖＝「原圖 W×H」）、`寬高`（畫面 px＝四捨五入；file 圖多「鎖 [%｜scale ▾]」下拉記 `tools.scene.sizeLock`：鎖 %＝改寬→sx、改高→sy（等比勾著兩個一起），鎖 scale＝改寬或高→反算 pct、另一邊等比跟著變；textures 圖永遠是鎖 %）。原圖尺寸：file 圖載 `<img>`、textures 圖 `IC.frameOf()`（sheet／atlas 是格子大小），快取在 `sizes`。
 - 「存檔…」（只有 file: 圖）：把原圖縮成 pct%（Canvas `imageSmoothingQuality:'high'`，只等比、sx/sy 不烤）**另存一份 PNG，場景完全不動**（img／pct／sx／sy 不換、不寫 scenes.json、不進 undo），pct 100 也能存（＝原尺寸收編）。對話框切「存到 textures」（資料夾樹只列 `textures/`，不列 `.tbd`／`minimap`，預設上次選的 `tools.scene.exportDir`）／「存到原始路徑」（整個專案的資料夾樹，預設原圖的資料夾），模式記 `tools.scene.exportMode`；樹裡每個資料夾在子資料夾後面列出 `.png`（純文字、照名字排），點檔案＝選它的資料夾＋把檔名（去 `.png`）填進檔名欄（還能改），擺設正在用的原圖標灰；檔名預設存到 textures＝`<原檔名>`、存到原始路徑＝`<原檔名>-copy`，切模式時檔名還是上個模式的預設才跟著換（改過、點檔案填過就不動）。同資料夾有同名檔先 `confirm` 問要不要覆蓋；擺設自己的原圖一律擋（覆蓋會讓 pct 縮兩次）；存進 textures/ 裡的還要檢查整個 textures/ texture key 撞名（大小寫不分，覆蓋的那張自己不算）、寫完打 `POST /__tools/textures` 更新圖片清單＋廣播 `textures.json`。核心是 `bakeProp(key, 資料夾, 檔名, overwrite)`（無頭測試直接呼叫，樹是 `folderTree(root, cur, onPick, self)`）。場景分頁的 `#dlgAsk` 外框不捲（`index.html` 覆寫共用 `style.css` 的 `.body` 60vh 捲動）：視窗矮時只有 body 裡的 `.treebox` 縮（最少 80px、自己捲），沒有 treebox 才讓 body 捲，按鈕一定看得到。
 - 深度照錨點 y 自動排，跟角色互相遮擋；不擋路。
-- 錨點：工具列「☑ 錨點」（預設勾、記 `tools.scene.anchor`、送 `anchor {on}`）勾著時選中的擺設（sprite x/y）或角色（root x/y＝套用 `role.anchor` 後站的點）畫黃點黑框＋十字（半徑 4 螢幕 px；原本的綠點跟綠框同色、壓在框線下邊上看不出來），沒勾不畫；只畫選中的那個（`_anchorPt()`）。
-- 操作：右鍵「在這裡放擺設…」（錨點＝點的位置）、左欄「＋」（地圖中間）；左鍵點選（綠框＋錨點黃點；角色跟擺設重疊時點到深度高的）、自由拖（整數 px，按住 Shift 錨點吸 16px＝格子交點＋格子中心，圖跟光一起動，放開才寫檔）；方向鍵 1px、Shift＋方向鍵 32px（每按一下一筆 undo）；Del 刪。
-- 畫面上拉大小：選中的擺設綠框上 8 個白色把手（4 角＋4 邊中點，固定 6 螢幕 px，游標換 resize；`angle≠0` 不出把手，用面板調），把手優先於點選。拉邊改一軸、拉角兩軸，**對邊（對角）固定**、錨點 x/y 重算（取到 0.01）；改什麼照面板：鎖 %＝`sx`/`sy`（等比勾著兩軸等比：角照拖得多的那軸、邊的另一軸繞錨點長），鎖 scale（file 圖）＝`pct`（一定等比）。Shift＝被拉的邊吸 16px（½ 格），等比時另一軸照比例。最小 1px、拉過對邊不翻面；拖曳中 sandbox 直接改 sprite 預覽，放開送 `resizeProp {key, patch}`、分頁 `setProp` 一筆 undo（sx/sy＝1、pct＝100 拿掉）。鎖跟等比狀態由分頁在 `select {key, lock, ratio}` 帶給 sandbox（`selMsg()`），切換鎖／等比時重送。sandbox：`_handles()`／`_handleAt()`／`_startResize()`／`_resizeTo()`。
+- 錨點：工具列「☑ 錨點」（預設勾、記 `tools.scene.anchor`、送 `anchor {on}`）勾著時選中的擺設（sprite x/y）或角色（root x/y＝站的點）畫黃點黑框＋十字（半徑 4 螢幕 px；原本的綠點跟選取框同色、壓在框線下邊上看不出來），沒勾不畫；只畫選中的那個（`_anchorPt()`）。prefab 實例例外：勾著時每個都畫（沒選中的半透明），而且**點錨點才選得到**（沒有白框、縮圖矩形不參與），沒勾＝不畫也點不到，見 [prefab.md](prefab.md)。
+- 操作：右鍵「在這裡放擺設…」（錨點＝點的位置）、左欄「＋」（地圖中間）；左鍵點選（白框＋錨點黃點；選中的記號一律白色 `SEL_COLOR`，不跟 prefab 占地方塊的紅／藍／綠撞色；角色跟擺設重疊時點到深度高的）、自由拖（整數 px，按住 Shift 錨點吸 16px＝格子交點＋格子中心，圖跟光一起動，放開才寫檔）；方向鍵 1px、Shift＋方向鍵 32px（每按一下一筆 undo）；Del 刪。
+- 畫面上拉大小：選中的擺設白框上 8 個白底黑框把手（4 角＋4 邊中點，固定 6 螢幕 px，游標換 resize；`angle≠0` 不出把手，用面板調），把手優先於點選。拉邊改一軸、拉角兩軸，**對邊（對角）固定**、錨點 x/y 重算（取到 0.01）；改什麼照面板：鎖 %＝`sx`/`sy`（等比勾著兩軸等比：角照拖得多的那軸、邊的另一軸繞錨點長），鎖 scale（file 圖）＝`pct`（一定等比）。Shift＝被拉的邊吸 16px（½ 格），等比時另一軸照比例。最小 1px、拉過對邊不翻面；拖曳中 sandbox 直接改 sprite 預覽，放開送 `resizeProp {key, patch}`、分頁 `setProp` 一筆 undo（sx/sy＝1、pct＝100 拿掉）。鎖跟等比狀態由分頁在 `select {key, lock, ratio}` 帶給 sandbox（`selMsg()`），切換鎖／等比時重送。sandbox：`_handles()`／`_handleAt()`／`_startResize()`／`_resizeTo()`。
 
 ## 格線與吸附
 

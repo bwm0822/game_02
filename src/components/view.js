@@ -10,6 +10,9 @@ import {setSpot} from '../core/spotlight.js'
 import {thumbOf} from '../core/prefab.js'
 import {equipFor, hiddenParts, weaponOf, handOf, ROLE_PARTS, WRISTS, pivotOf, atPivot, fromPivot, rigOf} from '../core/equip.js'
 const _tag = 'view';
+const ONE_TILE = {x:0, y:0, w:GM.TILE_W, h:GM.TILE_H, hw:GM.TILE_W/2, hh:GM.TILE_H/2};
+// 單張圖道具量圖邊的欄位，照 _edgeBox() 的參數順序(左、右、寬、上、下、高)
+const EDGE = {grid:['gl','gr','gw','gt','gb','gh'], zone:['zl','zr','zw','zt','zb','zh']};
 
 function debugDraw(mode=DEBUG.mode,text)
 {
@@ -58,31 +61,15 @@ function debugDraw(mode=DEBUG.mode,text)
         this._dbgPos.setOrigin(0);
     }
 
-    const draw_body = ()=>{
-        if((mode&DBG.MODE.BODY)===0) {return;}
-        if(this.body)
-        {
-            // body 的 x, y 是 body 的左上角
-            // Phaser.Geom.Rectangle( left, top, w, h )
-            this._dbgGraphics.lineStyle(6, 0x0000ff, 1);
-            let rect = new Phaser.Geom.Rectangle(this.body.x,this.body.y,this.body.width,this.body.height);
-            let circle = new Phaser.Geom.Circle(this.body.center.x,this.body.center.y,5);
-            this._dbgGraphics.strokeRectShape(rect);
-            this._dbgGraphics.strokeCircleShape(circle);
-        } 
-    }
-
     const draw_grid = ()=>{
         if((mode&DBG.MODE.GRID)===0) {return;}
         if(this._grid)
         {
-            // grid 的 x, y 是 grid 的中心點
+            // grid 的 x, y 是 grid 的中心點(相對錨點)
             // Phaser.Geom.Rectangle( left, top, w, h )
             this._dbgGraphics.lineStyle(4, 0x00ff00, 1);
-            // const x = this.cen.x + this.min.x + this.gl;
-            // const y = this.cen.y + this.min.y + this.gt;
-            const x = this.cen.x + this._grid.x - this._grid.hw;
-            const y = this.cen.y + this._grid.y - this._grid.hh;
+            const x = this.anchor.x + this._grid.x - this._grid.hw;
+            const y = this.anchor.y + this._grid.y - this._grid.hh;
             const rect = new Phaser.Geom.Rectangle( x, y, this._grid.w, this._grid.h );
             this._dbgGraphics.strokeRectShape(rect);
             // 顯示 grid 中心點
@@ -98,25 +85,24 @@ function debugDraw(mode=DEBUG.mode,text)
             // zone 的 x, y 是 zone 的中心點
             // Phaser.Geom.Rectangle( left, top, w, h )
             this._dbgGraphics.lineStyle(2, 0xff0000, 1);
-            let p = {x:this.cen.x + this._zone.x - this._zone.width/2, 
-                    y:this.cen.y + this._zone.y - this._zone.height/2}
-            let rect = new Phaser.Geom.Rectangle(p.x,p.y,this._zone.width,this._zone.height); 
-            this._dbgGraphics.strokeRectShape(rect);           
+            let p = {x:this.anchor.x + this._zone.x - this._zone.width/2,
+                    y:this.anchor.y + this._zone.y - this._zone.height/2}
+            let rect = new Phaser.Geom.Rectangle(p.x,p.y,this._zone.width,this._zone.height);
+            this._dbgGraphics.strokeRectShape(rect);
         }
     }
 
+    // 圖的範圍(rect)
     const draw_shape = ()=>{
         if((mode&DBG.MODE.SHAPE)===0) {return;}
-        // cen 是 shape 的中心點
         // Phaser.Geom.Rectangle( left, top, w, h )
         this._dbgGraphics.lineStyle(2, 0xffffff, 1);
-        const lt = {x:this.cen.x+this.min.x, y:this.cen.y+this.min.y}   // 左上角
-        const lb = {x:this.cen.x+this.min.x,y:this.cen.y+this.max.y}    // 左下角
+        const rect = this._getShapeRect();
+        const lb = {x:rect.x, y:rect.bottom}    // 左下角
         // 顯示外框及左下角
-        const rect = new Phaser.Geom.Rectangle(lt.x,lt.y,this.wid,this.hei); 
         const clb = new Phaser.Geom.Circle(lb.x,lb.y,5);
-        const cc = new Phaser.Geom.Circle(this.cen.x,this.cen.y,5);
-        this._dbgGraphics.strokeRectShape(rect);      
+        const cc = new Phaser.Geom.Circle(rect.centerX,rect.centerY,5);
+        this._dbgGraphics.strokeRectShape(rect);
         this._dbgGraphics.strokeCircleShape(clb);  
         this._dbgGraphics.strokeCircleShape(cc); 
         // 顯示左下角的座標
@@ -161,15 +147,15 @@ function debugDraw(mode=DEBUG.mode,text)
         if((mode&DBG.MODE.TEXT)===0) {return;}
         if(this._dbgText)
         {
-            this._dbgText.x = this.cen.x;
-            this._dbgText.y = this.cen.y+this.min.y;
+            const rect = this._getShapeRect();
+            this._dbgText.x = rect.centerX;
+            this._dbgText.y = rect.y;
             this._dbgText.setText(text??this.root.bb.sta);
         }
     }
 
     clr();
 
-    draw_body();
     draw_grid();
     draw_zone();
     draw_anchor();
@@ -196,21 +182,18 @@ class View extends Phaser.GameObjects.Container
         this._hover = false;
 
         // 以下參數一定要給值，_setData()時，才會 assign 相對應的值
-        this.wid = 0;               // container 的寬
-        this.hei = 0;               // container 的高
+        // 座標一律相對錨點(＝GameObject 的位置，view 本身放在錨點)
+        this.wid = 0;               // 單張圖道具的圖片寬(Tiled 物件的寬)
+        this.hei = 0;               // 單張圖道具的圖片高
         this.interactive = false;   // 是否可以互動
         this.en_outline = true;     // 是否開啟 outline 的功能
-        this.hasPhy = true;         // 是否有物理實體
-        this.isStatic = true;       // true: static body, false: dynamic body
         this.isBlock = false;       // 是否擋視線/攻擊(登記到 map.blockGrid)
         this.weight = 1000;
-        this.bl=null, this.br=null, this.bt=null, this.bb=null; this.bw=null; this.bh=null;   // body 的 left, right, top, bottom，物理 body 方塊
-        this.gl=null, this.gr=null, this.gt=null, this.gb=null; this.gw=null; this.gh=null;   // grid 的 left, right, top, bottom，地圖網格方塊
-        this.zl=null, this.zr=null, this.zt=null, this.zb=null; this.zw=null; this.zh=null;   // zone 的 left, right, top, bottom，可互動的方塊，interactive=true 才有作用，
-        this.anchorX = 0;           // 錨點(即gameobject中心點)跟view中心點的offsetX，(0,0)代表 gameobject 的中心點，(-w/2,-h/2) 代表在左上角
-        this.anchorY = 0;           // 錨點(即gameobject中心點)跟view中心點的offsetY，(0,0)代表 gameobject 在中心點，(w/2,h/2) 代表在右下角
-        this.al=null, this.ar=null, this.at=null, this.ab=null;   // 錨點跟 view 左/右/上/下邊界的距離，可取代直接給 anchorX/anchorY(al/at 優先於 ar/ab)
-        
+        // 單張圖道具(Tiled／item.json)：量圖片矩形的邊，三選二，沒寫＝貼齊圖邊(都沒寫＝整張圖)
+        this.gl=null, this.gr=null, this.gt=null, this.gb=null; this.gw=null; this.gh=null;   // grid：地圖網格方塊
+        this.zl=null, this.zr=null, this.zt=null, this.zb=null; this.zw=null; this.zh=null;   // zone：可互動的方塊，interactive=true 才有作用
+        this.al=null, this.ar=null, this.at=null, this.ab=null;   // 錨點到圖片左/右/上/下邊的距離(al 優先於 ar、at 優先於 ab)，沒寫的軸＝圖片中心
+
         this.key = null;            // sprite 的 key
         this.frame = null;          // sprite 的 frame
         this.scl = null;            // sprite 的 scl, 注意:變數名稱不可為 this.scale，會跟 Phaser.GameObjects.Container 相衝
@@ -225,26 +208,17 @@ class View extends Phaser.GameObjects.Container
     get pos() {return this._root.pos;}
 
     // 錨點=gameobject的原點(world space)
-    get anchor() {return this.pos;}          
-    // view的中心點(world space)
-    get cen() {return {x:this.anchor.x+this.x,y:this.anchor.y+this.y}}  
-    // grid 的中心點(world space)
-    get posG() {return {x:this.cen.x+this._grid.x, y:this.cen.y+this._grid.y}} 
-    // grid的BBox=>{x,y,h,w,hh,hw}，x,y為BBox中心點(world space)
-    get gridBB() {return {...this._grid,...this.posG}}  
-    // view 的左上角座標
-    get min() {return {x:-this.wid/2, y:-this.hei/2};}  
-    // view 的右下角座標
-    get max() {return {x:this.wid/2, y:this.hei/2};}    
-
-    // view 的左上角座標
-    get Min() {return {x:-this.anchorX-this.wid/2, y:-this.anchorY-this.hei/2};}  
-    // view 的右下角座標
-    get Max() {return {x:-this.anchorX+this.wid/2, y:-this.anchorY+this.hei/2};}   
-
-    // _addPhysics 會用到，不然 body 的位置會有問題
-    get displayWidth() {return this.wid;}
-    get displayHeight() {return this.hei;}
+    get anchor() {return this.pos;}
+    // grid 的中心點(world space)；沒有 grid＝錨點
+    get posG() {const g = this._grid, p = this.anchor; return g ? {x:p.x+g.x, y:p.y+g.y} : {x:p.x, y:p.y};}
+    // grid的BBox=>{x,y,h,w,hh,hw}，x,y為BBox中心點(world space)；沒有 grid＝錨點那一格
+    get gridBB() {return {...(this._grid ?? ONE_TILE),...this.posG}}
+    // 圖的範圍(相對錨點 {x,y,w,h})：單張圖＝圖片矩形、prefab＝縮圖外框、角色＝部位合成的範圍；遮擋、點選、fx 對齊用
+    get rect() {return this._img;}
+    // 可互動方塊(相對錨點 {x,y,w,h})，沒有＝null
+    get zoneBox() {return this._zoneBox;}
+    // shape 靜止時的位置(相對錨點)，shape 的轉動都繞這點
+    get pivot() {return {x:this._shape?.x ?? 0, y:this._shape?.y ?? 0};}
 
     // anim.js 會用到
     get shape() {return this._shape;}
@@ -305,9 +279,10 @@ class View extends Phaser.GameObjects.Container
 
     _outline_rect(on)
     {
+        if(!this._zone) {return;}
         if(!this._rect)
         {
-            let p = {x:this.cen.x + this._zone.x, y:this.cen.y + this._zone.y};
+            let p = {x:this.anchor.x + this._zone.x, y:this.anchor.y + this._zone.y};
             this._rect = this.scene.add.rectangle(p.x, p.y, this._zone.width, this._zone.height, 0xffffff, 0.5);
             this._rect.setStrokeStyle(2, 0xffffff)
             this._rect.setDepth(Infinity);
@@ -315,7 +290,7 @@ class View extends Phaser.GameObjects.Container
 
         if(on)
         {
-            let p = {x:this.cen.x + this._zone.x, y:this.cen.y + this._zone.y};
+            let p = {x:this.anchor.x + this._zone.x, y:this.anchor.y + this._zone.y};
 
             this._rect.x = p.x;
             this._rect.y = p.y;
@@ -333,12 +308,8 @@ class View extends Phaser.GameObjects.Container
 
     _getShapeRect()
     {
-        return new Phaser.Geom.Rectangle(
-                        this.cen.x - this.wid / 2,
-                        this.cen.y - this.hei / 2,
-                        this.wid,
-                        this.hei
-                    );
+        const r = this.rect, p = this.anchor;
+        return new Phaser.Geom.Rectangle(p.x + r.x, p.y + r.y, r.w, r.h);
     }
     
     //--------------------------------------------------
@@ -368,24 +339,8 @@ class View extends Phaser.GameObjects.Container
     }
 
     //--------------------------------------------------
-    // 物理碰撞相關 (physics)
+    // 占地方塊(grid／zone)：相對錨點的 {x,y,w,h}，x,y＝左上角
     //--------------------------------------------------
-    _addPhysics()
-    {
-        if(!this.hasPhy) {return this;}
-
-        const h = this._resolveAxis(this.bl, this.br, this.bw, this.wid);
-        const v = this._resolveAxis(this.bt, this.bb, this.bh, this.hei);
-
-        // (body.x, body.y) 是 body 的左上角，body.center 才是中心點
-        this.scene.physics.add.existing(this, this.isStatic);
-        this.body.setSize(h.size, v.size);
-        if(this.isStatic) {this.body.setOffset(this.anchor.x+h.a, this.anchor.y+v.a);}
-        else {this.body.setOffset(this.min.x+h.a, this.min.y+v.a);}
-
-        return this;
-    }
-
     // a,b(邊界),size(寬/高) 三選二推算；a,b 都給時以 a,b 為準重算 size
     // 只有 1 個給的話：缺的邊界當 0，size 缺的話用剩下兩個推算
     _resolveAxis(a, b, size, total)
@@ -399,30 +354,32 @@ class View extends Phaser.GameObjects.Container
         return {a, b, size};
     }
 
+    // 量圖片矩形(_img)的邊算出方塊(相對錨點)
+    _edgeBox([l, r, w, t, b, h])
+    {
+        const img = this._img;
+        const H = this._resolveAxis(l, r, w, img.w), V = this._resolveAxis(t, b, h, img.h);
+        return {x:img.x+H.a, y:img.y+V.a, w:H.size, h:V.size};
+    }
+
+    _hasEdge(k) {return EDGE[k].some(f=>this[f]!=null);}
+
+    // grid／zone 方塊：單張圖道具量圖邊(沒寫＝整張圖)；RoleView／prefab 覆寫(沒寫＝沒有)
+    _box(k) {return this._edgeBox(EDGE[k].map(f=>this[f]));}
+
     //--------------------------------------------------
-    // 地圖網格 (weight)
+    // 地圖網格 (weight)：沒有 grid＝不佔格
     //--------------------------------------------------
     _addGrid()
     {
-        const h = this._resolveAxis(this.gl, this.gr, this.gw, this.wid);
-        const v = this._resolveAxis(this.gt, this.gb, this.gh, this.hei);
-
-        this._grid = {};
-
-        this._grid.w = h.size;
-        this._grid.h = v.size;
-        this._grid.hw = this._grid.w/2;
-        this._grid.hh = this._grid.h/2;
-
-        this._grid.x = this.min.x + h.a + h.size/2;
-        this._grid.y = this.min.y + v.a + v.size/2;
-
+        const b = this._box('grid');
+        this._grid = b ? {w:b.w, h:b.h, hw:b.w/2, hh:b.h/2, x:b.x+b.w/2, y:b.y+b.h/2} : null;
         return this;
-
     }
 
     _removeWeight(weight)
     {
+        if(!this._grid) {return this;}
         const wei = weight ?? this.weight;
         wei!=0 && this.scene.map.updateGrid(this.posG,-wei,this._grid);
         this.isBlock && this.scene.map.updateBlock(this.posG,-1,this._grid);
@@ -432,6 +389,7 @@ class View extends Phaser.GameObjects.Container
 
     _addWeight(pt,weight)
     {
+        if(!this._grid) {return this;}
         const wei = weight ?? this.weight;
         const p = pt?this._pos2posG(pt):this.posG;
         wei!=0 && this.scene.map.updateGrid(p,wei,this._grid);
@@ -445,33 +403,29 @@ class View extends Phaser.GameObjects.Container
     {
         if(this.isBlock === on) {return;}
         this.isBlock = on;
-        this.scene.map.updateBlock(this.posG,on?1:-1,this._grid);
+        this._grid && this.scene.map.updateBlock(this.posG,on?1:-1,this._grid);
     }
-    
+
     //將 錨點 轉換成 grid的中心點 (world space)
     _pos2posG(p)
     {
-        return {x:p.x+this.x+this._grid.x,
-                y:p.y+this.y+this._grid.y}
+        return {x:p.x+this._grid.x, y:p.y+this._grid.y};
     }
 
     //--------------------------------------------------
-    // 設定 anchor
+    // 設定 anchor：單張圖道具的錨點在圖片矩形(wid×hei)的哪裡(al/ar/at/ab 量邊，沒寫的軸＝中心)，
+    // 算出圖片矩形相對錨點的位置；modify(Tiled 物件，位置＝圖片中心)把 root 挪到錨點
     //--------------------------------------------------
     _setAnchor(modify)
     {
-        if(this.al!=null) {this.anchorX = this.min.x + this.al;}
-        else if(this.ar!=null) {this.anchorX = this.max.x - this.ar;}
-
-        if(this.at!=null) {this.anchorY = this.min.y + this.at;}
-        else if(this.ab!=null) {this.anchorY = this.max.y - this.ab;}
-
-        this.x = -this.anchorX;
-        this.y = -this.anchorY;
+        const w = this.wid, h = this.hei;
+        const ax = this.al!=null ? this.al-w/2 : this.ar!=null ? w/2-this.ar : 0;
+        const ay = this.at!=null ? this.at-h/2 : this.ab!=null ? h/2-this.ab : 0;
+        this._img = {x:-ax-w/2, y:-ay-h/2, w, h};
         if(modify)
         {
-            this._root.x += this.anchorX;
-            this._root.y += this.anchorY;
+            this._root.x += ax;
+            this._root.y += ay;
         }
         return this;
     }
@@ -483,12 +437,10 @@ class View extends Phaser.GameObjects.Container
     {
         if(!this.interactive) {return this;}
 
-        // 產生 zone 方塊
-        const h = this._resolveAxis(this.zl, this.zr, this.zw, this.wid);
-        const v = this._resolveAxis(this.zt, this.zb, this.zh, this.hei);
-        const cx = this.min.x + h.a + h.size/2;
-        const cy = this.min.y + v.a + v.size/2;
-        this._zone = this.scene.add.zone(cx, cy, h.size, v.size)
+        // 產生 zone 方塊；沒有 zone＝點不到
+        const z = this._zoneBox = this._box('zone');
+        if(!z) {return this;}
+        this._zone = this.scene.add.zone(z.x + z.w/2, z.y + z.h/2, z.w, z.h)
         this.add(this._zone)
 
         // 將 zone 方塊設成可互動的
@@ -562,12 +514,6 @@ class View extends Phaser.GameObjects.Container
         //     }
         // }
 
-        if(this.body)
-        {
-            this.body.destroy();
-            this.body=null;
-        }
-
         if(this._dbgGraphics) {this._dbgGraphics.destroy();this._dbgGraphics=null;}
         if(this._dbgText) {this._dbgText.destroy();this._dbgText=null;}
         if(this._dbgPos) {this._dbgPos.destroy();this._dbgPos=null;}
@@ -590,7 +536,6 @@ class View extends Phaser.GameObjects.Container
         this._setData()
             ._setAnchor(modify)
             ._addShape(alpha)
-            // ._addPhysics()
             ._addGrid()
             ._updateDepth(depth)
             ._addWeight()
@@ -630,10 +575,11 @@ class View extends Phaser.GameObjects.Container
         const {modify, depth, alpha} = config;
         this._init(modify, depth, alpha);
 
-        // 算出 grid 所佔的 tile，尋路 會用到
+        // 算出 grid 所佔的 tile，尋路 會用到；沒有 grid＝1×1
         const{bb} = this.ctx;
-        bb.tile = { tw : Math.ceil(this._grid.w/GM.TILE_W),
-                    th : Math.ceil(this._grid.h/GM.TILE_H) };
+        const g = this._grid ?? ONE_TILE;
+        bb.tile = { tw : Math.ceil(g.w/GM.TILE_W),
+                    th : Math.ceil(g.h/GM.TILE_H) };
 
         // 1.提供 [外部操作的指令]
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
@@ -661,9 +607,6 @@ class View extends Phaser.GameObjects.Container
 }
 
 
-// prefab 的占地方塊(相對錨點的 {x,y,w,h}) → View 的 l/t/w/h 欄位；Tiled 有寫任何一個該組欄位就整組不套
-const PF_BOX ={body:['bl','br','bw','bt','bb','bh'], grid:['gl','gr','gw','gt','gb','gh'], zone:['zl','zr','zw','zt','zb','zh']};
-
 export class ItemView extends View
 {
     constructor(scene)
@@ -673,7 +616,7 @@ export class ItemView extends View
         this.look = null;       // prefab 的狀態，沒給＝prefab 的 look
     }
 
-    // prefab：大小＝縮圖外框、錨點＝prefab 的 (0,0)，占地方塊沒被 Tiled 覆寫就用 prefab 的
+    // prefab：圖的範圍＝縮圖外框、錨點＝prefab 的 (0,0)
     _setData()
     {
         super._setData();
@@ -682,27 +625,31 @@ export class ItemView extends View
         const t = thumbOf(pf);
         this.wid = t.w;
         this.hei = t.h;
-        this.anchorX = -(t.x + t.w/2);
-        this.anchorY = -(t.y + t.h/2);
-        for(const [k, [l, , w, top, , h]] of Object.entries(PF_BOX))
-        {
-            const box = pf[k];
-            if(!box || PF_BOX[k].some(f=>this[f]!=null)) {continue;}
-            this[l] = box.x - t.x;
-            this[w] = box.w;
-            this[top] = box.y - t.y;
-            this[h] = box.h;
-        }
         this.look ??= pf.look ?? null;
         if(pf.acts && Object.keys(pf.acts).length) {this.interactive = true;}
         return this;
     }
 
-    // Tiled 物件的位置＝縮圖中心(modify 把 root 挪到錨點)；runtime 生的(uid -1：放置道具、存檔重建、場景分頁)位置就是錨點，
+    // prefab：Tiled 物件的位置＝縮圖中心(modify 把 root 挪到錨點)；runtime 生的(uid -1：放置道具、存檔重建、場景分頁)位置就是錨點，
     // 存檔記的也是錨點，重建時不能再挪一次
     _setAnchor(modify)
     {
-        return super._setAnchor(this._pf && this.root.uid===-1 ? false : modify);
+        if(!this._pf) {return super._setAnchor(modify);}
+        const t = thumbOf(this._pf);
+        this._img = {x:t.x, y:t.y, w:t.w, h:t.h};
+        if(modify && this.root.uid!==-1)
+        {
+            this._root.x -= t.x + t.w/2;
+            this._root.y -= t.y + t.h/2;
+        }
+        return this;
+    }
+
+    // prefab 的方塊直接相對錨點、沒寫＝沒有；Tiled 物件有寫任何一個該組的量邊欄位(量縮圖外框)就整組蓋掉
+    _box(k)
+    {
+        if(!this._pf || this._hasEdge(k)) {return super._box(k);}
+        return this._pf[k] ?? null;
     }
 
     // prefab 的 acts：{動作 id: 狀態}，右鍵選單照 id 出按鈕(文字 id.lab())，目標狀態＝目前狀態的藏起來
@@ -770,6 +717,10 @@ export class ItemView extends View
                 this._shape = sp;
             }
 
+            // 圖片中心＝圖片矩形的中心(相對錨點)
+            const img = this._img;
+            this._shape.setPosition(img.x + img.w/2, img.y + img.h/2);
+
             // set flipX
             if(this.flipX) {this._shape.scaleX *= -1;}
 
@@ -786,14 +737,14 @@ export class ItemView extends View
     _buildPrefab()
     {
         const scene = this.scene;
-        this._shape = scene.add.container(this.anchorX, this.anchorY);
+        this._shape = scene.add.container(0, 0);
         this.add(this._shape);
         const parts = (this._pf.parts ?? []).map((p, i)=>({p, i}))
                         .sort((a, b)=>(a.p.depth ?? 0) - (b.p.depth ?? 0) || a.i - b.i);
         this._parts = [];
-        for(const {p} of parts)
+        for(const {p, i} of parts)
         {
-            const e = {p, on:false};
+            const e = {p, i, on:false};
             if(p.img)
             {
                 const [key, frame] = p.img.split(':');
@@ -817,7 +768,7 @@ export class ItemView extends View
         if(look && !this._pf.parts?.some(p=>p.look===look)) {dlog(T.WARN)(`prefab ${this.prefab} 沒有狀態 ${look}`);}
         for(const e of this._parts ?? [])
         {
-            const on = !e.p.look || e.p.look===look;
+            const on = (!e.p.look || e.p.look===look) && !this._hideParts?.has(e.i);
             if(on===e.on) {continue;}
             e.on = on;
             if(e.holder) {this._imgOn(e, on, anim);}
@@ -874,6 +825,13 @@ export class ItemView extends View
         this._applyLook(true);
     }
 
+    // 藏掉 prefab.json 裡第幾個零件（場景分頁 sandbox 的零件 hide 模式用，不存檔）
+    _setHiddenParts(idxs)
+    {
+        this._hideParts = new Set(idxs);
+        if(this._pf) {this._applyLook(false);}
+    }
+
     _updatePos(pos)
     {
         super._updatePos(pos);
@@ -905,15 +863,17 @@ export class ItemView extends View
         this._shape.setTexture(key,frame);
     }
 
-    _setShape({sprite,x=0,y=0,scl,origin={x:0.5,y:0.5}}={})
+    // x,y＝origin 點相對錨點，沒寫＝圖片矩形的中心
+    _setShape({sprite,x,y,scl,origin={x:0.5,y:0.5}}={})
     {
         if(this._pf) {return;}
         const[key,frame]=sprite.split(':');
+        const img = this._img;
         this._shape.setTexture(key,frame);
         this._shape.setOrigin(origin.x,origin.y);
         if(scl!=null) {this._shape.setScale(scl);}
-        this._shape.x = x;
-        this._shape.y = y;
+        this._shape.x = x ?? img.x + img.w/2;
+        this._shape.y = y ?? img.y + img.h/2;
     }
 
     //--------------------------------------------------
@@ -929,6 +889,7 @@ export class ItemView extends View
         root.setTexture = this._setTexture.bind(this);
         root.setShape = this._setShape.bind(this);
         root.setLook = this._setLook.bind(this);
+        root.setHiddenParts = this._setHiddenParts.bind(this);
         root.getLook = ()=>this.look;
         if(this._pf) {this._bindActs(root);}
 
@@ -976,7 +937,7 @@ export class ZoneView extends View
         const [w,h] = [GM.TILE_W, GM.TILE_H];
         const {jitter=0} = this.zoneAnim?.cell ?? {};
         const map = this.scene.map;
-        const cen = this.cen;
+        const cen = this.anchor;
         for(let x=xs; x<=xe; x++)
         {
             for(let y=ys; y<=ye; y++)
@@ -1021,7 +982,7 @@ export class ZoneView extends View
     _updateCellWeight(wei)
     {
         if(wei==0) {return;}
-        const cen = this.cen;
+        const cen = this.anchor;
         const size = {w:GM.TILE_W, h:GM.TILE_H};
         this._cells.forEach(c=>{
             this.scene.map.updateGrid({x:cen.x+c.gx*GM.TILE_W, y:cen.y+c.gy*GM.TILE_H}, wei, size);
@@ -1058,7 +1019,7 @@ export class ZoneView extends View
         const c = this._cells.find(c=>c.gx===gx && c.gy===gy);
         if(!c) {return;}
         c.fx?.tick();
-        playParticle(this.scene, DB.particle(this.zoneAnim?.tickParticle), {x:this.cen.x+gx*GM.TILE_W, y:this.cen.y+gy*GM.TILE_H});
+        playParticle(this.scene, DB.particle(this.zoneAnim?.tickParticle), {x:this.anchor.x+gx*GM.TILE_W, y:this.anchor.y+gy*GM.TILE_H});
     }
 
     _playEnd()
@@ -1090,18 +1051,55 @@ export class RoleView extends View
         // 從 bb.meta 取得參數
         this.meta = this.ctx.bb.meta??{};
         this._faceR = this.meta.faceR;
-        const b = this.meta.b;
-        const g = this.meta.g;
-        const z = this.meta.z;
-        if(b) {this.bl=b.l; this.br=b.r; this.bt=b.t; this.bb=b.b;}
-        if(g) {this.gl=g.l; this.gr=g.r; this.gt=g.t; this.gb=g.b;}
-        if(z) {this.zl=z.l; this.zr=z.r; this.zt=z.t; this.zb=z.b;}
-        this.wid = this.meta.w; 
-        this.hei = this.meta.h;
-        this.anchorX = this.meta.anchor.x;
-        this.anchorY = this.meta.anchor.y;
 
         return this;
+    }
+
+    // Tiled 的角色 tile 物件(位置＝物件中心，wid/hei＝物件大小)：錨點＝左下角那一格的中心；點物件(大小 0)＝點本身
+    _setAnchor(modify)
+    {
+        if(modify && this.wid>0)
+        {
+            this._root.x += GM.TILE_W/2 - this.wid/2;
+            this._root.y += this.hei/2 - GM.TILE_H/2;
+        }
+        this._img = {x:-GM.TILE_W/2, y:-GM.TILE_H/2, w:GM.TILE_W, h:GM.TILE_H};   // 建完部位再量(_measure)
+        return this;
+    }
+
+    // role.json 的 grid／zone 直接相對錨點，沒寫＝沒有
+    _box(k) {return this.meta[k] ?? null;}
+
+    // 支點(相對錨點)：_shape 放在這裡，轉身、走路搖晃、倒地都繞它轉；rig 反向挪回來，部位照樣相對錨點
+    get pivot() {return this._pivot ?? {x:0, y:0};}
+
+    // 轉身時 shape 繞支點翻面，範圍跟著鏡射
+    get rect()
+    {
+        const r = this._img, sh = this._shape;
+        if(!sh || sh.scaleX>=0 || !this._pivot) {return r;}
+        return {x:2*this._pivot.x - r.x - r.w, y:r.y, w:r.w, h:r.h};
+    }
+
+    // 量部位合成的範圍(相對錨點，不含武器、手上的工具)：建立跟換裝時量一次，量的時候 shape 暫時回到靜止姿勢、不翻面
+    _measure()
+    {
+        const sh = this._shape;
+        if(!sh) {return;}
+        const keep = {x:sh.x, y:sh.y, a:sh.angle, sx:sh.scaleX, sy:sh.scaleY};
+        const p = this.pivot;
+        sh.setPosition(p.x, p.y).setAngle(0).setScale(1);
+        const skip = new Set([...(this._weapon ?? []), ...(this._held ?? [])]);
+        const o = this.parentContainer ? {x:this.parentContainer.x, y:this.parentContainer.y} : {x:0, y:0};
+        let [l, t, r, b] = [Infinity, Infinity, -Infinity, -Infinity];
+        for(const sp of this.sprites)
+        {
+            if(!sp.visible || skip.has(sp) || !sp.getBounds) {continue;}
+            const bd = sp.getBounds();
+            l = Math.min(l, bd.x); t = Math.min(t, bd.y); r = Math.max(r, bd.right); b = Math.max(b, bd.bottom);
+        }
+        sh.setPosition(keep.x, keep.y).setAngle(keep.a).setScale(keep.sx, keep.sy);
+        if(l<r) {this._img = {x:l-o.x, y:t-o.y, w:r-l, h:b-t};}
     }
 
     _addShape()
@@ -1132,9 +1130,17 @@ export class RoleView extends View
         this._equips = [];
         this._sortParts();
 
+        // 支點：x＝身體圖的中心(左右對稱翻面)、y＝部位合成範圍的中心(倒地時整個人置中)；先在 shape 原點＝錨點時量
+        this._pivot = {x:0, y:0};
+        this._measure();
+        const bd = this._parts.body?.[0]?.getBounds(), r = this._img;
+        this._pivot = {x:bd ? bd.centerX : 0, y:r.y + r.h/2};
+        this._shape.setPosition(this._pivot.x, this._pivot.y);
+        this._rig.setPosition(rig.x - this._pivot.x, rig.y - this._pivot.y);
+
         // set flipX
         if(this.flipX) {this._shape.scaleX *= -1;}
-        
+
         return this;
     }
 
@@ -1262,14 +1268,17 @@ export class RoleView extends View
         this._hand = handOf(inHand);
         this._placeWrists(inHand);
         dats.forEach((dat)=>{this._addEquip(dat);});
+        this._held = null;
         if(held)
         {
             this._weapon?.forEach((sp)=>{sp.setVisible(false);});
-            this._equips.push(...this._addPart(equipFor(held.equip, this.meta.sex, held.sex), held.cat, this._hand));
+            this._held = this._addPart(equipFor(held.equip, this.meta.sex, held.sex), held.cat, this._hand);
+            this._equips.push(...this._held);
             this._sortParts();
         }
         const hide = hiddenParts(dats, GM.CAT, DB.rolePart(this.meta, 'hat'));
         for(const [k, sps] of Object.entries(this._parts)) {sps.forEach((sp)=>{sp.setVisible(!hide.has(k));});}
+        this._measure();
     }
 
     _isFaceRight() {return (this._shape.scaleX < 0) !== this._faceR;}
@@ -1289,12 +1298,12 @@ export class RoleView extends View
         this.sprites.forEach(sp=>sp.setTint?.(this._deadTint));
     }
 
-    // shape 的原點是 view 中心，以它為支點轉，再移到 grid 中心，屍體就會置中躺在自己那格
+    // shape 的原點是支點(身體中心)，以它為支點轉，再移到 grid 中心，屍體就會置中躺在自己那格
     _fall(attacker, instant)
     {
         const shape = this._shape;
         const angle = (this.meta.fall ?? 90) * this._fallDir(attacker);
-        const y = this._grid.y;
+        const y = this._grid ? this._grid.y : this.pivot.y;
         if(instant)
         {
             shape.setAngle(angle).setY(y);
@@ -1322,6 +1331,7 @@ export class RoleView extends View
         {
             this._remove();
             this._isCorpse = true;
+            this._shape.setPosition(0, 0).setAngle(0);     // 屍體圖相對錨點
             this._addPart(this.meta.corpse);
         }
         else
@@ -1345,7 +1355,7 @@ export class RoleView extends View
         this._dying = null;
         this._deadTint = null;
         this.sprites.forEach(sp=>sp.clearTint?.());
-        this._shape.setAngle(0).setY(0);
+        this._shape.setAngle(0).setPosition(this.pivot.x, this.pivot.y);
         ({weight:this.weight, isBlock:this.isBlock} = this._alive);
         this._addWeight();
         this._updateDepth();

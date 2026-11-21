@@ -19,6 +19,7 @@ import {shapeOf, zoneEditable, rectOf, handlesOf, hitZone, edgeZone, zoneArea, d
 const ZOOM = [0.25, 8];
 const GRID_DEPTH = 1e7;
 const HANDLE = 6;   // 擺設大小把手（螢幕 px）
+const SEL_COLOR = 0xffffff;   // 選中的記號（不能跟占地方塊 grid/zone 撞色）
 const DEFAULT_TIME = '08:00';   // 同 Record.game_def 的開局時間
 
 let dataLoaded = false;
@@ -38,7 +39,7 @@ export class Sandbox extends GameScene
         super.init({...data, map:data?.map ?? 'sandbox'});
     }
 
-    update() {this._syncLights(); this._drawSel();}
+    update() {this._syncLights(); this._syncPartHide(); this._drawSel();}
 
     async create()
     {
@@ -235,11 +236,14 @@ export class Sandbox extends GameScene
     }
 
     //------------------------------------------------------
-    //  選中的 prefab 實例（場景分頁送 inspect {key, boxes:{body,grid,zone}, part}）：畫錨點十字（橘）、有勾的占地方塊
-    //  （body 紅、grid 藍、zone 綠）、右欄展開的零件外框，都只看不拖；已選中再點＝回報點到的零件（part {key, i}，空白處 i＝null），
-    //  展開的那個零件可以拖（放開回報 movePart {key, i, x, y}，相對錨點；png、光源跟著動，粒子只動外框）
+    //  選中的 prefab 實例（場景分頁送 inspect {key, boxes:{grid,zone}, boxMode, partMode, part}）：畫錨點十字（橘）、
+    //  占地方塊（grid 藍、zone 綠）、零件外框，照各自的模式：hide 不畫、show 半透明唯讀、edit 不透明可拖；
+    //  edit 方塊在 4 邊中點出把手（照 grid→zone 搶，放開回報 box {key, k, box}），edit 零件按住拖
+    //  （放開回報 movePart {key, i, x, y}，相對錨點；png、光源跟著動，粒子只動外框）；
+    //  已選中再點、沒拖動＝回報點到的 show／edit 零件（part {key, i}，空白處 i＝null）
     //------------------------------------------------------
-    static BOX_COLOR = {body:0xff5555, grid:0x55aaff, zone:0x66dd66};
+    static BOX_COLOR = {grid:0x55aaff, zone:0x66dd66};
+    static BOX_ORDER = ['grid', 'zone'];
 
     _inspected()
     {
@@ -262,13 +266,28 @@ export class Sandbox extends GameScene
         return {x, y, rect:new Phaser.Geom.Rectangle(x - (p.ox ?? 0.5)*w, y - (p.oy ?? 1)*h, w, h)};
     }
 
-    // 點到選中實例的哪個零件（目前狀態看得到的；粒子／光源的點優先，png 照前後取最上面）；沒有＝null
-    _partAt(o, wx, wy)
+    _partMode(i) {return this._inspect?.partMode?.[i] ?? 'show';}
+
+    // 零件 hide＝藏零件本身：只藏選中（inspect）的那個實例，其他實例全顯示
+    _syncPartHide()
+    {
+        const o = this._inspected();
+        for(const [k, fi] of Object.entries(this._insts ?? {}))
+        {
+            if(!fi.go.active || !fi.go.setHiddenParts) {continue;}
+            const hide = fi===o ? (this._inspect.partMode ?? []).flatMap((m, i)=>(m==='hide' ? [i] : [])) : [];
+            const sig = hide.join();
+            if(fi.hideSig!==sig) {fi.hideSig = sig; fi.go.setHiddenParts(hide);}
+        }
+    }
+
+    // 點到選中實例的哪個零件（目前狀態看得到、模式在 modes 裡的；粒子／光源的點優先，png 照前後取最上面）；沒有＝null
+    _partAt(o, wx, wy, modes = ['edit'])
     {
         const parts = DB.prefab(o.data.prefab)?.parts ?? [], look = o.go.getLook?.() ?? null, tol = 8/this.cameras.main.zoom;
         let best = null;
         parts.forEach((p, i)=>{
-            const g = (!p.look || p.look===look) && this._partGeom(o, i);
+            const g = modes.includes(this._partMode(i)) && (!p.look || p.look===look) && this._partGeom(o, i);
             if(!g) {return;}
             if(!p.img) {if(Math.hypot(g.x - wx, g.y - wy)<=tol) {best = {i, z:Infinity};} return;}
             const z = p.depth ?? 0;
@@ -277,29 +296,74 @@ export class Sandbox extends GameScene
         return best ? best.i : null;
     }
 
+    // 方塊 k 目前的樣子（拖把手中＝拖曳中的值）
+    _box(k)
+    {
+        const d = this._drag;
+        return d?.box===k ? d.cur : this._inspect?.boxes?.[k] ?? null;
+    }
+
+    // edit 方塊的 4 邊中點把手（世界座標），照 grid→zone
+    _boxHandles()
+    {
+        const o = this._inspected();
+        if(!o) {return [];}
+        const ax = o.go.x, ay = o.go.y, out = [];
+        for(const k of Sandbox.BOX_ORDER)
+        {
+            const b = this._box(k);
+            if(!b || this._inspect.boxMode?.[k]!=='edit') {continue;}
+            const l = ax + b.x, t = ay + b.y, cx = l + b.w/2, cy = t + b.h/2;
+            out.push({k, side:'l', x:l, y:cy}, {k, side:'r', x:l + b.w, y:cy}, {k, side:'t', x:cx, y:t}, {k, side:'b', x:cx, y:t + b.h});
+        }
+        return out;
+    }
+
+    _boxHandleAt(wx, wy)
+    {
+        const r = (HANDLE/2 + 2)/this.cameras.main.zoom;
+        return this._boxHandles().find(hd=>Math.abs(hd.x - wx)<=r && Math.abs(hd.y - wy)<=r) ?? null;
+    }
+
+    // 拖方塊的邊：對邊固定、不能拉過對邊（最少 1px），Shift 吸 16px（世界座標）
+    _boxTo(d, wx, wy, shift)
+    {
+        const go = d.inst.go, b0 = d.b0, snap = (v)=>(shift ? Math.round(v/16)*16 : Math.round(v));
+        const rx = snap(wx) - go.x, ry = snap(wy) - go.y, b = {...b0};
+        if(d.side==='l') {const r = b0.x + b0.w; b.x = Math.min(rx, r - 1); b.w = r - b.x;}
+        else if(d.side==='r') {b.w = Math.max(1, rx - b0.x);}
+        else if(d.side==='t') {const bt = b0.y + b0.h; b.y = Math.min(ry, bt - 1); b.h = bt - b.y;}
+        else {b.h = Math.max(1, ry - b0.y);}
+        d.cur = b;
+    }
+
     _drawInspect(g, z)
     {
         const o = this._inspected();
         if(!o) {return;}
-        const ax = o.go.x, ay = o.go.y;
-        for(const [k, b] of Object.entries(this._inspect.boxes ?? {}))
+        const ax = o.go.x, ay = o.go.y, look = o.go.getLook?.() ?? null;
+        for(const k of [...Sandbox.BOX_ORDER].reverse())
         {
-            if(b) {g.lineStyle(1.5/z, Sandbox.BOX_COLOR[k], 0.9).strokeRect(ax + b.x, ay + b.y, b.w, b.h);}
+            const b = this._box(k), m = this._inspect.boxMode?.[k] ?? 'hide';
+            if(b && m!=='hide') {g.lineStyle((m==='edit' ? 2 : 1.5)/z, Sandbox.BOX_COLOR[k], m==='edit' ? 1 : 0.4).strokeRect(ax + b.x, ay + b.y, b.w, b.h);}
         }
-        const i = this._inspect.part, pg = i!=null && this._partGeom(o, i);
-        if(pg)
-        {
-            g.lineStyle(2/z, 0x33ccff, 1);
+        (DB.prefab(o.data.prefab)?.parts ?? []).forEach((p, i)=>{
+            const pg = this._partMode(i)==='edit' && (!p.look || p.look===look) && this._partGeom(o, i);
+            if(!pg) {return;}
+            const a = 1;
+            g.lineStyle(2/z, 0x33ccff, a);
             if(pg.rect) {g.strokeRectShape(pg.rect);}
             else
             {
                 g.strokeCircle(pg.x, pg.y, 6/z);
-                if(pg.r) {g.lineStyle(1/z, 0x33ccff, 0.6).strokeCircle(pg.x, pg.y, pg.r);}
+                if(pg.r) {g.lineStyle(1/z, 0x33ccff, a*0.6).strokeCircle(pg.x, pg.y, pg.r);}
             }
+        });
+        const s = HANDLE/z;
+        for(const hd of this._boxHandles().reverse())
+        {
+            g.fillStyle(Sandbox.BOX_COLOR[hd.k], 1).fillRect(hd.x-s/2, hd.y-s/2, s, s).lineStyle(1/z, 0x000000, 1).strokeRect(hd.x-s/2, hd.y-s/2, s, s);
         }
-        const r = 7/z;
-        g.lineStyle(2/z, 0x000000, 1).strokeCircle(ax, ay, r).lineBetween(ax-r*1.6, ay, ax+r*1.6, ay).lineBetween(ax, ay-r*1.6, ax, ay+r*1.6);
-        g.lineStyle(1/z, 0xff9933, 1).strokeCircle(ax, ay, r).lineBetween(ax-r*1.6, ay, ax+r*1.6, ay).lineBetween(ax, ay-r*1.6, ax, ay+r*1.6);
     }
 
     // 拖展開的零件：png 的 holder、光源跟著動（放開等分頁寫進草稿、送回來重建）
@@ -809,10 +873,11 @@ export class Sandbox extends GameScene
         if(em) {return {key:em[0], emitter:em[1]};}
         const li = this._lightAt(wx, wy);
         if(li) {return {key:li[0], light:li[1]};}
+        const fa = this._instAt(wx, wy);
+        if(fa) {return {key:fa[0], inst:fa[1]};}
         const hits = [
             ...this.roles.filter(p=>p.visible && p.getShapeRect?.().contains(wx, wy)).map(role=>({key:role.key, role, depth:role.depth})),
             ...Object.entries(this._props).filter(([, o])=>o.sp.visible && o.sp.getBounds().contains(wx, wy)).map(([key, prop])=>({key, prop, depth:prop.sp.depth})),
-            ...Object.entries(this._insts ?? {}).filter(([, o])=>o.go.active && o.go.getShapeRect().contains(wx, wy)).map(([key, inst])=>({key, inst, depth:inst.go.depth})),
         ];
         if(hits.length) {return hits.reduce((a, b)=>(b.depth>a.depth ? b : a));}
         const role = this._roleAt(wx, wy);
@@ -835,22 +900,21 @@ export class Sandbox extends GameScene
         {
             if(!this._markOn('particle', k)) {continue;}
             const {x, y} = this._emitPos(e), s = 6/z;
-            g.lineStyle(2/z, k===this._sel ? 0x7ddc5a : 0xff9933, 1).fillStyle(0x000000, 0.4)
+            g.lineStyle(2/z, k===this._sel ? SEL_COLOR : 0xff9933, 1).fillStyle(0x000000, 0.4)
                 .fillPoints([{x, y:y-s}, {x:x+s, y}, {x, y:y+s}, {x:x-s, y}], true).strokePoints([{x, y:y-s}, {x:x+s, y}, {x, y:y+s}, {x:x-s, y}], true);
         }
         this._drawZones(g, z);
-        this._drawInspect(g, z);
         for(const [k, o] of Object.entries(this._lights ?? {}))
         {
             if(!this._markOn('light', k)) {continue;}
             const {x, y} = this._lightPos(o), s = 6/z, sel = k===this._sel;
             g.fillStyle(o.hex, 1).fillCircle(x, y, s)
-                .lineStyle((sel ? 2 : 1.5)/z, sel ? 0x7ddc5a : 0x000000, 1).strokeCircle(x, y, s);
+                .lineStyle((sel ? 2 : 1.5)/z, sel ? SEL_COLOR : 0x000000, 1).strokeCircle(x, y, s);
             if(sel)
             {
                 // 虛線圈＝半徑；聚光燈＝扇形（兩條邊＋弧，中線淡淡的）
                 const R = o.light.radius, sp = o.light.spot;
-                g.lineStyle(1.5/z, 0x7ddc5a, 0.9);
+                g.lineStyle(1.5/z, SEL_COLOR, 0.9);
                 if(!sp)
                 {
                     const n = 64;
@@ -862,30 +926,40 @@ export class Sandbox extends GameScene
                 for(let i=0; i<n; i+=2) {g.beginPath().arc(x, y, R, a0 + (a1-a0)*i/n, a0 + (a1-a0)*(i+1)/n).strokePath();}
                 const dash = (a)=>{const m = Math.max(2, Math.round(R*z/8)); for(let i=0; i<m; i+=2) {g.lineBetween(x + R*i/m*Math.cos(a), y + R*i/m*Math.sin(a), x + R*(i+1)/m*Math.cos(a), y + R*(i+1)/m*Math.sin(a));}};
                 dash(a0); dash(a1);
-                g.lineStyle(1/z, 0x7ddc5a, 0.4).lineBetween(x, y, x + R*Math.cos(sp.dir*rad), y + R*Math.sin(sp.dir*rad));
+                g.lineStyle(1/z, SEL_COLOR, 0.4).lineBetween(x, y, x + R*Math.cos(sp.dir*rad), y + R*Math.sin(sp.dir*rad));
             }
         }
         const s = HANDLE/z;
         for(const hd of [this._radiusHandle(), ...this._arcHandles()].filter(Boolean))
         {
-            g.fillStyle(0xffffff, 1).fillRect(hd.x-s/2, hd.y-s/2, s, s).lineStyle(1/z, 0x3a8a2a, 1).strokeRect(hd.x-s/2, hd.y-s/2, s, s);
+            g.fillStyle(0xffffff, 1).fillRect(hd.x-s/2, hd.y-s/2, s, s).lineStyle(1/z, 0x000000, 1).strokeRect(hd.x-s/2, hd.y-s/2, s, s);
         }
-        const p = this._puppet(this._sel), o = this._props?.[this._sel], fi = this._insts?.[this._sel];
-        const r = p?.visible && p.getShapeRect ? p.getShapeRect() : o?.sp.visible ? o.sp.getBounds() : fi?.go.active ? fi.go.getShapeRect() : null;
-        if(!r) {return;}
-        g.lineStyle(2/z, 0x7ddc5a, 1).strokeRect(r.x, r.y, r.width, r.height);
-        for(const hd of this._handles()) {g.fillStyle(0xffffff, 1).fillRect(hd.x-s/2, hd.y-s/2, s, s).lineStyle(1/z, 0x3a8a2a, 1).strokeRect(hd.x-s/2, hd.y-s/2, s, s);}
-        const a = this._anchorPt();
-        if(a)
+        const p = this._puppet(this._sel), o = this._props?.[this._sel];
+        const r = p?.visible && p.getShapeRect ? p.getShapeRect() : o?.sp.visible ? o.sp.getBounds() : null;
+        if(r)
         {
-            // 黃點黑框＋十字：錨點常壓在綠框下邊上，要跟框線分得開
-            const ar = 4/z, c = ar*0.6;
-            g.fillStyle(0xffdd33, 1).fillCircle(a.x, a.y, ar).lineStyle(1.5/z, 0x000000, 1).strokeCircle(a.x, a.y, ar)
-                .lineStyle(1/z, 0x000000, 1).lineBetween(a.x-c, a.y, a.x+c, a.y).lineBetween(a.x, a.y-c, a.x, a.y+c);
+            g.lineStyle(2/z, SEL_COLOR, 1).strokeRect(r.x, r.y, r.width, r.height);
+            for(const hd of this._handles()) {g.fillStyle(0xffffff, 1).fillRect(hd.x-s/2, hd.y-s/2, s, s).lineStyle(1/z, 0x000000, 1).strokeRect(hd.x-s/2, hd.y-s/2, s, s);}
         }
+        // prefab 實例沒有選取框，錨點就是點選的地方：每個都畫（沒選中的半透明）
+        if(this._anchorOn!==false)
+        {
+            for(const [k, fi] of Object.entries(this._insts ?? {})) {if(fi.go.active && k!==this._sel) {this._drawAnchor(g, z, fi.go, 0.5);}}
+        }
+        const a = this._anchorPt();
+        if(a) {this._drawAnchor(g, z, a, 1);}
+        this._drawInspect(g, z);   // 占地方塊畫在選取框上面，重疊的邊才看得到
     }
 
-    // 選中的擺設（sprite 的 x/y）或角色（root 的 x/y＝套用 role.anchor 後站的點）；工具列「錨點」沒勾＝null
+    // 黃點黑框＋十字：錨點常壓在選取框下邊上，要跟框線分得開
+    _drawAnchor(g, z, a, alpha)
+    {
+        const ar = 4/z, c = ar*0.6;
+        g.fillStyle(0xffdd33, alpha).fillCircle(a.x, a.y, ar).lineStyle(1.5/z, 0x000000, 1).strokeCircle(a.x, a.y, ar)
+            .lineStyle(1/z, 0x000000, 1).lineBetween(a.x-c, a.y, a.x+c, a.y).lineBetween(a.x, a.y-c, a.x, a.y+c);
+    }
+
+    // 選中的擺設（sprite 的 x/y）、prefab 實例或角色（root 的 x/y＝站的點）；工具列「錨點」沒勾＝null
     _anchorPt()
     {
         if(this._anchorOn===false) {return null;}
@@ -896,8 +970,17 @@ export class Sandbox extends GameScene
         return null;
     }
 
+    // 點到的 prefab 實例錨點（8 螢幕 px 內，重疊取 depth 最高）；工具列「錨點」沒勾＝點不到
+    _instAt(wx, wy, only)
+    {
+        if(this._anchorOn===false) {return null;}
+        const R = 8/this.cameras.main.zoom;
+        const hits = Object.entries(this._insts ?? {}).filter(([k, o])=>(!only || k===only) && o.go.active && Math.hypot(o.go.x-wx, o.go.y-wy)<=R);
+        return hits.length ? hits.reduce((a, b)=>(b[1].go.depth>a[1].go.depth ? b : a)) : null;
+    }
+
     //------------------------------------------------------
-    //  擺設大小把手：選中的擺設綠框上 4 角＋4 邊中點（有角度不出），對邊固定；
+    //  擺設大小把手：選中的擺設白框上 4 角＋4 邊中點（有角度不出），對邊固定；
     //  改 sx/sy 或 pct 照分頁的鎖（_size.lock，file 圖才有 pct），等比＝_size.ratio（pct 一定等比）
     //------------------------------------------------------
     _handles()
@@ -1097,14 +1180,23 @@ export class Sandbox extends GameScene
             if(ah) {this._drag = {arc:ah.o, key:this._sel, arc0:ah.o.data.arc}; return;}
             const zh = p.leftButtonDown() && this._zoneHandleAt(p.worldX, p.worldY);
             if(zh) {this._startZone(zh, p); return;}
-            // 已選中的 prefab 實例：按在展開的零件上＝拖零件；其他地方＝拖實例，沒拖動就回報點到的零件
+            // 已選中的 prefab 實例：edit 方塊的把手＞edit 零件（拖零件）＞錨點或 show 零件＝拖實例，沒拖動就回報點到的零件
             const ins = p.leftButtonDown() && this._inspected();
-            const pi = ins ? this._partAt(ins, p.worldX, p.worldY) : null;
-            if(ins && (pi!==null || ins.go.getShapeRect().contains(p.worldX, p.worldY)))
+            const bh = ins && this._boxHandleAt(p.worldX, p.worldY);
+            if(bh)
             {
-                const pp = pi!==null && pi===this._inspect.part && DB.prefab(ins.data.prefab).parts[pi];
-                if(pp) {this._drag = {p:pp, part:pi, inst:ins, key:this._sel, x:pp.x ?? 0, y:pp.y ?? 0, ox:ins.go.x + (pp.x ?? 0) - p.worldX, oy:ins.go.y + (pp.y ?? 0) - p.worldY, moved:false};}
-                else {this._drag = {inst:ins, key:this._sel, dx:ins.go.x-p.worldX, dy:ins.go.y-p.worldY, moved:false, pickPart:pi};}
+                const b0 = this._inspect.boxes[bh.k];
+                this._drag = {box:bh.k, side:bh.side, inst:ins, key:this._sel, b0, cur:{...b0}};
+                return;
+            }
+            // edit 粒子／光源點＞錨點＞edit png 圖框
+            const ei = ins ? this._partAt(ins, p.worldX, p.worldY) : null;
+            const pp = ei!==null && DB.prefab(ins.data.prefab).parts[ei];
+            const onA = ins && (!pp || pp.img) && this._instAt(p.worldX, p.worldY, this._sel);
+            if(onA) {this._drag = {inst:ins, key:this._sel, dx:ins.go.x-p.worldX, dy:ins.go.y-p.worldY, moved:false}; this._cursor(p); return;}
+            if(pp)
+            {
+                this._drag = {p:pp, part:ei, inst:ins, key:this._sel, x:pp.x ?? 0, y:pp.y ?? 0, ox:ins.go.x + (pp.x ?? 0) - p.worldX, oy:ins.go.y + (pp.y ?? 0) - p.worldY, moved:false};
                 this._cursor(p);
                 return;
             }
@@ -1147,6 +1239,14 @@ export class Sandbox extends GameScene
                 if(!p.leftButtonDown()) {this._endDrag(); return;}
                 this._resizeTo(this._drag, p.worldX, p.worldY, p.event.shiftKey);
             }
+            else if(this._drag?.box)
+            {
+                if(!p.leftButtonDown()) {this._endDrag(); return;}
+                const d = this._drag;
+                this._boxTo(d, p.worldX, p.worldY, p.event.shiftKey);
+                this._send({sb:'dragLive', key:d.key, k:d.box, side:d.side, box:d.cur, start:!d.live});
+                d.live = true;
+            }
             else if(this._drag?.p)
             {
                 if(!p.leftButtonDown()) {this._endDrag(); return;}
@@ -1154,7 +1254,10 @@ export class Sandbox extends GameScene
                 const go = this._drag.inst.go;
                 let x = p.worldX + this._drag.ox, y = p.worldY + this._drag.oy;
                 [x, y] = p.event.shiftKey ? [x, y].map(v=>Math.round(v/16)*16) : [x, y].map(Math.round);
-                this._placePart(this._drag, x - go.x, y - go.y);
+                const d = this._drag;
+                this._placePart(d, x - go.x, y - go.y);
+                this._send({sb:'dragLive', key:d.key, part:d.part, x:d.x, y:d.y, start:!d.live});
+                d.live = true;
             }
             else if(this._drag?.radius)
             {
@@ -1206,16 +1309,18 @@ export class Sandbox extends GameScene
     _cursor(p = this.input.activePointer)
     {
         const d = this._drag;
-        if(d?.resize || d?.radius || d?.arc || (d?.zone && d.part!=='move') || !this._props) {return;}
+        if(d?.resize || d?.radius || d?.arc || d?.box || (d?.zone && d.part!=='move') || !this._props) {return;}
         let c = '';
         if(this._arm) {c = 'crosshair';}
         else if(d || this._pan) {c = 'grabbing';}
         else
         {
             const hd = this._handleAt(p.worldX, p.worldY), zh = !hd && this._zoneHandleAt(p.worldX, p.worldY);
-            const pk = !hd && !zh && this._pickAt(p.worldX, p.worldY);
+            const bh = !hd && !zh && this._inspected() && this._boxHandleAt(p.worldX, p.worldY);
+            const pk = !hd && !zh && !bh && this._pickAt(p.worldX, p.worldY);
             c = hd ?(!hd.hy ? 'ew-resize' : !hd.hx ? 'ns-resize' : hd.hx*hd.hy>0 ? 'nwse-resize' : 'nesw-resize')
                 : zh ? ZONE_CURSOR[zh.part]
+                : bh ? (bh.side==='l' || bh.side==='r' ? 'ew-resize' : 'ns-resize')
                 : this._radiusAt(p.worldX, p.worldY) || this._arcAt(p.worldX, p.worldY) ? 'pointer'
                 : !pk?.emitter && !pk?.light && this._zoneBodyAt(p.worldX, p.worldY, true) ? 'move'
                 : pk ? 'grab'
@@ -1229,9 +1334,20 @@ export class Sandbox extends GameScene
     {
         const d = this._drag;
         this._drag = null;
+        if(d?.live) {this._send({sb:'dragLive', key:d.key, end:true});}
+        if(d?.box)
+        {
+            if(JSON.stringify(d.cur)!==JSON.stringify(d.b0))
+            {
+                this._inspect.boxes[d.box] = d.cur;   // 等分頁寫進草稿送回來之前先照新的畫
+                this._send({sb:'box', key:d.key, k:d.box, box:d.cur});
+            }
+            return;
+        }
         if(d?.p)
         {
             if(d.moved && (d.x!==(d.p.x ?? 0) || d.y!==(d.p.y ?? 0))) {this._send({sb:'movePart', key:d.key, i:d.part, x:d.x, y:d.y});}
+            else if(!d.moved) {this._send({sb:'part', key:d.key, i:d.part});}
             return;
         }
         if(d?.resize)
@@ -1277,7 +1393,6 @@ export class Sandbox extends GameScene
         {
             const {x, y} = d.inst.go;
             if(d.moved && (x!==d.inst.data.x || y!==d.inst.data.y)) {this._send({sb:'moveInst', key:d.key, x, y});}
-            else if(!d.moved && 'pickPart' in d) {this._send({sb:'part', key:d.key, i:d.pickPart});}
             return;
         }
         if(!d?.to || (d.to[0]===d.from[0] && d.to[1]===d.from[1])) {return;}
