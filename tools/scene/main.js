@@ -887,10 +887,10 @@ function partRows(id, i, p)
                     h('span', {class: 'dim', dataset: {k: 'depthNote'}}, def?.local ? ' 跟 png 一起排（大的在前），下面的「深度」不管'
                         : ' 勾 local 才能排進零件；沒勾＝整個在 prefab 前面（下面「深度」選目標底下＝後面）')),
                 look),
-            h('div', {class: 'dim', dataset: {k: 'defState'}}, p.def ? '粒子內容：自訂（這個零件自己的，不跟粒子庫共用）' : '粒子內容：用 particle.json（改了就複製一份到這個零件）'),
-            !def ? h('div', {class: 'warn'}, `particle.json 沒有 ${p.particle}`) : h('div', null,
-                h('div', {class: 'row2'}, h('span', {class: 'grow'}), PPF.modeBtn()),
-                h('div', {class: 'pform'}, PP.body(k, def))),
+            ...foldSec('right.partParticle',
+                h('span', {dataset: {k: 'defState'}}, p.def ? '粒子內容：自訂（這個零件自己的，不跟粒子庫共用）' : '粒子內容：用 particle.json（改了就複製一份到這個零件）'),
+                () => [!def ? h('div', {class: 'warn'}, `particle.json 沒有 ${p.particle}`) : h('div', {class: 'pform'}, PP.body(k, def))],
+                def && PPF.modeBtn()),
         ];
     }
     const l = p.light ?? {}, point = !(l.arc > 0 && l.arc < 360);

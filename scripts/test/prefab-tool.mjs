@@ -357,6 +357,13 @@ run('prefab-tool', async t => {
         await sc.addPart('fire_pit', 'particle', '[新增]');
         out.newDef = [!!np()?.def, 'particle' in np(), sc.S.part === nP, psel()?.value, doc.querySelector('#right .partform [data-k="defState"]')?.textContent.includes('自訂'),
             !!doc.querySelector('#right .partform .pform')];
+        // 粒子內容可摺：標題（defState）跟 JSON 鈕留著、表單藏起來、記 tools.scene.fold
+        const pHead = () => doc.querySelector('#right .partform .head[data-fold="right.partParticle"]');
+        sc.toggleFold('right.partParticle');
+        out.pFold = [pHead()?.querySelector('.tw')?.textContent, !!pHead()?.querySelector('[data-k="defState"]'), pHead()?.querySelector('button')?.textContent,
+            !!doc.querySelector('#right .partform .pform'), JSON.parse(win.localStorage.getItem('tools.scene.fold')).includes('right.partParticle')];
+        sc.toggleFold('right.partParticle');
+        out.pFold.push(pHead()?.querySelector('.tw')?.textContent, !!doc.querySelector('#right .partform .pform'));
         psel().value = 'fire-charge';
         psel().dispatchEvent(new win.Event('change'));
         await answer('ok');
@@ -517,6 +524,7 @@ run('prefab-tool', async t => {
     t.eq('Esc 第一次：收起零件、實例還選著', JSON.stringify(r.esc1), JSON.stringify([null, 'f1']));
     t.eq('展開零件時 Del：刪零件（草稿）、實例還在', JSON.stringify(r.delKey), JSON.stringify([1, null, 'f1']));
     t.eq('＋粒子選 [新增]：範本 def、沒有 particle、展開、下拉停在 [新增]、自訂、嵌粒子表單', JSON.stringify(r.newDef), JSON.stringify([true, false, true, '[新增]', true, true]));
+    t.eq('粒子內容摺起來：標題＋JSON 鈕留著、表單藏、記住；再點展開', JSON.stringify(r.pFold), JSON.stringify(['▸', true, 'JSON', false, true, '▾', true]));
     t.eq('自己的換成庫 id：問過、變 {particle}', JSON.stringify(r.toLib), JSON.stringify([{particle: 'fire-charge'}, 'fire-charge']));
     t.eq('edit 粒子零件拖 zone 框線：共用的自動複製成 def（不留 id）、寫草稿、prefab.json 不動', JSON.stringify(r.zoneDrag), JSON.stringify([null, 'stream', true, 2]));
     t.check('（前置）零件 hide 藏起來', r.hideBefore);
