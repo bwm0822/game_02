@@ -885,7 +885,7 @@ function particleUsers(pid)
         for (const [o, v] of Object.entries(data ?? {})) walk(v, `${tab} ${o}`);
     return out;
 }
-const partIcon = (p) => (p.img ? imgEl(p.img, 20) : isParticle(p) ? h('span', null, '🔥') : h('span', {class: 'swatch', style: `background:${p.light?.color ?? '#ffcc88'}`}));
+const partIcon = (p) => (p.img ? imgEl(p.img, 20) : isParticle(p) ? h('span', null, '🔥') : h('span', {title: `光色 ${p.light?.color ?? '#ffcc88'}`}, '💡'));
 
 // 零件清單：一列一個，點一下在下面展開表單（一次一個）；不屬於這個實例目前狀態的標灰
 function partsPanel(o)
