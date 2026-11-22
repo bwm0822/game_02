@@ -466,6 +466,27 @@ run('prefab-tool', async t => {
         out.newPid = [np()?.particle, 'def' in np(), sc.S.part === nP, psel()?.value, !!sc.S.draft.ps['fire_pit-smoke']?.img,
             doc.querySelector('#right .partform [data-k="defState"]')?.textContent.includes('新的'), !!doc.querySelector('#right .partform .pform'),
             (await partDisk())['fire_pit-smoke'] ?? null, await until(() => !!sbP('fire_pit-smoke'))];
+        // 展開零件自動捲右欄：表單比視窗高＝那一列貼頂；重畫（改選取）不再捲；放得下的表單＝捲到剛好看到底
+        const rb = doc.getElementById('right'), rTop = () => rb.getBoundingClientRect().top + rb.clientTop;
+        const rowOf = (i) => doc.querySelector(`#right .part[data-part="${i}"]`);
+        sc.openPart(null);
+        rb.style.height = '300px';
+        rb.scrollTop = 0;
+        sc.openPart(nP);
+        out.scrollTall = [rb.scrollTop > 0, Math.abs(rowOf(nP).getBoundingClientRect().top - rTop()) <= 2];
+        rb.scrollTop = 0;
+        sc.togglePartSel(0);
+        sc.togglePartSel(0);
+        out.scrollStay = rb.scrollTop;
+        sc.openPart(null);
+        rb.style.height = '700px';
+        rb.scrollTop = 0;
+        const lastLight = sc.S.draft.pf.parts.findIndex(p => p.light);
+        sc.openPart(lastLight >= 0 ? lastLight : 0);
+        const fb = rowOf(sc.S.part).nextElementSibling.getBoundingClientRect().bottom, rbot = rTop() + rb.clientHeight;
+        out.scrollFit = [fb <= rbot + 1, rowOf(sc.S.part).getBoundingClientRect().top >= rTop() - 1, rb.scrollTop > 0];
+        rb.style.height = '';
+        sc.openPart(nP);
         // 粒子內容可摺：標題（defState）跟 JSON 鈕留著、表單藏起來、記 tools.scene.fold
         const pHead = () => doc.querySelector('#right .partform .head[data-fold="right.partParticle"]');
         sc.toggleFold('right.partParticle');
@@ -665,6 +686,9 @@ run('prefab-tool', async t => {
     t.eq('放開：黃框拿掉、零件位置寫進草稿', JSON.stringify(r.partLiveEnd), JSON.stringify([0, 2, 5]));
     t.eq('Esc 第一次：收起零件、實例還選著', JSON.stringify(r.esc1), JSON.stringify([null, 'f1']));
     t.eq('有選取的零件時 Del：刪選取的（草稿）、展開的收起、實例還在', JSON.stringify(r.delKey), JSON.stringify([1, null, 'f1']));
+    t.eq('展開零件自動捲：表單比右欄高＝那一列貼頂', JSON.stringify(r.scrollTall), JSON.stringify([true, true]));
+    t.eq('展開的零件沒換、只是重畫：不捲', r.scrollStay, 0);
+    t.eq('放得下的表單：捲到列跟表單底部都看得到', JSON.stringify(r.scrollFit), JSON.stringify([true, true, true]));
     t.eq('[新增] 撞名：擋下、不加零件', JSON.stringify(r.dupPid), JSON.stringify([0, true]));
     t.eq('＋粒子選 [新增]：{particle: 新 id}、沒有 def、展開、下拉停在新 id、範本在草稿副本、標「新的」、嵌粒子表單、particle.json 還沒有、sandbox 照副本',
          JSON.stringify(r.newPid), JSON.stringify(['fire_pit-smoke', false, true, 'fire_pit-smoke', true, true, true, null, true]));

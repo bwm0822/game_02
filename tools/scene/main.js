@@ -1915,6 +1915,23 @@ function equipSelect(r, cat)
     return sel;
 }
 
+// 展開的零件換了（收起→展開、換一個、↑↓ 搬動、換實例）才捲一次右欄：列＋表單都看得到就不動，
+//  底部超出捲到剛好看到底，比視窗高就讓那一列貼頂；改數字等重畫不捲（scrolledPart＝上次捲過的 實例#index）
+let scrolledPart = null;
+function scrollOpened(o)
+{
+    const k = S.part === null ? null : `${o.key}#${S.part}`;
+    if (k === scrolledPart) return;
+    scrolledPart = k;
+    const box = $('right'), row = k && box.querySelector(`.part[data-part="${S.part}"]`);
+    if (!row) return;
+    const form = row.nextElementSibling?.classList.contains('partform') ? row.nextElementSibling : row;
+    const y0 = box.getBoundingClientRect().top - box.scrollTop;
+    const top = row.getBoundingClientRect().top - y0, bot = form.getBoundingClientRect().bottom - y0, view = box.clientHeight;
+    if (bot - top > view || top < box.scrollTop) box.scrollTop = top;
+    else if (bot > box.scrollTop + view) box.scrollTop = bot - view;
+}
+
 // 重畫後把焦點還給同一個 data-k 的欄位（粒子表單連按 ↑↓ 才接得上）
 function renderRight()
 {
@@ -1933,7 +1950,11 @@ function drawRight()
     if (emOf(S.pick)) return put(emPanel(emOf(S.pick)));
     if (lightOf(S.pick)) return put(lightPanel(lightOf(S.pick)));
     const o = instOf(S.pick);
-    if (o) return put(instPanel(o), pfOf(o.prefab) ? [prefabPanel(o.prefab), partsPanel(o)] : []);
+    if (o)
+    {
+        put(instPanel(o), pfOf(o.prefab) ? [prefabPanel(o.prefab), partsPanel(o)] : []);
+        return scrollOpened(o);
+    }
     if (!r) return put(h('span', {class: 'dim'}, S.sel === null ? '' : '點畫面上的角色、或左邊清單選一個；右鍵畫面放角色'));
     const idSel = roleSelect(r.id);
     idSel.onchange = () => setRole(r.key, {id: idSel.value});
