@@ -1068,11 +1068,11 @@ export class Sandbox extends GameScene
         // prefab 實例沒有選取框：錨點每個都畫（沒選中的半透明），點選框只在 hover 時畫
         if(this._anchorOn!==false)
         {
-            for(const [k, fi] of Object.entries(this._insts ?? {})) {if(fi.go.active && k!==this._sel) {this._drawAnchor(g, z, fi.go, 0.5);}}
+            for(const [k, fi] of Object.entries(this._insts ?? {})) {if(fi.go.active && k!==this._sel) {this._drawInstAnchor(g, z, fi.go, 0.5);}}
         }
         this._drawInstHover(g, z);
         const a = this._anchorPt();
-        if(a) {this._drawAnchor(g, z, a, 1);}
+        if(a) {this._insts?.[this._sel]?.go.active ? this._drawInstAnchor(g, z, a, 1) : this._drawAnchor(g, z, a, 1);}
         this._drawInspect(g, z);   // 占地方塊畫在選取框上面，重疊的邊才看得到
     }
 
@@ -1082,6 +1082,17 @@ export class Sandbox extends GameScene
         const ar = 4/z, c = ar*0.6;
         g.fillStyle(0xffdd33, alpha).fillCircle(a.x, a.y, ar).lineStyle(1.5/z, 0x000000, 1).strokeCircle(a.x, a.y, ar)
             .lineStyle(1/z, 0x000000, 1).lineBetween(a.x-c, a.y, a.x+c, a.y).lineBetween(a.x, a.y-c, a.x, a.y+c);
+    }
+
+    // prefab 實例的錨點＝準星（空心圓＋穿出圓的長十字，黃線黑邊）：可以點、可以拖，跟擺設／角色的黃點分開
+    _drawInstAnchor(g, z, a, alpha)
+    {
+        const r = 5/z, c = 9/z;
+        for(const [w, col] of [[2.5/z, 0x000000], [1.5/z, 0xffdd33]])
+        {
+            g.lineStyle(w, col, alpha).strokeCircle(a.x, a.y, r)
+                .lineBetween(a.x-c, a.y, a.x+c, a.y).lineBetween(a.x, a.y-c, a.x, a.y+c);
+        }
     }
 
     // 選中的擺設（sprite 的 x/y）、prefab 實例或角色（root 的 x/y＝站的點）；工具列「錨點」沒勾＝null
