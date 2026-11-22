@@ -267,7 +267,6 @@ export class Sandbox extends GameScene
     }
 
     _partMode(i) {return this._inspect?.partMode?.[i] ?? 'show';}
-    _anchorMode() {return this._inspected() ? this._inspect.anchorMode ?? 'show' : 'show';}
 
     // 零件 hide＝藏零件本身：只藏選中（inspect）的那個實例，其他實例全顯示
     _syncPartHide()
@@ -1091,18 +1090,17 @@ export class Sandbox extends GameScene
         if(this._anchorOn===false) {return null;}
         const o = this._props?.[this._sel], p = this._puppet(this._sel), fi = this._insts?.[this._sel];
         if(o?.sp.visible) {return {x:o.sp.x, y:o.sp.y};}
-        if(this._drag?.anchor) {return {x:this._drag.x, y:this._drag.y};}
-        if(fi?.go.active) {return this._anchorMode()==='hide' ? null : {x:fi.go.x, y:fi.go.y};}
+        if(fi?.go.active) {return {x:fi.go.x, y:fi.go.y};}
         if(p?.visible) {return {x:p.x, y:p.y};}
         return null;
     }
 
-    // 點到的 prefab 實例錨點（8 螢幕 px 內，重疊取 depth 最高）；工具列「錨點」沒勾＝點不到，選中實例的錨點 hide 也點不到
+    // 點到的 prefab 實例錨點（8 螢幕 px 內，重疊取 depth 最高）；工具列「錨點」沒勾＝點不到
     _instAt(wx, wy, only)
     {
         if(this._anchorOn===false) {return null;}
-        const R = 8/this.cameras.main.zoom, hid = this._anchorMode()==='hide' ? this._inspect.key : null;
-        const hits = Object.entries(this._insts ?? {}).filter(([k, o])=>(!only || k===only) && k!==hid && o.go.active && Math.hypot(o.go.x-wx, o.go.y-wy)<=R);
+        const R = 8/this.cameras.main.zoom;
+        const hits = Object.entries(this._insts ?? {}).filter(([k, o])=>(!only || k===only) && o.go.active && Math.hypot(o.go.x-wx, o.go.y-wy)<=R);
         return hits.length ? hits.reduce((a, b)=>(b[1].go.depth>a[1].go.depth ? b : a)) : null;
     }
 
@@ -1328,10 +1326,7 @@ export class Sandbox extends GameScene
             if(pp && !pp.img) {dragPart(); return;}
             if(ins && this._instAt(p.worldX, p.worldY, this._sel))
             {
-                // 錨點 edit＝只移錨點（放開回報 moveAnchor {key, dx, dy}，分頁讓零件、方塊反向挪、畫面不動）
-                this._drag = this._anchorMode()==='edit'
-                    ? {anchor:true, inst:ins, key:this._sel, x0:ins.go.x, y0:ins.go.y, x:ins.go.x, y:ins.go.y, dx:ins.go.x-p.worldX, dy:ins.go.y-p.worldY, moved:false}
-                    : {inst:ins, key:this._sel, dx:ins.go.x-p.worldX, dy:ins.go.y-p.worldY, moved:false};
+                this._drag = {inst:ins, key:this._sel, dx:ins.go.x-p.worldX, dy:ins.go.y-p.worldY, moved:false};
                 this._cursor(p);
                 return;
             }
@@ -1397,16 +1392,6 @@ export class Sandbox extends GameScene
                 const d = this._drag;
                 this._placePart(d, x - go.x, y - go.y);
                 this._send({sb:'dragLive', key:d.key, part:d.part, x:d.x, y:d.y, start:!d.live});
-                d.live = true;
-            }
-            else if(this._drag?.anchor)
-            {
-                if(!p.leftButtonDown()) {this._endDrag(); return;}
-                // 只有黃點跟著走；Shift 吸世界 16px 格點
-                const d = this._drag;
-                [d.x, d.y] = [p.worldX + d.dx, p.worldY + d.dy].map(v=>(p.event.shiftKey ? Math.round(v/16)*16 : Math.round(v)));
-                d.moved = true;
-                this._send({sb:'dragLive', key:d.key, anchor:true, dx:d.x-d.x0, dy:d.y-d.y0, start:!d.live});
                 d.live = true;
             }
             else if(this._drag?.radius)
@@ -1506,11 +1491,6 @@ export class Sandbox extends GameScene
         {
             if(d.moved && (d.x!==(d.p.x ?? 0) || d.y!==(d.p.y ?? 0))) {this._send({sb:'movePart', key:d.key, i:d.part, x:d.x, y:d.y});}
             else if(!d.moved) {this._send({sb:'part', key:d.key, i:d.part});}
-            return;
-        }
-        if(d?.anchor)
-        {
-            if(d.moved && (d.x!==d.x0 || d.y!==d.y0)) {this._send({sb:'moveAnchor', key:d.key, dx:d.x-d.x0, dy:d.y-d.y0});}
             return;
         }
         if(d?.resize)

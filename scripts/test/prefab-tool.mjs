@@ -298,31 +298,28 @@ run('prefab-tool', async t => {
         out.delCopy = [Object.keys(await pfDisk()).includes('fire_pit-copy'), await has('templates/prefabs', 'fire_pit-copy.tj'), await has('textures/prefabs', 'prefab-fire_pit-copy.png'),
             (await read(await dir(assets, 'tilesets'), 'prefabs.tsj')).tiles.some(t => t.image.includes('copy'))];
 
-        // ---------- 移動錨點（草稿）：零件、方塊反向挪，實例畫面上不動；草稿中拖實例寫存檔位置；儲存才補償實例 ----------
+        // ---------- 草稿中拖實例：直接寫畫面位置、草稿還在；儲存不動實例（錨點編輯已拿掉）----------
         // 組成寫了 particle.json → sandbox 整個重開，等它建好
         await until(() => sc.S.ready && sb()?._insts?.f1?.go);
         sc.pickRole('f1');
-        await sc.setPf('fire_pit', {grid: {x: -16, y: -16, w: 32, h: 16}});
-        const thumb0 = sc.S.prefabs.fire_pit.thumb;
-        await sc.moveAnchor('fire_pit', 10, 0);
-        const dpf = () => sc.S.draft.pf;
-        out.anchor = [dpf().parts.map(p => [p.x ?? 0, p.y ?? 0]), dpf().grid, (await cDisk()).prefabs[0].x,
-            await until(() => sb()._insts.f1?.go?.x === 210), doc.querySelector('#right [data-k="x"]').value];
+        await sc.setPf('fire_pit', {grid: {x: -26, y: -16, w: 32, h: 16}});
+        await sc.setPart('fire_pit', 0, {x: -10});
+        await sc.setPart('fire_pit', 1, {x: -10});
+        out.noAnchorEdit = [doc.querySelector('#right [data-k="anchorDx"]'), doc.querySelector('#right select[data-k="anchor.mode"]'),
+            [...doc.querySelectorAll('#right .sec')].some(e => e.textContent.includes('移動錨點')), 'dx' in sc.S.draft, typeof sc.moveAnchor];
         sb()._send({sb: 'moveInst', key: 'f1', x: 230, y: 200});
-        out.anchorDrag = await until(async () => (await cDisk()).prefabs[0].x === 220) && [!!sc.S.draft, await until(() => sb()._insts.f1?.go?.x === 230)];
-        await sc.undo();
-        out.anchorUndo = [sc.S.draft.dx, dpf().grid.x];
-        await sc.redo();
+        out.draftDrag = await until(async () => (await cDisk()).prefabs[0].x === 230) && [!!sc.S.draft, await until(() => sb()._insts.f1?.go?.x === 230),
+            doc.querySelector('#right [data-k="x"]')?.value];
         await sc.saveDraft();
         const fp = (await pfDisk()).fire_pit;
-        out.anchorSave = [fp.parts.map(p => [p.x ?? 0, p.y ?? 0]), fp.grid.x, (await cDisk()).prefabs[0].x, fp.thumb.x - thumb0.x, sc.S.draft,
+        out.draftSave = [fp.parts.map(p => [p.x ?? 0, p.y ?? 0]), fp.grid.x, (await cDisk()).prefabs[0].x, sc.S.draft,
             await until(() => sb()._insts.f1?.go?.x === 230)];
 
         // ---------- 畫面互動：選中實例畫記號、點零件展開、拖零件、鍵盤 ----------
         sc.pickRole('f1');
         const ins = () => sb()._inspected?.();
         await until(() => ins());
-        const go = ins().go;
+        let go = ins().go;
         const holder0 = () => ins().go.view._parts.find(e => e.i === 0)?.holder;
         // 展開＝自動 edit（hide 的也是）、收起／換展開／取消選取＝回 show
         const pmNow = () => JSON.stringify(sb()._inspect?.partMode);
@@ -343,43 +340,20 @@ run('prefab-tool', async t => {
         sc.pickRole('f1');
         out.autoDeselect = await until(() => ins() && pmNow() === '["show","show"]') && [pmNow(), sc.S.part];
 
-        // 錨點模式：hide 藏黃點點不到、edit 拖黃點＝只移錨點（草稿、畫面不動）、Shift 吸 16、方向鍵、換選取回 show
+        // 選中實例的黃點：拖＝拖實例（立刻寫 scenes.json、不開草稿）；方向鍵＝移實例；再搬回原位
         const amFk = (x, y, shift = false) => ({leftButtonDown: () => true, rightButtonDown: () => false, middleButtonDown: () => false, worldX: x, worldY: y, x, y, event: {shiftKey: shift, clientX: 0, clientY: 0}});
-        const amSel = () => doc.querySelector('#right select[data-k="anchor.mode"]');
-        const gx = ins().go.x, gy = ins().go.y, px0 = sc.S.prefabs.fire_pit.parts[0].x ?? 0;
-        out.amDefault = [amSel()?.value, sb()._inspect.anchorMode];
-        sc.setAnchorMode('hide');
-        await until(() => sb()._inspect?.anchorMode === 'hide');
-        out.amHide = [sb()._anchorPt(), sb()._instAt(gx, gy), sb()._pickAt(gx - 2, gy - 8)?.key ?? null];
-        sc.setAnchorMode('edit');
-        await until(() => sb()._inspect?.anchorMode === 'edit');
+        const gx = ins().go.x, gy = ins().go.y;
         sb().input.emit('pointerdown', amFk(gx, gy));
         sb().input.emit('pointermove', amFk(gx + 5.3, gy - 3));
-        await until(() => doc.querySelector('#right [data-k="anchorDx"]')?.value === '5');
-        const adx = doc.querySelector('#right [data-k="anchorDx"]');
-        out.amDrag = [sb()._anchorPt().x - gx, sb()._anchorPt().y - gy, ins().go.x - gx, adx.classList.contains('live'), doc.querySelector('#right [data-k="anchorDy"]').value, sc.S.draft];
         sb().input.emit('pointerup', amFk(gx + 5.3, gy - 3));
-        out.amDrop = await until(() => sc.S.draft?.dx === 5 && sb()._insts.f1?.go?.x === gx + 5) && [sc.S.draft.dx, sc.S.draft.dy, sc.S.draft.pf.parts[0].x ?? 0, px0,
-            sb()._insts.f1.go.x, (await cDisk()).prefabs[0].x, doc.querySelectorAll('#right input.live').length, sc.S.am?.mode];
-        sb().input.emit('pointerdown', amFk(gx + 5, gy - 3));
-        sb().input.emit('pointermove', amFk(gx + 5 + 9, gy - 3 + 4, true));
-        const sp = sb()._anchorPt();
-        out.amSnap = [sp.x % 16, sp.y % 16];
-        sb().input.emit('pointerup', amFk(gx + 14, gy + 1, true));
-        out.amSnapDrop = await until(() => sc.S.draft?.dx === sp.x - gx) && [sc.S.draft.dx, sc.S.draft.dy];
+        out.selAnchorDrag = await until(async () => (await cDisk()).prefabs[0].x === gx + 5) && [(await cDisk()).prefabs[0].x - gx, (await cDisk()).prefabs[0].y - gy, sc.S.draft, sc.S.pick];
         const kd = (k, shift = false) => {doc.body.dispatchEvent(new win.KeyboardEvent('keydown', {key: k, shiftKey: shift, bubbles: true})); return sc.flush();};
-        const dx1 = sc.S.draft.dx, un = sc.S.draft.undo.length;
         await kd('ArrowRight');
-        await kd('ArrowRight');
-        await kd('ArrowDown', true);
-        out.amKey = [sc.S.draft.dx - dx1, sc.S.draft.dy - out.amSnapDrop[1], sc.S.draft.undo.length - un];
-        sc.dropDraft();
-        await until(() => !sc.S.draft && sb()._insts.f1?.go?.x === gx);
-        const amKept = sc.S.am?.mode;
-        sc.pickRole(null);
-        await until(() => !sb()._inspected());
-        sc.pickRole('f1');
-        out.amReset = await until(() => ins() && sb()._inspect?.anchorMode === 'show') && [amKept, amSel()?.value, sc.S.am];
+        out.selAnchorKey = await until(async () => (await cDisk()).prefabs[0].x === gx + 6) && [(await cDisk()).prefabs[0].x - gx, sc.S.draft];
+        sb()._send({sb: 'moveInst', key: 'f1', x: gx, y: gy});
+        await until(async () => (await cDisk()).prefabs[0].x === gx && sb()._insts.f1?.go?.x === gx);
+        await until(() => ins());
+        go = ins().go;
         out.partShow = [sb()._inspect.partMode, sb()._partAt(ins(), go.x - 10, go.y - 5), holder0().visible];
         sc.setPartMode('fire_pit', 0, 'hide');
         out.partHide = await until(() => !holder0().visible) && [holder0().visible, sb()._insts.f1 === ins()];
@@ -538,7 +512,7 @@ run('prefab-tool', async t => {
 
     // 右欄改 prefab 內容
     t.eq('右欄：實例＋屬性＋零件清單（沒有 prefab 標題列；不屬實例目前狀態 off 的標灰）', JSON.stringify(r.panel0),
-         JSON.stringify([[[0, false], [1, true], [2, true]], ['實例 f1', '屬性', '右鍵動作', '占地方塊', '移動錨點', '零件（3）']]));
+         JSON.stringify([[[0, false], [1, true], [2, true]], ['實例 f1', '屬性', '右鍵動作', '占地方塊', '零件（3）']]));
     t.eq('摺屬性＋零件：只剩標題、▸、記 localStorage', JSON.stringify(r.rFold),
          JSON.stringify([['實例 f1', '屬性', '零件（3）'], '▸', '▸', 0, false, ['right.props', 'right.parts']]));
     t.eq('摺實例', JSON.stringify(r.rFoldInst), JSON.stringify(['實例 f1', false]));
@@ -588,28 +562,18 @@ run('prefab-tool', async t => {
     t.eq('複製：一模一樣的新一筆＋template＋縮圖', JSON.stringify(r.dup), JSON.stringify([['forge', 'fire_pit', 'fire_pit-copy'], true, true, true]));
     t.eq('刪除沒人用的：prefab.json、template、縮圖、tsj 那格都拿掉', JSON.stringify(r.delCopy), JSON.stringify([false, false, false, false]));
 
-    // 移動錨點
-    t.eq('移動錨點：零件、方塊反向挪，scenes.json 不動，sandbox／右欄位置＝畫面不動', JSON.stringify(r.anchor),
-         JSON.stringify([[[-10, 0], [-10, -30]], {x: -26, y: -16, w: 32, h: 16}, 200, true, '210']));
-    t.eq('草稿中拖實例：立刻寫存檔位置（扣掉位移）、還在草稿', JSON.stringify(r.anchorDrag), JSON.stringify([true, true]));
-    t.eq('草稿 undo：位移跟零件一起退', JSON.stringify(r.anchorUndo), JSON.stringify([0, -16]));
-    t.eq('儲存：prefab.json 換新原點、實例補償位移（畫面不動）、縮圖外框跟著挪', JSON.stringify(r.anchorSave),
-         JSON.stringify([[[-10, 0], [-10, -30]], -26, 230, -10, null, true]));
+    // 錨點編輯已拿掉
+    t.eq('沒有移動錨點：右欄沒欄位／模式下拉／標題、草稿沒有 dx、沒有 moveAnchor', JSON.stringify(r.noAnchorEdit), JSON.stringify([null, null, false, false, 'undefined']));
+    t.eq('草稿中拖實例：直接寫畫面位置、還在草稿、右欄 x 跟著', JSON.stringify(r.draftDrag), JSON.stringify([true, true, '230']));
+    t.eq('儲存：prefab.json 寫草稿、實例位置不動', JSON.stringify(r.draftSave), JSON.stringify([[[-10, 0], [-10, -30]], -26, 230, null, true]));
 
     // 畫面互動
     t.eq('展開零件：自動 edit（hide 的也是）、下拉跟著變 ✎', JSON.stringify(r.autoOpen), JSON.stringify(['["show","edit"]', '✎']));
     t.eq('換展開別的零件：舊的回 show、新的 edit', r.autoSwap, '["edit","show"]');
     t.eq('收起零件：回 show', r.autoClose, '["show","show"]');
     t.eq('取消選取再選回來：展開的回 show、沒有展開', JSON.stringify(r.autoDeselect), JSON.stringify(['["show","show"]', null]));
-    t.eq('錨點模式預設 show（右欄下拉＋sandbox）', JSON.stringify(r.amDefault), JSON.stringify(['show', 'show']));
-    t.eq('錨點 hide：黃點不畫、點不到，點選框照樣選得到', JSON.stringify(r.amHide), JSON.stringify([null, null, 'f1']));
-    t.eq('錨點 edit 拖曳中：只有黃點動、x/y 即時＋黃框、草稿還沒寫', JSON.stringify(r.amDrag), JSON.stringify([5, -3, 0, true, '-3', null]));
-    t.eq('錨點 edit 放開：草稿位移 5,-3、零件反向挪、實例存檔位置不動、畫面在新錨點、黃框拿掉、還在 edit', JSON.stringify(r.amDrop?.slice(0, 3).concat(r.amDrop?.slice(6))),
-         JSON.stringify([5, -3, (r.amDrop?.[3] ?? 0) - 5, 0, 'edit']));
-    t.eq('錨點 edit Shift：吸世界 16px 格點', JSON.stringify(r.amSnap), JSON.stringify([0, 0]));
-    t.check('錨點 edit Shift 放開：草稿位移＝格點－原錨點', !!r.amSnapDrop, JSON.stringify(r.amSnapDrop));
-    t.eq('錨點 edit 方向鍵：1px、Shift 16px，連按併一步 undo', JSON.stringify(r.amKey), JSON.stringify([2, 16, 1]));
-    t.eq('放棄草稿還在 edit；換選取再選回來：錨點模式回 show', JSON.stringify(r.amReset), JSON.stringify(['edit', 'show', null]));
+    t.eq('選中實例拖黃點＝拖實例：寫 scenes.json、不開草稿、還選著', JSON.stringify(r.selAnchorDrag), JSON.stringify([5, -3, null, 'f1']));
+    t.eq('選中實例方向鍵＝移實例、不開草稿', JSON.stringify(r.selAnchorKey), JSON.stringify([6, null]));
     t.eq('零件預設 show：照常顯示、點不到', JSON.stringify(r.partShow), JSON.stringify([['show', 'show'], null, true]));
     t.eq('零件 hide：選中的實例藏零件本身', JSON.stringify(r.partHide), JSON.stringify([false, true]));
     t.eq('png 藏掉：點選框退回粒子點、最少 32×32', JSON.stringify(r.boxNoPng), JSON.stringify([32, 32, 0, 0]));

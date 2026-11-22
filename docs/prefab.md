@@ -74,17 +74,17 @@
 ### 右欄編輯＋草稿
 
 - 選中實例＝右欄三區，**每區可摺疊**（2026-11-18，標題 ▸/▾，跟左欄共用 `secHead()`／`foldSec()`，摺起來的記在 localStorage `tools.scene.fold` 的 `right.inst`／`right.props`／`right.parts`，全域一份、預設全展開；屬性裡的小段不再分層摺；不放操作說明字，操作看本文件）：
-  1. **實例 `f<n>`**（scenes.json，立刻寫、不算草稿）：換 prefab（草稿中先問）、**位置**（錨點在場景的座標；草稿移過錨點就顯示含位移的畫面位置）、狀態（這個實例的初始狀態，兼當下面零件清單的篩選）。
+  1. **實例 `f<n>`**（scenes.json，立刻寫、不算草稿）：換 prefab（草稿中先問）、**位置**（錨點在場景的座標）、狀態（這個實例的初始狀態，兼當下面零件清單的篩選）。
   - 有草稿時「實例 `f<n>`」標題列右邊「● 未存［儲存］［放棄］」（`secHead()` 的 btn，摺著也在，按了不摺／不開）；沒草稿時什麼都沒有（2026-11-19 從實例跟屬性中間的草稿列搬上來、拿掉「Ctrl+Z 退草稿裡的步驟」提示字）。
-  2. **屬性**（草稿；摺起來時 acts 有 local.json 沒有的 id 標 ⚠）：預設狀態、左鍵動作、右鍵動作 acts（local.json 沒有標 ⚠＋↗ 文字分頁）、占地方塊勾選＋x/y/w/h、移動錨點（x y＋套用）、縮圖外框（唯讀）。
+  2. **屬性**（草稿；摺起來時 acts 有 local.json 沒有的 id 標 ⚠）：預設狀態、左鍵動作、右鍵動作 acts（local.json 沒有標 ⚠＋↗ 文字分頁）、占地方塊勾選＋x/y/w/h、縮圖外框（唯讀）。**錨點不能改**（2026-11-22 拿掉「移動錨點」＋錨點模式下拉）：錨點在組成 prefab 時就定了，之後要調就改零件跟方塊的數字。
   3. **零件（n）**（草稿；零件摺著時 `openPart()` 開一個零件（sandbox 點到）會自動打開並記住，收起零件不摺回）：一列一個（縮圖／🔥／光色點＋名稱＋狀態），不屬於實例目前狀態的標灰；點一列在下面展開表單（一次一個，`S.part`＝index），↑↓ 排序、✕ 刪除，「零件」標題列右邊「＋png／＋粒子／＋光源」（摺著也在，按了自動打開；新零件放錨點、沒有 look）。png 表單同擺設（換圖可選 textures 或 `file:`、%／scale／寬高、翻轉、角度、錨點、深度＝prefab 內部前後、狀態、特效 fx.json）；粒子＝「粒子」下拉（最上面 `[新增]`＝自己的，下面是 particle.json 的 id；`{def}` 停在 `[新增]`；自己的換成庫 id 先問會丟掉，庫 id 換 `[新增]`＝範本 `SC.template()`）＋↗ 粒子分頁（只在用庫時）＋位置＋狀態＋「粒子內容：用 particle.json（改了就複製一份）／自訂」（這行是摺疊標題 `right.partParticle`，記在 `tools.scene.fold`、預設展開、所有粒子零件共用，右邊 JSON 鈕摺著也在）＋嵌粒子分頁同一份表單（`pform.js`，狀態 `PQ`／`ppCommit()`；`{particle}` 第一次改就整筆複製成 `{def}`、拿掉 `particle`，寫草稿）；「＋粒子」的清單最上面也是 `[新增]`（`NEW_PARTICLE`）；光源＝位置、半徑、光錐、方向、柔和、顏色、強度、狀態（`setPart()` 把 r/color/i/dir/arc/soft 寫進 `light`）。位置都相對錨點。
-- **草稿**（`S.draft＝{id, key, base, pf, thumb, dx, dy, undo, redo}`）：第一次改 prefab 內容才開始（`editPf()`），改的是記憶體副本，`pfOf(id)` 有草稿回傳草稿；送 sandbox 的 prefab.json 換成草稿（`prefabsMsg()`，同場景同 prefab 的其他實例也照草稿畫）。右欄「● 未存［儲存］［放棄］」。
-  - 儲存（按鈕或 Ctrl+S，輸入框有焦點也行）：`saveDraft()` 寫 prefab.json（＋實例補償錨點位移），接著 `finishEdit()` 收尾（算 `thumb`、Tiled 縮圖／tsj／template、`file:` 圖照 pct 烤成 `textures/prefabs/<id>/<id>-<檔名>.png` 改寫 key），`mergeUndo()` 併成全域一筆。
-  - 草稿自己一疊 undo（快照 `{pf, dx, dy, part}`）：草稿中 Ctrl+Z／Y 只退草稿的步驟，退不到草稿之前的全域步驟。
+- **草稿**（`S.draft＝{id, key, base, pf, thumb, undo, redo}`）：第一次改 prefab 內容才開始（`editPf()`），改的是記憶體副本，`pfOf(id)` 有草稿回傳草稿；送 sandbox 的 prefab.json 換成草稿（`prefabsMsg()`，同場景同 prefab 的其他實例也照草稿畫）。右欄「● 未存［儲存］［放棄］」。
+  - 儲存（按鈕或 Ctrl+S，輸入框有焦點也行）：`saveDraft()` 寫 prefab.json，接著 `finishEdit()` 收尾（算 `thumb`、Tiled 縮圖／tsj／template、`file:` 圖照 pct 烤成 `textures/prefabs/<id>/<id>-<檔名>.png` 改寫 key），`mergeUndo()` 併成全域一筆。
+  - 草稿自己一疊 undo（快照 `{pf, part}`）：草稿中 Ctrl+Z／Y 只退草稿的步驟，退不到草稿之前的全域步驟。
   - 離開草稿：取消選取（`pickRole`）、換場景、會選到別的東西的編輯（`commit()` 的 sel／pick 換了）、換 prefab、刪掉／改名這筆、↗ 跳過來 → `leaveDraft()` 問「儲存／放棄／取消」。
   - 別的分頁改了 prefab.json：重讀後比對草稿開始時的 `base`，那筆變了就問「保留我的草稿／放棄草稿用新的」（`draftConflict()`）。
-  - 移動錨點（`moveAnchor(id, x, y)`）：零件、占地方塊、thumb 反向挪，草稿記累積 `dx/dy`；送 sandbox 的實例畫在 存檔位置＋d（`gameScene()`），所以畫面不動；草稿中拖實例立刻寫「畫面位置 − d」；儲存時實例 `+d`；放棄＝歸零。別處已放好的同 prefab 實例錨點不動、圖會挪。
-    - **錨點模式**（2026-11-21）：「移動錨點」標題前一個模式下拉（`anchor.mode`，◌ hide／👁 show／✎ edit，同零件的下拉）。hide＝選中實例的黃點不畫、點不到（`_anchorPt()` null、`_instAt()` 排除它，點選框照樣選得到）；show＝照舊，拖黃點＝拖實例；edit＝拖黃點只移錨點：拖的時候只有黃點走（`_drag.anchor`），右欄 x y 即時顯示位移＋黃框（`dragLive {key, anchor, dx, dy}`，屬性區摺著自動打開），放開送 `moveAnchor {key, dx, dy}` → `moveAnchor()` 寫草稿（一筆 undo、整數 px），Shift＝錨點吸世界 16px 格點，沒拖動＝不做事；沒展開零件時方向鍵也移錨點（1px、Shift 16px，`H.arrow('anchor.nudge')` 連按併一步 undo）。只作用在選中的實例、只在記憶體（`S.am {key, mode}`，`inspect.anchorMode`），換選取／取消選取／換場景回 show；工具列「☑ 錨點」沒勾時哪個模式都看不到。
+  - 草稿中拖實例／改實例位置：照樣立刻寫 scenes.json（實例位置不算草稿），草稿不影響實例座標。
+  - 以前的「移動錨點」（零件＋方塊＋thumb 反向挪、草稿記 `dx/dy`、實例畫在存檔位置＋d）跟錨點模式下拉（◌／👁／✎）2026-11-22 整個拿掉，沒有替代品；選中實例的黃點一律＝拖實例。
   - sandbox 收到的草稿可能有還沒烤的 `file:` 零件：`Sandbox._pfFiles()` 把 img 換成 `file|<路徑>`（ItemView 用 `:` 切 frame）、pct 乘進 sx/sy，`_loadPartFiles()` 先載圖。
 - **模式**（2026-11-19）：占地方塊三列（`☐ 模式 名稱｜x y w×h`，勾選框在最左、模式接著）跟每個零件列最前面一個模式下拉（原生 `<select>` 拿掉箭頭跟底色，選項只有圖示 `◌` hide／`👁` show／`✎` edit，白字，title 寫中文說明），**只管 sandbox、不寫 prefab.json**。方塊的勾選框照舊管資料有沒有那個方塊，沒勾模式下拉藏起來（`visibility:hidden`，位置留著對齊）。
   - **方塊**：hide 不畫／show 半透明框（唯讀參考）／edit 不透明框＋4 邊把手；預設 hide，全 prefab 共用、記 localStorage `tools.scene.boxMode`。
