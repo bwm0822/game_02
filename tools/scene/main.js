@@ -839,8 +839,9 @@ function prefabPanel(id)
             onchange: (e) => setPf1({[k]: e.target.checked ? {x: -16, y: -32, w: 32, h: 32} : undefined})});
         const zw = k === 'zone' && noZone(pf) && h('span', {class: 'warn', title: '有右鍵動作卻沒有 zone：遊戲裡點不到'}, ' ⚠');
         const picked = !!b && pselOf().boxes.includes(k);
-        return h('tr', {class: picked ? 'picked' : '', dataset: {box: k}, title: b ? '右鍵：選取（sandbox 畫出來、拖四邊改大小），可多選' : '',
-            oncontextmenu: (e) => {e.preventDefault(); toggleBoxSel(k);}},
+        // 點數字欄／勾選框不算選取
+        return h('tr', {class: picked ? 'picked' : '', dataset: {box: k}, title: b ? '左鍵：選取（sandbox 畫出來、拖四邊改大小），再點取消，可多選' : '',
+            onclick: (e) => {if (!e.target.closest('input')) toggleBoxSel(k);}},
             h('td', {class: 'k'}, on, ' ', name, zw),
             h('td', null, n('x'), n('y'), ' ', n('w'), '×', n('h')));
     };
@@ -894,9 +895,9 @@ function partsPanel(o)
     const add = (k, kind, t) => h('button', {dataset: {k}, onclick: () => addPart(id, kind)}, t);
     return foldSec('right.parts', `零件（${parts.length}）`, () => [
         ...parts.flatMap((p, i) => [
-            h('div', {class: `part${i === S.part ? ' sel' : ''}${(p.look && p.look !== look) || p.off ? ' off' : ''}${pselOf().parts.includes(i) && !p.off ? ' picked' : ''}`, dataset: {part: i},
-                title: '左鍵：展開／收起表單；右鍵：選取（sandbox 外框、拖曳、方向鍵、Del），可多選',
-                onclick: () => openPart(i === S.part ? null : i), oncontextmenu: (e) => {e.preventDefault(); togglePartSel(i);}},
+            h('div', {class: `part${(p.look && p.look !== look) || p.off ? ' off' : ''}${pselOf().parts.includes(i) && !p.off ? ' picked' : ''}`, dataset: {part: i},
+                title: '左鍵：選取（sandbox 外框、拖曳、方向鍵、Del），再點取消，可多選；右鍵：展開／收起表單',
+                onclick: () => togglePartSel(i), oncontextmenu: (e) => {e.preventDefault(); openPart(i === S.part ? null : i);}},
                 h('input', {type: 'checkbox', checked: !p.off, dataset: {k: `part${i}.on`}, title: '作用：沒勾＝停用（off，遊戲跟 sandbox 都不建，資料留著）',
                     onclick: (e) => e.stopPropagation(), onchange: (e) => setPartOn(id, i, e.target.checked)}),
                 partIcon(p), h('span', {class: 'id'}, partName(p)), p.look && h('span', {class: 'lab'}, p.look), h('span', {class: 'grow'}),

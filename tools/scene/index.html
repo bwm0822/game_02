@@ -39,14 +39,13 @@
     #right .hint { color: #fc8; font-size: 12px; margin-top: 4px; }
     #right .part { display: flex; gap: 4px; align-items: center; padding: 1px 4px; cursor: pointer; border-radius: 3px; }
     #right .part:hover { background: #333; }
-    #right .part.sel { background: #2f6db5; color: #fff; }
     #right .part.off > .id, #right .part.off > .lab { opacity: .45; }
     #right .part .id { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     #right .part .lab { color: #aaa; font-size: 12px; }
     #right .part button { padding: 0 4px; font-size: 12px; line-height: 1.3; }
-    /* 右鍵選取（sandbox 可編輯）：左邊一條青色，跟展開的藍底分開 */
-    #right .part.picked { box-shadow: inset 3px 0 0 #33ccff; }
-    #right tr.picked > td:first-child { box-shadow: inset 3px 0 0 #33ccff; }
+    /* 左鍵選取（sandbox 可編輯）＝藍底；右鍵展開的列不標，靠下面的表單 */
+    #right .part.picked, #right tr.picked > td { background: #2f6db5; color: #fff; }
+    #right tr[data-box] { cursor: pointer; }
     #right .part > input[type=checkbox] { flex: none; margin: 0; }
     #right input.live { outline: 2px solid #ffd633; outline-offset: -1px; }
     #right .partform { margin: 2px 0 6px 12px; padding-left: 8px; border-left: 2px solid #2f6db5; }
