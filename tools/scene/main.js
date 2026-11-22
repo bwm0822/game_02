@@ -18,7 +18,7 @@ import * as ST from './store.js';
 import * as TL from './tiled.js';
 
 const LS = {sel: 'tools.scene.sel', grid: 'tools.scene.grid', role: 'tools.scene.lastRole', particle: 'tools.scene.lastParticle', prefab: 'tools.scene.lastPrefab', fold: 'tools.scene.fold',
-            boxMode: 'tools.scene.boxMode', anchor: 'tools.scene.anchor', lightIcon: 'tools.scene.lightIcon', particleIcon: 'tools.scene.particleIcon', sizeLock: 'tools.scene.sizeLock', exportMode: 'tools.scene.exportMode', exportDir: 'tools.scene.exportDir'};
+            anchor: 'tools.scene.anchor', lightIcon: 'tools.scene.lightIcon', particleIcon: 'tools.scene.particleIcon', sizeLock: 'tools.scene.sizeLock', exportMode: 'tools.scene.exportMode', exportDir: 'tools.scene.exportDir'};
 const ls = {
     get: (k) => {try {return localStorage.getItem(k);} catch {return null;}},
     set: (k, v) => {try {localStorage.setItem(k, v);} catch { /* 私密視窗 */ }},
@@ -44,6 +44,7 @@ const S = {
     particleIcon: ls.get(LS.particleIcon) !== '0',
     refs: {roles: {}, items: {}, abilities: {}, fx: {}, particles: {}, local: {}},
     part: null,                     // 選中 prefab 實例時右欄展開的零件（prefab.parts 的 index）
+    psel: null,                     // 選中 prefab 實例時右鍵選取的方塊／零件 {key, boxes, parts}（pselOf()）
     act: 'attack',                  // 動作下拉：attack／walk／ab:<技能 id>
     arm: null,                      // 指定目標中 {key, kind, id}
     maps: ['sandbox'],              // 底圖下拉
@@ -173,7 +174,7 @@ async function deleteScene(name, sure)
 
 function select(name, sync = true)
 {
-    if (name !== S.sel) {S.pick = null; S.part = null; S.hidden.clear();}
+    if (name !== S.sel) {S.pick = null; S.part = null; clearSel(); S.hidden.clear();}
     S.sel = name;
     ls.set(LS.sel, name ?? '');
     if (sync) refresh();
@@ -558,24 +559,25 @@ function movePart(id, i, d)
     if (i + d < 0 || i + d >= n) return Promise.resolve();
     if (S.part === i) S.part = i + d;
     else if (S.part === i + d) S.part = i;
-    const pm = pmOf(id);
-    [pm[i], pm[i + d]] = [pm[i + d], pm[i]];
-    if (opened?.id === id) opened.i = opened.i === i ? i + d : opened.i === i + d ? i : opened.i;
+    remapSel(j => (j === i ? i + d : j === i + d ? i : j));
     return editPf(id, pf => {const a = pf.parts; [a[i], a[i + d]] = [a[i + d], a[i]];});
 }
 
-function delPart(id, i)
+// 刪零件（可以好幾個，一筆 undo）
+function delParts(id, idxs)
 {
-    if (S.part === i) S.part = null;
-    else if (S.part > i) S.part--;
+    const del = new Set(idxs);
+    if (!del.size) return Promise.resolve();
+    const shift = (j) => (del.has(j) ? null : j - idxs.filter(k => k < j).length);
+    S.part = S.part === null ? null : shift(S.part);
+    remapSel(shift);
     return editPf(id, pf => {
-        if (!pf.parts?.[i]) return false;
-        pmOf(id).splice(i, 1);
-        if (opened?.id === id) opened = opened.i === i ? null : opened.i > i ? {id, i: opened.i - 1} : opened;
-        pf.parts.splice(i, 1);
+        if (!pf.parts?.some((_, j) => del.has(j))) return false;
+        pf.parts = pf.parts.filter((_, j) => !del.has(j));
         if (!pf.parts.length) delete pf.parts;
     });
 }
+const delPart = (id, i) => delParts(id, [i]);
 
 function openPart(i)
 {
@@ -585,23 +587,41 @@ function openPart(i)
     renderRight();
 }
 
-// 選中的實例在 sandbox 畫占地方塊、edit 零件外框、藏 hide 零件（照草稿＋各自的模式）
+// 選中的實例在 sandbox 畫選取的方塊、選取的零件外框（照草稿）
 function inspectMsg()
 {
-    syncOpen();
     const o = instOf(S.pick), pf = o && pfOf(o.prefab);
     if (!pf) return {sb: 'inspect', inspect: null};
-    const pm = pmOf(o.prefab);
+    const s = pselOf();
     return {sb: 'inspect', inspect: {key: o.key, boxes: Object.fromEntries(BOXES.map(([k]) => [k, pf[k] ?? null])),
-        boxMode: Object.fromEntries(BOXES.map(([k]) => [k, boxMode[k] ?? 'hide'])),
-        partMode: (pf.parts ?? []).map((_, i) => pm[i] ?? 'show'), part: S.part}};
+        boxSel: s.boxes.filter(k => pf[k]), partSel: s.parts.filter(i => pf.parts?.[i] && !pf.parts[i].off), part: S.part}};
 }
 
-// 展開的零件：方向鍵移（草稿）
-function nudgePart(dx, dy)
+// 選取的零件（停用的不算）
+const selParts = () => {
+    const o = instOf(S.pick), parts = o && pfOf(o.prefab)?.parts;
+    return parts ? pselOf().parts.filter(i => parts[i] && !parts[i].off) : [];
+};
+
+// 選取的零件一起移（草稿，連按併一步 undo）；moves＝[{i, x, y}]（sandbox 拖曳放開）
+function moveParts(id, moves)
 {
-    const o = instOf(S.pick), p = o && pfOf(o.prefab)?.parts?.[S.part];
-    if (p) return setPart(o.prefab, S.part, {x: (p.x ?? 0) + dx || undefined, y: (p.y ?? 0) + dy || undefined});
+    return editPf(id, pf => {
+        for (const {i, x, y} of moves)
+        {
+            const p = pf.parts?.[i];
+            if (!p) continue;
+            if (x) p.x = x; else delete p.x;
+            if (y) p.y = y; else delete p.y;
+        }
+    });
+}
+function nudgeParts(dx, dy)
+{
+    const o = instOf(S.pick), parts = o && pfOf(o.prefab)?.parts;
+    if (!parts) return;
+    H.arrow('part.nudge');
+    return moveParts(o.prefab, selParts().map(i => ({i, x: (parts[i].x ?? 0) + dx, y: (parts[i].y ?? 0) + dy})));
 }
 
 // 圖的原始大小（file: 圖＝原圖，不含 pct）
@@ -612,13 +632,13 @@ async function imgSize(img)
     return r && {w: r.f.w, h: r.f.h};
 }
 
-// 縮圖外框：預設狀態看得到的 png 零件（不算角度）聯集，相對錨點；沒有＝null
+// 縮圖外框：預設狀態看得到的 png 零件（停用的不算、不算角度）聯集，相對錨點；沒有＝null
 async function thumbFor(pf)
 {
     let box = null;
     for (const p of pf.parts ?? [])
     {
-        if (!p.img || (p.look && p.look !== pf.look)) continue;
+        if (!p.img || p.off || (p.look && p.look !== pf.look)) continue;
         const s = await imgSize(p.img);
         if (!s) continue;
         const k = isFile(p.img) ? (p.pct ?? 100) / 100 : 1;
@@ -730,46 +750,41 @@ const BOXES = [['grid', '占格（grid）'], ['zone', '可點（zone）']];
 // 有右鍵動作卻沒有 zone＝遊戲裡點不到
 const noZone = (pf) => !pf?.zone && Object.keys(pf?.acts ?? {}).length > 0;
 
-// 占地方塊／零件在 sandbox 的畫法（只管 sandbox、不寫 prefab.json）：
-//  方塊 hide 不畫、show 半透明唯讀、edit 可拖邊，全部 prefab 共用一組記 localStorage（預設 hide）
-//  零件 hide 藏零件本身、show 照常（沒外框、點不到）、edit 外框＋可點可拖，只作用在選中的實例；照 prefab 記在記憶體、跟著 ↑↓／✕ 搬（預設 show、展開＝edit）
-const MODES = ['hide', 'show', 'edit'], MODE_ICON = {hide: '◌', show: '👁', edit: '✎'};
-const BOX_TIP = '◌ 隱藏／👁 顯示（半透明唯讀）／✎ 編輯（可拖邊）';
-const PART_TIP = '◌ 藏起來／👁 顯示（點不到）／✎ 編輯（外框、可點可拖）';
-const boxMode = (() => {try {return JSON.parse(ls.get(LS.boxMode) ?? '{}') ?? {};} catch {return {};}})();
-const partMode = {};
-const pmOf = (id) => (partMode[id] ??= []);
-
-// 展開的零件自動 edit，收起（含換展開、取消選取／換實例）回 show；opened＝上次套用的 {id, i}，↑↓／✕ 跟著搬
-let opened = null;
-function syncOpen()
+// 選取（右欄右鍵切換，可多選；只在記憶體、只作用在選中的實例，換實例／取消選取／換場景清掉）：
+//  選取的方塊才在 sandbox 畫＋4 邊把手，選取的零件才有外框、點得到、拖得動（所有選取的一起動）、吃方向鍵／Del；
+//  停用（off）的零件不能選。S.psel＝{key（實例）, boxes: [k…], parts: [i…]}
+const pselOf = () => (S.psel?.key === S.pick && instOf(S.pick) ? S.psel : {key: S.pick, boxes: [], parts: []});
+const clearSel = () => {S.psel = null;};
+function editSel(fn)
 {
-    const id = instOf(S.pick)?.prefab;
-    const now = id && S.part !== null && S.part !== undefined ? {id, i: S.part} : null;
-    if (opened?.id === now?.id && opened?.i === now?.i) return;
-    if (opened && opened.i < (pfOf(opened.id)?.parts?.length ?? 0)) pmOf(opened.id)[opened.i] = 'show';
-    if (now) pmOf(now.id)[now.i] = 'edit';
-    opened = now;
-}
-
-function modeBtn(mode, k, set, disabled, tip)
-{
-    const part = k.startsWith('part');
-    mode ??= part ? 'show' : 'hide';
-    const sel = h('select', {class: `mode ${mode}`, dataset: {k}, disabled, title: tip ?? (part ? PART_TIP : BOX_TIP), style: disabled ? 'visibility:hidden' : '',
-        onclick: (e) => e.stopPropagation(), onchange: () => set(sel.value)}, MODES.map(m => h('option', {value: m}, MODE_ICON[m])));
-    sel.value = mode;
-    return sel;
-}
-
-function setMode(fn)
-{
-    fn();
+    const s = pselOf();
+    S.psel = {key: s.key, boxes: [...s.boxes], parts: [...s.parts]};
+    fn(S.psel);
     toGame(inspectMsg());
     renderRight();
 }
+const toggle = (a, v) => (a.includes(v) ? a.filter(x => x !== v) : [...a, v]);
+function toggleBoxSel(k)
+{
+    if (!pfOf(instOf(S.pick)?.prefab)?.[k]) return;
+    editSel(s => {s.boxes = toggle(s.boxes, k);});
+}
+function togglePartSel(i)
+{
+    if (pfOf(instOf(S.pick)?.prefab)?.parts?.[i]?.off) return;
+    editSel(s => {s.parts = toggle(s.parts, i);});
+}
+// 零件順序變了（↑↓／✕）：選取跟著搬；map(i)＝新 index，null＝拿掉
+const remapSel = (map) => {if (S.psel) S.psel.parts = S.psel.parts.map(map).filter(i => i !== null);};
 
-// sandbox 拖 edit 方塊／零件中：右欄欄位直接跟著變＋黃框（不寫草稿，放開才照 box／movePart 寫）；
+// 零件勾選＝作用：沒勾寫 off:true（草稿），遊戲跟 sandbox 都不建；停用時順便取消選取
+function setPartOn(id, i, on)
+{
+    if (!on && S.psel) S.psel.parts = S.psel.parts.filter(j => j !== i);
+    return setPart(id, i, {off: on ? undefined : true});
+}
+
+// sandbox 拖選取的方塊／零件中：右欄欄位直接跟著變＋黃框（不寫草稿，放開才照 box／moveParts 寫）；
 //  開始時自動打開屬性區／展開零件、捲到看得見；end＝拿掉黃框
 const LIVE_SIDE = {l: ['x', 'w'], r: ['w'], t: ['y', 'h'], b: ['h']};
 
@@ -797,8 +812,6 @@ function dragLive(m)
     }
     if (m.start) cells.find(([el, , live]) => el && live)?.[0].scrollIntoView({block: 'nearest'});}
 
-const setBoxMode = (k, v) => setMode(() => {boxMode[k] = v; ls.set(LS.boxMode, JSON.stringify(boxMode));});
-const setPartMode = (id, i, v) => setMode(() => {pmOf(id)[i] = v;});
 
 function prefabPanel(id)
 {
@@ -825,7 +838,10 @@ function prefabPanel(id)
         const on = h('input', {type: 'checkbox', checked: !!b, dataset: {k: `${k}.on`}, title: '沒勾＝沒有（沒 grid＝不佔格、沒 zone＝點不到）',
             onchange: (e) => setPf1({[k]: e.target.checked ? {x: -16, y: -32, w: 32, h: 32} : undefined})});
         const zw = k === 'zone' && noZone(pf) && h('span', {class: 'warn', title: '有右鍵動作卻沒有 zone：遊戲裡點不到'}, ' ⚠');
-        return h('tr', null, h('td', {class: 'k'}, on, modeBtn(b && boxMode[k], `${k}.mode`, (v) => setBoxMode(k, v), !b), ' ', name, zw),
+        const picked = !!b && pselOf().boxes.includes(k);
+        return h('tr', {class: picked ? 'picked' : '', dataset: {box: k}, title: b ? '右鍵：選取（sandbox 畫出來、拖四邊改大小），可多選' : '',
+            oncontextmenu: (e) => {e.preventDefault(); toggleBoxSel(k);}},
+            h('td', {class: 'k'}, on, ' ', name, zw),
             h('td', null, n('x'), n('y'), ' ', n('w'), '×', n('h')));
     };
     const d = draftOf(id), t = d ? d.thumb : pf.thumb;
@@ -878,8 +894,12 @@ function partsPanel(o)
     const add = (k, kind, t) => h('button', {dataset: {k}, onclick: () => addPart(id, kind)}, t);
     return foldSec('right.parts', `零件（${parts.length}）`, () => [
         ...parts.flatMap((p, i) => [
-            h('div', {class: `part${i === S.part ? ' sel' : ''}${p.look && p.look !== look ? ' off' : ''}`, dataset: {part: i}, onclick: () => openPart(i === S.part ? null : i)},
-                modeBtn(pmOf(id)[i], `part${i}.mode`, (v) => setPartMode(id, i, v)), partIcon(p), h('span', {class: 'id'}, partName(p)), p.look && h('span', {class: 'lab'}, p.look), h('span', {class: 'grow'}),
+            h('div', {class: `part${i === S.part ? ' sel' : ''}${(p.look && p.look !== look) || p.off ? ' off' : ''}${pselOf().parts.includes(i) && !p.off ? ' picked' : ''}`, dataset: {part: i},
+                title: '左鍵：展開／收起表單；右鍵：選取（sandbox 外框、拖曳、方向鍵、Del），可多選',
+                onclick: () => openPart(i === S.part ? null : i), oncontextmenu: (e) => {e.preventDefault(); togglePartSel(i);}},
+                h('input', {type: 'checkbox', checked: !p.off, dataset: {k: `part${i}.on`}, title: '作用：沒勾＝停用（off，遊戲跟 sandbox 都不建，資料留著）',
+                    onclick: (e) => e.stopPropagation(), onchange: (e) => setPartOn(id, i, e.target.checked)}),
+                partIcon(p), h('span', {class: 'id'}, partName(p)), p.look && h('span', {class: 'lab'}, p.look), h('span', {class: 'grow'}),
                 btn('↑', '往前（同深度時畫在下面）', () => movePart(id, i, -1)), btn('↓', '往後', () => movePart(id, i, 1)), btn('✕', '拿掉這個零件', () => delPart(id, i))),
             i === S.part && h('div', {class: 'partform'}, ...partRows(id, i, p)),
         ]),
@@ -1714,7 +1734,7 @@ function pickRole(key)
 {
     if (S.draft && key !== S.draft.key) {leaveDraft().then(ok => (ok ? pickRole(key) : toGame(selMsg()))); return;}
     if (S.arm && S.arm.key !== key) {S.arm = null; toGame({sb: 'arm', act: null});}
-    if (key !== S.pick) S.part = null;
+    if (key !== S.pick) {S.part = null; clearSel();}
     S.pick = key;
     toGame(selMsg());
     toGame(inspectMsg());
@@ -1905,7 +1925,6 @@ function renderRight()
 
 function drawRight()
 {
-    syncOpen();
     const r = roleOf(S.pick);
     // replaceChildren 不像 h() 會濾掉 `cond && …` 留下的 false
     const put = (...kids) => $('right').replaceChildren(...kids.flat(Infinity).filter(c => c !== null && c !== undefined && c !== false));
@@ -2051,18 +2070,19 @@ function onKey(k)
     if (k.ctrl && k.key.toLowerCase() === 's') saveDraft();
     else if (k.ctrl && k.key.toLowerCase() === 'z' && !k.shift) undo();
     else if (k.ctrl && (k.key.toLowerCase() === 'y' || (k.key.toLowerCase() === 'z' && k.shift))) redo();
-    // 展開了零件：Del／方向鍵作用在零件（草稿）；Esc 第一次收零件、第二次取消選取
-    else if (k.key === 'Delete' && S.part !== null && instOf(S.pick)) delPart(instOf(S.pick).prefab, S.part);
+    // 有選取的零件：Del／方向鍵作用在所有選取的零件（草稿）；Esc 一層一層退：收零件 → 清選取 → 取消選取實例
+    else if (k.key === 'Delete' && selParts().length) delParts(instOf(S.pick).prefab, selParts());
     else if (k.key === 'Delete' && S.pick) deleteObj(S.pick);
     else if (k.key.startsWith('Arrow') && (propOf(S.pick) || emOf(S.pick) || lightOf(S.pick) || instOf(S.pick)))
     {
         const d = k.shift ? 32 : 1, dx = {ArrowLeft: -d, ArrowRight: d}[k.key] ?? 0, dy = {ArrowUp: -d, ArrowDown: d}[k.key] ?? 0;
-        if (S.part !== null && instOf(S.pick)) nudgePart(dx, dy);
+        if (selParts().length) nudgeParts(dx, dy);
         else nudge(dx, dy);
     }
     else if (k.key === ' ') toGame({sb: 'replay'});
     else if (k.key === 'Escape' && S.arm) arm(false);
     else if (k.key === 'Escape' && S.part !== null) openPart(null);
+    else if (k.key === 'Escape' && (pselOf().parts.length || pselOf().boxes.length)) editSel(s => {s.boxes = []; s.parts = [];});
     else if (k.key === 'Escape' && S.pick) pickRole(null);
     else return false;
     return true;
@@ -2086,7 +2106,7 @@ addEventListener('message', (e) => {
     }
     else if (m.sb === 'moveEmitter') setEmitter(m.key, {x: m.x, y: m.y}).then(syncGame);
     else if (m.sb === 'part' && m.key === S.pick) openPart(m.i);
-    else if (m.sb === 'movePart' && instOf(m.key)) setPart(instOf(m.key).prefab, m.i, {x: m.x || undefined, y: m.y || undefined});
+    else if (m.sb === 'moveParts' && instOf(m.key)) moveParts(instOf(m.key).prefab, m.moves);
     else if (m.sb === 'dragLive') dragLive(m);
     else if (m.sb === 'box' && instOf(m.key) && BOXES.some(([k]) => k === m.k)) setPf(instOf(m.key).prefab, {[m.k]: m.box});
     else if (m.sb === 'moveInst') setInst(m.key, {x: m.x, y: m.y}).then(syncGame);
@@ -2231,5 +2251,5 @@ refresh();
 
 // 給無頭測試用
 window.__sc = {S, setProject, addScene, dupScene, renameScene, deleteScene, select, undo, redo, addRole, setRole, setEquip, deleteRole, pickRole, toggleHide, arm, toGame, addProp, setProp, deleteObj, nudge, bakeProp, folderTree, exportProp: (key) => exportProp(propOf(key)), srcSize, addLight, setLight, addEmitter, setEmitter, setField, setPlaying,
-               addInst, setInst, newPrefab, deletePrefab, toggleFold, setPf, setPart, addPart, movePart, delPart, openPart, pickPrefab, saveDraft, dropDraft, changePartParticle, forkPartParticle, particleUsers, pDef, composePrefab, renamePrefab, dupPrefab, setBoxMode, setPartMode,
+               addInst, setInst, newPrefab, deletePrefab, toggleFold, setPf, setPart, addPart, movePart, delPart, delParts, openPart, moveParts, setPartOn, toggleBoxSel, togglePartSel, pselOf, pickPrefab, saveDraft, dropDraft, changePartParticle, forkPartParticle, particleUsers, pDef, composePrefab, renamePrefab, dupPrefab,
                flush: () => S.q};

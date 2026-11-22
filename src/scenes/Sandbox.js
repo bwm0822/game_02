@@ -39,7 +39,7 @@ export class Sandbox extends GameScene
         super.init({...data, map:data?.map ?? 'sandbox'});
     }
 
-    update() {this._syncLights(); this._syncPartHide(); this._drawSel();}
+    update() {this._syncLights(); this._drawSel();}
 
     async create()
     {
@@ -237,11 +237,10 @@ export class Sandbox extends GameScene
     }
 
     //------------------------------------------------------
-    //  選中的 prefab 實例（場景分頁送 inspect {key, boxes:{grid,zone}, boxMode, partMode, part}）：畫錨點十字（橘）、
-    //  占地方塊（grid 藍、zone 綠）、零件外框，照各自的模式：hide 不畫、show 半透明唯讀、edit 不透明可拖；
-    //  edit 方塊在 4 邊中點出把手（照 grid→zone 搶，放開回報 box {key, k, box}），edit 零件按住拖
-    //  （放開回報 movePart {key, i, x, y}，相對錨點；png、光源跟著動，粒子只動外框）；
-    //  已選中再點、沒拖動＝回報點到的 show／edit 零件（part {key, i}，空白處 i＝null）
+    //  選中的 prefab 實例（場景分頁送 inspect {key, boxes:{grid,zone}, boxSel:[k…], partSel:[i…], part}）：
+    //  只畫選取的（右欄右鍵選，可多選）：方塊（grid 藍、zone 綠）＋4 邊中點把手（照 grid→zone 搶，放開回報 box {key, k, box}）、
+    //  零件外框，選取的零件按住拖＝所有選取的一起動（放開回報 moveParts {key, moves:[{i, x, y}]}，相對錨點；
+    //  png、光源跟著動，粒子只動外框）；沒拖動＝回報 part {key, i}（分頁展開它）
     //------------------------------------------------------
     static BOX_COLOR = {grid:0x55aaff, zone:0x66dd66};
     static BOX_ORDER = ['grid', 'zone'];
@@ -257,8 +256,9 @@ export class Sandbox extends GameScene
     {
         const p = DB.prefab(o.data.prefab)?.parts?.[i];
         if(!p) {return null;}
-        const d = this._drag?.p===p ? this._drag : null;
-        const x = o.go.x + (d ? d.x : p.x ?? 0), y = o.go.y + (d ? d.y : p.y ?? 0);
+        // 拖選取的零件中：所有選取的照被拖那個的位移一起挪
+        const d = this._drag?.p && this._drag.sel.includes(i) ? this._drag : null;
+        const x = o.go.x + (p.x ?? 0) + (d ? d.x - (d.p.x ?? 0) : 0), y = o.go.y + (p.y ?? 0) + (d ? d.y - (d.p.y ?? 0) : 0);
         if(!p.img) {return {x, y, r:p.light ? p.light.r ?? 120 : null};}
         const [key, frame] = p.img.split(':');
         const f = this.textures.exists(key) && this.textures.getFrame(key, frame);
@@ -267,28 +267,21 @@ export class Sandbox extends GameScene
         return {x, y, rect:new Phaser.Geom.Rectangle(x - (p.ox ?? 0.5)*w, y - (p.oy ?? 1)*h, w, h)};
     }
 
-    _partMode(i) {return this._inspect?.partMode?.[i] ?? 'show';}
-
-    // 零件 hide＝藏零件本身：只藏選中（inspect）的那個實例，其他實例全顯示
-    _syncPartHide()
+    // 零件 i 選取了（停用的不算）
+    _partSel(i)
     {
-        const o = this._inspected();
-        for(const [k, fi] of Object.entries(this._insts ?? {}))
-        {
-            if(!fi.go.active || !fi.go.setHiddenParts) {continue;}
-            const hide = fi===o ? (this._inspect.partMode ?? []).flatMap((m, i)=>(m==='hide' ? [i] : [])) : [];
-            const sig = hide.join();
-            if(fi.hideSig!==sig) {fi.hideSig = sig; fi.go.setHiddenParts(hide);}
-        }
+        const o = this._insts?.[this._inspect?.key];
+        return !!this._inspect?.partSel?.includes(i) && !!o && !DB.prefab(o.data.prefab)?.parts?.[i]?.off;
     }
+    _boxSel(k) {return !!this._inspect?.boxSel?.includes(k);}
 
-    // 點到選中實例的哪個零件（目前狀態看得到、模式在 modes 裡的；粒子／光源的點優先，png 照前後取最上面）；沒有＝null
-    _partAt(o, wx, wy, modes = ['edit'])
+    // 點到選中實例的哪個選取的零件（目前狀態看得到的；粒子／光源的點優先，png 照前後取最上面）；沒有＝null
+    _partAt(o, wx, wy)
     {
         const parts = DB.prefab(o.data.prefab)?.parts ?? [], look = o.go.getLook?.() ?? null, tol = 8/this.cameras.main.zoom;
         let best = null;
         parts.forEach((p, i)=>{
-            const g = modes.includes(this._partMode(i)) && (!p.look || p.look===look) && this._partGeom(o, i);
+            const g = this._partSel(i) && (!p.look || p.look===look) && this._partGeom(o, i);
             if(!g) {return;}
             if(!p.img) {if(Math.hypot(g.x - wx, g.y - wy)<=tol) {best = {i, z:Infinity};} return;}
             const z = p.depth ?? 0;
@@ -304,7 +297,7 @@ export class Sandbox extends GameScene
         return d?.box===k ? d.cur : this._inspect?.boxes?.[k] ?? null;
     }
 
-    // edit 方塊的 4 邊中點把手（世界座標），照 grid→zone
+    // 選取的方塊的 4 邊中點把手（世界座標），照 grid→zone
     _boxHandles()
     {
         const o = this._inspected();
@@ -313,7 +306,7 @@ export class Sandbox extends GameScene
         for(const k of Sandbox.BOX_ORDER)
         {
             const b = this._box(k);
-            if(!b || this._inspect.boxMode?.[k]!=='edit') {continue;}
+            if(!b || !this._boxSel(k)) {continue;}
             const l = ax + b.x, t = ay + b.y, cx = l + b.w/2, cy = t + b.h/2;
             out.push({k, side:'l', x:l, y:cy}, {k, side:'r', x:l + b.w, y:cy}, {k, side:'t', x:cx, y:t}, {k, side:'b', x:cx, y:t + b.h});
         }
@@ -345,11 +338,11 @@ export class Sandbox extends GameScene
         const ax = o.go.x, ay = o.go.y, look = o.go.getLook?.() ?? null;
         for(const k of [...Sandbox.BOX_ORDER].reverse())
         {
-            const b = this._box(k), m = this._inspect.boxMode?.[k] ?? 'hide';
-            if(b && m!=='hide') {g.lineStyle((m==='edit' ? 2 : 1.5)/z, Sandbox.BOX_COLOR[k], m==='edit' ? 1 : 0.4).strokeRect(ax + b.x, ay + b.y, b.w, b.h);}
+            const b = this._box(k);
+            if(b && this._boxSel(k)) {g.lineStyle(2/z, Sandbox.BOX_COLOR[k], 1).strokeRect(ax + b.x, ay + b.y, b.w, b.h);}
         }
         (DB.prefab(o.data.prefab)?.parts ?? []).forEach((p, i)=>{
-            const pg = this._partMode(i)==='edit' && (!p.look || p.look===look) && this._partGeom(o, i);
+            const pg = this._partSel(i) && (!p.look || p.look===look) && this._partGeom(o, i);
             if(!pg) {return;}
             const a = 1;
             g.lineStyle(2/z, 0x33ccff, a);
@@ -369,15 +362,21 @@ export class Sandbox extends GameScene
         }
     }
 
-    // 拖展開的零件：png 的 holder、光源跟著動（放開等分頁寫進草稿、送回來重建）
+    // 拖選取的零件（d.p＝被拖的那個，d.sel＝所有選取的 index）：png 的 holder、光源照同一個位移跟著動
+    //  （放開等分頁寫進草稿、送回來重建）
     _placePart(d, x, y)
     {
         d.x = x;
         d.y = y;
         d.moved = true;
-        const e = d.inst.go.view?._parts?.find(e=>e.p===d.p);
-        if(e?.holder) {e.holder.setPosition(x, y);}
-        if(e?.light) {e.light.x = d.inst.go.x + x; e.light.y = d.inst.go.y + y;}
+        const parts = DB.prefab(d.inst.data.prefab)?.parts ?? [], dx = x - (d.p.x ?? 0), dy = y - (d.p.y ?? 0);
+        for(const e of d.inst.go.view?._parts ?? [])
+        {
+            if(!d.sel.includes(e.i)) {continue;}
+            const q = parts[e.i], px = (q.x ?? 0) + dx, py = (q.y ?? 0) + dy;
+            if(e.holder) {e.holder.setPosition(px, py);}
+            if(e.light) {e.light.x = d.inst.go.x + px; e.light.y = d.inst.go.y + py;}
+        }
     }
 
     _dropInst(k)
@@ -756,7 +755,7 @@ export class Sandbox extends GameScene
         if(!o) {return [];}
         const look = o.go.getLook?.() ?? null, d = this._drag;
         return (DB.prefab(o.data.prefab)?.parts ?? []).flatMap((p, i)=>{
-            if(!p.particle || this._partMode(i)!=='edit' || (p.look && p.look!==look)) {return [];}
+            if(!p.particle || !this._partSel(i) || (p.look && p.look!==look)) {return [];}
             const def = DB.particle(p.particle), pg = def && this._partGeom(o, i);
             if(!pg) {return [];}
             const zones = ['emitZone', 'deathZone'].filter(k=>def[k]!==undefined).map(k=>{
@@ -960,10 +959,10 @@ export class Sandbox extends GameScene
     // 沒有＝看得見的粒子／光源點外擴 16、最少 32×32；連點都沒有＝錨點正中 32×32
     _instBox(o)
     {
-        const parts = DB.prefab(o.data.prefab)?.parts ?? [], look = o.go.getLook?.() ?? null, ins = this._inspected()===o;
+        const parts = DB.prefab(o.data.prefab)?.parts ?? [], look = o.go.getLook?.() ?? null;
         const img = [], pts = [];
         parts.forEach((p, i)=>{
-            if((p.look && p.look!==look) || (ins && this._partMode(i)==='hide')) {return;}
+            if(p.off || (p.look && p.look!==look)) {return;}
             const g = this._partGeom(o, i);
             if(!g) {return;}
             if(g.rect)
@@ -1335,7 +1334,8 @@ export class Sandbox extends GameScene
             const ei = ins ? this._partAt(ins, p.worldX, p.worldY) : null;
             const pp = ei!==null && DB.prefab(ins.data.prefab).parts[ei];
             const dragPart = ()=>{
-                this._drag = {p:pp, part:ei, inst:ins, key:this._sel, x:pp.x ?? 0, y:pp.y ?? 0, ox:ins.go.x + (pp.x ?? 0) - p.worldX, oy:ins.go.y + (pp.y ?? 0) - p.worldY, moved:false};
+                const sel = (this._inspect.partSel ?? []).filter(j=>this._partSel(j));
+                this._drag = {p:pp, part:ei, sel, inst:ins, key:this._sel, x:pp.x ?? 0, y:pp.y ?? 0, ox:ins.go.x + (pp.x ?? 0) - p.worldX, oy:ins.go.y + (pp.y ?? 0) - p.worldY, moved:false};
                 this._cursor(p);
             };
             if(pp && !pp.img) {dragPart(); return;}
@@ -1504,7 +1504,8 @@ export class Sandbox extends GameScene
         }
         if(d?.p)
         {
-            if(d.moved && (d.x!==(d.p.x ?? 0) || d.y!==(d.p.y ?? 0))) {this._send({sb:'movePart', key:d.key, i:d.part, x:d.x, y:d.y});}
+            const dx = d.x - (d.p.x ?? 0), dy = d.y - (d.p.y ?? 0), parts = DB.prefab(d.inst.data.prefab)?.parts ?? [];
+            if(d.moved && (dx || dy)) {this._send({sb:'moveParts', key:d.key, moves:d.sel.map(i=>({i, x:(parts[i].x ?? 0) + dx, y:(parts[i].y ?? 0) + dy}))});}
             else if(!d.moved) {this._send({sb:'part', key:d.key, i:d.part});}
             return;
         }

@@ -321,24 +321,23 @@ run('prefab-tool', async t => {
         await until(() => ins());
         let go = ins().go;
         const holder0 = () => ins().go.view._parts.find(e => e.i === 0)?.holder;
-        // 展開＝自動 edit（hide 的也是）、收起／換展開／取消選取＝回 show
-        const pmNow = () => JSON.stringify(sb()._inspect?.partMode);
-        const selIcon = (i) => {const s = doc.querySelector(`#right select[data-k="part${i}.mode"]`); return s?.options[s.selectedIndex].textContent;};
+        // 左鍵展開不選取；右鍵選取（可多選）＝sandbox partSel；取消選取實例再選回來＝清掉
+        const psNow = () => JSON.stringify(sb()._inspect?.partSel);
+        const rclick = (el) => el.dispatchEvent(new win.MouseEvent('contextmenu', {bubbles: true, cancelable: true}));
+        const prow = (i) => doc.querySelector(`#right .part[data-part="${i}"]`);
         sc.openPart(null);
-        await until(() => pmNow() === '["show","show"]');
-        sc.setPartMode('fire_pit', 1, 'hide');
-        sc.openPart(1);
-        out.autoOpen = [await until(() => pmNow() === '["show","edit"]') && pmNow(), selIcon(1)];
-        sc.openPart(0);
-        out.autoSwap = await until(() => pmNow() === '["edit","show"]') && pmNow();
-        sc.openPart(null);
-        out.autoClose = await until(() => pmNow() === '["show","show"]') && pmNow();
-        sc.openPart(1);
-        await until(() => pmNow() === '["show","edit"]');
+        await until(() => psNow() === '[]');
+        prow(1).click();
+        out.openNoSel = [await until(() => sb()._inspect?.part === 1) && psNow(), sc.S.part, doc.querySelectorAll('#right select.mode').length];
+        rclick(prow(0));
+        rclick(prow(1));
+        out.rSel = [await until(() => psNow() === '[0,1]') && psNow(), doc.querySelectorAll('#right .part.picked').length];
+        rclick(prow(0));
+        out.rUnsel = await until(() => psNow() === '[1]') && psNow();
         sc.pickRole(null);
         await until(() => !sb()._inspected());
         sc.pickRole('f1');
-        out.autoDeselect = await until(() => ins() && pmNow() === '["show","show"]') && [pmNow(), sc.S.part];
+        out.selDeselect = await until(() => ins() && psNow() === '[]') && [psNow(), sc.S.part];
 
         // 選中實例的黃點：拖＝拖實例（立刻寫 scenes.json、不開草稿）；方向鍵＝移實例；再搬回原位
         const amFk = (x, y, shift = false) => ({leftButtonDown: () => true, rightButtonDown: () => false, middleButtonDown: () => false, worldX: x, worldY: y, x, y, event: {shiftKey: shift, clientX: 0, clientY: 0}});
@@ -354,35 +353,63 @@ run('prefab-tool', async t => {
         await until(async () => (await cDisk()).prefabs[0].x === gx && sb()._insts.f1?.go?.x === gx);
         await until(() => ins());
         go = ins().go;
-        out.partShow = [sb()._inspect.partMode, sb()._partAt(ins(), go.x - 10, go.y - 5), holder0().visible];
-        sc.setPartMode('fire_pit', 0, 'hide');
-        out.partHide = await until(() => !holder0().visible) && [holder0().visible, sb()._insts.f1 === ins()];
-        // png 藏掉＝點選框退回粒子點（外擴 16、最少 32×32）
+        out.partShow = [sb()._inspect.partSel, sb()._partAt(ins(), go.x - 10, go.y - 5), holder0().visible];
+        // 零件勾選＝作用：沒勾寫 off（草稿）、sandbox 不建、取消選取、選不起來
+        sc.togglePartSel(0);
+        await until(() => psNow() === '[0]');
+        doc.querySelector('#right [data-k="part0.on"]').click();
+        out.partOff = await until(() => sc.S.draft?.pf.parts[0].off === true && ins() && !holder0()) && [sc.S.draft.pf.parts[0].off, !!holder0(), psNow(),
+            (sc.togglePartSel(0), JSON.stringify(sc.pselOf().parts)), prow(0).classList.contains('off'), (await pfDisk()).fire_pit.parts[0].off ?? null];
+        // png 停用＝點選框退回粒子點（外擴 16、最少 32×32）
         const pg = sb()._partGeom(ins(), 1), nb = sb()._instBox(ins());
         out.boxNoPng = [nb.width, nb.height, nb.centerX - pg.x, nb.centerY - pg.y];
-        sc.setPartMode('fire_pit', 0, 'edit');
-        sc.setPartMode('fire_pit', 1, 'edit');
-        await until(() => sb()._inspect?.partMode?.[1] === 'edit');
+        doc.querySelector('#right [data-k="part0.on"]').click();
+        await until(() => !('off' in sc.S.draft.pf.parts[0]) && holder0());
+        go = ins().go;
+        sc.togglePartSel(0);
+        sc.togglePartSel(1);
+        await until(() => psNow() === '[0,1]');
         out.partAt = [holder0().visible, sb()._partAt(ins(), go.x - 10, go.y - 5), sb()._partAt(ins(), go.x - 10, go.y - 30), sb()._partAt(ins(), go.x + 500, go.y)];
-        sc.setPartMode('fire_pit', 0, 'show');
-        sc.setPartMode('fire_pit', 1, 'show');
-        await until(() => sb()._inspect?.partMode?.[1] === 'show');
+        // 選取的兩個一起：方向鍵（連按併一步 undo）
+        const key = (k) => {doc.body.dispatchEvent(new win.KeyboardEvent('keydown', {key: k, bubbles: true})); return sc.flush();};
+        const xs = () => sc.S.draft.pf.parts.map(p => p.x ?? 0), mx0 = xs(), un0 = sc.S.draft.undo.length;
+        await key('ArrowLeft');
+        await key('ArrowLeft');
+        out.multiNudge = [xs().map((x, i) => x - mx0[i]), sc.S.draft.undo.length - un0, (await cDisk()).prefabs[0].x === gx];
+        await sc.undo();
+        out.multiNudge.push(JSON.stringify(xs()) === JSON.stringify(mx0));
+        // sandbox 拖其中一個：選取的一起動、放開一筆
+        const fk0 = (x, y) => ({leftButtonDown: () => true, rightButtonDown: () => false, middleButtonDown: () => false, worldX: x, worldY: y, x, y, event: {shiftKey: false, clientX: 0, clientY: 0}});
+        const un1 = sc.S.draft.undo.length;
+        await until(() => (game().__dbg.DB._prefabDB.fire_pit.parts[0].x ?? 0) === mx0[0]);
+        sb().input.emit('pointerdown', fk0(go.x - 14, go.y - 15));
+        sb().input.emit('pointermove', fk0(go.x - 11, go.y - 15));
+        sb().input.emit('pointerup', fk0(go.x - 11, go.y - 15));
+        out.multiDrag = await until(() => xs()[0] === mx0[0] + 3) && [xs().map((x, i) => x - mx0[i]), sc.S.draft.undo.length - un1];
+        await sc.undo();
+        sc.togglePartSel(0);
+        sc.togglePartSel(1);
+        await until(() => psNow() === '[]');
         sb()._send({sb: 'part', key: 'f1', i: 0});
         out.inspect = await until(() => sb()._inspect?.part === 0) && [sc.S.part, sb()._inspect.boxes.grid, !!sb()._partGeom(ins(), 0).rect];
-        sb()._send({sb: 'movePart', key: 'f1', i: 0, x: -6, y: 2});
+        sb()._send({sb: 'moveParts', key: 'f1', moves: [{i: 0, x: -6, y: 2}]});
         await until(() => sc.S.draft?.pf.parts[0].x === -6);
-        const key = (k) => {doc.body.dispatchEvent(new win.KeyboardEvent('keydown', {key: k, bubbles: true})); return sc.flush();};
+        sc.togglePartSel(0);
+        await until(() => psNow() === '[0]');
         await key('ArrowRight');
         out.dragPart = [sc.S.draft.pf.parts[0], (await pfDisk()).fire_pit.parts[0]];
+        sc.togglePartSel(0);
+        await until(() => psNow() === '[]');
 
-        // 模式：方塊 edit 出 4 邊把手、拖右邊寫草稿、左邊拉不過對邊；零件 edit 才拖得動
-        out.modeBtn = [...doc.querySelectorAll('#right select.mode')].map(b => [b.dataset.k, b.options[b.selectedIndex].textContent, b.disabled]);
-        const gsel = doc.querySelector('#right select[data-k="grid.mode"]');
-        gsel.value = 'edit';
-        gsel.dispatchEvent(new win.Event('change'));
-        await until(() => sb()._inspect?.boxMode?.grid === 'edit');
+        // 方塊：右鍵選取（可多選）才畫、出 4 邊把手；沒勾的右鍵沒反應；拖右邊寫草稿、左邊拉不過對邊；零件選取才拖得動
+        const brow = (k) => doc.querySelector(`#right tr[data-box="${k}"]`);
+        const bsNow = () => JSON.stringify(sb()._inspect?.boxSel);
+        out.modeBtn = doc.querySelectorAll('#right select.mode').length;
+        rclick(brow('grid'));
+        rclick(brow('zone'));
+        await until(() => bsNow() === '["grid"]');
         const hds = sb()._boxHandles();
-        out.boxHandles = [hds.map(hd => hd.k + hd.side), win.localStorage.getItem('tools.scene.boxMode')];
+        out.boxHandles = [hds.map(hd => hd.k + hd.side), bsNow(), brow('grid').classList.contains('picked'), win.localStorage.getItem('tools.scene.boxMode')];
         const hr = hds.find(hd => hd.side === 'r');
         out.boxHit = sb()._boxHandleAt(hr.x + 1, hr.y - 1)?.side;
         const b0 = sb()._inspect.boxes.grid;
@@ -396,22 +423,22 @@ run('prefab-tool', async t => {
         await sc.undo();
         out.boxUndo = sc.S.draft.pf.grid.w;
         sc.openPart(null);
-        await until(() => sb()._inspect?.partMode?.[0] === 'show');
-        out.editPart = [sb()._partAt(ins(), go.x - 10, go.y - 5, ['edit']), (sc.setPartMode('fire_pit', 0, 'edit'), await until(() => sb()._inspect?.partMode?.[0] === 'edit')) && sb()._partAt(ins(), go.x - 10, go.y - 5, ['edit'])];
+        await until(() => sb()._inspect?.part === null);
+        out.editPart = [sb()._partAt(ins(), go.x - 10, go.y - 5), (sc.togglePartSel(0), await until(() => psNow() === '[0]')) && sb()._partAt(ins(), go.x - 10, go.y - 5)];
 
         const fake = (x, y) => ({leftButtonDown: () => true, rightButtonDown: () => false, middleButtonDown: () => false, worldX: x, worldY: y, x, y, event: {shiftKey: false, clientX: 0, clientY: 0}});
         // 點選順序：edit 粒子／光源點＞錨點＞edit png 圖框
         const downAt = (x, y) => {sb().input.emit('pointerdown', fake(x, y)); const d = sb()._drag; sb()._drag = null; return d?.box ? 'box' : d?.p ? `part${d.part}` : d?.inst ? 'inst' : null;};
-        sc.setBoxMode('grid', 'hide');
-        await until(() => sb()._inspect?.boxMode?.grid === 'hide');
+        rclick(brow('grid'));
+        await until(() => bsNow() === '[]');
         const ag = ins().go;
         out.prio = [sb()._partGeom(ins(), 0).rect.contains(ag.x, ag.y), downAt(ag.x, ag.y)];
-        sc.setPartMode('fire_pit', 1, 'edit');
-        sb()._send({sb: 'movePart', key: 'f1', i: 1, x: 0, y: 0});
-        await until(() => sc.S.draft?.pf.parts[1].x === undefined && sb()._inspect?.partMode?.[1] === 'edit' && sb()._partGeom(ins(), 1)?.y === ins().go.y);
+        sc.togglePartSel(1);
+        sb()._send({sb: 'moveParts', key: 'f1', moves: [{i: 1, x: 0, y: 0}]});
+        await until(() => sc.S.draft?.pf.parts[1].x === undefined && psNow() === '[0,1]' && sb()._partGeom(ins(), 1)?.y === ins().go.y);
         out.prio.push(downAt(ins().go.x, ins().go.y));
-        sc.setPartMode('fire_pit', 1, 'show');
-        await until(() => sb()._inspect?.partMode?.[1] === 'show');
+        sc.togglePartSel(1);
+        await until(() => psNow() === '[0]');
         out.prio.push(downAt(ins().go.x, ins().go.y));
         await sc.undo();
         await until(() => sc.S.draft?.pf.parts[1].x === -10);
@@ -435,7 +462,7 @@ run('prefab-tool', async t => {
         psel().value = 'fire-charge';
         psel().dispatchEvent(new win.Event('change'));
         out.toLib = await until(() => np()?.particle === 'fire-charge') && [np(), psel().value, sc.particleUsers('fire-charge').length];
-        sc.setPartMode('fire_pit', nP, 'edit');
+        sc.togglePartSel(nP);
         const pzw = () => sb()._partZoneOwners().find(w => w.i === nP);
         await until(() => pzw()?.zones.length === 1);
         const zc = pzw().c;
@@ -467,8 +494,8 @@ run('prefab-tool', async t => {
         await sc.delPart('fire_pit', nP);
         await sc.saveDraft();
 
-        sc.setBoxMode('grid', 'edit');
-        await until(() => sb()._inspect?.boxMode?.grid === 'edit');
+        rclick(brow('grid'));
+        await until(() => bsNow() === '["grid"]');
 
         // 拖曳中右欄數字跟著變＋黃框（屬性摺著自動打開）、草稿放開才寫
         const inp = (s) => doc.querySelector(`#right ${s}`);
@@ -482,14 +509,14 @@ run('prefab-tool', async t => {
         sb().input.emit('pointerup', fake(hb.x, hb.y + 8));
         await until(() => sc.S.draft?.pf.grid.h === g0.h + 8);
         out.boxLiveEnd = [doc.querySelectorAll('#right input.live').length, sc.S.draft.pf.grid.h];
-        sc.setBoxMode('grid', 'hide');
-        await until(() => sb()._inspect?.boxMode?.grid === 'hide');
+        rclick(brow('grid'));
+        await until(() => bsNow() === '[]');
         sc.openPart(null);
         const p0 = {...sc.S.draft.pf.parts[0]};
         sb().input.emit('pointerdown', fake(go.x - 10, go.y - 20));
         sb().input.emit('pointermove', fake(go.x - 3, go.y - 17));
         await until(() => inp('.partform [data-k="x"]')?.value === String(p0.x + 7));
-        out.partLive = [sc.S.part, inp('.partform [data-k="x"]').value, inp('.partform [data-k="y"]').value, inp('.partform [data-k="y"]').classList.contains('live'), sc.S.draft.pf.parts[0].x];
+        out.partLive = [sc.S.part, inp('.partform [data-k="x"]')?.value, inp('.partform [data-k="y"]')?.value, inp('.partform [data-k="y"]')?.classList.contains('live'), sc.S.draft.pf.parts[0].x];
         sb().input.emit('pointerup', fake(go.x - 3, go.y - 17));
         await until(() => sc.S.draft.pf.parts[0].x === p0.x + 7);
         out.partLiveEnd = [doc.querySelectorAll('#right input.live').length, sc.S.draft.pf.parts[0].x, sc.S.draft.pf.parts[0].y];
@@ -498,8 +525,8 @@ run('prefab-tool', async t => {
         sc.openPart(0);
         await key('Delete');
         out.delKey = [sc.S.draft.pf.parts.length, sc.S.part, sc.S.pick];
-        sc.setPartMode('fire_pit', 0, 'hide');
-        out.hideBefore = await until(() => ins()?.go.view._parts.find(e => e.i === 0)?.on === false);
+        doc.querySelector('#right [data-k="part0.on"]').click();
+        out.hideBefore = await until(() => ins() && !ins().go.view._parts.some(e => e.i === 0));
         key('Escape');
         await answer('drop');
         out.esc2 = [sc.S.pick, sc.S.draft, (await pfDisk()).fire_pit.parts.length, await until(() => !sb()._inspected())];
@@ -593,32 +620,34 @@ run('prefab-tool', async t => {
     t.eq('儲存：prefab.json 寫草稿、實例位置不動', JSON.stringify(r.draftSave), JSON.stringify([[[-10, 0], [-10, -30]], -26, 230, null, true]));
 
     // 畫面互動
-    t.eq('展開零件：自動 edit（hide 的也是）、下拉跟著變 ✎', JSON.stringify(r.autoOpen), JSON.stringify(['["show","edit"]', '✎']));
-    t.eq('換展開別的零件：舊的回 show、新的 edit', r.autoSwap, '["edit","show"]');
-    t.eq('收起零件：回 show', r.autoClose, '["show","show"]');
-    t.eq('取消選取再選回來：展開的回 show、沒有展開', JSON.stringify(r.autoDeselect), JSON.stringify(['["show","show"]', null]));
+    t.eq('左鍵點零件列：展開、不選取、沒有模式下拉', JSON.stringify(r.openNoSel), JSON.stringify(['[]', 1, 0]));
+    t.eq('右鍵零件列：選取、可多選、列標 picked', JSON.stringify(r.rSel), JSON.stringify(['[0,1]', 2]));
+    t.eq('再右鍵：取消選取那個', r.rUnsel, '[1]');
+    t.eq('取消選取實例再選回來：選取清掉、沒有展開', JSON.stringify(r.selDeselect), JSON.stringify(['[]', null]));
     t.eq('選中實例拖黃點＝拖實例：寫 scenes.json、不開草稿、還選著', JSON.stringify(r.selAnchorDrag), JSON.stringify([5, -3, null, 'f1']));
     t.eq('選中實例方向鍵＝移實例、不開草稿', JSON.stringify(r.selAnchorKey), JSON.stringify([6, null]));
-    t.eq('零件預設 show：照常顯示、點不到', JSON.stringify(r.partShow), JSON.stringify([['show', 'show'], null, true]));
-    t.eq('零件 hide：選中的實例藏零件本身', JSON.stringify(r.partHide), JSON.stringify([false, true]));
-    t.eq('png 藏掉：點選框退回粒子點、最少 32×32', JSON.stringify(r.boxNoPng), JSON.stringify([32, 32, 0, 0]));
-    t.eq('edit 零件點得到：png 照外框、粒子照點、外面＝沒有', JSON.stringify(r.partAt), JSON.stringify([true, 0, 1, null]));
+    t.eq('零件沒選取：照常顯示、點不到', JSON.stringify(r.partShow), JSON.stringify([[], null, true]));
+    t.eq('零件取消勾：草稿寫 off、sandbox 不建、取消選取也選不起來、列標灰、prefab.json 不動', JSON.stringify(r.partOff), JSON.stringify([true, false, '[]', '[]', true, null]));
+    t.eq('png 停用：點選框退回粒子點、最少 32×32', JSON.stringify(r.boxNoPng), JSON.stringify([32, 32, 0, 0]));
+    t.eq('選取的零件點得到：png 照外框、粒子照點、外面＝沒有', JSON.stringify(r.partAt), JSON.stringify([true, 0, 1, null]));
+    t.eq('方向鍵：選取的零件一起移、連按一步 undo、實例不動；undo 回去', JSON.stringify(r.multiNudge), JSON.stringify([[-2, -2], 1, true, true]));
+    t.eq('sandbox 拖一個選取的零件：選取的一起動、一筆 undo', JSON.stringify(r.multiDrag), JSON.stringify([[3, 3], 1]));
     t.eq('sandbox 回報點到零件：右欄展開、sandbox 畫外框＋占地方塊', JSON.stringify(r.inspect), JSON.stringify([0, {x: -26, y: -16, w: 32, h: 16}, true]));
     t.eq('拖展開的零件＋方向鍵：寫草稿（相對錨點）、prefab.json 不動', JSON.stringify(r.dragPart), JSON.stringify([{img: 'Barrel', x: -5, y: 2}, {img: 'Barrel', x: -10}]));
-    t.check('模式按鈕：方塊兩個（沒勾的反灰）＋每個零件一個', r.modeBtn.length >= 4 && r.modeBtn.some(([k, , dis]) => k === 'grid.mode' && !dis) && r.modeBtn.some(([k, , dis]) => k === 'zone.mode' && dis), JSON.stringify(r.modeBtn));
-    t.eq('方塊 edit：4 邊中點把手、模式記 localStorage', JSON.stringify(r.boxHandles), JSON.stringify([['gridl', 'gridr', 'gridt', 'gridb'], '{"grid":"edit"}']));
+    t.eq('沒有模式下拉', r.modeBtn, 0);
+    t.eq('方塊右鍵選取：4 邊中點把手、沒勾的（zone）右鍵沒反應、列標 picked、不記 localStorage', JSON.stringify(r.boxHandles), JSON.stringify([['gridl', 'gridr', 'gridt', 'gridb'], '["grid"]', true, null]));
     t.eq('把手點得到（容許幾 px）', r.boxHit, 'r');
     t.eq('拖右邊：草稿 w+10、prefab.json 不動；左邊拉不過右邊（最少 1px）', JSON.stringify(r.boxDrag),
          JSON.stringify([{x: -26, y: -16, w: 42, h: 16}, {x: 15, y: -16, w: 1, h: 16}, {x: -26, y: -16, w: 32, h: 16}]));
     t.eq('拖方塊一筆 undo', r.boxUndo, 32);
-    t.eq('零件 edit 才拖得動', JSON.stringify(r.editPart), JSON.stringify([null, 0]));
-    t.eq('點選順序：錨點＞edit png（png 蓋住錨點）、edit 粒子點＞錨點、show 的點不搶', JSON.stringify(r.prio), JSON.stringify([true, 'inst', 'part1', 'inst']));    t.eq('（前置）屬性區摺起來', r.propsFolded, true);
+    t.eq('零件選取才拖得動', JSON.stringify(r.editPart), JSON.stringify([null, 0]));
+    t.eq('點選順序：錨點＞選取的 png（png 蓋住錨點）、選取的粒子點＞錨點、沒選的點不搶', JSON.stringify(r.prio), JSON.stringify([true, 'inst', 'part1', 'inst']));    t.eq('（前置）屬性區摺起來', r.propsFolded, true);
     t.eq('拖方塊下邊中：屬性自動打開、h 跟著變＋黃框（w 不亮）、草稿還沒寫', JSON.stringify(r.boxLive), JSON.stringify(['24', true, false, 16]));
     t.eq('放開：黃框拿掉、草稿寫進去', JSON.stringify(r.boxLiveEnd), JSON.stringify([0, 24]));
     t.eq('拖 edit 零件中：自動展開、x/y 跟著變＋黃框、草稿還沒寫', JSON.stringify(r.partLive), JSON.stringify([0, '2', '5', true, -5]));
     t.eq('放開：黃框拿掉、零件位置寫進草稿', JSON.stringify(r.partLiveEnd), JSON.stringify([0, 2, 5]));
     t.eq('Esc 第一次：收起零件、實例還選著', JSON.stringify(r.esc1), JSON.stringify([null, 'f1']));
-    t.eq('展開零件時 Del：刪零件（草稿）、實例還在', JSON.stringify(r.delKey), JSON.stringify([1, null, 'f1']));
+    t.eq('有選取的零件時 Del：刪選取的（草稿）、展開的收起、實例還在', JSON.stringify(r.delKey), JSON.stringify([1, null, 'f1']));
     t.eq('[新增] 撞名：擋下、不加零件', JSON.stringify(r.dupPid), JSON.stringify([0, true]));
     t.eq('＋粒子選 [新增]：{particle: 新 id}、沒有 def、展開、下拉停在新 id、範本在草稿副本、標「新的」、嵌粒子表單、particle.json 還沒有、sandbox 照副本',
          JSON.stringify(r.newPid), JSON.stringify(['fire_pit-smoke', false, true, 'fire_pit-smoke', true, true, true, null, true]));
@@ -629,7 +658,7 @@ run('prefab-tool', async t => {
     t.eq('另存新 id：帶著草稿改過的內容、零件改用新 id', JSON.stringify(r.fork), JSON.stringify([{particle: 'fire_pit-charge'}, 10]));
     t.eq('儲存：prefab.json＋particle.json 一起寫，只寫還有零件在用的粒子', JSON.stringify(r.savePs), JSON.stringify([null, {particle: 'fire_pit-charge'}, 10, 0, false]));
     t.eq('別處改了草稿碰過的粒子：問（列出粒子 id）、保留＝草稿副本還在、讀到新內容', JSON.stringify(r.pConflict), JSON.stringify([true, 3, 5]));
-    t.check('（前置）零件 hide 藏起來', r.hideBefore);
+    t.check('（前置）零件取消勾：sandbox 不建', r.hideBefore);
     t.eq('Esc 第二次：取消選取（有草稿先問，放棄）、sandbox 不畫記號', JSON.stringify(r.esc2), JSON.stringify([null, null, 2, true]));
-    t.check('取消選取：藏的零件全部恢復', r.unhide);
+    t.check('取消選取放棄草稿：停用的零件回來', r.unhide);
 });

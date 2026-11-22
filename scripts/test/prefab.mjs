@@ -20,6 +20,8 @@ run('prefab', async t => {
                 {light: {r: 100, color: '#ff8800'}, y: -16, look: 'on'},
                 {particle: 't_p100', y: -10, look: 'on'},
                 {def: {img: 'p-dot', mode: 'stream', frequency: 50}, look: 'on'},
+                {img: 'Crate', off: true},
+                {particle: 't_p100', off: true},
             ],
         };
         const p = d.GM.player;
@@ -54,6 +56,9 @@ run('prefab', async t => {
         out.onEm = go.view._parts.filter(e => e.em).length;
         out.defEm = (() => {const e = go.view._parts.find(e => e.p.particle === 't_p100'); return [!!e?.em, e?.em?.frequency ?? e?.em?.emitter?.frequency ?? null];})();
         out.oldDef = go.view._parts.some(e => e.p.def);
+        out.offPart = go.view._parts.some(e => e.p.off);
+        const {defaultImgs} = await import('/src/core/prefab.js');
+        out.offGhost = defaultImgs({...d.DB._prefabDB.t_forge, look: 'off'}).some(p => p.off);
         out.lightPos = (() => {const l = go.view._parts.find(e => e.light).light; return [l.x - go.x, l.y - go.y];})();
 
         go.save();
@@ -90,6 +95,8 @@ run('prefab', async t => {
     t.check('on：一盞光、兩個粒子（都參照 particle.json）', r.onLights === 1 && r.onEm === 2, JSON.stringify(r));
     t.eq('粒子零件照 particle.json 那筆噴（frequency 100）', JSON.stringify(r.defEm), JSON.stringify([true, 100]));
     t.eq('零件自己的 {def} 已不支援：不建、不噴', r.oldDef, false);
+    t.eq('停用的零件（off）：不建（png、粒子都是）', r.offPart, false);
+    t.eq('停用的 png：不算進縮圖／ghost（defaultImgs）', r.offGhost, false);
     t.eq('光源在錨點＋(0,-16)', JSON.stringify(r.lightPos), '[0,-16]');
     t.eq('存檔記 look', JSON.stringify(r.saved), '{"look":"on"}');
     t.eq('移除後光源拿掉', r.afterRemoveLights, 0);

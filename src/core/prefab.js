@@ -3,9 +3,9 @@
 // 縮圖外框(相對錨點，左上角＋寬高)；沒有 thumb＝錨點在底部中間的 32×32
 export const thumbOf = (pf)=>pf?.thumb ?? {x:-16, y:-32, w:32, h:32};
 
-// 預設狀態看得到的 png 零件，照 depth 排(同 depth 照原順序)
+// 預設狀態看得到的 png 零件(停用 off 的不算)，照 depth 排(同 depth 照原順序)
 export const defaultImgs = (pf)=>(pf?.parts ?? []).map((p, i)=>({p, i}))
-    .filter(({p})=>p.img && (!p.look || p.look===pf.look))
+    .filter(({p})=>p.img && !p.off && (!p.look || p.look===pf.look))
     .sort((a, b)=>(a.p.depth ?? 0) - (b.p.depth ?? 0) || a.i - b.i)
     .map(({p})=>p);
 

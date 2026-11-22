@@ -744,6 +744,7 @@ export class ItemView extends View
         this._parts = [];
         for(const {p, i} of parts)
         {
+            if(p.off) {continue;}   // 停用的零件（場景分頁沒勾）：資料留著、不建
             const e = {p, i, on:false};
             if(p.img)
             {
@@ -768,7 +769,7 @@ export class ItemView extends View
         if(look && !this._pf.parts?.some(p=>p.look===look)) {dlog(T.WARN)(`prefab ${this.prefab} 沒有狀態 ${look}`);}
         for(const e of this._parts ?? [])
         {
-            const on = (!e.p.look || e.p.look===look) && !this._hideParts?.has(e.i);
+            const on = !e.p.look || e.p.look===look;
             if(on===e.on) {continue;}
             e.on = on;
             if(e.holder) {this._imgOn(e, on, anim);}
@@ -840,13 +841,6 @@ export class ItemView extends View
         this._applyLook(true);
     }
 
-    // 藏掉 prefab.json 裡第幾個零件（場景分頁 sandbox 的零件 hide 模式用，不存檔）
-    _setHiddenParts(idxs)
-    {
-        this._hideParts = new Set(idxs);
-        if(this._pf) {this._applyLook(false);}
-    }
-
     _updatePos(pos)
     {
         super._updatePos(pos);
@@ -904,7 +898,6 @@ export class ItemView extends View
         root.setTexture = this._setTexture.bind(this);
         root.setShape = this._setShape.bind(this);
         root.setLook = this._setLook.bind(this);
-        root.setHiddenParts = this._setHiddenParts.bind(this);
         root.getLook = ()=>this.look;
         if(this._pf) {this._bindActs(root);}
 

@@ -21,7 +21,7 @@
 ```
 
 - id 一律 ASCII。座標全部相對**錨點**（＝GameObject 位置、ItemView 原點、y 排序基準）。
-- **狀態**：自由命名的單一狀態，存 `bb.look`（不用 `bb.sta`，那是現有的物件狀態）。零件沒寫 `look`＝永遠出現；寫了＝只在那個狀態出現。`look` 只能一個名稱，三狀態以上真的需要時再擴充成陣列。狀態名稱沒有任何零件用到 → `dlog` 警告、只顯示沒寫 `look` 的零件，不當掉。
+- **狀態**：自由命名的單一狀態，存 `bb.look`（不用 `bb.sta`，那是現有的物件狀態）。零件沒寫 `look`＝永遠出現；寫了＝只在那個狀態出現。`look` 只能一個名稱，三狀態以上真的需要時再擴充成陣列。狀態名稱沒有任何零件用到 → `dlog` 警告、只顯示沒寫 `look` 的零件，不當掉。零件寫 `off: true`＝停用（2026-11-22，場景分頁零件列的勾選框）：資料留著，遊戲跟 sandbox 都不建、`defaultImgs()`（縮圖／ghost）不算。
 - `acts`：右鍵選單動作 id → 切到的狀態。按鈕文字＝`'<id>'.lab()`（local.json）；目標狀態＝目前狀態的那個 act 藏起來。也可以用現有的 key（`turn_on`/`turn_off`）。
 - `defAct`：選填，左鍵預設動作；沒寫的話 acts 不進左鍵預設（`ORDER`）。
 - `grid`／`zone`：占地方塊（相對錨點的 `{x,y,w,h}`，見 [anchor.md](anchor.md)），**沒寫＝沒有**（沒 grid＝不佔格、沒 zone＝點不到）；Tiled 物件寫了量邊的 `gl…`／`zl…`（量縮圖外框）就整組蓋掉。body 已拿掉。
@@ -86,18 +86,19 @@
   - 草稿中拖實例／改實例位置：照樣立刻寫 scenes.json（實例位置不算草稿），草稿不影響實例座標。
   - 以前的「移動錨點」（零件＋方塊＋thumb 反向挪、草稿記 `dx/dy`、實例畫在存檔位置＋d）跟錨點模式下拉（◌／👁／✎）2026-11-22 整個拿掉，沒有替代品；選中實例的錨點一律＝拖實例。
   - sandbox 收到的草稿可能有還沒烤的 `file:` 零件：`Sandbox._pfFiles()` 把 img 換成 `file|<路徑>`（ItemView 用 `:` 切 frame）、pct 乘進 sx/sy，`_loadPartFiles()` 先載圖。
-- **模式**（2026-11-19）：占地方塊三列（`☐ 模式 名稱｜x y w×h`，勾選框在最左、模式接著）跟每個零件列最前面一個模式下拉（原生 `<select>` 拿掉箭頭跟底色，選項只有圖示 `◌` hide／`👁` show／`✎` edit，白字，title 寫中文說明），**只管 sandbox、不寫 prefab.json**。方塊的勾選框照舊管資料有沒有那個方塊，沒勾模式下拉藏起來（`visibility:hidden`，位置留著對齊）。
-  - **方塊**：hide 不畫／show 半透明框（唯讀參考）／edit 不透明框＋4 邊把手；預設 hide，全 prefab 共用、記 localStorage `tools.scene.boxMode`。
-  - **零件**（2026-11-21 改）：hide＝**藏零件本身**（png 不畫、粒子不噴、光不亮；`root.setHiddenParts(idxs)`＝`ItemView._setHiddenParts()`，跟 look 一起算）／show＝照常顯示、沒外框、**點不到**／edit＝照常＋不透明外框＋點得到、拖得動；預設 show。照 prefab id 記在記憶體（`partMode`，↑↓／✕ 跟著搬，重新整理回 show），**只作用在選中（inspect）的那個實例、只在選中時**：sandbox 每幀 `_syncPartHide()` 對其他實例送空的，取消選取全部恢復。**展開零件＝自動切 edit**（2026-11-21，原本是 show 或 hide 都一樣，右欄點列、sandbox 點 edit 零件／選 zone／拖曳自動展開都算），**收起＝一律回 show**（不管展開前是什麼、展開期間手動改過下拉也一樣；換展開別的、Esc、取消選取／換實例／換場景都算收起）；做法是 `syncOpen()` 拿上次套用的 `opened {id, i}` 跟現在的 `S.part` 比，`drawRight()`／`inspectMsg()` 前先跑，↑↓／✕ 時 `opened` 跟著搬。
-- **畫面**（`inspect {key, boxes, boxMode, partMode, part}`，`inspectMsg()`）：選中的實例畫占地方塊（body 紅／grid 藍／zone 綠）、edit 零件的外框（藍；png 照圖框不算角度、粒子／光源畫點，光源加半徑圈；只畫目前狀態看得到的）；`_drawSel()` 最後才 `_drawInspect()`。
+- **勾選＋選取**（2026-11-22，取代 2026-11-19 起的 ◌ hide／👁 show／✎ edit 模式下拉；`tools.scene.boxMode`、`setHiddenParts`／`_syncPartHide()` 都拿掉了）：
+  - **勾選＝作用（寫草稿）**：占地方塊的勾選框照舊＝資料有沒有那個方塊；零件列最前面的勾選框＝零件作用，沒勾寫 `off: true`（遊戲 ItemView 不建、sandbox 也不建，`defaultImgs()`／縮圖外框／點選框都不算，資料留著；停用的列標灰、不能選取，停用時順便取消選取）。
+  - **右鍵＝選取**（`togglePartSel(i)`／`toggleBoxSel(k)`，可多選，列左邊一條青色 `picked`）：選取的方塊才在 sandbox 畫（不透明框＋4 邊把手），沒選的不畫；選取的零件才有外框、點得到、拖得動，沒選的照常顯示、沒外框、點不到。沒勾的方塊右鍵沒反應。選取只在記憶體（`S.psel {key, boxes, parts}`，`pselOf()` 只認目前選中的實例），取消選取／換實例／換場景清掉，↑↓／✕ 時跟著零件搬（`remapSel()`）。
+  - **左鍵**：零件列＝展開／收起表單（一次一個，**不會自動選取**）；方塊列左鍵沒作用（數字欄一直在）。
+- **畫面**（`inspect {key, boxes, boxSel:[k…], partSel:[i…], part}`，`inspectMsg()`；`partSel` 不含停用的）：選中的實例畫選取的占地方塊（grid 藍／zone 綠）、選取的零件外框（藍；png 照圖框不算角度、粒子／光源畫點，光源加半徑圈；只畫目前狀態看得到的）；`_drawSel()` 最後才 `_drawInspect()`。
 - **prefab 實例沒有白色選取框，點錨點或點選框**：工具列「☑ 錨點」勾著時**每個**實例都畫錨點**準星**（2026-11-22，`_drawInstAnchor()`：空心圓半徑 5＋十字伸到 9 螢幕 px、穿出圓，黃線 1.5px 外描黑邊；選中的不透明、其他 0.5；跟擺設／角色的黃點分開＝看到準星就是抓得起來），點錨點 8 螢幕 px 內選取（`_instAt()`，重疊取 depth 高的，優先於角色／擺設，在發射點／光源記號之後）；沒勾＝準星全部不畫、錨點點不到。擺設／角色不受影響（只畫選中的黃點、照舊點圖）。
-  - **點選框**（2026-11-21，`_instBox()`／`_instBoxAt()`，只在 sandbox 算、不寫檔、跟 `zone` 無關、不管「☑ 錨點」）：目前看得見的 png 零件（照現在的 look、選中實例 hide 的不算）外接框（含 angle）；沒有＝看得見的粒子／光源點外擴 16px、最少 32×32；連點都沒有＝錨點正中 32×32。排在最後：發射點／光源記號＞錨點＞角色／擺設的圖＞**點選框**＞角色站的格子（`_pickAt()`），重疊取 depth 高的；按下去一下選取＋拖（同錨點拖曳）。滑鼠 hover 到的實例（`_pickAt` 得到 inst，拖曳中＝拖的那個）畫白色淡虛線點選框、游標 `move`（`_drawInstHover()`）。已選中實例的 edit 零件照下面順序先吃到。
-  - edit 方塊：4 邊中點各一個把手（方塊顏色、壓在框線上，沒有角落把手、不能整塊拖），拖哪邊只改那邊、對邊固定（左＝x＋w、上＝y＋h），不能拉過對邊（最少 1px），整數 px、Shift 吸 16px（世界座標），游標 ew／ns-resize；放開回報 `box {key, k, box}` → `setPf` 寫草稿（一次拖曳一筆 undo）。把手疊在一起照 body → grid → zone 搶（`_boxHandles()`／`_boxHandleAt()`／`_boxTo()`）。
-  - **粒子零件的 zone**（2026-11-21）：edit 的粒子零件（`{particle}` 也算）畫 emitZone 綠框／deathZone 紅虛線（`_partZoneOwners()`，原點＝錨點＋零件 x/y＋粒子自己的 x/y，畫法共用 `_drawZoneList()`），點框線選起那個 zone（`_pzsel {key, i, k}`，同時展開那個零件）出白色把手，拖本體／把手同發射點（`pzone.js`），放開送 `partZone {key, i, k, z}` → 分頁寫進那個粒子 id 的草稿副本（`ps[id]`），拖的時候右欄數字不即時跟。粒子零件一律跟著物件（follow），用 deathZone 要勾 `local`，不然粒子一出生就被殺掉（表單會出 ⚠，見 particle-tool.md 的陷阱）。
-  - 按下的順序：edit 方塊把手 → **選中 zone 的白色把手** → **edit 粒子／光源的點**（8 螢幕 px）→ **錨點**（8 螢幕 px，拖實例）→ **zone 框線**（6 螢幕 px，選起 zone、可拖）→ **edit png 圖框**（照 depth 取最上面）→ **選中 zone 的框內**（拖本體）→ 其他照一般點選（`_partAt()` 只認 edit）。點到 edit 零件＝拖零件（png holder／光源跟著動，放開回報 `movePart {key, i, x, y}` 相對錨點，Shift 吸 16px；沒拖動＝回報 `part {key, i}` 展開它）。所以 png 蓋住錨點時照樣能從錨點拖實例；光源壓在錨點上又要拖實例，把光源切回 show。縮得很小時 edit 方塊把手可能蓋到錨點（把手優先）。
-  - 展開零件（`S.part`）只管右欄表單＋鍵盤，不再決定畫框跟拖曳。
-  - 拖曳中右欄數字跟著變：sandbox 每次移動送 `dragLive {key, k, side, box}`（方塊）／`{key, part, x, y}`（零件），第一則帶 `start`，放開送 `{end}`；分頁 `dragLive()` 直接改欄位值（不重畫、不寫草稿、不進 undo），正在變的欄位加黃框（`input.live`，方塊照拉的邊：左＝x、w，上＝y、h，右＝w，下＝h）；`start` 時屬性區摺著自動打開、零件沒展開就 `openPart()`、那格 `scrollIntoView({block:'nearest'})`；放開照舊 `box`／`movePart` 寫草稿。
-- 鍵盤：展開零件時 Del 刪零件、方向鍵移零件（草稿，Shift 一格）；收起時作用在實例。Esc：先收零件，再取消選取。
+  - **點選框**（2026-11-21，`_instBox()`／`_instBoxAt()`，只在 sandbox 算、不寫檔、跟 `zone` 無關、不管「☑ 錨點」）：目前看得見的 png 零件（照現在的 look、停用 off 的不算）外接框（含 angle）；沒有＝看得見的粒子／光源點外擴 16px、最少 32×32；連點都沒有＝錨點正中 32×32。排在最後：發射點／光源記號＞錨點＞角色／擺設的圖＞**點選框**＞角色站的格子（`_pickAt()`），重疊取 depth 高的；按下去一下選取＋拖（同錨點拖曳）。滑鼠 hover 到的實例（`_pickAt` 得到 inst，拖曳中＝拖的那個）畫白色淡虛線點選框、游標 `move`（`_drawInstHover()`）。已選中實例的選取零件照下面順序先吃到。
+  - 選取的方塊：4 邊中點各一個把手（方塊顏色、壓在框線上，沒有角落把手、不能整塊拖），拖哪邊只改那邊、對邊固定（左＝x＋w、上＝y＋h），不能拉過對邊（最少 1px），整數 px、Shift 吸 16px（世界座標），游標 ew／ns-resize；放開回報 `box {key, k, box}` → `setPf` 寫草稿（一次拖曳一筆 undo）。把手疊在一起照 body → grid → zone 搶（`_boxHandles()`／`_boxHandleAt()`／`_boxTo()`）。
+  - **粒子零件的 zone**（2026-11-21）：選取的粒子零件（`{particle}` 也算）畫 emitZone 綠框／deathZone 紅虛線（`_partZoneOwners()`，原點＝錨點＋零件 x/y＋粒子自己的 x/y，畫法共用 `_drawZoneList()`），點框線選起那個 zone（`_pzsel {key, i, k}`，同時展開那個零件）出白色把手，拖本體／把手同發射點（`pzone.js`），放開送 `partZone {key, i, k, z}` → 分頁寫進那個粒子 id 的草稿副本（`ps[id]`），拖的時候右欄數字不即時跟。粒子零件一律跟著物件（follow），用 deathZone 要勾 `local`，不然粒子一出生就被殺掉（表單會出 ⚠，見 particle-tool.md 的陷阱）。
+  - 按下的順序：選取的方塊把手 → **選中 zone 的白色把手** → **選取的粒子／光源的點**（8 螢幕 px）→ **錨點**（8 螢幕 px，拖實例）→ **zone 框線**（6 螢幕 px，選起 zone、可拖）→ **選取的 png 圖框**（照 depth 取最上面）→ **選中 zone 的框內**（拖本體）→ 其他照一般點選（`_partAt()` 只認選取的）。點到選取的零件＝拖零件，**所有選取的一起動**（`_drag.sel`；png holder／光源照同一個位移跟著動，放開回報 `moveParts {key, moves:[{i, x, y}]}` 相對錨點、一筆 undo，Shift 照被拖的那個吸 16px；沒拖動＝回報 `part {key, i}` 展開它）。所以 png 蓋住錨點時照樣能從錨點拖實例；光源壓在錨點上又要拖實例，把光源取消選取。縮得很小時選取的方塊把手可能蓋到錨點（把手優先）。
+  - 展開零件（`S.part`）只管右欄表單，不決定畫框、拖曳、鍵盤。
+  - 拖曳中右欄數字跟著變：sandbox 每次移動送 `dragLive {key, k, side, box}`（方塊）／`{key, part, x, y}`（被拖的那個零件），第一則帶 `start`，放開送 `{end}`；分頁 `dragLive()` 直接改欄位值（不重畫、不寫草稿、不進 undo），正在變的欄位加黃框（`input.live`，方塊照拉的邊：左＝x、w，上＝y、h，右＝w，下＝h）；`start` 時屬性區摺著自動打開、零件沒展開就 `openPart()`、那格 `scrollIntoView({block:'nearest'})`；放開照舊 `box`／`moveParts` 寫草稿。
+- 鍵盤：有選取的零件時 Del 刪掉所有選取的（`delParts()`，一筆 undo）、方向鍵一起移（`nudgeParts()`，1px、Shift 一格，連按併一步 undo）；沒選零件時作用在實例。Esc 一層一層退：收起展開的零件 → 清掉所有選取（零件＋方塊）→ 取消選取實例（有草稿先問）。
 - 改名：連帶改 template／縮圖／tsj／所有地圖跟 template 的 `prefab`、scenes.json、item.json，一筆 undo。刪除：地圖或道具有用到就擋（列出來）；只有 scenes.json 用到就連實例一起拿掉。
 - `textures/prefabs/` 不再被用到的圖不自動刪，交給圖片分頁的「未使用」。
 

@@ -44,9 +44,11 @@
     #right .part .id { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     #right .part .lab { color: #aaa; font-size: 12px; }
     #right .part button { padding: 0 4px; font-size: 12px; line-height: 1.3; }
-    #right select.mode { flex: none; width: auto; padding: 0 2px; font-size: 12px; appearance: none; -webkit-appearance: none; background: none; border: none; color: #fff; cursor: pointer; text-align: center; }
+    /* 右鍵選取（sandbox 可編輯）：左邊一條青色，跟展開的藍底分開 */
+    #right .part.picked { box-shadow: inset 3px 0 0 #33ccff; }
+    #right tr.picked > td:first-child { box-shadow: inset 3px 0 0 #33ccff; }
+    #right .part > input[type=checkbox] { flex: none; margin: 0; }
     #right input.live { outline: 2px solid #ffd633; outline-offset: -1px; }
-    #right select.mode option { background: #222; color: #fff; }
     #right .partform { margin: 2px 0 6px 12px; padding-left: 8px; border-left: 2px solid #2f6db5; }
     #right .swatch { flex: none; width: 12px; height: 12px; border-radius: 50%; border: 1px solid #000; }
     #right .pform { margin-top: 6px; }
