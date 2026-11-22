@@ -349,7 +349,8 @@ export class Sandbox extends GameScene
             if(pg.rect) {g.strokeRectShape(pg.rect);}
             else
             {
-                g.strokeCircle(pg.x, pg.y, 6/z);
+                if(pg.r) {Sandbox._drawSun(g, z, pg.x, pg.y, null, 0x33ccff, 2/z);}   // 光源＝太陽記號
+                else {g.strokeCircle(pg.x, pg.y, 6/z);}
                 if(pg.r) {g.lineStyle(1/z, 0x33ccff, a*0.6).strokeCircle(pg.x, pg.y, pg.r);}
             }
         });
@@ -360,6 +361,21 @@ export class Sandbox extends GameScene
         {
             g.fillStyle(Sandbox.BOX_COLOR[hd.k], 1).fillRect(hd.x-s/2, hd.y-s/2, s, s).lineStyle(1/z, 0x000000, 1).strokeRect(hd.x-s/2, hd.y-s/2, s, s);
         }
+    }
+
+    // 光源記號＝太陽：圓（半徑 6 螢幕 px，fill＝光色、null＝空心）＋圈外 8 條光線（8～12 px）；
+    //  光線先描一層 line 色的粗線、再疊光色細線（空心的就只有 line 色）
+    static _drawSun(g, z, x, y, fill, line, lw)
+    {
+        const r = 6/z, r0 = 8/z, r1 = 12/z;
+        const rays = (w, c)=>{
+            g.lineStyle(w, c, 1);
+            for(let i=0; i<8; i++) {const a = i*Math.PI/4, cs = Math.cos(a), sn = Math.sin(a); g.lineBetween(x + r0*cs, y + r0*sn, x + r1*cs, y + r1*sn);}
+        };
+        if(fill===null) {rays(lw, line); g.lineStyle(lw, line, 1).strokeCircle(x, y, r); return;}
+        rays(lw + 1.5/z, line);
+        rays(1.5/z, fill);
+        g.fillStyle(fill, 1).fillCircle(x, y, r).lineStyle(lw, line, 1).strokeCircle(x, y, r);
     }
 
     // 拖選取的零件（d.p＝被拖的那個，d.sel＝所有選取的 index）：png 的 holder、光源照同一個位移跟著動
@@ -1033,9 +1049,8 @@ export class Sandbox extends GameScene
         for(const [k, o] of Object.entries(this._lights ?? {}))
         {
             if(!this._markOn('light', k)) {continue;}
-            const {x, y} = this._lightPos(o), s = 6/z, sel = k===this._sel;
-            g.fillStyle(o.hex, 1).fillCircle(x, y, s)
-                .lineStyle((sel ? 2 : 1.5)/z, sel ? SEL_COLOR : 0x000000, 1).strokeCircle(x, y, s);
+            const {x, y} = this._lightPos(o), sel = k===this._sel;
+            Sandbox._drawSun(g, z, x, y, o.hex, sel ? SEL_COLOR : 0x000000, (sel ? 2 : 1.5)/z);
             if(sel)
             {
                 // 虛線圈＝半徑；聚光燈＝扇形（兩條邊＋弧，中線淡淡的）
