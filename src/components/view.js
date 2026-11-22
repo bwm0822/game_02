@@ -756,7 +756,7 @@ export class ItemView extends View
                 e.fx = p.fx ? DB.fx(p.fx) : null;
                 this._shape.add(e.holder);
             }
-            else if(!p.particle && !p.def && !p.light) {continue;}
+            else if(!p.particle && !p.light) {continue;}
             this._parts.push(e);
         }
         this._applyLook(false);
@@ -772,7 +772,7 @@ export class ItemView extends View
             if(on===e.on) {continue;}
             e.on = on;
             if(e.holder) {this._imgOn(e, on, anim);}
-            else if(e.p.particle || e.p.def) {this._particleOn(e, on);}
+            else if(e.p.particle) {this._particleOn(e, on);}
             else {this._lightOn(e, on);}
         }
     }
@@ -802,10 +802,10 @@ export class ItemView extends View
 
     _particleOn(e, on)
     {
-        // 粒子零件：def＝prefab 自己那份（不跟 particle.json 共用），沒有才查 particle 的 id；
+        // 粒子零件只認 particle.json 的 id（查不到 DB.particle 會 dlog）；
         // local＝放進 _shape 跟 png 照零件 depth 排(不管 def.depth)，world＝跟著 root 的 depth(under 在後、否則在前)
         if(!on) {e.em?.stop(); e.em = null; return;}
-        const def = e.p.def ?? DB.particle(e.p.particle);
+        const def = DB.particle(e.p.particle);
         if(!def) {return;}
         e.em = playParticle(this.scene, def.local ? {...def, depth:undefined} : def,
                             {target:this.root, parent:this._shape, followDepth:true, ox:e.p.x ?? 0, oy:e.p.y ?? 0});

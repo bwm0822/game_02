@@ -213,7 +213,8 @@ export class Sandbox extends GameScene
     //------------------------------------------------------
     _applyInsts(list, force)
     {
-        const sig = (i)=>JSON.stringify([i, DB.prefab(i.prefab) ?? null, this._hidden.has(i.key)]);
+        const pdefs = (pf)=>(pf?.parts ?? []).map(p=>(p.particle ? DB._particleDB?.[p.particle] ?? null : null));
+        const sig = (i)=>{const pf = DB.prefab(i.prefab); return JSON.stringify([i, pf ?? null, pdefs(pf), this._hidden.has(i.key)]);};
         const want = Object.fromEntries(list.map(i=>[i.key, i]));
         for(const [k, o] of Object.entries(this._insts))
         {
@@ -494,10 +495,12 @@ export class Sandbox extends GameScene
     {
         this._emitters ??= {};
         const want = Object.fromEntries(list.map(e=>[e.key, e]));
+        // 簽名含 particle.json 那筆（沒有自己那份時）：分頁改了 particle.json 不重開，靠這個重建
+        const sig = (e)=>JSON.stringify([e, e.def ? null : DB._particleDB?.[e.id] ?? null]);
         for(const [k, o] of Object.entries(this._emitters))
         {
             const e = want[k];
-            if(force || JSON.stringify(e)!==o.sig || (e.follow && this._target(e.follow)!==o.target)) {this._dropEmitter(k);}
+            if(force || !e || sig(e)!==o.sig || (e.follow && this._target(e.follow)!==o.target)) {this._dropEmitter(k);}
         }
         const bad = [];
         for(const e of list)
@@ -505,7 +508,7 @@ export class Sandbox extends GameScene
             if(this._emitters[e.key]) {continue;}
             const def = e.def ?? DB.particle(e.id);
             if(!def) {bad.push(e.id);}
-            this._emitters[e.key] = {data:e, sig:JSON.stringify(e), def, target:this._target(e.follow)};
+            this._emitters[e.key] = {data:e, sig:sig(e), def, target:this._target(e.follow)};
             this._emit(this._emitters[e.key]);
         }
         if(bad.length) {this._send({sb:'error', msg:`particle.json 沒有：${[...new Set(bad)].join('、')}`});}
@@ -753,8 +756,8 @@ export class Sandbox extends GameScene
         if(!o) {return [];}
         const look = o.go.getLook?.() ?? null, d = this._drag;
         return (DB.prefab(o.data.prefab)?.parts ?? []).flatMap((p, i)=>{
-            if(!(p.particle || p.def) || this._partMode(i)!=='edit' || (p.look && p.look!==look)) {return [];}
-            const def = p.def ?? DB.particle(p.particle), pg = def && this._partGeom(o, i);
+            if(!p.particle || this._partMode(i)!=='edit' || (p.look && p.look!==look)) {return [];}
+            const def = DB.particle(p.particle), pg = def && this._partGeom(o, i);
             if(!pg) {return [];}
             const zones = ['emitZone', 'deathZone'].filter(k=>def[k]!==undefined).map(k=>{
                 const z = d?.pzone===k && d.i===i && d.cur ? d.cur : def[k];
@@ -1204,6 +1207,7 @@ export class Sandbox extends GameScene
         {
             case 'load':
                 if(m.prefabs) {DB._prefabDB = Sandbox._pfFiles(m.prefabs);}
+                if(m.particles) {DB._particleDB = m.particles;}   // particle.json＋prefab 草稿的粒子副本
                 if((m.scene.map ?? 'sandbox') !== this.mapName) {this._saveCam(); this.scene.restart({map:m.scene.map, scene:m.scene, grid:this._gridOn, sel:this._sel, hidden:[...this._hidden]});}
                 else {this._apply(m.scene);}
                 break;

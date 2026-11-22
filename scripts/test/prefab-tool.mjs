@@ -299,7 +299,7 @@ run('prefab-tool', async t => {
             (await read(await dir(assets, 'tilesets'), 'prefabs.tsj')).tiles.some(t => t.image.includes('copy'))];
 
         // ---------- 草稿中拖實例：直接寫畫面位置、草稿還在；儲存不動實例（錨點編輯已拿掉）----------
-        // 組成寫了 particle.json → sandbox 整個重開，等它建好
+        // 組成寫了 particle.json（sandbox 不重開，load 帶整份）；等實例建好
         await until(() => sc.S.ready && sb()?._insts?.f1?.go);
         sc.pickRole('f1');
         await sc.setPf('fire_pit', {grid: {x: -26, y: -16, w: 32, h: 16}});
@@ -415,12 +415,16 @@ run('prefab-tool', async t => {
         out.prio.push(downAt(ins().go.x, ins().go.y));
         await sc.undo();
         await until(() => sc.S.draft?.pf.parts[1].x === -10);
-        // ---------- 粒子零件：[新增]＝範本（自己的 def）、換成庫 id 先問、edit 時拖 zone＝共用的自動複製成 def（草稿） ----------
+        // ---------- 粒子零件：[新增]＝問新 id＋範本進草稿副本、換 id、edit 時拖 zone＝改那個 id 的草稿副本、另存新 id、儲存寫 particle.json ----------
         const nP = sc.S.draft.pf.parts.length, np = () => sc.S.draft.pf.parts[nP];
         const psel = () => doc.querySelector('#right .partform select[data-k="particle"]');
-        await sc.addPart('fire_pit', 'particle', '[新增]');
-        out.newDef = [!!np()?.def, 'particle' in np(), sc.S.part === nP, psel()?.value, doc.querySelector('#right .partform [data-k="defState"]')?.textContent.includes('自訂'),
-            !!doc.querySelector('#right .partform .pform')];
+        const sbP = (pid) => game().__dbg?.DB?._particleDB?.[pid];
+        await sc.addPart('fire_pit', 'particle', '[新增]', 'fire-charge');
+        out.dupPid = [sc.S.draft.pf.parts.length - nP, doc.getElementById('status').textContent.includes('已經有粒子')];
+        await sc.addPart('fire_pit', 'particle', '[新增]', 'fire_pit-smoke');
+        out.newPid = [np()?.particle, 'def' in np(), sc.S.part === nP, psel()?.value, !!sc.S.draft.ps['fire_pit-smoke']?.img,
+            doc.querySelector('#right .partform [data-k="defState"]')?.textContent.includes('新的'), !!doc.querySelector('#right .partform .pform'),
+            (await partDisk())['fire_pit-smoke'] ?? null, await until(() => !!sbP('fire_pit-smoke'))];
         // 粒子內容可摺：標題（defState）跟 JSON 鈕留著、表單藏起來、記 tools.scene.fold
         const pHead = () => doc.querySelector('#right .partform .head[data-fold="right.partParticle"]');
         sc.toggleFold('right.partParticle');
@@ -430,8 +434,7 @@ run('prefab-tool', async t => {
         out.pFold.push(pHead()?.querySelector('.tw')?.textContent, !!doc.querySelector('#right .partform .pform'));
         psel().value = 'fire-charge';
         psel().dispatchEvent(new win.Event('change'));
-        await answer('ok');
-        out.toLib = await until(() => np()?.particle === 'fire-charge') && [np(), psel().value];
+        out.toLib = await until(() => np()?.particle === 'fire-charge') && [np(), psel().value, sc.particleUsers('fire-charge').length];
         sc.setPartMode('fire_pit', nP, 'edit');
         const pzw = () => sb()._partZoneOwners().find(w => w.i === nP);
         await until(() => pzw()?.zones.length === 1);
@@ -439,8 +442,30 @@ run('prefab-tool', async t => {
         sb().input.emit('pointerdown', fake(zc.x + 18, zc.y - 16));
         sb().input.emit('pointermove', fake(zc.x + 28, zc.y - 16));
         sb().input.emit('pointerup', fake(zc.x + 28, zc.y - 16));
-        out.zoneDrag = await until(() => np()?.def?.emitZone?.source.x === 10) && [np().particle ?? null, np().def.mode, sb()._pzsel?.i === nP, (await pfDisk()).fire_pit.parts.length];
+        out.zoneDrag = await until(() => sc.S.draft.ps['fire-charge']?.emitZone?.source.x === 10) && [np(), sb()._pzsel?.i === nP, (await pfDisk()).fire_pit.parts.length,
+            (await partDisk())['fire-charge'].emitZone.source.x, await until(() => sbP('fire-charge')?.emitZone?.source.x === 10)];
+        // 另存新 id：草稿裡改過的內容一起帶過去、零件改用它；儲存只寫還有零件在用的（fire_pit-smoke 換掉了、fire-charge 也換掉了＝不寫）
+        await sc.forkPartParticle('fire_pit', nP, 'fire_pit-charge');
+        out.fork = [np(), sc.S.draft.ps['fire_pit-charge']?.emitZone?.source.x];
+        await sc.saveDraft();
+        const pd = await partDisk();
+        out.savePs = [sc.S.draft, (await pfDisk()).fire_pit.parts[nP], pd['fire_pit-charge']?.emitZone?.source.x, pd['fire-charge'].emitZone.source.x, 'fire_pit-smoke' in pd];
         await sc.delPart('fire_pit', nP);
+        await sc.saveDraft();
+        // 別的分頁改了草稿碰過的粒子：一起問；保留＝留著草稿副本、儲存時蓋過去
+        await sc.addPart('fire_pit', 'particle', 'fire-charge');
+        const zq = {type: 'edge', source: {x: 5, y: -16, r: 18}, quantity: 12};
+        sb()._send({sb: 'partZone', key: 'f1', i: nP, k: 'emitZone', z: zq});
+        await until(() => sc.S.draft?.ps['fire-charge']?.emitZone.source.x === 5);
+        const pd2 = await partDisk();
+        await write(json, 'particle.json', JSON.stringify({...pd2, 'fire-charge': {...pd2['fire-charge'], quantity: 3}}, null, 2));
+        new BroadcastChannel('tools').postMessage({type: 'saved', file: 'particle.json'});
+        await until(() => dlg.open);
+        const askText = dlg.textContent;
+        await answer('keep');
+        out.pConflict = [askText.includes('粒子 fire-charge'), sc.S.refs.particles['fire-charge'].quantity, sc.S.draft?.ps['fire-charge']?.emitZone.source.x];
+        await sc.delPart('fire_pit', nP);
+        await sc.saveDraft();
 
         sc.setBoxMode('grid', 'edit');
         await until(() => sb()._inspect?.boxMode?.grid === 'edit');
@@ -453,9 +478,9 @@ run('prefab-tool', async t => {
         sb()._drag = {box: 'grid', side: 'b', inst: ins(), key: 'f1', b0: g0, cur: {...g0}};
         sb().input.emit('pointermove', fake(hb.x, hb.y + 8));
         await until(() => inp('[data-k="grid.h"]')?.value === String(g0.h + 8));
-        out.boxLive = [inp('[data-k="grid.h"]').value, inp('[data-k="grid.h"]').classList.contains('live'), inp('[data-k="grid.w"]').classList.contains('live'), sc.S.draft.pf.grid.h];
+        out.boxLive = [inp('[data-k="grid.h"]').value, inp('[data-k="grid.h"]').classList.contains('live'), inp('[data-k="grid.w"]').classList.contains('live'), (sc.S.draft?.pf ?? sc.S.prefabs.fire_pit).grid.h];
         sb().input.emit('pointerup', fake(hb.x, hb.y + 8));
-        await until(() => sc.S.draft.pf.grid.h === g0.h + 8);
+        await until(() => sc.S.draft?.pf.grid.h === g0.h + 8);
         out.boxLiveEnd = [doc.querySelectorAll('#right input.live').length, sc.S.draft.pf.grid.h];
         sc.setBoxMode('grid', 'hide');
         await until(() => sb()._inspect?.boxMode?.grid === 'hide');
@@ -542,9 +567,9 @@ run('prefab-tool', async t => {
 
     // 組成
     const [cpf, cpart, cscene, cpick] = r.compose;
-    t.eq('組成：零件相對錨點（第一個擺設）、跟著的粒子換成絕對再換相對、自己那份帶進零件（{def}、不留來源 id）', JSON.stringify(cpf?.parts), JSON.stringify([{img: 'Barrel'}, {def: {img: 'p-dot', speedY: -20}, y: -30}]));
+    t.eq('組成：零件相對錨點（第一個擺設）、跟著的粒子換成絕對再換相對、✎ 的另存成 <prefab>-<原 id>', JSON.stringify(cpf?.parts), JSON.stringify([{img: 'Barrel'}, {particle: 'brazier-campfire', y: -30}]));
     t.check('組成：算縮圖外框', !!cpf?.thumb, JSON.stringify(cpf));
-    t.eq('組成：不寫 particle.json', JSON.stringify(cpart), 'null');
+    t.eq('組成：✎ 的內容寫進 particle.json', JSON.stringify(cpart), JSON.stringify({img: 'p-dot', speedY: -20}));
     t.eq('組成：原地換成實例、沒勾但跟著的光源改成絕對位置', JSON.stringify(cscene), JSON.stringify({map: 'sandbox', lights: [{key: 'l1', x: 210, y: 190, r: 120, color: '#ffcc88'}], prefabs: [{key: 'f1', prefab: 'brazier', x: 200, y: 200}]}));
     t.eq('組成：選起實例', cpick, 'f1');
     t.eq('undo 組成（含收尾）：一筆退回', JSON.stringify(r.composeUndo), JSON.stringify([null, null, 1, null]));
@@ -594,10 +619,16 @@ run('prefab-tool', async t => {
     t.eq('放開：黃框拿掉、零件位置寫進草稿', JSON.stringify(r.partLiveEnd), JSON.stringify([0, 2, 5]));
     t.eq('Esc 第一次：收起零件、實例還選著', JSON.stringify(r.esc1), JSON.stringify([null, 'f1']));
     t.eq('展開零件時 Del：刪零件（草稿）、實例還在', JSON.stringify(r.delKey), JSON.stringify([1, null, 'f1']));
-    t.eq('＋粒子選 [新增]：範本 def、沒有 particle、展開、下拉停在 [新增]、自訂、嵌粒子表單', JSON.stringify(r.newDef), JSON.stringify([true, false, true, '[新增]', true, true]));
-    t.eq('粒子內容摺起來：標題＋JSON 鈕留著、表單藏、記住；再點展開', JSON.stringify(r.pFold), JSON.stringify(['▸', true, 'JSON', false, true, '▾', true]));
-    t.eq('自己的換成庫 id：問過、變 {particle}', JSON.stringify(r.toLib), JSON.stringify([{particle: 'fire-charge'}, 'fire-charge']));
-    t.eq('edit 粒子零件拖 zone 框線：共用的自動複製成 def（不留 id）、寫草稿、prefab.json 不動', JSON.stringify(r.zoneDrag), JSON.stringify([null, 'stream', true, 2]));
+    t.eq('[新增] 撞名：擋下、不加零件', JSON.stringify(r.dupPid), JSON.stringify([0, true]));
+    t.eq('＋粒子選 [新增]：{particle: 新 id}、沒有 def、展開、下拉停在新 id、範本在草稿副本、標「新的」、嵌粒子表單、particle.json 還沒有、sandbox 照副本',
+         JSON.stringify(r.newPid), JSON.stringify(['fire_pit-smoke', false, true, 'fire_pit-smoke', true, true, true, null, true]));
+    t.eq('粒子內容摺起來：標題＋按鈕留著、表單藏、記住；再點展開', JSON.stringify(r.pFold), JSON.stringify(['▸', true, '另存新 id…', false, true, '▾', true]));
+    t.eq('換成庫的 id：不問、變 {particle}、只有自己用', JSON.stringify(r.toLib), JSON.stringify([{particle: 'fire-charge'}, 'fire-charge', 1]));
+    t.eq('edit 粒子零件拖 zone 框線：改那個 id 的草稿副本、零件不變、prefab.json／particle.json 不動、sandbox 照副本', JSON.stringify(r.zoneDrag),
+         JSON.stringify([{particle: 'fire-charge'}, true, 2, 0, true]));
+    t.eq('另存新 id：帶著草稿改過的內容、零件改用新 id', JSON.stringify(r.fork), JSON.stringify([{particle: 'fire_pit-charge'}, 10]));
+    t.eq('儲存：prefab.json＋particle.json 一起寫，只寫還有零件在用的粒子', JSON.stringify(r.savePs), JSON.stringify([null, {particle: 'fire_pit-charge'}, 10, 0, false]));
+    t.eq('別處改了草稿碰過的粒子：問（列出粒子 id）、保留＝草稿副本還在、讀到新內容', JSON.stringify(r.pConflict), JSON.stringify([true, 3, 5]));
     t.check('（前置）零件 hide 藏起來', r.hideBefore);
     t.eq('Esc 第二次：取消選取（有草稿先問，放棄）、sandbox 不畫記號', JSON.stringify(r.esc2), JSON.stringify([null, null, 2, true]));
     t.check('取消選取：藏的零件全部恢復', r.unhide);

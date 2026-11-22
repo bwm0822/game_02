@@ -5,13 +5,13 @@ import * as SH from '../common/shell.js';
 
 export const FILE = 'scenes.json';
 export const PREFAB = 'prefab.json';
-export const PARTICLE = 'particle.json';    // 發射點挑粒子用（場景分頁不寫它）
+export const PARTICLE = 'particle.json';    // prefab 草稿儲存／組成時寫（粒子分頁存的格式：結尾沒有換行）
 export const EMPTY = '{}\n';
 export const newScene = () => ({map: 'sandbox'});
 
 const PATHS = {[FILE]: 'tools', [PREFAB]: 'public/assets/json', [PARTICLE]: 'public/assets/json'};
 let root = null;
-const serialize = (data) => JSON.stringify(data, null, 2) + '\n';
+const serialize = (data, file) => JSON.stringify(data, null, 2) + (file === PARTICLE ? '' : '\n');
 
 export async function load(r)
 {
@@ -56,7 +56,7 @@ export async function edit(fn, files = [FILE])
     const out = {};
     for (const f of files)
     {
-        const after = serialize(data[f]);
+        const after = serialize(data[f], f);
         if (after !== before[f]) out[f] = {before: before[f], after};
     }
     if (!Object.keys(out).length) return null;

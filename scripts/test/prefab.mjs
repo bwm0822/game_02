@@ -7,6 +7,7 @@ run('prefab', async t => {
     const r = await t.eval(async d => {
         const gs = d.game.scene.getScene('GameScene');
         const {default: Item} = await import('/src/items/item.js');
+        d.DB._particleDB.t_p100 = {img: 'p-dot', mode: 'stream', frequency: 100, lifespan: 300};
         d.DB._prefabDB.t_forge = {
             look: 'off',
             thumb: {x: -20, y: -40, w: 40, h: 40},
@@ -17,7 +18,8 @@ run('prefab', async t => {
                 {img: 'Crate', y: -20, look: 'off', sx: 0.5, sy: 0.5},
                 {particle: 'campfire', y: -30, look: 'on'},
                 {light: {r: 100, color: '#ff8800'}, y: -16, look: 'on'},
-                {def: {img: 'p-dot', mode: 'stream', frequency: 100, lifespan: 300}, y: -10, look: 'on'},
+                {particle: 't_p100', y: -10, look: 'on'},
+                {def: {img: 'p-dot', mode: 'stream', frequency: 50}, look: 'on'},
             ],
         };
         const p = d.GM.player;
@@ -50,7 +52,8 @@ run('prefab', async t => {
         out.on = vis(go);
         out.onLights = nLights() - L0;
         out.onEm = go.view._parts.filter(e => e.em).length;
-        out.defEm = (() => {const e = go.view._parts.find(e => e.p.def); return [!!e?.em, e?.em?.frequency ?? e?.em?.emitter?.frequency ?? null];})();
+        out.defEm = (() => {const e = go.view._parts.find(e => e.p.particle === 't_p100'); return [!!e?.em, e?.em?.frequency ?? e?.em?.emitter?.frequency ?? null];})();
+        out.oldDef = go.view._parts.some(e => e.p.def);
         out.lightPos = (() => {const l = go.view._parts.find(e => e.light).light; return [l.x - go.x, l.y - go.y];})();
 
         go.save();
@@ -69,6 +72,7 @@ run('prefab', async t => {
         go2.emit('remove');
         delete d.Record.game.scenes[gs._data.map].prefab[987654];
         delete d.DB._prefabDB.t_forge;
+        delete d.DB._particleDB.t_p100;
         return out;
     });
 
@@ -83,8 +87,9 @@ run('prefab', async t => {
     t.eq('off：底座＋小箱子，火焰藏', JSON.stringify(r.off), '[true,true,false]');
     t.check('off：沒光源、沒粒子', r.offLights === 0 && r.offEm === 0, JSON.stringify(r));
     t.eq('on：底座＋火焰，小箱子藏', JSON.stringify(r.on), '[true,false,true]');
-    t.check('on：一盞光、兩個粒子（參照 particle.json＋零件自己的 def）', r.onLights === 1 && r.onEm === 2, JSON.stringify(r));
-    t.eq('零件自己的 def：照 def 噴（frequency 100）', JSON.stringify(r.defEm), JSON.stringify([true, 100]));
+    t.check('on：一盞光、兩個粒子（都參照 particle.json）', r.onLights === 1 && r.onEm === 2, JSON.stringify(r));
+    t.eq('粒子零件照 particle.json 那筆噴（frequency 100）', JSON.stringify(r.defEm), JSON.stringify([true, 100]));
+    t.eq('零件自己的 {def} 已不支援：不建、不噴', r.oldDef, false);
     t.eq('光源在錨點＋(0,-16)', JSON.stringify(r.lightPos), '[0,-16]');
     t.eq('存檔記 look', JSON.stringify(r.saved), '{"look":"on"}');
     t.eq('移除後光源拿掉', r.afterRemoveLights, 0);
@@ -99,15 +104,16 @@ run('prefab', async t => {
         const gs = d.game.scene.getScene('GameScene');
         const {default: Item} = await import('/src/items/item.js');
         const pd = {img: 'p-dot', mode: 'stream', frequency: 100, lifespan: 300};
+        Object.assign(d.DB._particleDB, {t_lu: {...pd, local: true, depth: 'under'}, t_l: {...pd, local: true}, t_w: pd, t_wu: {...pd, depth: 'under'}});
         d.DB._prefabDB.t_layer = {
             look: 'off',
             parts: [
                 {img: 'Crate', depth: 2},
-                {def: {...pd, local: true, depth: 'under'}, depth: 1},
+                {particle: 't_lu', depth: 1},
                 {img: 'Barrel'},
-                {def: {...pd, local: true}, depth: 1.5, look: 'on'},
-                {def: pd},
-                {def: {...pd, depth: 'under'}},
+                {particle: 't_l', depth: 1.5, look: 'on'},
+                {particle: 't_w'},
+                {particle: 't_wu'},
             ],
         };
         const p = d.GM.player;
@@ -127,6 +133,7 @@ run('prefab', async t => {
         go.emit('remove');
         delete d.Record.game.scenes?.[gs._data.map]?.prefab?.[987658];
         delete d.DB._prefabDB.t_layer;
+        for (const k of ['t_lu', 't_l', 't_w', 't_wu']) delete d.DB._particleDB[k];
         return out;
     });
     t.eq('local 粒子照零件 depth 插在 png 中間（不管 def 的 under）', z.off, 'i2,p1,i0');
@@ -270,7 +277,7 @@ run('prefab', async t => {
             zone: v.zoneBox ?? null,
             key: [v.key ?? null, v.frame ?? null],
             interactive: !!v._zone,
-            pfEms: pf.parts.filter(p => (p.def || p.particle) && (!p.look || p.look === (pf.look ?? null))).length,
+            pfEms: pf.parts.filter(p => p.particle &&(!p.look || p.look === (pf.look ?? null))).length,
             pfGrid: [pf.grid.x + pf.grid.w / 2, pf.grid.y + pf.grid.h / 2, pf.grid.w, pf.grid.h],
             tiles: JSON.stringify(gs.map.gridTiles(go.posG, go.gridBB)),
             tool: await (async () => {

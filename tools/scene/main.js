@@ -25,7 +25,8 @@ const ls = {
 };
 const SLOTS = [['CAT_WEAPON', '武器'], ['CAT_HELMET', '頭盔'], ['CAT_CHESTPLATE', '護甲'], ['CAT_GLOVES', '手套'], ['CAT_BOOTS', '靴子']];
 // 這些檔改了 sandbox 的 DB 就舊了：整個重開
-const GAME_FILES = ['role.json', 'item.json', 'part.json', 'anim.json', 'fx.json', 'particle.json', 'ability.json', 'local.json', 'textures.json'];
+// （particle.json 不用：load 訊息帶整份，DB._particleDB 直接換）
+const GAME_FILES = ['role.json', 'item.json', 'part.json', 'anim.json', 'fx.json', 'ability.json', 'local.json', 'textures.json'];
 
 const S = {
     root: null,
@@ -86,8 +87,8 @@ function gotData(data)
 {
     if (data[ST.FILE]) S.data = data[ST.FILE];
     if (data[ST.PREFAB]) S.prefabs = data[ST.PREFAB];
-    // particle.json（目前場景分頁沒有指令會寫它）：sandbox 的 DB 舊了，整個重開
-    if (data[ST.PARTICLE]) {S.refs.particles = data[ST.PARTICLE]; reloadGame();}
+    // particle.json（prefab 草稿儲存／組成寫的）：sandbox 不重開，load 訊息會帶整份（particlesMsg）
+    if (data[ST.PARTICLE]) S.refs.particles = data[ST.PARTICLE];
 }
 
 // 改目前場景：fn(場景)；場景被別處刪了就擋
@@ -361,7 +362,7 @@ function fromSyn(syn, ax, ay)
     const rel = (o) => clean({x: o.x - ax || undefined, y: o.y - ay || undefined});
     const out = [];
     for (const {key, x, y, img, ...p} of syn.props ?? []) out.push(clean({img, ...rel({x, y}), ...p}));
-    for (const {key, x, y, id, follow, def, every, ...p} of syn.particles ?? []) out.push(clean({...def ? {def: structuredClone(def)} : {particle: id}, ...rel({x, y}), ...p}));
+    for (const {key, x, y, id, follow, def, every, ...p} of syn.particles ?? []) out.push(clean({particle: id, ...rel({x, y}), ...p}));
     for (const {key, x, y, follow, ...l} of syn.lights ?? [])
     {
         const light = clean(Object.fromEntries(LIGHT_KEYS.map(k => [k, l[k]])));
@@ -371,9 +372,18 @@ function fromSyn(syn, ax, ay)
 }
 
 // ---------- 草稿：改 prefab 內容只動記憶體（sandbox 照草稿畫），按儲存才寫 prefab.json ----------
-// S.draft＝{id, key（選中的實例）, base（開始時 prefab.json 那筆的 JSON，偵測別處改過）, pf, thumb（即時算的縮圖外框）, undo, redo（{pf, part}）}
+// S.draft＝{id, key（選中的實例）, base（開始時 prefab.json 那筆的 JSON，偵測別處改過）, pf, thumb（即時算的縮圖外框）,
+//          ps（粒子副本 {particle id: def}：零件的粒子內容改的是這裡，儲存才寫 particle.json）, pbase（各粒子第一次碰時 particle.json 那筆的 JSON）,
+//          undo, redo（{pf, ps, part}）}
 const pfOf = (id) => (S.draft?.id === id ? S.draft.pf : S.prefabs[id]);
 const draftOf = (id) => (S.draft?.id === id ? S.draft : null);
+// 粒子內容：草稿裡有副本用副本
+const pDef = (pid) => (pid && S.draft && pid in S.draft.ps ? S.draft.ps[pid] : S.refs.particles[pid]);
+// 草稿裡還有零件在用的粒子副本（[新增] 後又換掉／刪掉零件的不算，儲存時不寫）
+const livePs = (d) => Object.entries(d?.ps ?? {}).filter(([pid]) => d.pf?.parts?.some(p => p.particle === pid));
+const particleIds = () => [...new Set([...Object.keys(S.refs.particles), ...livePs(S.draft).map(([pid]) => pid)])];
+// 送給 sandbox 的 particle.json：草稿的粒子副本蓋上去
+const particlesMsg = () => (S.draft && Object.keys(S.draft.ps).length ? {...S.refs.particles, ...S.draft.ps} : S.refs.particles);
 
 // 送給 sandbox 的 prefab.json：草稿那筆換成草稿（點選範圍用即時算的縮圖外框）
 function prefabsMsg()
@@ -385,18 +395,21 @@ function prefabsMsg()
     return {...S.prefabs, [d.id]: pf};
 }
 
-// 改 prefab 內容：fn(那筆 prefab 的副本)，回傳 false＝沒改；第一次改才開始草稿
+// 改 prefab 內容：fn(那筆 prefab 的副本, 粒子副本 {id: def})，回傳 false＝沒改；第一次改才開始草稿
 function editPf(id, fn)
 {
     const src = pfOf(id);
     if (!src) {status(`prefab.json 沒有 ${id}`); return Promise.resolve();}
-    const next = structuredClone(src);
-    if (fn(next) === false || str(next) === str(src)) {renderRight(); return Promise.resolve();}
-    S.draft ??= {id, key: S.pick, base: str(S.prefabs[id]), pf: null, thumb: src.thumb ?? null, undo: [], redo: []};
+    const ps0 = draftOf(id)?.ps ?? {};
+    const next = structuredClone(src), ps = structuredClone(ps0);
+    if (fn(next, ps) === false || (str(next) === str(src) && str(ps) === str(ps0))) {renderRight(); return Promise.resolve();}
+    S.draft ??= {id, key: S.pick, base: str(S.prefabs[id]), pf: null, ps: {}, pbase: {}, thumb: src.thumb ?? null, undo: [], redo: []};
     const d = S.draft;
-    if (!(H.take() && d.undo.length)) d.undo.push({pf: d.pf ?? structuredClone(src), part: S.part});
+    for (const pid of Object.keys(ps)) if (!(pid in d.pbase)) d.pbase[pid] = str(S.refs.particles[pid] ?? null);
+    if (!(H.take() && d.undo.length)) d.undo.push({pf: d.pf ?? structuredClone(src), ps: d.ps, part: S.part});
     d.redo = [];
     d.pf = next;
+    d.ps = ps;
     liveThumb();
     refresh();
     return Promise.resolve();
@@ -417,22 +430,25 @@ function draftStep(from, to)
 {
     const d = S.draft, u = d[from].pop();
     if (!u) return status('草稿最早的一步了（再往前要先儲存或放棄）');
-    d[to].push({pf: d.pf, part: S.part});
-    ({pf: d.pf, part: S.part} = u);
+    d[to].push({pf: d.pf, ps: d.ps, part: S.part});
+    ({pf: d.pf, ps: d.ps, part: S.part} = u);
     liveThumb();
     refresh();
 }
 
-// 儲存：prefab.json 寫草稿，收尾（縮圖外框、Tiled、file: 圖烤進 textures）併成同一筆 undo；失敗留著草稿、回傳 false
+// 儲存：prefab.json 寫草稿（粒子副本寫進 particle.json，只寫碰過的 id），收尾（縮圖外框、Tiled、file: 圖烤進 textures）併成同一筆 undo；
+//  失敗留著草稿、回傳 false
 async function saveDraft()
 {
     const d = S.draft;
     if (!d) return true;
-    await commit((scenes, pfs) => {
+    const ps = livePs(d);
+    await commit((scenes, pfs, particles) => {
         if (!(d.id in pfs)) throw new Error(`prefab.json 沒有 ${d.id}`);
         pfs[d.id] = structuredClone(d.pf);
-    }, undefined, undefined, PREFAB_FILES);
-    if (str(S.prefabs[d.id]) !== str(d.pf)) return false;
+        for (const [pid, def] of ps) particles[pid] = structuredClone(def);
+    }, undefined, undefined, ps.length ? [...PREFAB_FILES, ST.PARTICLE] : PREFAB_FILES);
+    if (str(S.prefabs[d.id]) !== str(d.pf) || ps.some(([pid, def]) => str(S.refs.particles[pid]) !== str(def))) return false;
     S.draft = null;
     const n0 = S.undo.length;
     try {await finishEdit(d.id);}
@@ -458,16 +474,21 @@ async function leaveDraft()
     return false;
 }
 
-// 別處改了草稿那筆（prefab.json 廣播）：問 保留草稿／用新的
+// 別處改了草稿那筆 prefab 或草稿碰過的粒子（prefab.json／particle.json 廣播）：一起問 保留草稿／用新的
 async function draftConflict()
 {
     const d = S.draft;
-    if (!d || str(S.prefabs[d.id]) === d.base) return;
+    if (!d) return;
+    const pfChanged = str(S.prefabs[d.id]) !== d.base;
+    const pids = livePs(d).map(([pid]) => pid).filter(pid => str(S.refs.particles[pid] ?? null) !== d.pbase[pid]);
+    if (!pfChanged && !pids.length) return;
     if (!S.prefabs[d.id]) {status(`prefab ${d.id} 在別處被刪了，草稿丟掉`); return dropDraft();}
-    const v = await ask('prefab 在別處改了', `prefab ${d.id} 在別處改過了（你還有沒存的草稿）`, [['keep', '保留我的草稿'], ['theirs', '放棄草稿用新的']]);
+    const what = [pfChanged && `prefab ${d.id}`, ...pids.map(pid => `粒子 ${pid}`)].filter(Boolean).join('、');
+    const v = await ask('在別處改了', `${what} 在別處改過了（你還有沒存的草稿）`, [['keep', '保留我的草稿'], ['theirs', '放棄草稿用新的']]);
     if (S.draft !== d) return;
     if (v === 'theirs') return dropDraft();
     d.base = str(S.prefabs[d.id]);
+    for (const pid of pids) d.pbase[pid] = str(S.refs.particles[pid] ?? null);
 }
 
 // 零件欄位：patch 值 undefined＝拿掉；光源的 r/color/… 寫進 light
@@ -484,19 +505,51 @@ function setPart(id, i, patch)
     });
 }
 
-// 加零件（放在錨點、永遠出現）：kind＝png／particle／light，v＝圖／粒子 id（沒給就問；粒子 NEW_PARTICLE＝範本、零件自己的 def）
+// 新的粒子 id（particle.json＋草稿副本都沒有）：預設 <base>-<n> 最小空號；問到的不合法／撞名＝null
 const NEW_PARTICLE = '[新增]';
-const particleIds = () => Object.keys(S.refs.particles);
-async function addPart(id, kind, v)
+function particleIdError(pid)
+{
+    if (!pid) return 'id 不能空白';
+    if (!PREFAB_ID.test(pid)) return 'id 只能用英數字、_、-';
+    if (particleIds().includes(pid)) return `已經有粒子「${pid}」`;
+}
+const freePid = (base, num) => {
+    const ids = particleIds();
+    if (!num && !ids.includes(base)) return base;
+    let i = num ? 1 : 2;
+    while (ids.includes(`${base}-${i}`)) i++;
+    return `${base}-${i}`;
+};
+async function askParticleId(title, def, pid)
+{
+    pid ??= await askName(title, def);
+    if (pid === null) return null;
+    const err = particleIdError(pid);
+    if (err) {status(err); return null;}
+    return pid;
+}
+
+// 加零件（放在錨點、永遠出現）：kind＝png／particle／light，v＝圖／粒子 id（沒給就問；粒子 NEW_PARTICLE＝範本，再問新 id＝pid）
+async function addPart(id, kind, v, pid)
 {
     if (kind === 'png') v ??= await askImg();
-    else if (kind === 'particle') v ??= await askId('加粒子（[新增]＝自己的、不跟粒子庫共用）', particleIds(), ls.get(LS.particle), [NEW_PARTICLE]);
+    else if (kind === 'particle') v ??= await askId('加粒子（[新增]＝新建一筆 particle.json，存 prefab 時一起寫）', particleIds(), ls.get(LS.particle), [NEW_PARTICLE]);
     if (kind !== 'light' && !v) return;
+    if (kind === 'particle' && v === NEW_PARTICLE)
+    {
+        v = await askParticleId('新粒子 id', freePid(id, true), pid);
+        if (!v) return;
+        pid = v;
+    }
+    else pid = null;
     if (kind === 'particle') ls.set(LS.particle, v);
-    const part = kind === 'png' ? {img: v} : kind === 'particle' ? (v === NEW_PARTICLE ? {def: PSC.template()} : {particle: v}) : {light: {...LIGHT}};
+    const part = kind === 'png' ? {img: v} : kind === 'particle' ? {particle: v} : {light: {...LIGHT}};
     S.part = pfOf(id)?.parts?.length ?? 0;
     if (isFolded('right.parts')) toggleFold('right.parts');
-    await editPf(id, pf => {(pf.parts ??= []).push(part);});
+    await editPf(id, (pf, ps) => {
+        (pf.parts ??= []).push(part);
+        if (pid) ps[pid] = PSC.template();
+    });
 }
 
 function movePart(id, i, d)
@@ -796,8 +849,25 @@ function prefabPanel(id)
     ];
 }
 
+// 零件自己的粒子（{def}）已不支援：遊戲不畫，列 ⚠、表單只能換成 particle.json 的 id
 const isParticle = (p) => !!(p.particle || p.def);
-const partName = (p) => (p.img ? propName(p) : p.def ? '自訂粒子' : p.particle ?? `光源 r${p.light?.r ?? ''}`);
+const oldDef = (p) => !!p.def && !p.particle;
+const partName = (p) => (p.img ? propName(p) : oldDef(p) ? '⚠ 零件自己的粒子（已不支援）' : p.particle ?? `光源 r${p.light?.r ?? ''}`);
+
+// 用到這個粒子 id 的地方（prefab 照草稿、能力／道具／特效）：['prefab forge', …]，同一筆用幾次列幾次
+function particleUsers(pid)
+{
+    const out = [];
+    const walk = (v, who) => {
+        if (Array.isArray(v)) return v.forEach(x => walk(x, who));
+        if (!v || typeof v !== 'object') return;
+        for (const [k, x] of Object.entries(v)) {if ((k === 'particle' || k === 'tickParticle') && x === pid) out.push(who); else walk(x, who);}
+    };
+    const pfs = S.draft ? {...S.prefabs, [S.draft.id]: S.draft.pf} : S.prefabs;
+    for (const [tab, data] of [['prefab', pfs], ['能力', S.refs.abilities], ['道具', S.refs.items], ['特效', S.refs.fx]])
+        for (const [o, v] of Object.entries(data ?? {})) walk(v, `${tab} ${o}`);
+    return out;
+}
 const partIcon = (p) => (p.img ? imgEl(p.img, 20) : isParticle(p) ? h('span', null, '🔥') : h('span', {class: 'swatch', style: `background:${p.light?.color ?? '#ffcc88'}`}));
 
 // 零件清單：一列一個，點一下在下面展開表單（一次一個）；不屬於這個實例目前狀態的標灰
@@ -839,24 +909,30 @@ function partRows(id, i, p)
     ];
     if (isParticle(p))
     {
-        const def = p.def ?? S.refs.particles[p.particle], k = `${id}#${i}`;
-        const idSel = h('select', {dataset: {k: 'particle'}, onchange: () => changePartParticle(id, i, p, idSel.value)}, [NEW_PARTICLE, ...particleIds()].map(v => h('option', {value: v}, v)));
-        if (p.particle && !S.refs.particles[p.particle]) idSel.append(h('option', {value: p.particle}, `⚠ ${p.particle}`));
-        idSel.value = p.def ? NEW_PARTICLE : p.particle;
+        const pid = p.particle, def = pDef(pid), k = `${id}#${i}`;
+        const idSel = h('select', {dataset: {k: 'particle'}, onchange: () => changePartParticle(id, i, idSel.value)}, [NEW_PARTICLE, ...particleIds()].map(v => h('option', {value: v}, v)));
+        if (pid && !def) idSel.append(h('option', {value: pid}, `⚠ ${pid}`));
+        if (oldDef(p)) idSel.append(h('option', {value: ''}, '⚠ 零件自己的（選一個 id）'));
+        idSel.value = pid ?? '';
+        if (oldDef(p)) return [h('div', {class: 'warn', dataset: {k: 'oldDef'}}, '零件自己的粒子已不支援（遊戲不畫）：選一個 particle.json 的 id，或 [新增] 一筆'),
+            h('table', {class: 'props'}, row('粒子', idSel), pos, look)];
         if (PQ.key !== k) {PQ.key = k; PQ.drafts = {};}
         PQ.of = [id, i];
         PQ.data = {[k]: def};
+        const users = particleUsers(pid), dirty = S.draft?.id === id && pid in S.draft.ps;
         return [
             h('table', {class: 'props'},
-                row('粒子', idSel, ' ', !p.def && h('button', {title: '內容到粒子分頁改（用到的地方一起變）', onclick: () => SH.gotoTab('particle', [p.particle])}, '↗')), pos,
+                row('粒子', idSel, ' ', S.refs.particles[pid] && h('button', {title: '到粒子分頁（草稿裡改的要先存 prefab）', onclick: () => SH.gotoTab('particle', [pid])}, '↗')), pos,
                 row('深度', Object.assign(n('depth', 1, '0'), {disabled: !def?.local}),
                     h('span', {class: 'dim', dataset: {k: 'depthNote'}}, def?.local ? ' 跟 png 一起排（大的在前），下面的「深度」不管'
                         : ' 勾 local 才能排進零件；沒勾＝整個在 prefab 前面（下面「深度」選目標底下＝後面）')),
                 look),
             ...foldSec('right.partParticle',
-                h('span', {dataset: {k: 'defState'}}, p.def ? '粒子內容：自訂（這個零件自己的，不跟粒子庫共用）' : '粒子內容：用 particle.json（改了就複製一份到這個零件）'),
-                () => [!def ? h('div', {class: 'warn'}, `particle.json 沒有 ${p.particle}`) : h('div', {class: 'pform'}, PP.body(k, def))],
-                def && PPF.modeBtn()),
+                h('span', {dataset: {k: 'defState'}}, `粒子內容：${pid}`,
+                    !S.refs.particles[pid] ? h('span', {class: 'dim'}, '（新的，存 prefab 時寫進 particle.json）') : dirty ? h('span', {class: 'warn'}, ' ●') : null,
+                    users.length > 1 && h('span', {class: 'warn', dataset: {k: 'shared'}, title: `改了這些地方一起變：\n${users.join('\n')}`}, ` 共用 ${users.length} 處`)),
+                () => [!def ? h('div', {class: 'warn'}, `particle.json 沒有 ${pid}`) : h('div', {class: 'pform'}, PP.body(k, def))],
+                def && [h('button', {dataset: {k: 'forkParticle'}, title: '把目前的內容複製成新的粒子 id，這個零件改用它（不影響共用的地方）', onclick: (e) => {e.stopPropagation(); forkPartParticle(id, i);}}, '另存新 id…'), PPF.modeBtn()]),
         ];
     }
     const l = p.light ?? {}, point = !(l.arc > 0 && l.arc < 360);
@@ -922,7 +998,8 @@ async function dupPrefab(from, to)
 
 // ---------- 組成 prefab：場景裡挑擺設／粒子／光源 → prefab.json 一筆＋原地換成一個實例 ----------
 // 錨點＝第一個勾的擺設（沒有就第一個勾的東西）；跟著角色／擺設的粒子／光源先換成絕對位置；
-// 發射點有自己那份（def）的直接變成零件自己的 {def}（不寫 particle.json、不留來源 id）；最後收尾（烤圖、縮圖外框）
+// 發射點有自己那份（def ✎）的寫進 particle.json：另存新 id（預設 <prefab>-<原 id>）或覆寫原 id；最後收尾（烤圖、縮圖外框）
+// opt（測試用）＝{keys, id, particles?: {發射點 key: {mode: 'new'|'over', id?}}}，沒給的 ✎ 照預設另存新 id
 async function composePrefab(start, opt)
 {
     if (S.sel === null) return status('先選或新增一個場景');
@@ -930,28 +1007,62 @@ async function composePrefab(start, opt)
     const all = [...props().map(o => ['props', o, `擺設 ${o.key}　${propName(o)}`]), ...emitters().map(o => ['particles', o, `粒子 ${o.key}　${o.id}${o.def ? ' ✎' : ''}`]),
                  ...lights().map(o => ['lights', o, `光源 ${o.key}`])];
     if (!all.length) return status('場景裡沒有擺設／粒子／光源可以組');
-    let pick, id;
-    if (opt) ({keys: pick, id} = opt);
+    const own = emitters().filter(o => o.def);
+    const defPid = (pfId, o) => freePid(`${pfId}-${o.id}`);
+    let pick, id, pmode = {};
+    if (opt) ({keys: pick, id, particles: pmode = {}} = opt);
     else
     {
         let n = 'prefab';
         for (let i = 2; n in S.prefabs; i++) n = `prefab${i}`;
         const idInp = h('input', {size: 20, value: n});
         const checks = all.map(([, o, t]) => h('label', {style: 'display:block'}, h('input', {type: 'checkbox', value: o.key, checked: o.key === start || o.follow === start}), ' ', t));
+        // ✎ 的發射點：每個一列，另存新 id（跟著 prefab id 改預設，手改過就不動）／覆寫原 id
+        const rows = own.map(o => {
+            const inp = h('input', {size: 20, value: defPid(n, o), dataset: {k: `pid.${o.key}`}});
+            const users = particleUsers(o.id).length;
+            const sel = h('select', {dataset: {k: `pmode.${o.key}`}, onchange: () => {inp.disabled = sel.value === 'over';}},
+                h('option', {value: 'new'}, '另存新 id'), h('option', {value: 'over'}, `覆寫 ${o.id}${users ? `（共用 ${users} 處）` : ''}`));
+            return {o, inp, sel, el: h('div', {class: 'row2'}, `${o.key}（${o.id} ✎）`, sel, inp)};
+        });
+        let last = n;
+        idInp.oninput = () => {
+            const v = idInp.value.trim();
+            for (const r of rows) if (r.inp.value === defPid(last, r.o)) r.inp.value = defPid(v, r.o);
+            last = v;
+        };
         const p = ask('組成 prefab', [
             h('label', null, 'id ', idInp, h('span', {class: 'dim'}, '　英數字、_、-')),
-            h('div', {class: 'dim', style: 'margin-top:6px'}, '要組進去的東西（錨點＝第一個勾的擺設；✎＝自己改過的粒子，帶進 prefab 變成零件自己的）'),
+            h('div', {class: 'dim', style: 'margin-top:6px'}, '要組進去的東西（錨點＝第一個勾的擺設；✎＝自己改過的粒子，要存進 particle.json）'),
             h('div', {class: 'treebox', style: 'height:auto; max-height:260px; padding:4px'}, checks),
+            rows.length ? h('div', {class: 'dim', style: 'margin-top:6px'}, '✎ 的粒子（有勾到才用）：') : null,
+            ...rows.map(r => r.el),
         ], [['ok', '組成'], ['cancel', '取消']]);
         idInp.select();
         if (await p !== 'ok') return;
         id = idInp.value.trim();
         pick = checks.map(l => l.querySelector('input')).filter(c => c.checked).map(c => c.value);
+        pmode = Object.fromEntries(rows.map(r => [r.o.key, {mode: r.sel.value, id: r.inp.value.trim()}]));
     }
     const err = prefabIdError(id);
     if (err) return status(err);
     const chosen = all.filter(([, o]) => pick.includes(o.key));
     if (!chosen.length) return status('至少勾一個');
+    // ✎ 的發射點 → particle.json 的 id（另存的不能撞名、彼此也不能重複）
+    const writes = {}, pidOf = {};
+    for (const [k, o] of chosen)
+    {
+        if (k !== 'particles' || !o.def) continue;
+        const m = pmode[o.key] ?? {mode: 'new'};
+        const pid = m.mode === 'over' ? o.id : (m.id || defPid(id, o));
+        if (m.mode !== 'over')
+        {
+            const perr = particleIdError(pid) ?? (pid in writes ? `粒子 id「${pid}」重複了` : null);
+            if (perr) return status(perr);
+        }
+        writes[pid] = structuredClone(o.def);
+        pidOf[o.key] = pid;
+    }
     const abs = (o) => {const b = o.follow ? followBase(sc, o.follow) : null; return {x: (b?.x ?? 0) + o.x, y: (b?.y ?? 0) + o.y};};
     const first = chosen.find(([k]) => k === 'props') ?? chosen[0];
     const anchor = abs(first[1]);
@@ -960,11 +1071,13 @@ async function composePrefab(start, opt)
     for (const [k, o] of chosen)
     {
         const {follow, every, ...rest} = o;
-        syn[k].push({...rest, ...abs(o)});
+        syn[k].push({...rest, ...abs(o), ...(pidOf[o.key] && {id: pidOf[o.key], def: undefined})});
     }
     const parts = fromSyn(syn, anchor.x, anchor.y);
-    await commit((scenes, pf) => {
+    const pw = Object.entries(writes);
+    await commit((scenes, pf, particles) => {
         if (id in pf) throw new Error(`已經有 prefab「${id}」`);
+        for (const [pid, def] of pw) particles[pid] = def;
         const s = scenes[name];
         if (!s) throw new Error(`找不到場景「${name}」`);
         pf[id] = {parts};
@@ -984,7 +1097,7 @@ async function composePrefab(start, opt)
             if (!s[k].length) delete s[k];
         }
         (s.prefabs ??= []).push({key, prefab: id, x: anchor.x, y: anchor.y});
-    }, undefined, key, PREFAB_FILES);
+    }, undefined, key, pw.length ? [...PREFAB_FILES, ST.PARTICLE] : PREFAB_FILES);
     if (!S.prefabs[id]) return;
     const n0 = S.undo.length;
     try {await finishEdit(id);}
@@ -1159,31 +1272,49 @@ function pCommit(fn)
 const PFF = createForm({S: PS, render: () => renderRight(), commit: pCommit});
 const PF = createPForm({S: PS, F: PFF, set: (id, path, v) => pCommit(() => setAt(PS.data[id], path, v)), commit: pCommit, render: () => renderRight()});
 
-// prefab 粒子零件的表單：{particle:id} 第一次改就整筆複製成 {def}（拿掉 particle），之後跟 particle.json 脫鉤；寫的是草稿
+// prefab 粒子零件的表單：改的是那個 particle id 的草稿副本（S.draft.ps），儲存 prefab 才寫 particle.json（共用的地方一起變）
 const PQ = {data: {}, open: {}, json: false, drafts: {}, extra: {}, of: null, key: null};
-const partDef = (p) => p?.def ?? S.refs.particles[p?.particle];
+const partPid = (id, i) => pfOf(id)?.parts?.[i]?.particle;
 function ppCommit(fn)
 {
-    const [id, i] = PQ.of ?? [], k = PQ.key, cur = partDef(pfOf(id)?.parts?.[i]);
+    const [id, i] = PQ.of ?? [], k = PQ.key, pid = partPid(id, i), cur = pDef(pid);
     if (!cur) return;
     PQ.data[k] = structuredClone(cur);
     fn();
     if (str(PQ.data[k]) === str(cur)) return renderRight();
-    return setPart(id, i, {def: PQ.data[k], particle: undefined});
+    return editPf(id, (pf, ps) => {ps[pid] = PQ.data[k];});
 }
 const PPF = createForm({S: PQ, render: () => renderRight(), commit: ppCommit});
 const PP = createPForm({S: PQ, F: PPF, set: (k, path, v) => ppCommit(() => setAt(PQ.data[k], path, v)), commit: ppCommit, render: () => renderRight()});
 
-// 零件換粒子：[新增]＝範本（自己的）；換成庫的 id 時自己那份會丟掉，先問
-async function changePartParticle(id, i, p, v)
+// 零件換粒子：[新增]＝問新 id、範本放進草稿副本；舊的 {def} 換掉時拿掉
+async function changePartParticle(id, i, v, pid)
 {
+    if (!v) return renderRight();
     if (v === NEW_PARTICLE)
     {
-        if (!p.def) await setPart(id, i, {def: PSC.template(), particle: undefined});
-        return;
+        v = await askParticleId('新粒子 id', freePid(id, true), pid);
+        if (!v) return renderRight();
+        return editPf(id, (pf, ps) => {
+            ps[v] = PSC.template();
+            pf.parts[i].particle = v;
+            delete pf.parts[i].def;
+        });
     }
-    if (p.def && await ask('換粒子', `這個零件有自己的粒子內容，換成 ${v} 會丟掉，確定？`, [['ok', '換'], ['cancel', '取消']]) !== 'ok') return renderRight();
     await setPart(id, i, {particle: v, def: undefined});
+}
+
+// 另存新 id：目前內容（含草稿改的）複製成新 id，這個零件改用它；預設 <prefab>-<原 id>
+async function forkPartParticle(id, i, nid)
+{
+    const pid = partPid(id, i), cur = pDef(pid);
+    if (!cur) return;
+    nid = await askParticleId(`另存 ${pid} 成新 id`, freePid(`${id}-${pid}`), nid);
+    if (!nid) return renderRight();
+    return editPf(id, (pf, ps) => {
+        ps[nid] = structuredClone(cur);
+        pf.parts[i].particle = nid;
+    });
 }
 
 // 換粒子＝丟掉自己那份；自己那份改過（跟來源不一樣）先問
@@ -1910,7 +2041,7 @@ function syncGame()
     toGame(playMsg());
     toGame(selMsg());
     toGame({sb: 'hide', keys: [...S.hidden]});
-    toGame({sb: 'load', scene: cur(), prefabs: prefabsMsg()});
+    toGame({sb: 'load', scene: cur(), prefabs: prefabsMsg(), particles: particlesMsg()});
     toGame(inspectMsg());
 }
 
@@ -1972,9 +2103,9 @@ addEventListener('message', (e) => {
     }
     else if (m.sb === 'partZone' && instOf(m.key))
     {
-        // 拖 prefab 粒子零件的 zone＝改它的粒子內容（草稿；共用的先整筆複製成 {def}）
-        const id = instOf(m.key).prefab, cur = partDef(pfOf(id)?.parts?.[m.i]);
-        if (cur) setPart(id, m.i, {def: {...structuredClone(cur), [m.k]: m.z}, particle: undefined});
+        // 拖 prefab 粒子零件的 zone＝改那個粒子 id 的草稿副本
+        const id = instOf(m.key).prefab, pid = partPid(id, m.i), cur = pDef(pid);
+        if (cur) editPf(id, (pf, ps) => {ps[pid] = {...structuredClone(cur), [m.k]: m.z};});
     }
     else if (m.sb === 'moveLight') setLight(m.key, {x: m.x, y: m.y}).then(syncGame);
     else if (m.sb === 'radiusLight') setLight(m.key, {r: m.r, ...(m.dir !== undefined && {dir: m.dir})}).then(syncGame);
@@ -2083,9 +2214,11 @@ SH.onSaved((file) => {
     if (!S.root) return;
     if (file === ST.FILE) queue(async () => {S.data = await ST.read(); refresh();});
     else if (file === ST.PREFAB) queue(async () => {S.prefabs = await ST.read(ST.PREFAB); refresh();}).then(draftConflict);
+    // particle.json：load 訊息帶整份給 sandbox，不重開；草稿碰過的粒子被改了要問
+    else if (file === ST.PARTICLE) queue(async () => {await loadRefs(); refresh();}).then(draftConflict);
     else if (GAME_FILES.includes(file))
     {
-        if (['role.json', 'item.json', 'ability.json', 'fx.json', 'particle.json', 'local.json'].includes(file)) queue(async () => {await loadRefs(); refresh();});
+        if (['role.json', 'item.json', 'ability.json', 'fx.json', 'local.json'].includes(file)) queue(async () => {await loadRefs(); refresh();});
         // 加了圖（包括「存檔…」存進 textures/）：sandbox 自己補載新 key，不重開；同 key 換內容要按重開
         if (file === 'textures.json') toGame({sb: 'textures'});
         else reloadGame();
@@ -2098,5 +2231,5 @@ refresh();
 
 // 給無頭測試用
 window.__sc = {S, setProject, addScene, dupScene, renameScene, deleteScene, select, undo, redo, addRole, setRole, setEquip, deleteRole, pickRole, toggleHide, arm, toGame, addProp, setProp, deleteObj, nudge, bakeProp, folderTree, exportProp: (key) => exportProp(propOf(key)), srcSize, addLight, setLight, addEmitter, setEmitter, setField, setPlaying,
-               addInst, setInst, newPrefab, deletePrefab, toggleFold, setPf, setPart, addPart, movePart, delPart, openPart, pickPrefab, saveDraft, dropDraft, composePrefab, renamePrefab, dupPrefab, setBoxMode, setPartMode,
+               addInst, setInst, newPrefab, deletePrefab, toggleFold, setPf, setPart, addPart, movePart, delPart, openPart, pickPrefab, saveDraft, dropDraft, changePartParticle, forkPartParticle, particleUsers, pDef, composePrefab, renamePrefab, dupPrefab, setBoxMode, setPartMode,
                flush: () => S.q};
