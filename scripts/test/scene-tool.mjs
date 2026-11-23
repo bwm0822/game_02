@@ -569,6 +569,31 @@ run('scene-tool', async t => {
         cd.querySelectorAll('.buttons button')[1].click();
         await cutDone;
         out.cutCancel = [(await scDisk()).props.length, (await scDisk()).props[0].img];
+
+        // prefab png 零件切前後片：PNG 立刻寫（file: 圖存 textures/prefabs/<id>/）、零件進草稿，後片插在前面、全部照抄
+        await sc.addProp(tkey, 400, 300);
+        const kq = (await scDisk()).props.at(-1).key;
+        await sc.composePrefab(kq, {keys: [kq], id: 'cutpf'});
+        await until(() => sc.S.prefabs.cutpf && sc.S.pick);
+        const pfP = () => (sc.S.draft?.id === 'cutpf' ? sc.S.draft.pf : sc.S.prefabs.cutpf).parts;
+        await sc.setPart('cutpf', 0, {img: `file:public/assets/${turl}`, pct: 50, depth: 3, look: 'on', fx: 'zz'});
+        sc.openPart(0);
+        out.partBtn = await until(() => doc.querySelector('#right .partform [data-k=cut]')) && true;
+        cutDone = sc.cutPart('cutpf', 0);
+        cd = await cutDlg();
+        await raf2();
+        cd.querySelector('[data-k=cutName]').value = 'cutp';
+        for (const [x, y] of [[0, 0], [hx, 0], [hx, CH], [0, CH], [0, 0]]) cutPtr(cd, x, y);
+        cd.querySelector('.buttons button').click();
+        await cutDone;
+        const pfDir = await dir(proj, 'public', 'assets', 'textures', 'prefabs', 'cutpf');
+        out.partCut = [pfP().map(p => ({...p})), sc.S.part, !!sc.S.draft, !!await pfDir.getFileHandle('cutp-front.png').catch(() => null), !!await pfDir.getFileHandle('cutp-back.png').catch(() => null),
+                       sc.S.prefabs.cutpf.parts.length];
+        sc.dropDraft();
+        await sc.undo();
+        await until(async () => !(await scDisk()).prefabs && (await scDisk()).props.some(p => p.key === kq));
+        await sc.deleteObj(kq);
+        await until(async () => (await scDisk()).props.length === 1);
         await sc.setProp('p2', {pct: undefined, depth: undefined, flip: undefined});
 
         // ---------- 第 5 步：特效 ----------
@@ -864,6 +889,16 @@ run('scene-tool', async t => {
     t.check('切前後片：undo 回一個原圖擺設', r.cutUndo && r.cutUndo.key === 'p2' && r.cutUndo.img.startsWith('file:') && r.cutUndo.pct === 50, JSON.stringify(r.cutUndo));
     t.eq('切前後片：Shift 鎖 45°（再吸整數）', JSON.stringify(r.cutShift), JSON.stringify([[10, 10], [30, 10]]));
     t.check('切前後片：取消不動', r.cutCancel[0] === 1 && r.cutCancel[1].startsWith('file:'), JSON.stringify(r.cutCancel));
+    t.check('prefab 零件：展開的 png 表單有「切前後片…」', r.partBtn);
+    {
+        const [parts, part, draft, fOk, bOk, saved] = r.partCut;
+        const [B, F] = parts;
+        t.check('prefab 零件切前後片：後片插在前面、原零件變前片（拿掉 pct）、其他全部照抄（depth/look/fx）',
+                parts.length === 2 && B.img === 'cutp-back' && F.img === 'cutp-front' && F.pct === undefined && B.pct === undefined &&
+                B.depth === 3 && F.depth === 3 && B.look === 'on' && F.look === 'on' && B.fx === 'zz' && F.fx === 'zz' && B.x === F.x && B.y === F.y, JSON.stringify(parts));
+        t.check('prefab 零件切前後片：在草稿（prefab.json 沒動）、展開的表單跟著前片', draft && saved === 1 && part === 1, JSON.stringify([draft, saved, part]));
+        t.check('prefab 零件切前後片：file: 圖的 PNG 存 textures/prefabs/<id>/', fOk && bOk, JSON.stringify([fOk, bOk]));
+    }
     t.eq('拖曳放開：寫檔、sandbox 跟著', JSON.stringify(r.moveProp), JSON.stringify([208, 224]));
     t.eq('方向鍵 1px、Shift＋方向鍵一格', JSON.stringify(r.nudge), JSON.stringify([209, 256]));
     t.eq('擺設點得到', r.pickProp, 'p1');

@@ -105,18 +105,24 @@
 
 目的：組成 prefab 時夾東西在中間（後片 → 火焰粒子 → 前片）。2026-11-23 定案最小版（第一版魔術棒＋連動＋prefab 零件做完後整個 revert）：只有手繪、1px 對齊、切完是兩個**獨立**的擺設，遊戲跟 sandbox 都不改。
 
-- 入口：擺設右鍵（左欄、畫面）＋面板按鈕「切前後片…」（`canCut()`：textures 單張圖或 `file:`；sheet／atlas 格子不行）。
+- 入口：擺設右鍵（左欄、畫面）＋面板按鈕「切前後片…」；prefab 的 png 零件在展開的零件表單「換圖…」旁邊（零件列右鍵已經是展開／收起）。只限單張圖（`canCut()`：textures 單張圖或 `file:`；sheet／atlas 格子不行）。
 - 對話框 `tools/scene/cut.js` 的 `cutDialog({src, title, side, check})`（`#dlgCut`，JS 建、92vw×88vh；左畫布用 `panzoom.js` 自己一組 view `tools.scene.cutView`、每次開都置中；右邊預覽切換、倍率、說明、呼叫端給的檔名欄）：
   - 只有手繪（自己一份，不跟紙娃娃共用）：點一下加頂點（**吸整數像素**＝像素角落）、點第一點（8 螢幕 px 內）或雙擊閉合、Shift＝從上一點出發鎖 45° 的倍數（游標投影到那條線上再吸整數，水平／垂直也是）；閉合後拖頂點、點邊插點；指著頂點按 Del 刪點（閉合時最少 3 點）、沒指著按 Backspace（沒閉合時 Del 也一樣）退一點／解開閉合；Ctrl+Z／Y 對話框內 undo；滾輪縮放、中鍵平移；Esc／取消＝什麼都不做，沒閉合不能確定。
   - **圈起來的＝後片**，其餘＝前片。
   - **1px 對齊**：`cutMask()` 掃描線算像素中心 (x+0.5, y+0.5) 在不在多邊形裡（奇偶規則），每個像素只屬於一張、不反鋸齒，`cutPiece()` 把另一邊的 alpha 設 0，兩張疊回去＝原圖。
   - 預覽 `原圖＋後片｜前片｜後片`（記 `tools.scene.cutPreview`）：原圖模式把後片的不透明像素染藍（照 `cutMask` 算，看到的就是切出來的）；倍率 ×8 以上畫像素格線（只畫看得到的那段）。
+- 共用流程 `runCut(o, 標題, file 圖的資料夾)`（開對話框、檢查、寫兩張 PNG、更新圖片清單，回傳 `{F, B, dir, over}`），擺設 `cutProp(key)`、零件 `cutPart(id, i)` 再各自改資料；`cutSync()`：蓋掉既有檔就重開 sandbox，不然送 `textures` 補載。
 - `cutProp(key)`：
   - 要切的圖（`cutSrc()`）：`file:` 圖先照 `pct` 縮好（同「存檔…」，`imageSmoothingQuality:'high'`），頂點對齊縮好後的像素，存的時候不再縮放；textures 圖原尺寸。
   - 存檔位置不給選：textures 圖＝原圖所在資料夾（`texDirOf()` 從圖片清單網址推），`file:` 圖＝`textures/props/`（不在就建）；檔名欄預設原圖名，寫 `<名>-front.png`／`<名>-back.png`，兩張跟（縮好的）原圖同尺寸、不裁邊，所以錨點、位置照抄就對齊。
   - 檢查（`cutCheck()`，錯誤顯示在對話框、不關）：空白／非法字元、跟原圖同名、texture key 撞到別的資料夾擋；同資料夾已有＝`confirm` 覆蓋。
   - 寫完 `updateTextures()`；sandbox 送 `textures` 補載，蓋掉既有檔（同 key 換內容）＝重開 sandbox。
   - 場景（一筆 undo，PNG 不退）：原擺設（key 不變）＝前片，`img` 換 `<名>-front`、拿掉 `pct`；後片＝新 key 的擺設**插在前片前面**，其他欄位照抄（`depth` 也一樣）。兩個沒有任何關聯欄位、各拖各的。同深度在 sandbox 誰在上面不保證（不加 container、不處理）；組成 prefab 後零件同深度照清單順序，後片在下。
+- `cutPart(id, i)`（prefab png 零件，2026-11-23）：同擺設的規則，差別：
+  - `file:` 圖的 PNG 存 `textures/prefabs/<prefab id>/`（跟 prefab 儲存時烤 file: 圖同一個地方）；textures 圖一樣存原資料夾。
+  - PNG 按確定就寫，零件的變化進**草稿**（按儲存才寫 prefab.json；放棄＝回到沒切的樣子，PNG 留著沒人用、圖片分頁標未使用）。
+  - 原零件留原位＝前片（`img` 換新、拿掉 `pct`），後片插在前面（同深度清單前面的在下），其他欄位**全部照抄**（含 `depth`／`look`／`off`／`fx`）；兩個是獨立零件、沒有關聯欄位。展開中的表單（`S.part`）跟左鍵選取跟著往後移一格。
+  - 切的途中零件被改了（img 不一樣）＝不改零件，只提示（PNG 已寫）。
 
 ## 格線與吸附
 

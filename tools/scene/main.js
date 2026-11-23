@@ -918,7 +918,8 @@ function partRows(id, i, p)
     const look = row('狀態', lookSelect(id, p.look, (v) => set({look: v})));
     if (p.img) return [
         h('div', {class: 'row2'}, imgEl(p.img, 48), h('span', {class: 'dim', style: 'word-break: break-all'}, p.img),
-            h('button', {onclick: async () => {const v = await askImg(p.img); if (v) set({img: v, pct: isFile(v) ? p.pct : undefined});}}, '換圖…')),
+            h('button', {onclick: async () => {const v = await askImg(p.img); if (v) set({img: v, pct: isFile(v) ? p.pct : undefined});}}, '換圖…'),
+            canCut(p) && h('button', {dataset: {k: 'cut'}, title: '手繪圈出後片，切成前片＋後片兩個零件（PNG 立刻寫進 textures/，零件改在草稿）', onclick: () => cutPart(id, i)}, '切前後片…')),
         h('table', {class: 'props'},
             pos,
             ...sizeRows(p, row, set, `${id}#${i}`),
@@ -1732,22 +1733,21 @@ async function cutCheck(dir, base, srcImg)
     return null;
 }
 
-async function cutProp(key)
+// 開對話框切 o（擺設或 prefab 的 png 零件）、寫兩張 PNG：textures 圖存原資料夾、file: 圖存 fileDir；回傳 {F, B, dir, over（蓋掉既有檔）}｜null
+async function runCut(o, what, fileDir)
 {
-    if (!S.root) return status('先在上方選擇專案資料夾');
-    const p = propOf(key);
-    if (!p) return;
-    if (!canCut(p)) return status('只能切單張圖（sheet／atlas 的格子不行）');
-    const src = await cutSrc(p);
-    if (!src) return status(`讀不到 ${p.img}`);
-    const dir = isFile(p.img) ? `${TEX}/props` : texDirOf(p.img) ?? TEX;
-    const name = h('input', {size: 24, value: propName(p).replace(/\.png$/i, ''), dataset: {k: 'cutName'}});
+    if (!S.root) return status('先在上方選擇專案資料夾'), null;
+    if (!canCut(o)) return status('只能切單張圖（sheet／atlas 的格子不行）'), null;
+    const src = await cutSrc(o);
+    if (!src) return status(`讀不到 ${o.img}`), null;
+    const dir = isFile(o.img) ? fileDir : texDirOf(o.img) ?? TEX;
+    const name = h('input', {size: 24, value: propName(o).replace(/\.png$/i, ''), dataset: {k: 'cutName'}});
     const side = h('div', {class: 'cutsave'}, h('div', {class: 'dim', style: 'word-break: break-all'}, `存到 ${dir}/`),
         h('label', null, '檔名 ', name, h('span', {class: 'dim'}, ' -front／-back.png')));
     const base = () => bakeName(name.value);
-    const r = await cutDialog({src, title: `切前後片：${propName(p)}${pctOf(p) !== 1 ? `（照 ${p.pct}% 縮好再切）` : ''}`, side,
-                               check: () => cutCheck(dir, base(), p.img)});
-    if (!r) return;
+    const r = await cutDialog({src, title: `切前後片：${what}${pctOf(o) !== 1 ? `（照 ${o.pct}% 縮好再切）` : ''}`, side,
+                               check: () => cutCheck(dir, base(), o.img)});
+    if (!r) return null;
     const M = cutMask(src.width, src.height, r.pts), [F, B] = cutNames(base());
     let over = false;
     try
@@ -1759,23 +1759,55 @@ async function cutProp(key)
             await FS.writeFile(out, `${n}.png`, await new Promise(res => cutPiece(src, M, keep).toBlob(res, 'image/png')));
         }
     }
-    catch (e) {return status(`寫不了 PNG：${e.message}`);}
+    catch (e) {return status(`寫不了 PNG：${e.message}`), null;}
     await updateTextures();
+    return {F, B, dir, over};
+}
+
+// 蓋掉既有的圖＝同 key 換內容，sandbox 要重開才會換
+const cutSync = (r) => (r.over ? reloadGame() : toGame({sb: 'textures'}));
+
+async function cutProp(key)
+{
+    const p = propOf(key);
+    if (!p) return;
+    const r = await runCut(p, propName(p), `${TEX}/props`);
+    if (!r) return;
     await editScene(sc => {
         const i = sc.props?.findIndex(x => x.key === key) ?? -1;
         if (i < 0) throw new Error(`場景裡沒有 ${key}`);
         const q = sc.props[i];
         let n = 1;
         while (sc.props.some(x => x.key === `p${n}`)) n++;
-        q.img = F;
+        q.img = r.F;
         delete q.pct;
         const {key: _k, img: _i, ...rest} = q;
-        sc.props.splice(i, 0, {key: `p${n}`, img: B, ...rest});
+        sc.props.splice(i, 0, {key: `p${n}`, img: r.B, ...rest});
     }, key);
-    // 蓋掉既有的圖＝同 key 換內容，sandbox 要重開才會換
-    if (over) reloadGame();
-    else toGame({sb: 'textures'});
-    status(`${key} 切成 ${F}＋${B}（${dir}）`);
+    cutSync(r);
+    status(`${key} 切成 ${r.F}＋${r.B}（${r.dir}）`);
+}
+
+// prefab png 零件（草稿）：原零件留原位變前片、後片插在前面、其他欄位全部照抄；file: 圖存 textures/prefabs/<id>/
+async function cutPart(id, i)
+{
+    const p = pfOf(id)?.parts?.[i];
+    if (!p?.img) return;
+    const r = await runCut(p, `${id} 零件 ${i + 1}（${propName(p)}）`, `${TEX}/prefabs/${id}`);
+    if (!r) return;
+    if (pfOf(id)?.parts?.[i]?.img !== p.img) return status(`${id} 零件 ${i + 1} 已經變了，沒有改零件（PNG 已寫）`);
+    const sh = (j) => (j >= i ? j + 1 : j);
+    S.part = S.part === null ? null : sh(S.part);
+    remapSel(sh);
+    await editPf(id, pf => {
+        const q = pf.parts[i];
+        q.img = r.F;
+        delete q.pct;
+        const {img: _i, ...rest} = q;
+        pf.parts.splice(i, 0, {img: r.B, ...structuredClone(rest)});
+    });
+    cutSync(r);
+    status(`${id} 零件 ${i + 1} 切成 ${r.F}＋${r.B}（${r.dir}，存 prefab 才寫進 prefab.json）`);
 }
 
 function propPanel(p)
@@ -2364,5 +2396,5 @@ refresh();
 
 // 給無頭測試用
 window.__sc = {S, setProject, addScene, dupScene, renameScene, deleteScene, select, undo, redo, addRole, setRole, setEquip, deleteRole, pickRole, toggleHide, arm, toGame, addProp, setProp, deleteObj, nudge, bakeProp, folderTree, exportProp: (key) => exportProp(propOf(key)), srcSize, addLight, setLight, addEmitter, setEmitter, setField, setPlaying,
-               addInst, setInst, newPrefab, deletePrefab, toggleFold, setPf, setPart, addPart, movePart, delPart, delParts, openPart, moveParts, setPartOn, toggleBoxSel, togglePartSel, pselOf, pickPrefab, saveDraft, dropDraft, changePartParticle, forkPartParticle, particleUsers, pDef, composePrefab, renamePrefab, dupPrefab, cutProp,
+               addInst, setInst, newPrefab, deletePrefab, toggleFold, setPf, setPart, addPart, movePart, delPart, delParts, openPart, moveParts, setPartOn, toggleBoxSel, togglePartSel, pselOf, pickPrefab, saveDraft, dropDraft, changePartParticle, forkPartParticle, particleUsers, pDef, composePrefab, renamePrefab, dupPrefab, cutProp, cutPart,
                flush: () => S.q};
