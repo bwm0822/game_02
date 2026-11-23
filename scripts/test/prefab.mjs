@@ -298,8 +298,8 @@ run('prefab', async t => {
         };
     });
     t.eq('m_04x05 有一個 forge', m.n, 1);
-    t.eq('錨點＝Tiled 左下角＋(32,0)', JSON.stringify(m.pos), '[1344,1664]');
-    t.eq('只有 1 張 png（沒多畫縮圖）', m.pngs, 1);
+    t.eq('錨點＝Tiled 左下角＋(16,−16)（縮圖外框 x−16、下緣在錨點下方 16）', JSON.stringify(m.pos), '[1328,1648]');
+    t.eq('只有前後片 2 張 png（沒多畫縮圖）', m.pngs, 2);
     t.eq('預設狀態該有的粒子在跑', m.ems, m.pfEms);
     t.eq('grid 照 prefab（中心相對錨點）', JSON.stringify(m.grid), JSON.stringify(m.pfGrid));
     t.eq('地圖沒列 prefabs.tsj 也換對 gid（縮圖 key）', JSON.stringify(m.key), '["prefab-forge",null]');
@@ -345,10 +345,10 @@ run('prefab', async t => {
     }, forge);
     t.check('forge 建成 Stove、isBlock、有 zone', s.cls && s.isBlock && s.zone, JSON.stringify(s));
     t.eq('一開始＝prefab 的預設狀態', s.dflt[0], s.dflt[1]);
-    t.eq('on：png＋2 個粒子', JSON.stringify([s.look0, s.pngs0, s.ems0]), '["on",1,2]');
+    t.eq('on：png＋2 個粒子', JSON.stringify([s.look0, s.pngs0, s.ems0]), '["on",2,2]');
     t.eq('on：烹飪＋熄火（點火藏）', s.acts0, 'cook:en fire_on:hide fire_off:en');
     t.eq('左鍵＝烹飪', s.def0, 'cook');
-    t.eq('熄火 → off：png 還在、粒子停', JSON.stringify([s.look1, s.pngs1, s.ems1]), '["off",1,0]');
+    t.eq('熄火 → off：png 還在、粒子停', JSON.stringify([s.look1, s.pngs1, s.ems1]), '["off",2,0]');
     t.eq('off：烹飪＋點火', s.acts1, 'cook:en fire_on:en fire_off:hide');
     t.eq('off 左鍵還是烹飪', s.def1, 'cook');
     t.eq('烹飪開製造介面（owner＝forge）', JSON.stringify(s.cook), '[true,true]');
@@ -375,6 +375,9 @@ run('prefab', async t => {
         v._setOutline(true);
         const off = await sample();
         await go.aEmit('fire_on', d.GM.player);
+        // forge 切了前後片後火夾在中間、不是最後畫的：測試自己把粒子搬到最上面，重現 ADD 粒子最後畫的情況
+        const em = v._shape.list.filter(o => o.type === 'ParticleEmitter').at(-1);
+        if (em) v._shape.bringToTop(em);
         const on = await sample();
         v._setOutline(false);
         cam.startFollow?.(d.GM.player);
