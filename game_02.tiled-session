@@ -3,18 +3,17 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/maps/m/m_03x05.json",
+    "activeFile": "public/assets/maps/m/m_04x05.json",
     "expandedProjectPaths": [
         "public/assets/templates",
-        "public/assets/maps/m",
-        "public/assets",
-        "public/assets/maps/m_04x05",
-        ".",
-        "public/assets/templates/animals",
-        "public/assets/tiles",
         "public/assets/maps/m/m_04x05",
-        "public/assets/maps",
-        "public"
+        ".",
+        "public",
+        "public/assets/maps/m",
+        "public/assets/tiles",
+        "public/assets",
+        "public/assets/templates/prefabs",
+        "public/assets/maps/m_04x05"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -383,11 +382,11 @@
                 5,
                 3
             ],
-            "scale": 1,
-            "selectedLayer": 2,
+            "scale": 1.5,
+            "selectedLayer": 3,
             "viewCenter": {
-                "x": 1577,
-                "y": 1962
+                "x": 1405,
+                "y": 1655.3333333333333
             }
         },
         "public/assets/maps/m00x00.json": {
@@ -980,13 +979,14 @@
     "map.width": 20,
     "openFiles": [
         "public/assets/maps/m/m_03x05.json",
-        "public/assets/maps/m_04x05/trump-inn-f2.json"
+        "public/assets/maps/m_04x05/trump-inn-f2.json",
+        "public/assets/maps/m/m_04x05.json"
     ],
     "project": "game_02.tiled-project",
     "property.type": "string",
     "recentFiles": [
-        "public/assets/maps/m_04x05/trump-inn-f2.json",
         "public/assets/maps/m/m_03x05.json",
+        "public/assets/maps/m_04x05/trump-inn-f2.json",
         "public/assets/maps/m/m_04x05.json",
         "public/assets/maps/m/m_00x09.json",
         "public/assets/maps/m_04x05/house-01.json",

@@ -240,15 +240,6 @@
     "blendMode": "ADD",
     "frequency": 100,
     "quantity": 2,
-    "deathZone": {
-      "type": "onLeave",
-      "source": {
-        "x": -8,
-        "y": -7,
-        "w": 17,
-        "h": 10
-      }
-    },
     "local": true
   }
 }

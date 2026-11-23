@@ -5,20 +5,35 @@
       {
         "key": "r1",
         "id": "wick",
-        "tx": 14,
-        "ty": 9,
+        "tx": 16,
+        "ty": 7,
         "equip": {
           "CAT_WEAPON": "sword-1"
         }
       }
     ],
-    "time": "23:59",
+    "time": "06:52",
     "prefabs": [
       {
         "key": "f1",
         "prefab": "forge",
-        "x": 544,
-        "y": 352
+        "x": 560,
+        "y": 240
+      }
+    ],
+    "ambient": "#666666",
+    "props": [
+      {
+        "key": "p2",
+        "img": "forge-back",
+        "x": 448,
+        "y": 320
+      },
+      {
+        "key": "p1",
+        "img": "forge-front",
+        "x": 448,
+        "y": 320
       }
     ]
   }
