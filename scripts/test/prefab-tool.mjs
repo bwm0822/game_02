@@ -206,6 +206,44 @@ run('prefab-tool', async t => {
         await sc.undo();
         out.saveUndo = JSON.stringify(await pfDisk()) === pf0;
         await sc.redo();
+        // 光源零件的把手：選取才出（點光源＝圈的右邊一個）；拖＝右欄 r 即時＋黃框、放開寫草稿一筆；聚光燈多弧兩端、半徑把手連 dir
+        sc.pickRole('f1');
+        await sc.setInst('f1', {look: 'on'});
+        const li = sc.S.prefabs.forge.parts.findIndex(p => p.light);
+        const L = () => inst()?.go?.view?._parts?.find(e => e.i === li)?.light;
+        await until(() => sb()._inspected() && L());
+        const lhs = () => sb()._partLightHandles();
+        out.lhNone = lhs().length;
+        sc.togglePartSel(li);
+        await until(() => lhs().length === 1);
+        const h0 = lhs()[0], lx = L().x, ly = L().y, rIn = () => doc.querySelector('#right .partform [data-k="r"]');
+        out.lhPos = [h0.kind, h0.x - lx, h0.y - ly];
+        sb().input.emit('pointerdown', fk(h0.x, h0.y));
+        sb().input.emit('pointermove', fk(lx + 100.4, ly + 3));
+        out.lhLive = await until(() => rIn()?.value === '100') && [sc.S.part, rIn()?.value, rIn()?.classList.contains('live'), L().radius, sc.S.draft];
+        sb().input.emit('pointerup', fk(lx + 100.4, ly + 3));
+        out.lhDrop = await until(() => draft()?.parts[li].light.r === 100) && [draft().parts[li].light, rIn()?.classList.contains('live'), sc.S.draft.undo.length,
+            JSON.stringify(await pfDisk()) === JSON.stringify(sc.S.prefabs)];
+        await sc.setPart('forge', li, {arc: 90, dir: 0});
+        await until(() => L()?.spot?.arc === 90 && lhs().length === 3);
+        const c = {x: L().x, y: L().y};
+        out.lhSpot = lhs().map(hd => [hd.kind, Math.round(hd.x - c.x), Math.round(hd.y - c.y)]);
+        const un2 = sc.S.draft.undo.length, hr0 = lhs()[0];
+        sb().input.emit('pointerdown', fk(hr0.x, hr0.y));
+        sb().input.emit('pointermove', fk(c.x + 1, c.y + 50));
+        sb().input.emit('pointerup', fk(c.x + 1, c.y + 50));
+        await until(() => draft().parts[li].light.dir === 89 && L()?.spot?.dir === 89);
+        const ha = lhs().find(hd => hd.kind === 'arc'), a30 = (89 + 30)*Math.PI/180;
+        sb().input.emit('pointerdown', fk(ha.x, ha.y));
+        sb().input.emit('pointermove', fk(c.x + 40*Math.cos(a30), c.y + 40*Math.sin(a30)));
+        sb().input.emit('pointerup', fk(c.x + 40*Math.cos(a30), c.y + 40*Math.sin(a30)));
+        out.lhSpotDrag = await until(() => draft().parts[li].light.arc === 60) && [draft().parts[li].light, sc.S.draft.undo.length - un2];
+        sc.togglePartSel(li);
+        await until(() => lhs().length === 0);
+        sc.dropDraft();
+        await until(() => !sc.S.draft && L()?.radius === 80 && !L().spot);
+        await sc.undo();
+        await until(() => inst()?.go?.getLook?.() === 'off');
         // 外部 png 零件：草稿中 sandbox 直接載原圖（pct 乘進 scale）；儲存時照 pct 烤進 textures/prefabs/forge/、改成 texture key、算縮圖外框
         await sc.addPart('forge', 'png', 'file:public/assets/textures/props/Crate.png');
         await sc.setPart('forge', 3, {pct: 50});
@@ -617,6 +655,11 @@ run('prefab-tool', async t => {
     t.eq('草稿中 undo：退草稿一步、prefab.json 不動', JSON.stringify(r.undoPf), JSON.stringify([{turn_on: 'on'}, true]));
     t.eq('儲存：寫 prefab.json、草稿結束、實例還選著', JSON.stringify(r.save), JSON.stringify([['Barrel', 'Crate', 80], 10, 'turn_on', null, 'f1']));
     t.check('儲存後全域 undo 一筆退回整份草稿', r.saveUndo);
+    t.eq('光源零件沒選取＝沒有把手；選取＝點光源一個半徑把手在圈的右邊', JSON.stringify([r.lhNone, r.lhPos]), JSON.stringify([0, ['radius', 80, 0]]));
+    t.eq('拖半徑把手：自動展開、右欄 r 即時＋黃框、燈即時變、還沒寫草稿', JSON.stringify(r.lhLive), JSON.stringify([2, '100', true, 100, null]));
+    t.eq('放開寫草稿（light.r）、拿掉黃框、prefab.json 不動', JSON.stringify(r.lhDrop), JSON.stringify([{r: 100}, false, 1, true]));
+    t.eq('聚光燈：半徑把手在中線末端＋弧兩端', JSON.stringify(r.lhSpot), JSON.stringify([['radius', 100, 0], ['arc', 71, -71], ['arc', 71, 71]]));
+    t.eq('拖聚光燈半徑把手連 dir、拖弧端改 arc，各一筆 undo', JSON.stringify(r.lhSpotDrag), JSON.stringify([{r: 50, arc: 60, dir: 89}, 2]));
     t.eq('草稿裡的外部 png：sandbox 載原圖、pct 乘進 scale', r.sbFile, 'file|public/assets/textures/props/Crate.png');
     const [xpick, xpart, xbaked, xthumb, crate] = r.exit;
     t.check('儲存外部 png 零件：照 pct 烤進 textures/prefabs/forge/forge-Crate.png、改成 key', xpick === 'f1' && xbaked && xpart && !('pct' in xpart), JSON.stringify([xpick, xpart]));

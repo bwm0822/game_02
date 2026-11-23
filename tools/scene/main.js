@@ -802,7 +802,7 @@ function dragLive(m)
     else
     {
         if (m.start && S.part !== m.part) openPart(m.part);
-        cells = [['x', m.x], ['y', m.y]].map(([f, v]) => [q(`.partform [data-k="${f}"]`), v, true]);
+        cells = Object.entries(m.light ?? {x: m.x, y: m.y}).map(([f, v]) => [q(`.partform [data-k="${f}"]`), v, true]);
     }
     for (const [el, v, live] of cells)
     {
@@ -967,6 +967,7 @@ function partRows(id, i, p)
             row('顏色', h('input', {type: 'color', value: l.color ?? '#ffcc88', dataset: {k: 'color'}, onchange: (e) => set({color: e.target.value})})),
             row('強度', n('i', 0.1, '1', l)),
             look),
+        h('div', {class: 'hint dim'}, '選取時 sandbox 畫範圍＋藍色把手：拖把手改半徑（聚光燈：中線末端的把手連方向一起改、弧兩端的把手改光錐；Shift 吸 16px／15°）'),
     ];
 }
 
@@ -2129,6 +2130,7 @@ addEventListener('message', (e) => {
     else if (m.sb === 'moveEmitter') setEmitter(m.key, {x: m.x, y: m.y}).then(syncGame);
     else if (m.sb === 'part' && m.key === S.pick) openPart(m.i);
     else if (m.sb === 'moveParts' && instOf(m.key)) moveParts(instOf(m.key).prefab, m.moves);
+    else if (m.sb === 'partLight' && instOf(m.key) && pfOf(instOf(m.key).prefab)?.parts?.[m.i]?.light) setPart(instOf(m.key).prefab, m.i, m.patch);
     else if (m.sb === 'dragLive') dragLive(m);
     else if (m.sb === 'box' && instOf(m.key) && BOXES.some(([k]) => k === m.k)) setPf(instOf(m.key).prefab, {[m.k]: m.box});
     else if (m.sb === 'moveInst') setInst(m.key, {x: m.x, y: m.y}).then(syncGame);

@@ -331,11 +331,50 @@ export class Sandbox extends GameScene
         d.cur = b;
     }
 
+    // 選中實例裡選取的光源零件（目前狀態看得到＝有建燈）：[{i, light}]
+    _partLights()
+    {
+        const o = this._inspected();
+        return o ? (o.go.view?._parts ?? []).filter(e=>e.light && this._partSel(e.i)).map(e=>({i:e.i, light:e.light})) : [];
+    }
+
+    // 選取的光源零件的把手（半徑＋聚光燈弧兩端）
+    _partLightHandles()
+    {
+        return this._partLights().flatMap(({i, light})=>Sandbox._lightHandles({x:light.x, y:light.y}, light).map(h=>({i, light, ...h})));
+    }
+    _partLightHandleAt(wx, wy) {return this._partLightHandles().find(h=>this._near(h, wx, wy)) ?? null;}
+
+    // 拖光源零件的把手：直接改燈（放開送 partLight {key, i, patch}，分頁寫進草稿）
+    _partLightTo(d, wx, wy, snap)
+    {
+        const L = d.plight, c = {x:L.x, y:L.y}, s = L.spot;
+        if(d.kind==='radius')
+        {
+            const {r, dir} = Sandbox._radiusFrom(c, wx, wy, snap, s);
+            d.r = r;
+            L.setRadius(r);
+            if(dir!==undefined) {d.dir = (dir % 360 + 360) % 360; setSpot(L, {...s, dir:d.dir});}
+        }
+        else
+        {
+            d.arc = Sandbox._arcFrom(c, s.dir, wx, wy, snap);
+            setSpot(L, {...s, arc:d.arc});
+        }
+    }
+
+    // 拖曳中改了哪些欄位（半徑把手＝r，聚光燈加 dir；弧＝arc）
+    static _partLightVals(d)
+    {
+        return d.kind==='arc' ? {arc:d.arc} : {r:d.r, ...(d.dir!==undefined && {dir:d.dir})};
+    }
+
     _drawInspect(g, z)
     {
         const o = this._inspected();
         if(!o) {return;}
         const ax = o.go.x, ay = o.go.y, look = o.go.getLook?.() ?? null;
+        const lights = Object.fromEntries(this._partLights().map(e=>[e.i, e.light]));
         for(const k of [...Sandbox.BOX_ORDER].reverse())
         {
             const b = this._box(k);
@@ -351,12 +390,17 @@ export class Sandbox extends GameScene
             {
                 if(pg.r) {Sandbox._drawSun(g, z, pg.x, pg.y, null, 0x33ccff, 2/z);}   // 光源＝太陽記號
                 else {g.strokeCircle(pg.x, pg.y, 6/z);}
-                if(pg.r) {g.lineStyle(1/z, 0x33ccff, a*0.6).strokeCircle(pg.x, pg.y, pg.r);}
+                const L = lights[i];
+                if(L) {Sandbox._drawLightRange(g, z, pg.x, pg.y, L.radius, L.spot, 0x33ccff);}
             }
         });
         const zs = this._pzSel();
         for(const w of this._partZoneOwners()) {this._drawZoneList(g, z, w.c, w.zones, zs?.i===w.i ? zs.k : null);}
         const s = HANDLE/z;
+        for(const hd of this._partLightHandles())
+        {
+            g.fillStyle(0x33ccff, 1).fillRect(hd.x-s/2, hd.y-s/2, s, s).lineStyle(1/z, 0x000000, 1).strokeRect(hd.x-s/2, hd.y-s/2, s, s);
+        }
         for(const hd of this._boxHandles().reverse())
         {
             g.fillStyle(Sandbox.BOX_COLOR[hd.k], 1).fillRect(hd.x-s/2, hd.y-s/2, s, s).lineStyle(1/z, 0x000000, 1).strokeRect(hd.x-s/2, hd.y-s/2, s, s);
@@ -827,23 +871,58 @@ export class Sandbox extends GameScene
         return !this._hidden.has(k) && (this._icons?.[kind] !== false || k===this._sel);
     }
 
-    // 選中光源的半徑把手：點光源在圈的右邊、聚光燈在中線末端（畫面上的方向＝鏡像後的）
-    _radiusHandle()
+    // 燈 light（圓心 c）的把手：半徑（點光源在圈的右邊、聚光燈在中線末端）＋聚光燈弧兩端；方向＝畫面上的（鏡像後的）
+    static _lightHandles(c, light)
     {
-        const o = this._lights?.[this._sel];
-        if(!o || this._hidden.has(this._sel)) {return null;}
-        const p = this._lightPos(o), R = o.light.radius, a = (o.light.spot?.dir ?? 0)*Math.PI/180;
-        return {o, x:p.x + R*Math.cos(a), y:p.y + R*Math.sin(a)};
+        const R = light.radius, s = light.spot;
+        const at = (deg)=>({x:c.x + R*Math.cos(deg*Math.PI/180), y:c.y + R*Math.sin(deg*Math.PI/180)});
+        return [{kind:'radius', ...at(s?.dir ?? 0)}, ...(s ? [-1, 1].map(k=>({kind:'arc', ...at(s.dir + k*s.arc/2)})) : [])];
     }
 
-    // 聚光燈弧兩端的把手
-    _arcHandles()
+    // 拖半徑把手：r＝游標到圓心的距離（整數、最少 1；Shift 吸 16 的倍數）；聚光燈連畫面上的方向一起給（Shift 吸 15°）
+    static _radiusFrom(c, wx, wy, snap, spot)
     {
-        const o = this._lights?.[this._sel], s = o?.light.spot;
-        if(!s || this._hidden.has(this._sel)) {return [];}
-        const p = this._lightPos(o), R = o.light.radius;
-        return [-1, 1].map(k=>{const a = (s.dir + k*s.arc/2)*Math.PI/180; return {o, x:p.x + R*Math.cos(a), y:p.y + R*Math.sin(a)};});
+        const dist = Math.hypot(wx-c.x, wy-c.y), r = Math.max(1, snap ? Math.round(dist/16)*16 : Math.round(dist));
+        if(!spot) {return {r};}
+        const a = Math.atan2(wy-c.y, wx-c.x)*180/Math.PI;
+        return {r, dir:snap ? Math.round(a/15)*15 : Math.round(a)};
     }
+
+    // 拖弧端：光錐＝兩倍的「游標跟中線夾角」（1～359；Shift 吸 15°）
+    static _arcFrom(c, dir, wx, wy, snap)
+    {
+        const diff = Math.abs(((Math.atan2(wy-c.y, wx-c.x)*180/Math.PI - dir) % 360 + 540) % 360 - 180);
+        const arc = snap ? Math.round(diff*2/15)*15 : Math.round(diff*2);
+        return Math.min(359, Math.max(1, arc));
+    }
+
+    // 範圍：點光源＝虛線圈；聚光燈＝扇形（兩條虛線邊＋虛線弧，中線淡淡的）
+    static _drawLightRange(g, z, x, y, R, sp, color)
+    {
+        g.lineStyle(1.5/z, color, 0.9);
+        if(!sp)
+        {
+            const n = 64;
+            for(let i=0; i<n; i+=2) {g.beginPath().arc(x, y, R, i/n*Math.PI*2, (i+1)/n*Math.PI*2).strokePath();}
+            return;
+        }
+        const rad = Math.PI/180, a0 = (sp.dir - sp.arc/2)*rad, a1 = (sp.dir + sp.arc/2)*rad;
+        const n = Math.max(2, Math.round(sp.arc/360*64) & ~1);
+        for(let i=0; i<n; i+=2) {g.beginPath().arc(x, y, R, a0 + (a1-a0)*i/n, a0 + (a1-a0)*(i+1)/n).strokePath();}
+        const dash = (a)=>{const m = Math.max(2, Math.round(R*z/8)); for(let i=0; i<m; i+=2) {g.lineBetween(x + R*i/m*Math.cos(a), y + R*i/m*Math.sin(a), x + R*(i+1)/m*Math.cos(a), y + R*(i+1)/m*Math.sin(a));}};
+        dash(a0); dash(a1);
+        g.lineStyle(1/z, color, 0.4).lineBetween(x, y, x + R*Math.cos(sp.dir*rad), y + R*Math.sin(sp.dir*rad));
+    }
+
+    // 選中光源的把手
+    _sceneLightHandles()
+    {
+        const o = this._lights?.[this._sel];
+        if(!o || this._hidden.has(this._sel)) {return [];}
+        return Sandbox._lightHandles(this._lightPos(o), o.light).map(h=>({o, ...h}));
+    }
+    _radiusHandle() {return this._sceneLightHandles().find(h=>h.kind==='radius') ?? null;}
+    _arcHandles() {return this._sceneLightHandles().filter(h=>h.kind==='arc');}
 
     _near(h, wx, wy)
     {
@@ -854,28 +933,22 @@ export class Sandbox extends GameScene
     _radiusAt(wx, wy) {return this._near(this._radiusHandle(), wx, wy);}
     _arcAt(wx, wy) {return this._arcHandles().find(h=>this._near(h, wx, wy)) ?? null;}
 
-    // 拖半徑把手：r＝游標到圓心的距離（整數、最少 1；Shift 吸 16 的倍數）；聚光燈連方向一起改（Shift 吸 15°，存的是鏡像前的）
+    // 拖選中光源的半徑把手（聚光燈連方向，存的是鏡像前的）
     _radiusTo(d, wx, wy, snap)
     {
-        const o = d.radius, c = this._lightPos(o), dist = Math.hypot(wx-c.x, wy-c.y);
-        d.r = Math.max(1, snap ? Math.round(dist/16)*16 : Math.round(dist));
-        o.light.setRadius(d.r);
-        if(!o.light.spot) {return;}
-        let a = Math.atan2(wy-c.y, wx-c.x)*180/Math.PI;
-        a = snap ? Math.round(a/15)*15 : Math.round(a);
-        d.dir = ((this._mirror(o) ? 180 - a : a) % 360 + 360) % 360;
+        const o = d.radius, {r, dir} = Sandbox._radiusFrom(this._lightPos(o), wx, wy, snap, o.light.spot);
+        d.r = r;
+        o.light.setRadius(r);
+        if(dir===undefined) {return;}
+        d.dir = ((this._mirror(o) ? 180 - dir : dir) % 360 + 360) % 360;
         o.data = {...o.data, dir:d.dir};
         this._lightSpot(o);
     }
 
-    // 拖弧端：光錐＝兩倍的「游標跟中線夾角」（1～359；Shift 吸 15°）
     _arcTo(d, wx, wy, snap)
     {
-        const o = d.arc, c = this._lightPos(o), s = o.light.spot;
-        let diff = Math.abs(((Math.atan2(wy-c.y, wx-c.x)*180/Math.PI - s.dir) % 360 + 540) % 360 - 180);
-        let arc = diff*2;
-        arc = snap ? Math.round(arc/15)*15 : Math.round(arc);
-        d.v = Math.min(359, Math.max(1, arc));
+        const o = d.arc;
+        d.v = Sandbox._arcFrom(this._lightPos(o), o.light.spot.dir, wx, wy, snap);
         o.data = {...o.data, arc:d.v};
         this._lightSpot(o);
     }
@@ -1051,27 +1124,10 @@ export class Sandbox extends GameScene
             if(!this._markOn('light', k)) {continue;}
             const {x, y} = this._lightPos(o), sel = k===this._sel;
             Sandbox._drawSun(g, z, x, y, o.hex, sel ? SEL_COLOR : 0x000000, (sel ? 2 : 1.5)/z);
-            if(sel)
-            {
-                // 虛線圈＝半徑；聚光燈＝扇形（兩條邊＋弧，中線淡淡的）
-                const R = o.light.radius, sp = o.light.spot;
-                g.lineStyle(1.5/z, SEL_COLOR, 0.9);
-                if(!sp)
-                {
-                    const n = 64;
-                    for(let i=0; i<n; i+=2) {g.beginPath().arc(x, y, R, i/n*Math.PI*2, (i+1)/n*Math.PI*2).strokePath();}
-                    continue;
-                }
-                const rad = Math.PI/180, a0 = (sp.dir - sp.arc/2)*rad, a1 = (sp.dir + sp.arc/2)*rad;
-                const n = Math.max(2, Math.round(sp.arc/360*64) & ~1);
-                for(let i=0; i<n; i+=2) {g.beginPath().arc(x, y, R, a0 + (a1-a0)*i/n, a0 + (a1-a0)*(i+1)/n).strokePath();}
-                const dash = (a)=>{const m = Math.max(2, Math.round(R*z/8)); for(let i=0; i<m; i+=2) {g.lineBetween(x + R*i/m*Math.cos(a), y + R*i/m*Math.sin(a), x + R*(i+1)/m*Math.cos(a), y + R*(i+1)/m*Math.sin(a));}};
-                dash(a0); dash(a1);
-                g.lineStyle(1/z, SEL_COLOR, 0.4).lineBetween(x, y, x + R*Math.cos(sp.dir*rad), y + R*Math.sin(sp.dir*rad));
-            }
+            if(sel) {Sandbox._drawLightRange(g, z, x, y, o.light.radius, o.light.spot, SEL_COLOR);}
         }
         const s = HANDLE/z;
-        for(const hd of [this._radiusHandle(), ...this._arcHandles()].filter(Boolean))
+        for(const hd of this._sceneLightHandles())
         {
             g.fillStyle(0xffffff, 1).fillRect(hd.x-s/2, hd.y-s/2, s, s).lineStyle(1/z, 0x000000, 1).strokeRect(hd.x-s/2, hd.y-s/2, s, s);
         }
@@ -1343,6 +1399,14 @@ export class Sandbox extends GameScene
                 this._drag = {box:bh.k, side:bh.side, inst:ins, key:this._sel, b0, cur:{...b0}};
                 return;
             }
+            const lh = ins && this._partLightHandleAt(p.worldX, p.worldY);
+            if(lh)
+            {
+                const L = lh.light;
+                this._drag = {plight:L, kind:lh.kind, i:lh.i, key:this._sel, r:L.radius, dir:L.spot?.dir, arc:L.spot?.arc};
+                this._drag.v0 = JSON.stringify(Sandbox._partLightVals(this._drag));
+                return;
+            }
             // 選中 zone 的把手＞edit 粒子／光源點＞錨點＞zone 框線＞edit png 圖框＞選中 zone 的框內
             const pzh = ins && this._pzHandleAt(p.worldX, p.worldY);
             if(pzh) {this._startPartZone(pzh, p); return;}
@@ -1424,6 +1488,14 @@ export class Sandbox extends GameScene
                 this._send({sb:'dragLive', key:d.key, part:d.part, x:d.x, y:d.y, start:!d.live});
                 d.live = true;
             }
+            else if(this._drag?.plight)
+            {
+                if(!p.leftButtonDown()) {this._endDrag(); return;}
+                const d = this._drag;
+                this._partLightTo(d, p.worldX, p.worldY, p.event.shiftKey);
+                this._send({sb:'dragLive', key:d.key, part:d.i, light:Sandbox._partLightVals(d), start:!d.live});
+                d.live = true;
+            }
             else if(this._drag?.radius)
             {
                 if(!p.leftButtonDown()) {this._endDrag(); return;}
@@ -1479,7 +1551,7 @@ export class Sandbox extends GameScene
     _cursor(p = this.input.activePointer)
     {
         const d = this._drag;
-        if(d?.resize || d?.radius || d?.arc || d?.box || ((d?.zone || d?.pzone) && d.part!=='move') || !this._props) {return;}
+        if(d?.resize || d?.radius || d?.arc || d?.plight || d?.box || ((d?.zone || d?.pzone) && d.part!=='move') || !this._props) {return;}
         let c = '';
         if(this._arm) {c = 'crosshair';}
         else if(d || this._pan) {c = 'grabbing';}
@@ -1487,11 +1559,13 @@ export class Sandbox extends GameScene
         {
             const hd = this._handleAt(p.worldX, p.worldY), zh = !hd && this._zoneHandleAt(p.worldX, p.worldY);
             const bh = !hd && !zh && this._inspected() && this._boxHandleAt(p.worldX, p.worldY);
-            const pz = !hd && !zh && !bh && this._inspected() && (this._pzHandleAt(p.worldX, p.worldY) || this._pzBodyAt(p.worldX, p.worldY, true));
-            const pk = !hd && !zh && !bh && !pz && this._pickAt(p.worldX, p.worldY);
+            const lh = !hd && !zh && !bh && this._inspected() && this._partLightHandleAt(p.worldX, p.worldY);
+            const pz = !hd && !zh && !bh && !lh && this._inspected() && (this._pzHandleAt(p.worldX, p.worldY) || this._pzBodyAt(p.worldX, p.worldY, true));
+            const pk = !hd && !zh && !bh && !lh && !pz && this._pickAt(p.worldX, p.worldY);
             c = hd ?(!hd.hy ? 'ew-resize' : !hd.hx ? 'ns-resize' : hd.hx*hd.hy>0 ? 'nwse-resize' : 'nesw-resize')
                 : zh ? ZONE_CURSOR[zh.part]
                 : bh ? (bh.side==='l' || bh.side==='r' ? 'ew-resize' : 'ns-resize')
+                : lh ? 'pointer'
                 : pz ? ZONE_CURSOR[pz.part]
                 : this._radiusAt(p.worldX, p.worldY) || this._arcAt(p.worldX, p.worldY) ? 'pointer'
                 : !pk?.emitter && !pk?.light && this._zoneBodyAt(p.worldX, p.worldY, true) ? 'move'
@@ -1522,6 +1596,12 @@ export class Sandbox extends GameScene
             const dx = d.x - (d.p.x ?? 0), dy = d.y - (d.p.y ?? 0), parts = DB.prefab(d.inst.data.prefab)?.parts ?? [];
             if(d.moved && (dx || dy)) {this._send({sb:'moveParts', key:d.key, moves:d.sel.map(i=>({i, x:(parts[i].x ?? 0) + dx, y:(parts[i].y ?? 0) + dy}))});}
             else if(!d.moved) {this._send({sb:'part', key:d.key, i:d.part});}
+            return;
+        }
+        if(d?.plight)
+        {
+            const v = Sandbox._partLightVals(d);
+            if(JSON.stringify(v)!==d.v0) {this._send({sb:'partLight', key:d.key, i:d.i, patch:v});}
             return;
         }
         if(d?.resize)
