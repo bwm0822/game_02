@@ -164,7 +164,6 @@ sp.x = part.x ?? 0;  sp.y = part.y ?? 0;  sp.angle = part.a ?? 0;
 |---|---|
 | `main.js` | 狀態、繪製、滑鼠鍵盤、模式（移動／裁切／縮放／清除透明／顏色／移除綠色／變形／自動／像素／前後片／icon）、UI 同步、開存檔 |
 | `pixels.js` | 純像素運算：xform（平滑模式先每次縮一半到兩倍以內）、compose、warp、replay、erase、mask、alphaClear、fill、key、removeGreen、paint、opaqueBounds、blobs（連通塊）、splitTrace（前後片追線）；工具建的 canvas 都是 `willReadFrequently`（getImageData 快很多） |
-| `../common/polyedit.js` | 多邊形編輯（手繪加點／閉合、拖點、點邊插點、退點、Ctrl 磁性套索、畫線），呼叫端給 host `{scr, grad, mag, commit, before}`、先把滑鼠換成像素座標；裁切多邊形、前後片／自動模式的切線都走它，場景分頁的切前後片也用 |
 | `history.js` | 全域 undo／redo（快照 x/y/a/ox/oy/ops/canvas 參照；合併用的圖層清單結構快照） |
 | `../common/fs.js` | 列目錄、讀寫檔；跟道具編輯器共用 |
 | `../common/shell.js` | 跟殼的接線：收專案資料夾、寫 json 後廣播、回報未存狀態 |

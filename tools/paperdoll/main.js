@@ -1,6 +1,5 @@
 import {History} from './history.js';
 import * as PX from './pixels.js';
-import * as PE from '../common/polyedit.js';
 import * as FS from '../common/fs.js';
 import * as SH from '../common/shell.js';
 import * as ST from '../common/settings.js';
@@ -1944,19 +1943,161 @@ function cropSel(m)
 
 // 螢幕 px 換成多邊形所在圖層的像素
 const scrPx = (n) => {const sp = editSp(); return n / zoomK() / (sp?.vk?.[0] ?? 1) / (sp?.view ?? S.mode.layer).scale;};
+const polyTol = () => scrPx(8);
 const polyLayer = (m) => m.view ?? m.layer;
-const PH = {scr: scrPx, grad: (m) => PX.gradMap(m.view.canvas), mag: () => ST.get('mag'), commit: (before) => spCommit(S.mode, before), before: () => spBefore(S.mode)};
-const polyRaw = (m, e) => {const w = screenToWorld(e); return toLocal(polyLayer(m), w.x, w.y);};
-const polyVertexHit = (P, p) => PE.vertexHit(PH, P, p);
-const polyEdgeHit = (P, p) => PE.edgeHit(PH, P, p);
-const magOn = PE.magOn;
-const polyPointerDown = (m, e) => PE.down(PH, m, polyRaw(m, e), e);
-const polyDrag = (m, e, i) => PE.drag(m, polyRaw(m, e), e, i);
-const polyHover = (m, e) => PE.hover(PH, m, polyRaw(m, e), e);
-const polyBack = PE.back;
-const magBegin = (m, before = spBefore(S.mode)) => PE.magBegin(m, before);
-const magEnd = (m) => PE.magEnd(PH, m);
-const MAG_KEYS = ['width', 'freq', 'contrast'];
+
+// Shift：從 from 出發的方向鎖在 45° 的倍數
+function snap45(from, p)
+{
+    const d = Math.hypot(p.x - from.x, p.y - from.y), a = Math.round(Math.atan2(p.y - from.y, p.x - from.x) / (Math.PI / 4)) * Math.PI / 4;
+    return {x: from.x + d * Math.cos(a), y: from.y + d * Math.sin(a)};
+}
+
+function polyEdgeHit(P, p)
+{
+    const n = P.pts.length;
+    let best = null;
+    for (let i = 0; i < n; i++)
+    {
+        const a = P.pts[i], b = P.pts[(i + 1) % n];
+        const dx = b.x - a.x, dy = b.y - a.y, len2 = dx * dx + dy * dy;
+        const t = len2 ? Math.min(1, Math.max(0, ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2)) : 0;
+        const q = {x: a.x + t * dx, y: a.y + t * dy}, d = Math.hypot(p.x - q.x, p.y - q.y);
+        if (d < polyTol() && (!best || d < best.d)) best = {i, q, d};
+    }
+    return best;
+}
+
+const polyVertexHit = (P, p) => P.pts.findIndex(v => Math.hypot(v.x - p.x, v.y - p.y) < polyTol());
+const polyNearFirst = (P, p) => P.pts.length >= 3 && Math.hypot(P.pts[0].x - p.x, P.pts[0].y - p.y) < polyTol();
+// 手繪按住 Ctrl（沒按 Shift）＝磁性套索
+const magOn = (m, e) => m.method === 'hand' && e.ctrlKey && !e.shiftKey && !m.poly?.closed;
+
+function polyPointerDown(m, e)
+{
+    const w = screenToWorld(e), raw = toLocal(polyLayer(m), w.x, w.y), P = m.poly;
+    if (!P)
+    {
+        const p = magOn(m, e) ? PX.edgeNear(magGrad(m), raw, scrPx(ST.get('mag').width), ST.get('mag').contrast) ?? raw : raw;
+        m.poly = {pts: [p], closed: false, cursor: p};
+        if (m.mag) m.mag.trail = [p];
+        return null;
+    }
+    if (!P.closed)
+    {
+        if (e.detail >= 2) P.closed = P.pts.length >= 3;
+        else if (magOn(m, e)) magClick(m, raw);
+        else if (polyNearFirst(P, raw)) P.closed = true;
+        else P.pts = [...P.pts, e.shiftKey ? snap45(P.pts.at(-1), raw) : raw];
+        return null;
+    }
+    const i = polyVertexHit(P, raw);
+    if (i >= 0) return {type: 'polyPt', i};
+    const hit = polyEdgeHit(P, raw);
+    if (!hit) return null;
+    P.pts = [...P.pts.slice(0, hit.i + 1), hit.q, ...P.pts.slice(hit.i + 1)];
+    P.edge = null;
+    return {type: 'polyPt', i: hit.i + 1};
+}
+
+function polyDrag(m, e, i)
+{
+    const P = m.poly, w = screenToWorld(e), raw = toLocal(polyLayer(m), w.x, w.y);
+    const prev = P.pts[(i - 1 + P.pts.length) % P.pts.length];
+    P.pts = P.pts.map((v, k) => k === i ? (e.shiftKey ? snap45(prev, raw) : raw) : v);
+}
+
+function polyHover(m, e)
+{
+    const P = m.poly, w = screenToWorld(e), raw = toLocal(polyLayer(m), w.x, w.y);
+    if (m.mag && !e.ctrlKey) magEnd(m);
+    if (m.mag && P.live) delete P.live;
+    if (!P.closed && magOn(m, e)) {magHover(m, raw); P.vert = null;}
+    else if (!P.closed)
+    {
+        P.cursor = e.shiftKey && P.pts.length ? snap45(P.pts.at(-1), raw) : raw;
+        const v = polyVertexHit(P, raw);
+        P.vert = v >= 0 ? v : null;
+    }
+    else
+    {
+        const v = polyVertexHit(P, raw);
+        P.vert = v >= 0 ? v : null;
+        P.edge = v < 0 ? polyEdgeHit(P, raw)?.i ?? null : null;
+    }
+}
+
+// Backspace：刪最後一點；已閉合就先解開閉合
+function polyBack(m)
+{
+    const P = m.poly;
+    if (P.closed) P.closed = false;
+    else if (P.pts.length > 1) P.pts = P.pts.slice(0, -1);
+    else m.poly = null;
+}
+
+// 手繪按住 Ctrl＝磁性套索（m.mag＝這次按住的 session）：移動時從最後一點沿顏色邊界即時尋路到游標，路徑走滿 freq 就把那段簡化成頂點釘下來；
+// Ctrl＋點收進到游標那段，靠近第一點就接回去閉合；放開 Ctrl 丟掉黃線，整段按住期間記一步 undo
+const MAG_TOL = 0.75, MAG_KEYS = ['width', 'freq', 'contrast'];
+const magGrad = (m) => PX.gradMap(m.view.canvas);
+
+function magBegin(m, before = spBefore(S.mode))
+{
+    m.mag = {before, changed: false, trail: m.poly ? [m.poly.pts.at(-1)] : []};
+}
+
+function magEnd(m)
+{
+    const s = m.mag;
+    if (!s) return;
+    m.mag = null;
+    if (m.poly) delete m.poly.live;
+    if (s.changed) spCommit(S.mode, s.before);
+}
+
+function magPath(m, to)
+{
+    const {width, contrast} = ST.get('mag');
+    return PX.liveWire(magGrad(m), m.poly.pts.at(-1), to, [...m.mag.trail, to], scrPx(width), contrast);
+}
+
+function magHover(m, raw)
+{
+    const P = m.poly, s = m.mag ?? (magBegin(m), m.mag), F = scrPx(ST.get('mag').freq);
+    let path = magPath(m, raw);
+    for (;;)
+    {
+        let len = 0, i = 1;
+        for (; i < path.length; i++)
+        {
+            len += Math.hypot(path[i].x - path[i - 1].x, path[i].y - path[i - 1].y);
+            if (len >= F) break;
+        }
+        if (i >= path.length - 1) break;
+        const pin = path[i];
+        P.pts = [...P.pts, ...PX.simplify(path.slice(0, i + 1), MAG_TOL).slice(1)];
+        s.changed = true;
+        const k = s.trail.reduce((b, t, j) => Math.hypot(t.x - pin.x, t.y - pin.y) < Math.hypot(s.trail[b].x - pin.x, s.trail[b].y - pin.y) ? j : b, 0);
+        s.trail = [pin, ...s.trail.slice(k + 1)];
+        path = path.slice(i);
+    }
+    s.trail.push(raw);
+    P.live = PX.simplify(path, MAG_TOL).slice(1);
+    P.cursor = path.at(-1);
+}
+
+function magClick(m, raw)
+{
+    const P = m.poly, s = m.mag ?? (magBegin(m), m.mag);
+    const close = polyNearFirst(P, raw);
+    const add = PX.simplify(magPath(m, close ? P.pts[0] : raw), MAG_TOL).slice(1);
+    if (close && add.length && polyNearFirst(P, add.at(-1))) add.pop();
+    P.pts = [...P.pts, ...add];
+    if (close) P.closed = P.pts.length >= 3;
+    delete P.live;
+    P.cursor = P.pts.at(-1);
+    s.trail = [P.pts.at(-1)];
+}
 
 function drawCrop(m, L, K)
 {
@@ -1971,7 +2112,43 @@ function drawCrop(m, L, K)
     if (m.poly) drawPolyEdit(m.poly, L, K);
 }
 
-const drawPolyEdit = (P, L, K) => PE.draw(g, PH, P, (x, y) => toWorld(L, x, y), K);
+function drawPolyEdit(P, L, K)
+{
+    const wp = P.pts.map(p => toWorld(L, p.x, p.y));
+    if (P.closed)
+    {
+        poly(wp);
+        if (P.edge != null)
+        {
+            const a = wp[P.edge], b = wp[(P.edge + 1) % wp.length];
+            g.lineWidth = 3 / K;
+            g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke();
+            g.lineWidth = 1 / K;
+        }
+    }
+    else
+    {
+        const c = toWorld(L, P.cursor.x, P.cursor.y);
+        g.beginPath();
+        [...wp, ...(P.live ? [] : [c])].forEach((p, i) => i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y));
+        g.stroke();
+        if (P.live)
+        {
+            const s = g.strokeStyle;
+            g.strokeStyle = '#ff0';
+            g.beginPath();
+            [wp.at(-1), ...P.live.map(p => toWorld(L, p.x, p.y))].forEach((p, i) => i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y));
+            g.stroke();
+            g.strokeStyle = s;
+        }
+    }
+    g.fillStyle = '#fff';
+    wp.forEach((p, i) => {
+        const r = ((i === 0 && !P.closed && polyNearFirst(P, P.cursor)) || i === P.vert ? 6 : 3) / K;
+        g.fillRect(p.x - r, p.y - r, r * 2, r * 2);
+        g.strokeRect(p.x - r, p.y - r, r * 2, r * 2);
+    });
+}
 
 function updateAlpha()
 {
