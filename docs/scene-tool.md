@@ -103,29 +103,19 @@
 
 ## 切前後片
 
-目的：prefab 內部前後（後片 → 火焰粒子 → 前片），遊戲不改；組成 prefab 時擺設的 `depth` 原樣變零件 `depth`。5 步計畫（2026-11-23）：1 多邊形編輯抽共用 `tools/common/polyedit.js`（紙娃娃改用）2 對話框＋寫 PNG＋擺設切成一組 3 擺設一組的連動 4 prefab png 零件 5 測試＋docs；2026-11-23 全部完成。
+目的：prefab 內部前後（後片 → 火焰粒子 → 前片），遊戲不改；組成 prefab 時擺設的 `depth` 原樣變零件 `depth`。5 步計畫（2026-11-23）：1 多邊形編輯抽共用 `tools/common/polyedit.js`（紙娃娃改用）2 對話框＋寫 PNG＋擺設切成一組 3 擺設一組的連動 4 prefab png 零件 5 測試＋docs；目前做完 1、2。
 
 - 對話框 `tools/scene/cut.js` 的 `cutDialog({src, title, pts?, side, check})`（`#dlgCut`，JS 建、92vw×88vh）：左邊原圖畫布（`panzoom.js` 自己一組 view `tools.scene.cutView`，每次開都置中），右邊切法 `魔術棒｜手繪`（記 `tools.scene.cutMethod`）、魔術棒參數、看 `原圖＋後片｜前片｜後片`（記 `tools.scene.cutPreview`；原圖模式後片那塊的不透明像素染藍）、說明、呼叫端給的存檔位置。
   - **圈起來的＝後片**，其餘＝前片（同紙娃娃）。
   - 魔術棒＝紙娃娃 `PX.splitCut()`：點一下＝起點（洋紅十字）產生閉合多邊形；參數 `settings.json` 的 `scene.wand`（`lum` 輪廓亮度／`close` 閉運算／`drop` 往下射／`right` 往右射，0＝不做，預設 24／4／0／0；對話框改了即時重算、寫回設定，設定分頁也有一張表）。魔術棒模式點到閉合多邊形的頂點／邊＝改多邊形，其他地方＝換起點。
   - 手繪＝`polyedit.js`：點頂點、點第一點或雙擊閉合、Shift 鎖 45°、Ctrl＝磁性套索（跟紙娃娃共用 `mag`）；閉合後拖頂點、點邊插點；Alt＋點／指著頂點按 Del 刪點（最少 3 點）、Backspace（沒閉合時 Del）退一點／解開閉合；Ctrl+Z／Y 對話框內 undo。切法換來換去多邊形保留（魔術棒的結果可以改成手繪接著修）。
   - 確定：多邊形沒閉合擋；`check()` 回錯誤字串就留在對話框顯示。Esc／取消＝null。
-- 擺設（`cutProp(key)`）：只有單張圖（textures 單張圖或 `file:`；sheet／atlas 格子不行）才能切；切過的（前片或後片）選單／面板變成「重切前後片…」「撤掉前後片」（`cutItems()`）。共用流程 `runCut()`（開對話框、檢查、寫 PNG、更新圖片清單），參數 `cutArgs()`。
+- 擺設（`cutProp(key)`）：只有單張圖（textures 單張圖或 `file:`；sheet／atlas 格子不行）、沒切過、不是後片才有選單／按鈕（`canCut()`）。
   - 存檔位置：資料夾樹只列 `textures/`（`folderTree`，點檔案＝用它的名字、去掉 `-front`／`-back`），預設 textures 圖＝原圖所在資料夾、`file:` 圖＝上次選的（`tools.scene.cutDir`）或 `textures/props`；檔名欄＝基底名（預設原圖名），寫 `<名>-front.png`／`<名>-back.png`。
   - 檢查（`cutCheck`）：空白／非法字元、跟原圖同名、texture key 撞到別的資料夾擋；同資料夾已有＝`confirm` 覆蓋。
   - 寫檔（`writeCut`）：兩張都跟原圖同尺寸（`PX.mask` keep／挖掉，不裁邊），`file:` 圖再照 `pct` 縮（`imageSmoothingQuality:'high'`）；資料夾不在就建；寫完 `updateTextures()`，sandbox 送 `textures` 補載（有蓋掉既有檔＝同 key 換內容 → 重開 sandbox）。
   - 資料（一筆 undo）：前片＝原擺設 `img` 換 `<名>-front`、拿掉 `pct`、加 `cut: {src: 原 img, pct?: 原 pct, pts: [[x,y]…]}`（原圖像素座標，取到 0.01）；後片＝新擺設插在前片後面 `{key, of: 前片 key, img: <名>-back, …前片的 x/y/sx/sy/flip/angle/ox/oy, depth: 前片 depth − 1}`。sandbox 照一般擺設各畫各的（`of`／`cut` 不讀）。
-- **一組當一個東西**（擺設）：
-  - 同步：`editScene()` 每次改完跑 `syncProps()`，後片照抄前片的 `PROP_SYNC`（x/y/sx/sy/flip/angle/ox/oy，前片沒有＝後片也拿掉），前片不見了後片拿掉 `of` 變一般擺設；`setProp(後片, patch)` 只有 `depth` 寫後片，其他改到前片（方向鍵、面板、sandbox 拉大小都走這條）。
-  - sandbox：`_pickAt()` 點到後片回報前片（`_frontOf()`），所以點選／拖曳都是前片；`_placeProp()`（拖曳、拉大小）把後片的位置、scale 一起搬，深度用後片自己的 `y＋depth`。
-  - 左欄：後片縮排一列 `↳`（點它選後片）；右欄後片面板只有「深度」＋選前片／重切／撤掉；前片面板標「前片（後片 pN）」，沒有「換圖…」，有重切／撤掉，原圖不見了標 ⚠。
-  - Del：前片＝整組刪（`deleteObj` 連 `of` 指它的一起拿掉）；後片＝問「撤掉前後片」（`revokeProp(key, sure)`：後片拿掉、前片 `img` 換回 `cut.src`、還原 `pct`、刪 `cut`，PNG 留著，一筆 undo）。
-- **重切**（前片或後片都行，作用在前片）：對話框帶回 `cut.pts`（預設手繪）、資料夾＝前片圖所在資料夾（`texDirFind()`：圖片清單沒有就去 textures/ 找）、檔名＝前片去掉 `-front`。檔名沒改＝覆寫同兩張：`imgUses()`（所有場景擺設＋所有 prefab 零件，草稿照草稿）超過 1 處先問「全部覆寫」，確定後別處同一張前片的 `cut.pts` 一起換（`syncCutPts()`，草稿那筆 prefab 不動；scenes.json＋prefab.json 一筆 undo）；同名不能換資料夾。改檔名＝另存新名，只有這組換圖、`cut.src` 不變。蓋掉既有檔＝重開 sandbox（同 key 換內容）。
-- **組成 prefab**：勾了前片或後片就整組帶；`fromSyn()` 把 `of` 換成同一個 `pair` 組號（1 起），後片排在前片前面，前片的 `cut` 帶進 prefab.json（遊戲不讀）。
-- **prefab png 零件**（草稿）：前後片＝同 `pair`、有 `cut` 的是前片（`isBackPart()`／`frontIdx()`／`backIdxs()`）。
-  - 展開的 png 零件表單有「切前後片…」（`cutPart(id, i)`；零件列右鍵已經是展開／收起，所以放在表單裡）／前片「重切前後片…」「撤掉前後片」，沒有「換圖…」。PNG 按確定就寫（放棄草稿留下沒人用的圖，圖片分頁會標未使用），零件改在草稿：後片插在前片的位置、前片往後一格，同 `pair`、`depth −1`，`S.part`／選取跟著位移。
-  - 同步：`editPf()` 每次改完跑 `syncParts()`，後片照抄前片的 `PART_SYNC`（擺設那幾個＋`look`/`off`/`fx`）；`setPart(後片)` 只有 `depth` 寫後片；`moveParts()` 的後片位移改到前片；sandbox 拖選取的零件時同 `pair` 的一起拖。後片列的作用勾選框反灰，表單只有深度＋重切／撤掉，標「前片」「後片」；清單順序可以 ↑↓（同深度照順序）。
-  - 刪除：`delParts()` 前片連後片一起刪；單獨刪後片＝問撤掉（`revokePart()` 不問），前片換回原圖、拿掉 `cut`/`pair`。
+- 還沒做（第 3、4 步）：點後片選前片、拖／改前片後片同步、左欄縮排、後片面板只有 depth、Del 整組／撤掉、重切（帶回 `cut.pts`、共用 n 處問覆寫／另存）、組成 prefab 時 `of`→`pair`、prefab png 零件切割。
 
 ## 格線與吸附
 

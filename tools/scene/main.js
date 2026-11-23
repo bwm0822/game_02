@@ -102,9 +102,7 @@ const editScene = (fn, pick) => {
     if (name === null) {status('先選或新增一個場景'); return Promise.resolve();}
     return commit(d => {
         if (!(name in d)) throw new Error(`找不到場景「${name}」`);
-        const r = fn(d[name]);
-        syncProps(d[name]);
-        return r;
+        return fn(d[name]);
     }, undefined, pick);
 };
 
@@ -240,45 +238,8 @@ function setProp(key, patch)
     return editScene(sc => {
         const p = sc.props?.find(x => x.key === key);
         if (!p) throw new Error(`場景裡沒有 ${key}`);
-        const front = p.of && sc.props.find(x => x.key === p.of);
-        for (const [k, v] of Object.entries(patch))
-        {
-            const o = front && k !== 'depth' ? front : p;
-            if (v === undefined) delete o[k]; else o[k] = v;
-        }
+        for (const [k, v] of Object.entries(patch)) {if (v === undefined) delete p[k]; else p[k] = v;}
     });
-}
-
-// ---------- 前後片一組（docs/scene-tool.md「切前後片」）：後片照抄前片的這些欄位，只有 depth（零件再加清單順序）是自己的 ----------
-const PROP_SYNC = ['x', 'y', 'sx', 'sy', 'flip', 'angle', 'ox', 'oy'];
-const PART_SYNC = [...PROP_SYNC, 'look', 'off', 'fx'];
-function copyKeys(from, to, keys)
-{
-    for (const k of keys) {if (from[k] === undefined) delete to[k]; else to[k] = structuredClone(from[k]);}
-}
-// 擺設：後片 of＝前片 key；前片不見了＝變成一般擺設
-function syncProps(sc)
-{
-    for (const b of sc?.props ?? [])
-    {
-        if (!b.of) continue;
-        const f = sc.props.find(x => x.key === b.of);
-        if (f) copyKeys(f, b, PROP_SYNC); else delete b.of;
-    }
-}
-const backsOf = (key, list = props()) => list.filter(b => b.of === key);
-// prefab 零件：同 pair 一組，有 cut 的是前片
-const isBackPart = (p) => p?.pair !== undefined && !p.cut;
-const frontIdx = (parts, i) => (isBackPart(parts[i]) ? parts.findIndex(q => q.pair === parts[i].pair && q.cut) : i);
-const backIdxs = (parts, i) => (parts[i]?.cut && parts[i].pair !== undefined ? parts.map((q, j) => (j !== i && q.pair === parts[i].pair && !q.cut ? j : -1)).filter(j => j >= 0) : []);
-function syncParts(pf)
-{
-    for (const b of pf?.parts ?? [])
-    {
-        if (!isBackPart(b)) continue;
-        const f = pf.parts.find(q => q.pair === b.pair && q.cut);
-        if (f) copyKeys(f, b, PART_SYNC); else delete b.pair;
-    }
 }
 
 // ---------- 粒子發射點 ----------
@@ -405,12 +366,7 @@ function fromSyn(syn, ax, ay)
     const clean = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined));
     const rel = (o) => clean({x: o.x - ax || undefined, y: o.y - ay || undefined});
     const out = [];
-    // 前後片：of → 同 pair 組號，後片排在前片前面
-    const ps = syn.props ?? [], pairOf = {};
-    let n = 0;
-    for (const o of ps) if (o.cut && ps.some(b => b.of === o.key)) pairOf[o.key] = ++n;
-    const ordered = ps.filter(o => !pairOf[o.of]).flatMap(o => [...ps.filter(b => pairOf[o.key] && b.of === o.key), o]);
-    for (const {key, x, y, img, of, ...p} of ordered) out.push(clean({img, ...rel({x, y}), ...p, pair: pairOf[key] ?? pairOf[of]}));
+    for (const {key, x, y, img, ...p} of syn.props ?? []) out.push(clean({img, ...rel({x, y}), ...p}));
     for (const {key, x, y, id, follow, def, every, ...p} of syn.particles ?? []) out.push(clean({particle: id, ...rel({x, y}), ...p}));
     for (const {key, x, y, follow, ...l} of syn.lights ?? [])
     {
@@ -451,9 +407,7 @@ function editPf(id, fn)
     if (!src) {status(`prefab.json 沒有 ${id}`); return Promise.resolve();}
     const ps0 = draftOf(id)?.ps ?? {};
     const next = structuredClone(src), ps = structuredClone(ps0);
-    const ret = fn(next, ps);
-    syncParts(next);
-    if (ret === false || (str(next) === str(src) && str(ps) === str(ps0))) {renderRight(); return Promise.resolve();}
+    if (fn(next, ps) === false || (str(next) === str(src) && str(ps) === str(ps0))) {renderRight(); return Promise.resolve();}
     S.draft ??= {id, key: S.pick, base: str(S.prefabs[id]), pf: null, ps: {}, pbase: {}, thumb: src.thumb ?? null, undo: [], redo: []};
     const d = S.draft;
     for (const pid of Object.keys(ps)) if (!(pid in d.pbase)) d.pbase[pid] = str(S.refs.particles[pid] ?? null);
@@ -548,10 +502,9 @@ function setPart(id, i, patch)
     return editPf(id, pf => {
         const p = pf.parts?.[i];
         if (!p) throw new Error(`prefab ${id} 沒有第 ${i + 1} 個零件`);
-        const front = isBackPart(p) ? pf.parts[frontIdx(pf.parts, i)] : null;
         for (const [k, v] of Object.entries(patch))
         {
-            const o = p.light && LIGHT_KEYS.includes(k) ? p.light : front && k !== 'depth' ? front : p;
+            const o = p.light && LIGHT_KEYS.includes(k) ? p.light : p;
             if (v === undefined) delete o[k]; else o[k] = v;
         }
     });
@@ -614,27 +567,16 @@ function movePart(id, i, d)
     return editPf(id, pf => {const a = pf.parts; [a[i], a[i + d]] = [a[i + d], a[i]];});
 }
 
-// 刪零件（可以好幾個，一筆 undo）：前片連後片一起刪；後片單獨刪＝撤掉前後片（問，sure＝不問），前片換回原圖
-async function delParts(id, idxs, sure)
+// 刪零件（可以好幾個，一筆 undo）
+function delParts(id, idxs)
 {
-    const parts = pfOf(id)?.parts ?? [], del = new Set(idxs);
-    for (const i of idxs) for (const b of backIdxs(parts, i)) del.add(b);
-    const lone = [...del].filter(i => isBackPart(parts[i]) && !del.has(frontIdx(parts, i)) && frontIdx(parts, i) >= 0);
-    const revert = new Set();
-    if (lone.length)
-    {
-        if (sure || await ask('撤掉前後片', '後片不能單獨刪：要撤掉前後片嗎？（前片換回原圖、後片拿掉，PNG 留著，可以復原）', [['ok', '撤掉'], ['cancel', '取消']]) === 'ok')
-            lone.forEach(i => revert.add(frontIdx(parts, i)));
-        else lone.forEach(i => del.delete(i));
-    }
-    if (!del.size) return;
-    const gone = [...del];
-    const shift = (j) => (del.has(j) ? null : j - gone.filter(k => k < j).length);
+    const del = new Set(idxs);
+    if (!del.size) return Promise.resolve();
+    const shift = (j) => (del.has(j) ? null : j - idxs.filter(k => k < j).length);
     S.part = S.part === null ? null : shift(S.part);
     remapSel(shift);
     return editPf(id, pf => {
         if (!pf.parts?.some((_, j) => del.has(j))) return false;
-        for (const j of revert) revertFront(pf.parts[j]);
         pf.parts = pf.parts.filter((_, j) => !del.has(j));
         if (!pf.parts.length) delete pf.parts;
     });
@@ -669,13 +611,9 @@ const selParts = () => {
 function moveParts(id, moves)
 {
     return editPf(id, pf => {
-        const parts = pf.parts ?? [];
-        const idx = new Set(moves.map(m => m.i));
-        for (const {i: i0, x, y} of moves)
+        for (const {i, x, y} of moves)
         {
-            const i = frontIdx(parts, i0);
-            if (i !== i0 && (i < 0 || idx.has(i))) continue;
-            const p = parts[i];
+            const p = pf.parts?.[i];
             if (!p) continue;
             if (x) p.x = x; else delete p.x;
             if (y) p.y = y; else delete p.y;
@@ -964,11 +902,9 @@ function partsPanel(o)
             h('div', {class: `part${(p.look && p.look !== look) || p.off ? ' off' : ''}${pselOf().parts.includes(i) && !p.off ? ' picked' : ''}`, dataset: {part: i},
                 title: '左鍵：選取（sandbox 外框、拖曳、方向鍵、Del），再點取消，可多選；右鍵：展開／收起表單',
                 onclick: () => togglePartSel(i), oncontextmenu: (e) => {e.preventDefault(); openPart(i === S.part ? null : i);}},
-                h('input', {type: 'checkbox', checked: !p.off, disabled: isBackPart(p), dataset: {k: `part${i}.on`},
-                    title: isBackPart(p) ? '後片跟著前片' : '作用：沒勾＝停用（off，遊戲跟 sandbox 都不建，資料留著）',
+                h('input', {type: 'checkbox', checked: !p.off, dataset: {k: `part${i}.on`}, title: '作用：沒勾＝停用（off，遊戲跟 sandbox 都不建，資料留著）',
                     onclick: (e) => e.stopPropagation(), onchange: (e) => setPartOn(id, i, e.target.checked)}),
-                partIcon(p), h('span', {class: 'id'}, partName(p)), p.cut && h('span', {class: 'lab'}, '前片'), isBackPart(p) && h('span', {class: 'lab'}, '後片'),
-                p.look && h('span', {class: 'lab'}, p.look), h('span', {class: 'grow'}),
+                partIcon(p), h('span', {class: 'id'}, partName(p)), p.look && h('span', {class: 'lab'}, p.look), h('span', {class: 'grow'}),
                 btn('↑', '往前（同深度時畫在下面）', () => movePart(id, i, -1)), btn('↓', '往後', () => movePart(id, i, 1)), btn('✕', '拿掉這個零件', () => delPart(id, i))),
             i === S.part && h('div', {class: 'partform'}, ...partRows(id, i, p)),
         ]),
@@ -983,20 +919,9 @@ function partRows(id, i, p)
         onchange: (e) => set({[k]: e.target.value === '' ? undefined : +e.target.value})});
     const pos = row('位置', n('x', 1, '0'), ' ', n('y', 1, '0'));
     const look = row('狀態', lookSelect(id, p.look, (v) => set({look: v})));
-    if (isBackPart(p)) return [
-        h('div', {class: 'row2'}, imgEl(p.img, 48), h('span', {class: 'dim', style: 'word-break: break-all'}, p.img)),
-        h('table', {class: 'props'}, row('深度', n('depth', 1, '0'), h('span', {class: 'dim'}, ' prefab 裡的前後（大的在前）'))),
-        h('div', {class: 'hint dim'}, '後片：位置、大小、翻轉、角度、錨點、狀態、特效、作用都跟著前片；清單順序可以 ↑↓（同深度時照順序）'),
-        h('div', {class: 'row2'}, h('button', {dataset: {k: 'recut'}, onclick: () => cutPart(id, i)}, '重切前後片…'),
-            h('button', {dataset: {k: 'revoke'}, onclick: () => revokePart(id, i)}, '撤掉前後片')),
-    ];
-    const cutOk = !p.cut && (isFile(p.img) || !!IC.IMAGES[p.img]);
     if (p.img) return [
         h('div', {class: 'row2'}, imgEl(p.img, 48), h('span', {class: 'dim', style: 'word-break: break-all'}, p.img),
-            !p.cut && h('button', {onclick: async () => {const v = await askImg(p.img); if (v) set({img: v, pct: isFile(v) ? p.pct : undefined});}}, '換圖…'),
-            cutOk && h('button', {dataset: {k: 'cut'}, title: '圈出後片，切成前片＋後片兩張 PNG（立刻寫進 textures/，零件改在草稿）', onclick: () => cutPart(id, i)}, '切前後片…'),
-            p.cut && h('button', {dataset: {k: 'recut'}, title: `原圖 ${p.cut.src}`, onclick: () => cutPart(id, i)}, '重切前後片…'),
-            p.cut && h('button', {dataset: {k: 'revoke'}, title: '後片拿掉、換回原圖（PNG 留著）', onclick: () => revokePart(id, i)}, '撤掉前後片')),
+            h('button', {onclick: async () => {const v = await askImg(p.img); if (v) set({img: v, pct: isFile(v) ? p.pct : undefined});}}, '換圖…')),
         h('table', {class: 'props'},
             pos,
             ...sizeRows(p, row, set, `${id}#${i}`),
@@ -1147,8 +1072,6 @@ async function composePrefab(start, opt)
     }
     const err = prefabIdError(id);
     if (err) return status(err);
-    // 前後片整組帶：勾了其中一片就兩片都進
-    for (const o of props()) if (o.of && (pick.includes(o.key) || pick.includes(o.of))) pick = [...new Set([...pick, o.key, o.of])];
     const chosen = all.filter(([, o]) => pick.includes(o.key));
     if (!chosen.length) return status('至少勾一個');
     // ✎ 的發射點 → particle.json 的 id（另存的不能撞名、彼此也不能重複）
@@ -1482,7 +1405,6 @@ function fxPanel(r)
 function deleteObj(key)
 {
     const list = listOf(key);
-    if (propOf(key)?.of) return revokeProp(key);
     return editScene(sc => {
         const i = sc[list]?.findIndex(x => x.key === key) ?? -1;
         if (i < 0) return false;
@@ -1495,7 +1417,6 @@ function deleteObj(key)
             delete o.follow;
         }
         sc[list].splice(i, 1);
-        if (list === 'props') sc.props = sc.props.filter(b => b.of !== key);
         if (!sc[list].length) delete sc[list];
     }, S.pick === key ? null : S.pick);
 }
@@ -1783,7 +1704,6 @@ const texDirOf = (key) => {
 const texRel = (path, n) => (path === TEX ? n : `${path.slice(TEX.length + 1)}/${n}`);
 const cutNames = (base) => [`${base}-front`, `${base}-back`];
 
-const cutItems = (p) => (canCut(p) ? [['切前後片…', () => cutProp(p.key)]] : p?.cut || p?.of ? [['重切前後片…', () => cutProp(p.key)], ['撤掉前後片', () => revokeProp(p.key)]] : []);
 const canCut = (p) => !!p && !p.of && !p.cut && (isFile(p.img) || !!IC.IMAGES[p.img]);
 
 async function cutSrc(img)
@@ -1849,160 +1769,44 @@ async function writeCut(src, pts, k, path, base)
     return over;
 }
 
-// 誰在用這張圖（所有場景的擺設＋所有 prefab 的零件，草稿那筆照草稿）
-function imgUses(img)
-{
-    const out = [];
-    for (const [n, sc] of Object.entries(S.data)) for (const p of sc.props ?? []) if (p.img === img) out.push(`場景 ${n} ${p.key}`);
-    for (const id of Object.keys(S.prefabs)) (pfOf(id)?.parts ?? []).forEach((p, i) => {if (p.img === img) out.push(`prefab ${id} 零件 ${i + 1}`);});
-    return out;
-}
-
-// 開對話框切／重切、寫兩張 PNG：c＝{img（原圖）, pct, pts?（重切帶回）, title, dir, name, cur?: [前片, 後片]（重切）}
-// 重切檔名沒改＝覆寫同兩張（共用的先問）；回傳 {pts, F, B, over（蓋掉既有檔）, same（覆寫同名）}｜null
-async function runCut(c)
-{
-    const src = await cutSrc(c.img);
-    if (!src) {status(`讀不到 ${c.img}`); return null;}
-    const k = isFile(c.img) ? (c.pct ?? 100) / 100 : 1;
-    const side = cutSide(c.dir, c.name);
-    const same = () => !!c.cur && cutNames(side.name).join() === c.cur.join();
-    const r = await cutDialog({src, title: c.title, pts: c.pts, side: side.el, check: async () => {
-        if (!same()) return cutCheck(side.path, side.name, c.img);
-        if (side.path !== c.dir) return `${c.cur[0]} 在 ${c.dir}，同名不能換資料夾`;
-        const users = imgUses(c.cur[0]);
-        if (users.length > 1 && await ask('重切共用的前後片', [`${c.cur[0]}／${c.cur[1]} 共用 ${users.length} 處，覆寫會全部一起變：`, h('div', {class: 'dim'}, users.join('、'))],
-            [['ok', '全部覆寫'], ['cancel', '取消']]) !== 'ok') return '改檔名＝另存新名（只有這裡換新圖）';
-        return null;
-    }});
-    if (!r) return null;
-    if (isFile(c.img)) ls.set(LS.cutDir, side.path);
-    const [F, B] = cutNames(side.name);
-    let over;
-    try {over = await writeCut(src, r.pts, k, side.path, side.name);}
-    catch (e) {status(`寫不了 PNG：${e.message}`); return null;}
-    await updateTextures();
-    return {pts: r.pts, F, B, over, same: same()};
-}
-
-// texture key 所在資料夾：圖片清單沒有（剛寫、清單還沒更新）就去 textures/ 找
-async function texDirFind(key)
-{
-    const d = texDirOf(key);
-    if (d) return d;
-    const hit = await findTexKey(await mkdirs(TEX), key);
-    return hit ? [TEX, ...hit.split('/').slice(0, -1)].join('/') : TEX;
-}
-
-// 切／重切的參數：o＝擺設或零件（前片）
-async function cutArgs(o, what)
-{
-    const recut = !!o.cut, img = recut ? o.cut.src : o.img, last = ls.get(LS.cutDir);
-    if (!isFile(img) && !IC.IMAGES[img]) return status(recut ? `原圖 ${img} 不見了，不能重切` : '只能切單張圖（sheet／atlas 的格子不行）'), null;
-    const base = recut ? o.img.replace(/-front$/, '') : (isFile(img) ? img.split('/').pop() : img).replace(/\.png$/i, '');
-    return {img, pct: recut ? o.cut.pct : o.pct, pts: o.cut?.pts, title: `${recut ? '重切' : '切'}前後片：${what}`, name: base,
-            dir: recut ? await texDirFind(o.img) : isFile(img) ? (last?.startsWith(TEX) ? last : `${TEX}/props`) : await texDirFind(img),
-            cur: recut ? cutNames(base) : null};
-}
-
-// 前片：第一次切記 cut、拿掉 pct；重切只換 pts；img 換新前片
-function cutFront(q, r)
-{
-    if (q.cut) q.cut.pts = r.pts;
-    else {q.cut = {src: q.img, ...(q.pct !== undefined && {pct: q.pct}), pts: r.pts}; delete q.pct;}
-    q.img = r.F;
-}
-const revertFront = (q) => {q.img = q.cut.src; if (q.cut.pct !== undefined) q.pct = q.cut.pct; delete q.cut; delete q.pair;};
-
-// 覆寫同名：別處用同一張前片的 cut.pts 一起換（草稿那筆 prefab 不動，呼叫端自己改）
-function syncCutPts(scenes, pfs, r, skipPf)
-{
-    if (!r.same) return;
-    for (const sc of Object.values(scenes)) for (const p of sc.props ?? []) if (p.img === r.F && p.cut) p.cut.pts = r.pts;
-    for (const [id, pf] of Object.entries(pfs ?? {})) if (id !== skipPf) for (const p of pf.parts ?? []) if (p.img === r.F && p.cut) p.cut.pts = r.pts;
-}
-
-// 擺設切／重切（點到後片＝前片）
 async function cutProp(key)
 {
     if (!S.root) return status('先在上方選擇專案資料夾');
-    let p = propOf(key);
-    if (p?.of) p = propOf(p.of) ?? p;
-    if (!p || p.of) return;
-    const c = await cutArgs(p, propName(p));
-    if (!c) return;
-    const r = await runCut(c), name = S.sel, fkey = p.key;
+    const p = propOf(key);
+    if (!p) return;
+    if (p.of) return status('後片不能再切');
+    if (p.cut) return status(`${key} 已經切過前後片了`);
+    if (!isFile(p.img) && !IC.IMAGES[p.img]) return status('只能切單張圖（sheet／atlas 的格子不行）');
+    const src = await cutSrc(p.img);
+    if (!src) return status(`讀不到 ${p.img}`);
+    const k = pctOf(p), last = ls.get(LS.cutDir);
+    const cur = isFile(p.img) ? (last?.startsWith(TEX) ? last : `${TEX}/props`) : texDirOf(p.img) ?? TEX;
+    const side = cutSide(cur, propName(p).replace(/\.png$/i, ''));
+    const r = await cutDialog({src, title: `切前後片：${propName(p)}${k !== 1 ? `（存成 ${p.pct}%）` : ''}`, side: side.el,
+                               check: () => cutCheck(side.path, side.name, p.img)});
     if (!r) return;
-    await commit((scenes, pfs) => {
-        const sc = scenes[name], q = sc?.props?.find(x => x.key === fkey);
-        if (!q) throw new Error(`場景裡沒有 ${fkey}`);
-        cutFront(q, r);
-        const backs = sc.props.filter(x => x.of === fkey);
-        for (const x of backs) x.img = r.B;
-        if (!backs.length)
-        {
-            let n = 1;
-            while (sc.props.some(x => x.key === `p${n}`)) n++;
-            const {key: _k, img: _i, cut: _c, depth, ...rest} = q;
-            sc.props.splice(sc.props.indexOf(q) + 1, 0, {key: `p${n}`, of: fkey, img: r.B, ...rest, depth: (depth ?? 0) - 1});
-        }
-        syncCutPts(scenes, pfs, r, S.draft?.id);
-        syncProps(sc);
-    }, undefined, fkey, r.same ? PREFAB_FILES : undefined);
-    if (r.over) reloadGame();
-    else toGame({sb: 'textures'});
-    status(`${fkey} 切成 ${r.F}＋${r.B}`);
-}
-
-// 撤掉：後片拿掉、前片換回原圖（PNG 留著）
-async function revokeProp(key, sure)
-{
-    let p = propOf(key);
-    if (p?.of) p = propOf(p.of);
-    if (!p?.cut) return;
-    if (!sure && await ask('撤掉前後片', `${p.key} 換回原圖 ${p.cut.src}、後片拿掉（PNG 留著，可以復原）`, [['ok', '撤掉'], ['cancel', '取消']]) !== 'ok') return;
+    if (isFile(p.img)) ls.set(LS.cutDir, side.path);
+    const [F, B] = cutNames(side.name);
+    let over;
+    try {over = await writeCut(src, r.pts, k, side.path, side.name);}
+    catch (e) {return status(`寫不了 PNG：${e.message}`);}
+    await updateTextures();
     await editScene(sc => {
-        const q = sc.props?.find(x => x.key === p.key);
-        if (!q?.cut) return false;
-        sc.props = sc.props.filter(x => x.of !== q.key);
-        revertFront(q);
-    }, p.key);
-}
-
-// prefab png 零件切／重切（草稿）：後片插在前片前面、同 pair
-async function cutPart(id, i0)
-{
-    if (!S.root) return status('先在上方選擇專案資料夾');
-    const parts = pfOf(id)?.parts ?? [], i = Math.max(0, frontIdx(parts, i0)), p = parts[i];
-    if (!p?.img) return;
-    const c = await cutArgs(p, `${id} 零件 ${i + 1}`);
-    if (!c) return;
-    const r = await runCut(c);
-    if (!r) return;
-    if (r.same) await commit((scenes, pfs) => syncCutPts(scenes, pfs, r, id), undefined, undefined, PREFAB_FILES);
-    const add = !backIdxs(parts, i).length;
-    if (add)
-    {
-        const sh = (j) => (j >= i ? j + 1 : j);
-        S.part = S.part === null ? null : sh(S.part);
-        remapSel(sh);
-    }
-    await editPf(id, pf => {
-        const q = pf.parts[i];
-        cutFront(q, r);
-        if (q.pair === undefined) {let n = 1; while (pf.parts.some(x => x.pair === n)) n++; q.pair = n;}
-        for (const j of backIdxs(pf.parts, i)) pf.parts[j].img = r.B;
-        if (add)
-        {
-            const {img: _i, cut: _c, pct: _p, depth, pair, ...rest} = q;
-            pf.parts.splice(i, 0, {img: r.B, ...rest, depth: (depth ?? 0) - 1, pair});
-        }
-    });
-    if (r.over) reloadGame();
+        const i = sc.props?.findIndex(x => x.key === key) ?? -1;
+        if (i < 0) throw new Error(`場景裡沒有 ${key}`);
+        const q = sc.props[i];
+        let n = 1;
+        while (sc.props.some(x => x.key === `p${n}`)) n++;
+        q.cut = {src: q.img, ...(q.pct !== undefined && {pct: q.pct}), pts: r.pts};
+        q.img = F;
+        delete q.pct;
+        const {key: _k, img: _i, cut: _c, depth, ...rest} = q;
+        sc.props.splice(i + 1, 0, {key: `p${n}`, of: key, img: B, ...rest, depth: (depth ?? 0) - 1});
+    }, key);
+    if (over) reloadGame();
     else toGame({sb: 'textures'});
+    status(`${key} 切成 ${F}＋${B}（${side.path}）`);
 }
-
-const revokePart = (id, i) => delParts(id, backIdxs(pfOf(id)?.parts ?? [], frontIdx(pfOf(id)?.parts ?? [], i)), true);
 
 function propPanel(p)
 {
@@ -2012,25 +1816,12 @@ function propPanel(p)
     };
     const n = (k, step, ph) => h('input', {type: 'number', step, value: p[k] ?? '', placeholder: ph, class: 'n', dataset: {k}, onchange: put(k)});
     const row = (k, ...v) => h('tr', null, h('td', {class: 'k'}, k), h('td', null, ...v));
-    // 後片：只有深度，其他跟著前片
-    if (p.of) return [
-        h('div', {class: 'sec'}, `擺設 ${p.key}`, h('span', {class: 'dim'}, `　${p.of} 的後片`)),
-        h('div', {class: 'row2'}, imgEl(p.img, 64), h('span', {class: 'dim', style: 'word-break: break-all'}, p.img)),
-        h('table', {class: 'props'}, row('深度', n('depth', 1, '0'), h('span', {class: 'dim'}, ' 加在 y 上'))),
-        h('div', {class: 'hint dim'}, '位置、大小、翻轉、角度、錨點跟著前片（在畫面上點後片＝選前片）'),
-        h('div', {class: 'acts row2'}, h('button', {onclick: () => pickRole(p.of)}, '選前片'), h('button', {dataset: {k: 'recut'}, onclick: () => cutProp(p.key)}, '重切前後片…'),
-            h('button', {dataset: {k: 'revoke'}, onclick: () => revokeProp(p.key)}, '撤掉前後片（Del）')),
-    ];
-    const backs = backsOf(p.key);
     return [
-        h('div', {class: 'sec'}, `擺設 ${p.key}`, p.cut && h('span', {class: 'dim'}, `　前片（後片 ${backs.map(b => b.key).join('、') || '⚠ 沒有'}）`)),
+        h('div', {class: 'sec'}, `擺設 ${p.key}`),
         h('div', {class: 'row2'}, imgEl(p.img, 64), h('span', {class: 'dim', style: 'word-break: break-all'}, p.img),
-            !p.cut && h('button', {onclick: async () => {const v = await askImg(p.img); if (v) setProp(p.key, {img: v, pct: isFile(v) ? p.pct : undefined});}}, '換圖…'),
+            h('button', {onclick: async () => {const v = await askImg(p.img); if (v) setProp(p.key, {img: v, pct: isFile(v) ? p.pct : undefined});}}, '換圖…'),
             isFile(p.img) && h('button', {title: '把原圖縮成 % 另存一份 PNG（場景不動）', onclick: () => exportProp(p)}, '存檔…'),
-            canCut(p) && h('button', {title: '圈出後片，切成前片＋後片兩張 PNG（進 textures/）', onclick: () => cutProp(p.key)}, '切前後片…'),
-            p.cut && h('button', {dataset: {k: 'recut'}, title: `原圖 ${p.cut.src}`, onclick: () => cutProp(p.key)}, '重切前後片…'),
-            p.cut && h('button', {dataset: {k: 'revoke'}, title: '後片拿掉、換回原圖（PNG 留著）', onclick: () => revokeProp(p.key)}, '撤掉前後片'),
-            p.cut && !isFile(p.cut.src) && !IC.IMAGES[p.cut.src] && h('span', {class: 'warn'}, `⚠ 原圖 ${p.cut.src} 不見了，不能重切`)),
+            canCut(p) && h('button', {title: '圈出後片，切成前片＋後片兩張 PNG（進 textures/）', onclick: () => cutProp(p.key)}, '切前後片…')),
         h('table', {class: 'props'},
             row('位置', n('x', 1), ' ', n('y', 1)),
             ...sizeRows(p, row),
@@ -2202,10 +1993,9 @@ function renderTree()
         ...sec('props', `擺設（${props().length}）`, plus('放擺設', () => placeProp(S.center[0] * 32 + 16, S.center[1] * 32 + 32)), () => props().map(p => h('div', {
             class: `item${p.key === S.pick ? ' sel' : ''}${S.hidden.has(p.key) ? ' hid' : ''}`, dataset: {key: p.key},
             onclick: () => pickRole(p.key === S.pick ? null : p.key),
-            oncontextmenu: (e) => menu(e, [...cutItems(p), ['組成 prefab…', () => composePrefab(p.key)], [p.of ? '撤掉前後片' : '刪除', () => deleteObj(p.key)]]),
-            style: p.of ? 'padding-left: 18px' : null,
+            oncontextmenu: (e) => menu(e, [...(canCut(p) ? [['切前後片…', () => cutProp(p.key)]] : []), ['組成 prefab…', () => composePrefab(p.key)], ['刪除', () => deleteObj(p.key)]]),
         }, h('button', {class: 'eye', title: '暫時藏起來（不存檔）', onclick: (e) => {e.stopPropagation(); toggleHide(p.key);}}, S.hidden.has(p.key) ? '◌' : '👁'),
-           p.of && h('span', {class: 'dim'}, '↳'), imgEl(p.img, 20), h('span', {class: 'id'}, p.img.startsWith(FILE) ? p.img.split('/').pop() : p.img), h('span', {class: 'mark dim'}, `${p.x},${p.y}`)))),
+           imgEl(p.img, 20), h('span', {class: 'id'}, p.img.startsWith(FILE) ? p.img.split('/').pop() : p.img), h('span', {class: 'mark dim'}, `${p.x},${p.y}`)))),
         ...sec('particles', `粒子（${emitters().length}）`, plus('放粒子發射點', () => placeEmitter(S.center[0] * 32 + 16, S.center[1] * 32 + 16)), () => emitters().map(e => h('div', {
             class: `item${e.key === S.pick ? ' sel' : ''}${S.hidden.has(e.key) ? ' hid' : ''}`, dataset: {key: e.key},
             onclick: () => pickRole(e.key === S.pick ? null : e.key),
@@ -2488,7 +2278,7 @@ addEventListener('message', (e) => {
         const b = frame.getBoundingClientRect(), at = {clientX: b.left + m.cx, clientY: b.top + m.cy};
         const items = [[`在這裡放角色…（${m.tx}, ${m.ty}）`, () => placeAt(m.tx, m.ty)], ['在這裡放擺設…', () => placeProp(m.wx, m.wy)], ['在這裡放粒子…', () => placeEmitter(m.wx, m.wy)],
                        ['在這裡放光源', () => addLight(m.wx, m.wy)], ['在這裡放 prefab…', () => placeInst(m.wx, m.wy)]];
-        if (propOf(m.key)) items.push(...cutItems(propOf(m.key)));
+        if (canCut(propOf(m.key))) items.push(['切前後片…', () => cutProp(m.key)]);
         if (m.key && (isProp(m.key) || isEm(m.key) || isLight(m.key))) items.push(['組成 prefab…', () => composePrefab(m.key)]);
         if (m.key) items.push([`刪除 ${roleOf(m.key)?.id ?? m.key}`, () => deleteObj(m.key)]);
         if (S.sel === null) return status('先選或新增一個場景');
@@ -2606,5 +2396,5 @@ refresh();
 
 // 給無頭測試用
 window.__sc = {S, setProject, addScene, dupScene, renameScene, deleteScene, select, undo, redo, addRole, setRole, setEquip, deleteRole, pickRole, toggleHide, arm, toGame, addProp, setProp, deleteObj, nudge, bakeProp, folderTree, exportProp: (key) => exportProp(propOf(key)), srcSize, addLight, setLight, addEmitter, setEmitter, setField, setPlaying,
-               addInst, setInst, newPrefab, deletePrefab, toggleFold, setPf, setPart, addPart, movePart, delPart, delParts, openPart, moveParts, setPartOn, toggleBoxSel, togglePartSel, pselOf, pickPrefab, saveDraft, dropDraft, changePartParticle, forkPartParticle, particleUsers, pDef, composePrefab, renamePrefab, dupPrefab, cutProp, revokeProp, cutPart, revokePart,
+               addInst, setInst, newPrefab, deletePrefab, toggleFold, setPf, setPart, addPart, movePart, delPart, delParts, openPart, moveParts, setPartOn, toggleBoxSel, togglePartSel, pselOf, pickPrefab, saveDraft, dropDraft, changePartParticle, forkPartParticle, particleUsers, pDef, composePrefab, renamePrefab, dupPrefab, cutProp,
                flush: () => S.q};
