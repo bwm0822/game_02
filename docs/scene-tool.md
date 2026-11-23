@@ -96,9 +96,26 @@
 - 大小（同紙娃娃兩段）：`sx`／`sy`＝擺放（預設 1、等於 1 不存），`pct`＝只有 `file:` 圖有、「存檔…」烤成原圖的幾 %（100 不存；換圖成 textures 圖時拿掉）；畫面＝原圖像素 × pct% × sx／sy（sandbox `setScale(k·sx, k·sy)`，不真的縮圖），`%` 跟 scale 不互相換算。面板三列：`%`（一格，說明在 title，右邊灰字「原圖 W×H」）、`scale`（☐ 等比：勾著＝sx＝sy 只有一格，狀態從資料推，sx＝sy 時取消勾選記在記憶體 `freeRatio`；勾回去 sy＝sx；右邊灰字 file 圖＝「縮放後 W×H」＝原圖×%（烤完那張的大小，還沒乘 scale）、textures 圖＝「原圖 W×H」）、`寬高`（畫面 px＝四捨五入；file 圖多「鎖 [%｜scale ▾]」下拉記 `tools.scene.sizeLock`：鎖 %＝改寬→sx、改高→sy（等比勾著兩個一起），鎖 scale＝改寬或高→反算 pct、另一邊等比跟著變；textures 圖永遠是鎖 %）。原圖尺寸：file 圖載 `<img>`、textures 圖 `IC.frameOf()`（sheet／atlas 是格子大小），快取在 `sizes`。
 - 「存檔…」（只有 file: 圖）：把原圖縮成 pct%（Canvas `imageSmoothingQuality:'high'`，只等比、sx/sy 不烤）**另存一份 PNG，場景完全不動**（img／pct／sx／sy 不換、不寫 scenes.json、不進 undo），pct 100 也能存（＝原尺寸收編）。對話框切「存到 textures」（資料夾樹只列 `textures/`，不列 `.tbd`／`minimap`，預設上次選的 `tools.scene.exportDir`）／「存到原始路徑」（整個專案的資料夾樹，預設原圖的資料夾），模式記 `tools.scene.exportMode`；樹裡每個資料夾在子資料夾後面列出 `.png`（純文字、照名字排），點檔案＝選它的資料夾＋把檔名（去 `.png`）填進檔名欄（還能改），擺設正在用的原圖標灰；檔名預設存到 textures＝`<原檔名>`、存到原始路徑＝`<原檔名>-copy`，切模式時檔名還是上個模式的預設才跟著換（改過、點檔案填過就不動）。同資料夾有同名檔先 `confirm` 問要不要覆蓋；擺設自己的原圖一律擋（覆蓋會讓 pct 縮兩次）；存進 textures/ 裡的還要檢查整個 textures/ texture key 撞名（大小寫不分，覆蓋的那張自己不算）、寫完打 `POST /__tools/textures` 更新圖片清單＋廣播 `textures.json`。核心是 `bakeProp(key, 資料夾, 檔名, overwrite)`（無頭測試直接呼叫，樹是 `folderTree(root, cur, onPick, self)`）。場景分頁的 `#dlgAsk` 外框不捲（`index.html` 覆寫共用 `style.css` 的 `.body` 60vh 捲動）：視窗矮時只有 body 裡的 `.treebox` 縮（最少 80px、自己捲），沒有 treebox 才讓 body 捲，按鈕一定看得到。
 - 深度照錨點 y 自動排，跟角色互相遮擋；不擋路。
+- **切前後片**（2026-11-23 定案，見下面「切前後片」）：擺設右鍵（左欄／畫面）或面板「切前後片…」。
 - 錨點：工具列「☑ 錨點」（預設勾、記 `tools.scene.anchor`、送 `anchor {on}`）勾著時選中的擺設（sprite x/y）或角色（root x/y＝站的點）畫黃點黑框＋十字（半徑 4 螢幕 px；原本的綠點跟選取框同色、壓在框線下邊上看不出來），沒勾不畫；只畫選中的那個（`_anchorPt()`）。prefab 實例例外：勾著時每個都畫、畫成準星不是黃點（沒選中的半透明），而且**點錨點才選得到**（沒有白框、縮圖矩形不參與），沒勾＝不畫也點不到，見 [prefab.md](prefab.md)。
 - 操作：右鍵「在這裡放擺設…」（錨點＝點的位置）、左欄「＋」（地圖中間）；左鍵點選（白框＋錨點黃點；選中的記號一律白色 `SEL_COLOR`，不跟 prefab 占地方塊的紅／藍／綠撞色；角色跟擺設重疊時點到深度高的）、自由拖（整數 px，按住 Shift 錨點吸 16px＝格子交點＋格子中心，圖跟光一起動，放開才寫檔）；方向鍵 1px、Shift＋方向鍵 32px（每按一下一筆 undo）；Del 刪。
 - 畫面上拉大小：選中的擺設白框上 8 個白底黑框把手（4 角＋4 邊中點，固定 6 螢幕 px，游標換 resize；`angle≠0` 不出把手，用面板調），把手優先於點選。拉邊改一軸、拉角兩軸，**對邊（對角）固定**、錨點 x/y 重算（取到 0.01）；改什麼照面板：鎖 %＝`sx`/`sy`（等比勾著兩軸等比：角照拖得多的那軸、邊的另一軸繞錨點長），鎖 scale（file 圖）＝`pct`（一定等比）。Shift＝被拉的邊吸 16px（½ 格），等比時另一軸照比例。最小 1px、拉過對邊不翻面；拖曳中 sandbox 直接改 sprite 預覽，放開送 `resizeProp {key, patch}`、分頁 `setProp` 一筆 undo（sx/sy＝1、pct＝100 拿掉）。鎖跟等比狀態由分頁在 `select {key, lock, ratio}` 帶給 sandbox（`selMsg()`），切換鎖／等比時重送。sandbox：`_handles()`／`_handleAt()`／`_startResize()`／`_resizeTo()`。
+
+## 切前後片
+
+目的：prefab 內部前後（後片 → 火焰粒子 → 前片），遊戲不改；組成 prefab 時擺設的 `depth` 原樣變零件 `depth`。5 步計畫（2026-11-23）：1 多邊形編輯抽共用 `tools/common/polyedit.js`（紙娃娃改用）2 對話框＋寫 PNG＋擺設切成一組 3 擺設一組的連動 4 prefab png 零件 5 測試＋docs；目前做完 1、2。
+
+- 對話框 `tools/scene/cut.js` 的 `cutDialog({src, title, pts?, side, check})`（`#dlgCut`，JS 建、92vw×88vh）：左邊原圖畫布（`panzoom.js` 自己一組 view `tools.scene.cutView`，每次開都置中），右邊切法 `魔術棒｜手繪`（記 `tools.scene.cutMethod`）、魔術棒參數、看 `原圖＋後片｜前片｜後片`（記 `tools.scene.cutPreview`；原圖模式後片那塊的不透明像素染藍）、說明、呼叫端給的存檔位置。
+  - **圈起來的＝後片**，其餘＝前片（同紙娃娃）。
+  - 魔術棒＝紙娃娃 `PX.splitCut()`：點一下＝起點（洋紅十字）產生閉合多邊形；參數 `settings.json` 的 `scene.wand`（`lum` 輪廓亮度／`close` 閉運算／`drop` 往下射／`right` 往右射，0＝不做，預設 24／4／0／0；對話框改了即時重算、寫回設定，設定分頁也有一張表）。魔術棒模式點到閉合多邊形的頂點／邊＝改多邊形，其他地方＝換起點。
+  - 手繪＝`polyedit.js`：點頂點、點第一點或雙擊閉合、Shift 鎖 45°、Ctrl＝磁性套索（跟紙娃娃共用 `mag`）；閉合後拖頂點、點邊插點；Alt＋點／指著頂點按 Del 刪點（最少 3 點）、Backspace（沒閉合時 Del）退一點／解開閉合；Ctrl+Z／Y 對話框內 undo。切法換來換去多邊形保留（魔術棒的結果可以改成手繪接著修）。
+  - 確定：多邊形沒閉合擋；`check()` 回錯誤字串就留在對話框顯示。Esc／取消＝null。
+- 擺設（`cutProp(key)`）：只有單張圖（textures 單張圖或 `file:`；sheet／atlas 格子不行）、沒切過、不是後片才有選單／按鈕（`canCut()`）。
+  - 存檔位置：資料夾樹只列 `textures/`（`folderTree`，點檔案＝用它的名字、去掉 `-front`／`-back`），預設 textures 圖＝原圖所在資料夾、`file:` 圖＝上次選的（`tools.scene.cutDir`）或 `textures/props`；檔名欄＝基底名（預設原圖名），寫 `<名>-front.png`／`<名>-back.png`。
+  - 檢查（`cutCheck`）：空白／非法字元、跟原圖同名、texture key 撞到別的資料夾擋；同資料夾已有＝`confirm` 覆蓋。
+  - 寫檔（`writeCut`）：兩張都跟原圖同尺寸（`PX.mask` keep／挖掉，不裁邊），`file:` 圖再照 `pct` 縮（`imageSmoothingQuality:'high'`）；資料夾不在就建；寫完 `updateTextures()`，sandbox 送 `textures` 補載（有蓋掉既有檔＝同 key 換內容 → 重開 sandbox）。
+  - 資料（一筆 undo）：前片＝原擺設 `img` 換 `<名>-front`、拿掉 `pct`、加 `cut: {src: 原 img, pct?: 原 pct, pts: [[x,y]…]}`（原圖像素座標，取到 0.01）；後片＝新擺設插在前片後面 `{key, of: 前片 key, img: <名>-back, …前片的 x/y/sx/sy/flip/angle/ox/oy, depth: 前片 depth − 1}`。sandbox 照一般擺設各畫各的（`of`／`cut` 不讀）。
+- 還沒做（第 3、4 步）：點後片選前片、拖／改前片後片同步、左欄縮排、後片面板只有 depth、Del 整組／撤掉、重切（帶回 `cut.pts`、共用 n 處問覆寫／另存）、組成 prefab 時 `of`→`pair`、prefab png 零件切割。
 
 ## 格線與吸附
 

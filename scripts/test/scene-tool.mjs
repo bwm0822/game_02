@@ -516,6 +516,54 @@ run('scene-tool', async t => {
         await sc.deleteObj('l1');
         out.lightDel = await until(() => !lo('l1')) && [(await scDisk()).lights, nLights() === nl0];
 
+        // 切前後片：手繪圈左半＝後片，確定後兩張 PNG 進 textures/（file: 照 pct 烤），擺設變前片（cut）＋後片（of、depth −1）
+        await sc.setProp('p2', {pct: 50, depth: 2, flip: true, sx: undefined, sy: undefined});
+        const cutDlg = async () => until(() => doc.getElementById('dlgCut')?.open && doc.getElementById('dlgCut').__cut && doc.getElementById('dlgCut'));
+        const cutPtr = (cd, type, x, y, o = {}) => cd.querySelector('canvas').dispatchEvent(new win.PointerEvent(type, {bubbles: true, button: 0, ...cd.__cut.toClient(x, y), ...o}));
+        const texDir = await dir(proj, 'public', 'assets', 'textures', 'props');
+        let cutDone = sc.cutProp('p2');
+        let cd = await cutDlg();
+        await new Promise(res => win.requestAnimationFrame(() => win.requestAnimationFrame(res)));
+        const {width: CW, height: CH} = cd.__cut.src;
+        cd.querySelector('input[name=cutMethod][value=hand]').click();
+        cd.querySelector('[data-k=cutName]').value = 'cutt';
+        for (const [x, y] of [[-2, -2], [CW / 2, -2], [CW / 2, CH + 2], [-2, CH + 2], [-2, -2]]) cutPtr(cd, 'pointerdown', x, y);
+        out.cutPoly = [cd.__cut.m.poly?.closed, cd.__cut.m.poly?.pts.length];
+        cd.querySelector('.buttons button').click();
+        await cutDone;
+        const cutDisk = (await scDisk()).props;
+        const pix = async (n) => {
+            const bm = await createImageBitmap(await (await texDir.getFileHandle(`${n}.png`)).getFile());
+            const c = new OffscreenCanvas(bm.width, bm.height), g = c.getContext('2d');
+            g.drawImage(bm, 0, 0);
+            const d = g.getImageData(0, 0, bm.width, bm.height).data, half = Math.floor(bm.width / 2);
+            let l = 0, r = 0;
+            for (let y = 0; y < bm.height; y++) for (let x = 0; x < bm.width; x++) {const a = d[(y * bm.width + x) * 4 + 3]; if (x < half - 1) l += a; else if (x > half + 1) r += a;}
+            return {w: bm.width, h: bm.height, l, r};
+        };
+        const pf = await pix('cutt-front'), pb = await pix('cutt-back');
+        out.cut = {front: cutDisk.find(p => p.key === 'p2'), back: cutDisk.find(p => p.of === 'p2'), order: cutDisk.map(p => p.key),
+                   size: [pf.w, pf.h, pb.w, pb.h, Math.round(CW / 2), Math.round(CH / 2)], alpha: [pf.l, pb.r, pf.r + pb.l > 0]};
+        out.cutAgain = (await sc.cutProp('p2'), doc.getElementById('status').textContent);
+        await sc.undo();
+        out.cutUndo = await until(async () => (await scDisk()).props.length === 1) && (await scDisk()).props[0];
+        // 魔術棒：輪廓亮度 0＝只靠透明停，點不透明的地方＝整塊；取消＝不動
+        cutDone = sc.cutProp('p2');
+        cd = await cutDlg();
+        await new Promise(res => win.requestAnimationFrame(() => win.requestAnimationFrame(res)));
+        cd.querySelector('input[name=cutMethod][value=wand]').click();
+        const lum = cd.querySelector('.cutwand [data-k=lum]');
+        lum.value = 0; lum.dispatchEvent(new win.Event('change'));
+        const sd = cd.__cut.src.getContext('2d').getImageData(0, 0, CW, CH).data;
+        let at = -1;
+        for (let i = 0; i < CW * CH && at < 0; i++) if (sd[i * 4 + 3] >= 200) at = i;
+        cutPtr(cd, 'pointerdown', at % CW + 0.5, Math.floor(at / CW) + 0.5);
+        out.wand = [cd.__cut.m.err, cd.__cut.m.poly?.closed, cd.__cut.m.poly?.pts.length >= 3];
+        cd.querySelectorAll('.buttons button')[1].click();
+        await cutDone;
+        out.wandCancel = [(await scDisk()).props.length, (await scDisk()).props[0].img === `file:public/assets/${turl}`];
+        await sc.setProp('p2', {pct: undefined, depth: undefined, flip: undefined});
+
         // ---------- 第 5 步：特效 ----------
         // 狀態特效：加＝fxOn（不重建角色）、tick、解除＝fxOff；存在角色的 fx
         const fxId = Object.keys(sc.S.refs.fx).find(id => !sc.S.refs.fx[id].cell?.flash && sc.S.refs.fx[id].img);
@@ -794,6 +842,20 @@ run('scene-tool', async t => {
     t.eq('刪被跟的擺設：光源、粒子改成不跟、位置換成絕對', JSON.stringify(r.detach), JSON.stringify([null, true, true, null, true, true].map(v => v ?? undefined)));
     t.eq('刪被跟的擺設：undo 回來', JSON.stringify(r.detachUndo), JSON.stringify(['p2', 'p2']));
     t.check('光源：刪除', r.lightDel && r.lightDel[0] == null && r.lightDel[1], JSON.stringify(r.lightDel));
+    t.eq('切前後片：手繪點四點＋點第一點閉合', JSON.stringify(r.cutPoly), JSON.stringify([true, 4]));
+    {
+        const {front: F, back: B} = r.cut;
+        t.check('切前後片：前片換 img、拿掉 pct、記 cut {src, pct, pts}',
+                F?.img === 'cutt-front' && F.pct === undefined && F.cut?.src?.startsWith('file:') && F.cut.pct === 50 && F.cut.pts?.length === 4 && F.depth === 2 && F.flip === true, JSON.stringify(F));
+        t.check('切前後片：後片 of 前片、transform 照抄、depth −1、排在前片後面',
+                B?.img === 'cutt-back' && B.x === F.x && B.y === F.y && B.flip === true && B.depth === 1 && !B.cut && !B.pct && JSON.stringify(r.cut.order) === JSON.stringify(['p2', B.key]), JSON.stringify([B, r.cut.order]));
+    }
+    t.eq('切前後片：兩張 PNG 照 pct 烤、同尺寸', JSON.stringify(r.cut.size.slice(0, 4)), JSON.stringify([...r.cut.size.slice(4), ...r.cut.size.slice(4)]));
+    t.eq('切前後片：前片左半透明、後片右半透明', JSON.stringify(r.cut.alpha), JSON.stringify([0, 0, true]));
+    t.check('切前後片：切過的不能再切', r.cutAgain.includes('已經切過'), r.cutAgain);
+    t.check('切前後片：undo 回原圖、後片拿掉', r.cutUndo && r.cutUndo.img.startsWith('file:') && r.cutUndo.pct === 50 && !r.cutUndo.cut, JSON.stringify(r.cutUndo));
+    t.eq('切前後片：魔術棒點不透明處＝整塊閉合多邊形', JSON.stringify(r.wand), JSON.stringify([null, true, true]));
+    t.eq('切前後片：取消不動', JSON.stringify(r.wandCancel), JSON.stringify([1, true]));
     t.eq('拖曳放開：寫檔、sandbox 跟著', JSON.stringify(r.moveProp), JSON.stringify([208, 224]));
     t.eq('方向鍵 1px、Shift＋方向鍵一格', JSON.stringify(r.nudge), JSON.stringify([209, 256]));
     t.eq('擺設點得到', r.pickProp, 'p1');
