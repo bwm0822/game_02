@@ -472,9 +472,21 @@ export class Sandbox extends GameScene
     }
 
     // 拖曳中：深度照新的 y（跟著它的光源每幀在 update 跟上、粒子跟著 sprite）
+    // 切了前後片的擺設：後片（of＝前片 key）跟著前片的位置、大小，深度用自己的 depth
     _placeProp(o, x, y)
     {
         o.sp.setPosition(x, y).setDepth(y + (o.data.depth ?? 0));
+        for(const b of Object.values(this._props))
+        {
+            if(b!==o && b.data.of===o.data.key) {b.sp.setPosition(x, y).setScale(o.sp.scaleX, o.sp.scaleY).setDepth(y + (b.data.depth ?? 0));}
+        }
+    }
+
+    // 點到後片＝選前片（一組當一個東西）
+    _frontOf(key)
+    {
+        const of = this._props[key]?.data.of;
+        return of && this._props[of] ? of : key;
     }
 
     // follow 的對象：角色（root＝站的點）或擺設（sprite＝錨點）
@@ -1035,7 +1047,8 @@ export class Sandbox extends GameScene
         if(fa) {return {key:fa[0], inst:fa[1]};}
         const hits = [
             ...this.roles.filter(p=>p.visible && p.getShapeRect?.().contains(wx, wy)).map(role=>({key:role.key, role, depth:role.depth})),
-            ...Object.entries(this._props).filter(([, o])=>o.sp.visible && o.sp.getBounds().contains(wx, wy)).map(([key, prop])=>({key, prop, depth:prop.sp.depth})),
+            ...Object.entries(this._props).filter(([, o])=>o.sp.visible && o.sp.getBounds().contains(wx, wy))
+                .map(([key, prop])=>({key:this._frontOf(key), prop:this._props[this._frontOf(key)], depth:prop.sp.depth})),
         ];
         if(hits.length) {return hits.reduce((a, b)=>(b.depth>a.depth ? b : a));}
         const fb = this._instBoxAt(wx, wy);
@@ -1413,7 +1426,10 @@ export class Sandbox extends GameScene
             const ei = ins ? this._partAt(ins, p.worldX, p.worldY) : null;
             const pp = ei!==null && DB.prefab(ins.data.prefab).parts[ei];
             const dragPart = ()=>{
-                const sel = (this._inspect.partSel ?? []).filter(j=>this._partSel(j));
+                // 前後片（同 pair）一起拖
+                const parts = DB.prefab(ins.data.prefab)?.parts ?? [], sel0 = (this._inspect.partSel ?? []).filter(j=>this._partSel(j));
+                const pairs = new Set(sel0.map(j=>parts[j]?.pair).filter(v=>v!==undefined));
+                const sel = [...new Set([...sel0, ...parts.map((q, j)=>(pairs.has(q.pair) && !q.off ? j : -1)).filter(j=>j>=0)])];
                 this._drag = {p:pp, part:ei, sel, inst:ins, key:this._sel, x:pp.x ?? 0, y:pp.y ?? 0, ox:ins.go.x + (pp.x ?? 0) - p.worldX, oy:ins.go.y + (pp.y ?? 0) - p.worldY, moved:false};
                 this._cursor(p);
             };

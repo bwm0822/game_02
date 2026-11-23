@@ -28,6 +28,7 @@
 - `thumb`：縮圖（預設狀態下所有 png 零件的外框）左下角相對錨點的位移＋大小，Tiled tile 物件座標換算回錨點用。
 - 零件：
   - `img`：texture key，`sx`/`sy`/`angle`/`flip`/`ox`/`oy`/`depth`（只排 prefab 內部前後），選填 `fx`（fx.json id，跑 `fxcell.js` 的 idle，切狀態時 spawn／end）。
+  - 前後片（2026-11-23，場景分頁「切前後片…」產生，見 [scene-tool.md](scene-tool.md)「切前後片」）：一組兩個 png 零件同 `pair`（數字），有 `cut: {src, pct?, pts}` 的是前片（工具重切／撤掉用），後片的 x/y/sx/sy/flip/angle/ox/oy/look/off/fx 由工具照抄前片、只有 `depth`（通常前片 −1）跟清單順序是自己的，中間夾火焰之類的粒子（勾 `local`）。**遊戲不讀 `pair`／`cut`**，照一般零件各畫各的。
   - 粒子（2026-11-22 改）**只能是 `{particle: id}`**＝參照 particle.json，內容一律集中在 particle.json（粒子分頁的引用／未使用／缺粒子才算得準、方便 mod 蓋）。零件自己的 `{def}`（11-21～11-22 有過）已拿掉：遊戲只播 `DB.particle(particle)`、查不到不噴＋dlog，`{def}` 零件不建；場景分頁零件列標「⚠ 零件自己的粒子（已不支援）」、表單只能換成一個 id。原本 forge 的兩個 `{def}` 搬成 `forge-smoke`／`forge-fire`。粒子零件也能寫 `depth`（2026-11-21）：粒子勾 `local` 時跟 png 一起照零件 `depth`（同值照清單順序）排，**不管粒子自己的 `depth:'under'`**；沒勾 local 的粒子不能插在 png 中間，整個在 prefab 前面（root depth +0.5）、粒子 `depth:'under'`＝整個在後面（−0.5），零件 `depth` 無效（右欄反灰）。光源不是畫面物件、沒有前後，只照亮 Light2D 的 png（粒子不吃燈）。
   - `light`：寫在 prefab 裡（`r`/`color`/`i?`/`dir`/`arc`/`soft`）。光源閃爍以後再說。
 - 實例不能覆寫零件；要不一樣就另做一個 prefab。

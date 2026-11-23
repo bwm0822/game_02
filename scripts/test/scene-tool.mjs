@@ -544,8 +544,105 @@ run('scene-tool', async t => {
         const pf = await pix('cutt-front'), pb = await pix('cutt-back');
         out.cut = {front: cutDisk.find(p => p.key === 'p2'), back: cutDisk.find(p => p.of === 'p2'), order: cutDisk.map(p => p.key),
                    size: [pf.w, pf.h, pb.w, pb.h, Math.round(CW / 2), Math.round(CH / 2)], alpha: [pf.l, pb.r, pf.r + pb.l > 0]};
-        out.cutAgain = (await sc.cutProp('p2'), doc.getElementById('status').textContent);
+        const bk = out.cut.back.key;
+        const propD = async (k) => (await scDisk()).props.find(p => p.key === k);
+        const pickOk = async () => {const a = doc.getElementById('dlgAsk'); await until(() => a.open); a.close('ok');};
+        const handPoly = (cd2, pts) => {for (const [x, y] of [...pts, pts[0]]) cutPtr(cd2, 'pointerdown', x, y);};
+        const raf2 = () => new Promise(res => win.requestAnimationFrame(() => win.requestAnimationFrame(res)));
+        // 一組連動：改前片後片跟著；改後片只有 depth 是自己的、其他改到前片
+        await sc.setProp('p2', {x: 330, sx: 2});
+        await sc.setProp(bk, {y: 210, depth: 5});
+        {
+            const F = await propD('p2'), B = await propD(bk);
+            out.pairSync = [F.x, F.y, F.sx, F.depth, B.x, B.y, B.sx, B.depth];
+        }
+        // sandbox：前片移動後片跟著、點後片＝前片
+        await sc.addProp(tkey, 100, 100);
+        const ka = (await scDisk()).props.at(-1).key;
+        await sc.addProp(tkey, 0, 0);
+        const kb = (await scDisk()).props.at(-1).key;
+        await sc.setProp(kb, {of: ka, depth: -1});
+        out.sbPair = await until(() => prop(ka) && prop(kb)?.data.x === 100) && (() => {
+            sb()._placeProp(prop(ka), 140, 120);
+            const b = prop(kb).sp, c = prop(ka).sp.getBounds();
+            return [b.x, b.y, b.depth, sb()._frontOf(kb) === ka, sb()._pickAt(c.centerX, c.centerY)?.key === ka];
+        })();
+        await sc.deleteObj(ka);
+        out.sbPairDel = await until(async () => (await scDisk()).props.length === 2) && true;
+        // 後片面板只有深度
+        sc.pickRole(bk);
+        out.backPanel = await until(() => doc.querySelector('#right [data-k=revoke]')) && [...doc.querySelectorAll('#right input[data-k]')].map(e => e.dataset.k);
+        // 重切：帶回多邊形，改檔名＝另存新名（只有這組換圖，cut.src／pts 不變）
+        cutDone = sc.cutProp(bk);
+        cd = await cutDlg();
+        await raf2();
+        out.recutPoly = [cd.__cut.m.poly?.closed, cd.__cut.m.poly?.pts.length, cd.querySelector('[data-k=cutName]').value];
+        cd.querySelector('[data-k=cutName]').value = 'cutt2';
+        cd.querySelector('.buttons button').click();
+        await cutDone;
+        {
+            const F = await propD('p2'), B = await propD(bk);
+            out.recut = [F.img, B.img, JSON.stringify(F.cut.pts) === JSON.stringify(out.cut.front.cut.pts), F.cut.src === out.cut.front.cut.src, !!await texDir.getFileHandle('cutt2-back.png').catch(() => null)];
+        }
+        // 共用：別的擺設也用 cutt2-front → 重切同名先問「全部覆寫」，cut.pts 一起換
+        await sc.addProp('cutt2-front', 0, 0);
+        const k2 = (await scDisk()).props.at(-1).key;
+        await sc.setProp(k2, {cut: {src: 'x', pts: [[0, 0], [1, 0], [1, 1]]}});
+        const cam0 = (({zoom, scrollX, scrollY}) => ({zoom, scrollX, scrollY}))(sb().cameras.main);
+        cutDone = sc.cutProp('p2');
+        cd = await cutDlg();
+        await raf2();
+        cd.querySelector('.buttons button').click();
+        await pickOk();
+        await cutDone;
+        out.shared = JSON.stringify((await propD(k2)).cut.pts) === JSON.stringify((await propD('p2')).cut.pts);
+        // 蓋掉同名 PNG 會重開 sandbox：鏡頭放回去（後面的測試照原本的倍率點記號）
+        await until(() => sc.S.ready && game()?.__sb?._scene && game().__sb._props);
+        await sleep(100);
+        sb().cameras.main.setZoom(cam0.zoom).setScroll(cam0.scrollX, cam0.scrollY);
+        await sc.deleteObj(k2);
+        // Del 後片＝問撤掉；undo 回來；Del 前片＝整組刪
+        const dd = sc.deleteObj(bk);
+        await pickOk();
+        await dd;
+        {
+            const ps = (await scDisk()).props;
+            out.revoke = [ps.length, ps[0].img.startsWith('file:'), ps[0].pct, !!ps[0].cut];
+        }
         await sc.undo();
+        out.revokeUndo = await until(async () => (await scDisk()).props.length === 2) && (await propD(bk))?.of;
+        await sc.deleteObj('p2');
+        out.delPair = await until(async () => !(await scDisk()).props) && true;
+        await sc.undo();
+        await until(async () => (await scDisk()).props?.length === 2);
+        // 組成 prefab：勾前片就整組帶，of → 同 pair、後片在前面
+        await sc.composePrefab('p2', {keys: ['p2'], id: 'cutpf'});
+        const pfParts = () => (sc.S.draft?.id === 'cutpf' ? sc.S.draft.pf : sc.S.prefabs.cutpf).parts;
+        out.compose = await until(() => sc.S.prefabs.cutpf) && sc.S.prefabs.cutpf.parts.map(p => [p.img, p.pair, !!p.cut, p.depth ?? 0, p.of ?? null]);
+        // 零件：改後片位置＝改前片、深度是自己的；拖後片＝拖前片
+        await sc.setPart('cutpf', 0, {x: 7, depth: 1});
+        out.partSync = pfParts().map(p => [p.x, p.depth]);
+        await sc.moveParts('cutpf', [{i: 0, x: 9, y: 4}]);
+        out.partMove = pfParts().map(p => [p.x, p.y]);
+        // 刪後片＝問撤掉：前片換回原圖
+        const dp = sc.delParts('cutpf', [0]);
+        await pickOk();
+        await dp;
+        out.partRevoke = pfParts().map(p => [p.img.startsWith('file:'), p.pct, !!p.cut, p.pair ?? null]);
+        // 零件切前後片（草稿）：後片插在前面
+        cutDone = sc.cutPart('cutpf', 0);
+        cd = await cutDlg();
+        await raf2();
+        cd.querySelector('input[name=cutMethod][value=hand]').click();
+        cd.querySelector('[data-k=cutName]').value = 'cutt3';
+        handPoly(cd, [[-2, -2], [CW / 2, -2], [CW / 2, CH + 2], [-2, CH + 2]]);
+        cd.querySelector('.buttons button').click();
+        await cutDone;
+        out.partCut = pfParts().map(p => [p.img, p.pair ?? null, !!p.cut, p.x ?? 0, p.depth ?? 0]);
+        sc.dropDraft();
+        await sc.undo();
+        await until(async () => (await scDisk()).props?.length === 2 && !(await scDisk()).prefabs);
+        await sc.revokeProp('p2', true);
         out.cutUndo = await until(async () => (await scDisk()).props.length === 1) && (await scDisk()).props[0];
         // 魔術棒：輪廓亮度 0＝只靠透明停，點不透明的地方＝整塊；取消＝不動
         cutDone = sc.cutProp('p2');
@@ -562,7 +659,7 @@ run('scene-tool', async t => {
         cd.querySelectorAll('.buttons button')[1].click();
         await cutDone;
         out.wandCancel = [(await scDisk()).props.length, (await scDisk()).props[0].img === `file:public/assets/${turl}`];
-        await sc.setProp('p2', {pct: undefined, depth: undefined, flip: undefined});
+        await sc.setProp('p2', {pct: undefined, depth: undefined, flip: undefined, sx: undefined, x: 320, y: 200});
 
         // ---------- 第 5 步：特效 ----------
         // 狀態特效：加＝fxOn（不重建角色）、tick、解除＝fxOff；存在角色的 fx
@@ -852,8 +949,20 @@ run('scene-tool', async t => {
     }
     t.eq('切前後片：兩張 PNG 照 pct 烤、同尺寸', JSON.stringify(r.cut.size.slice(0, 4)), JSON.stringify([...r.cut.size.slice(4), ...r.cut.size.slice(4)]));
     t.eq('切前後片：前片左半透明、後片右半透明', JSON.stringify(r.cut.alpha), JSON.stringify([0, 0, true]));
-    t.check('切前後片：切過的不能再切', r.cutAgain.includes('已經切過'), r.cutAgain);
-    t.check('切前後片：undo 回原圖、後片拿掉', r.cutUndo && r.cutUndo.img.startsWith('file:') && r.cutUndo.pct === 50 && !r.cutUndo.cut, JSON.stringify(r.cutUndo));
+    t.eq('前後片：改前片後片跟著、改後片只有 depth 自己的', JSON.stringify(r.pairSync), JSON.stringify([330, 210, 2, 2, 330, 210, 2, 5]));
+    t.eq('前後片：sandbox 前片移動後片跟著（深度用自己的）、點後片＝前片', JSON.stringify([...(r.sbPair || []), r.sbPairDel]), JSON.stringify([140, 120, 119, true, true, true]));
+    t.eq('前後片：後片面板只有深度', JSON.stringify(r.backPanel), JSON.stringify(['depth']));
+    t.eq('重切：帶回多邊形、檔名預設原本的', JSON.stringify(r.recutPoly), JSON.stringify([true, 4, 'cutt']));
+    t.eq('重切：改檔名＝另存新名，cut.src／pts 不變', JSON.stringify(r.recut), JSON.stringify(['cutt2-front', 'cutt2-back', true, true, true]));
+    t.check('重切：共用的同名覆寫先問、別處 cut.pts 一起換', r.shared);
+    t.eq('前後片：Del 後片＝撤掉（換回原圖＋pct）', JSON.stringify(r.revoke), JSON.stringify([1, true, 50, false]));
+    t.check('前後片：撤掉可以 undo、Del 前片整組刪', r.revokeUndo === 'p2' && r.delPair, JSON.stringify([r.revokeUndo, r.delPair]));
+    t.eq('組成 prefab：整組帶、of→pair、後片在前', JSON.stringify(r.compose), JSON.stringify([['cutt2-back', 1, false, 5, null], ['cutt2-front', 1, true, 2, null]]));
+    t.eq('prefab 前後片：改後片位置＝改前片、深度自己的', JSON.stringify(r.partSync), JSON.stringify([[7, 1], [7, 2]]));
+    t.eq('prefab 前後片：拖後片＝拖前片', JSON.stringify(r.partMove), JSON.stringify([[9, 4], [9, 4]]));
+    t.eq('prefab 前後片：刪後片＝撤掉、前片換回原圖', JSON.stringify(r.partRevoke), JSON.stringify([[true, 50, false, null]]));
+    t.eq('prefab 零件切前後片：後片插在前面、同 pair', JSON.stringify(r.partCut), JSON.stringify([['cutt3-back', 1, false, 9, 1], ['cutt3-front', 1, true, 9, 2]]));
+    t.check('切前後片：撤掉回原圖、後片拿掉', r.cutUndo && r.cutUndo.img.startsWith('file:') && r.cutUndo.pct === 50 && !r.cutUndo.cut, JSON.stringify(r.cutUndo));
     t.eq('切前後片：魔術棒點不透明處＝整塊閉合多邊形', JSON.stringify(r.wand), JSON.stringify([null, true, true]));
     t.eq('切前後片：取消不動', JSON.stringify(r.wandCancel), JSON.stringify([1, true]));
     t.eq('拖曳放開：寫檔、sandbox 跟著', JSON.stringify(r.moveProp), JSON.stringify([208, 224]));
