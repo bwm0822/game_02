@@ -11,7 +11,6 @@ const AUTO_COLS = ['pct', 'scale', 'x', 'y', 'a', 'ox', 'oy'];
 const AUTO_LABS = {pct: '存檔%'};
 const PT_COLS = [['size', '尺寸'], ['fill', '%']];
 const MAG_COLS = [['width', '寬度'], ['freq', '錨點間距'], ['contrast', '對比']];
-const WAND_COLS = [['lum', '輪廓亮度'], ['close', '閉運算'], ['drop', '往下射'], ['right', '往右射']];
 const GREEN_ROWS = [
     ['寬鬆綠', [['h1', 'H 下限'], ['h2', 'H 上限'], ['s1', 'S 下限'], ['s2', 'S 上限'], ['v1', 'V 下限'], ['v2', 'V 上限'], ['rgbThr', 'RGB 差']]],
     ['種子', [['seedS', '亮綠 S ≥'], ['seedV', '亮綠 V ≥'], ['semiA', '半透明 alpha ≤'], ['semiV', '半透明 V ≥'], ['grow', '往外長（格）']]],
@@ -31,7 +30,7 @@ const AUTO_ROWS = [
 
 const S = {hist: [], hi: -1};
 
-const apply = (o) => {ST.set('step', o.step); ST.set('auto', o.auto); ST.set('portrait', o.portrait); ST.set('green', o.green); ST.set('mag', o.mag); ST.set('scene', o.scene);};
+const apply = (o) => {ST.set('step', o.step); ST.set('auto', o.auto); ST.set('portrait', o.portrait); ST.set('green', o.green); ST.set('mag', o.mag);};
 
 function resetHist()
 {
@@ -131,10 +130,6 @@ const magTable = () => h('table', {class: 'grid'},
     h('tr', null, MAG_COLS.map(([, lab]) => h('th', null, lab))),
     h('tr', null, MAG_COLS.map(([k]) => numCell(['mag', k]))));
 
-const wandTable = () => h('table', {class: 'grid'},
-    h('tr', null, WAND_COLS.map(([, lab]) => h('th', null, lab))),
-    h('tr', null, WAND_COLS.map(([k]) => numCell(['scene', 'wand', k]))));
-
 const greenTable = () => h('table', {class: 'grid'}, GREEN_ROWS.flatMap(([grp, cols]) => [
     h('tr', null, h('th'), cols.map(([, lab]) => h('th', null, lab))),
     h('tr', null, h('td', {class: 'k'}, grp), cols.map(([k]) => numCell(['green', k]))),
@@ -155,8 +150,6 @@ function render()
         h('div', {class: 'hint'}, '手動面板跟下次自動拆圖共用（面板按確定也會寫回這裡），已經拆好的零件不受影響；半透明 alpha 上限 0＝不抓綠霧'),
         title('紙娃娃磁性套索', 'mag'), magTable(),
         h('div', {class: 'hint'}, '手繪按住拖曳：寬度＝游標拖過的地方左右幾 px 內找邊、錨點間距＝路徑走多長釘一個頂點（都是螢幕 px）、對比＝顏色／透明度變化低於它當成沒邊（0～255）'),
-        title('場景切前後片魔術棒', 'scene'), wandTable(),
-        h('div', {class: 'hint'}, '場景分頁「切前後片…」的魔術棒（對話框裡改也寫這裡）：輪廓亮度＝亮度低於它當輪廓線（0＝只靠透明停）、閉運算＝填平寬 ≤ 2×它的縫、往下／往右射＝邊緣往外幾格內碰到透明就收進來（0＝不做）'),
         title('角色頭像', 'portrait'), portraitTable(),
         h('div', {class: 'hint'}, '角色編輯器「由頭+髮產生」：頭＋頭髮等比塞進 尺寸×尺寸 的 %（可以超過 100，超出的裁掉）'),
     ] : [h('div', {class: 'hint'}, '等專案資料夾…')]));

@@ -44,8 +44,6 @@ export const DEF = {
     // 紙娃娃手繪按住拖＝磁性套索（螢幕 px）：width＝游標拖過的軌跡左右多遠內找邊、freq＝路徑走多長釘一個錨點、contrast＝梯度低於它當沒邊
     mag: {width: 10, freq: 40, contrast: 10},
     green: {h1: 45, h2: 85, s1: 60, s2: 255, v1: 20, v2: 255, rgbThr: 40, grow: 3, seedS: 150, seedV: 150, semiA: 254, semiV: 100},
-    // 場景分頁切前後片的魔術棒（同紙娃娃 PX.splitCut）：lum＝輪廓線亮度門檻、close＝閉運算、drop／right＝往下／往右射幾格（0＝不做；擺設多半沒黑輪廓，預設不射）
-    scene: {wand: {lum: 24, close: 4, drop: 0, right: 0}},
 };
 
 const S = {dir: null, over: {}, cur: structuredClone(DEF), timer: null, fns: []};
