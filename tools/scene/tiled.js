@@ -1,5 +1,5 @@
 // prefab → Tiled（docs/prefab.md 第 5 步）：每筆 prefab 產生
-//   縮圖 textures/prefabs/prefab-<id>.png（預設狀態看得到的 png 零件合成，大小＝thumb）
+//   縮圖 textures/prefabs/prefab-<id>.png（永遠出現的 png 零件合成，大小＝thumb＝所有狀態 png 的外框）
 //   tilesets/prefabs.tsj 一格（圖片集合型；tile id 一旦給了就不換，地圖裡的 gid 才不會跑掉）
 //   templates/prefabs/<id>.tj（gid＝那格、寬高＝thumb、屬性 prefab，type 預設 item；已有的保留 type 跟其他屬性）
 // 遊戲裡 ItemView 有 prefab 就不畫 gid 那張縮圖，錨點用 thumb 從 tile 物件左下角換回來
@@ -8,7 +8,7 @@ import * as IC from '../common/icons.js';
 import {stringify, eolOf} from '../common/tiledjson.js';
 import {roleRefs, renameRoleRefs} from '../common/maproles.js';
 import {joinPath} from '../../src/data/navgrid.js';
-import {defaultImgs} from '../../src/core/prefab.js';
+import {thumbImgs} from '../../src/core/prefab.js';
 
 const ASSETS = 'public/assets';
 const PNG_DIR = `${ASSETS}/textures/prefabs`;
@@ -39,15 +39,17 @@ async function partImg(img)
     return IC.frameOf(img);
 }
 
-// 預設狀態看得到的 png 零件照 depth 合成進 thumb 框
+// 永遠出現（沒寫 look）的 png 零件照 depth 合成進 thumb 框；一張都畫不出來＝半透明底＋外框
 export async function renderThumb(pf, thumb = pf.thumb ?? DEF_THUMB)
 {
     const cv = Object.assign(document.createElement('canvas'), {width: Math.max(1, thumb.w), height: Math.max(1, thumb.h)});
     const g = cv.getContext('2d');
-    for (const p of defaultImgs(pf))
+    let n = 0;
+    for (const p of thumbImgs(pf))
     {
         const r = await partImg(p.img);
         if (!r) continue;
+        n++;
         const k = p.img.startsWith(FILE) ? (p.pct ?? 100) / 100 : 1;
         g.save();
         g.translate((p.x ?? 0) - thumb.x, (p.y ?? 0) - thumb.y);
@@ -55,6 +57,14 @@ export async function renderThumb(pf, thumb = pf.thumb ?? DEF_THUMB)
         g.scale((p.flip ? -1 : 1) * (p.sx ?? 1) * k, (p.sy ?? 1) * k);
         g.drawImage(r.img, r.f.x, r.f.y, r.f.w, r.f.h, -(p.ox ?? 0.5) * r.f.w, -(p.oy ?? 1) * r.f.h, r.f.w, r.f.h);
         g.restore();
+    }
+    if (!n)
+    {
+        g.fillStyle = 'rgba(128,128,128,0.3)';
+        g.fillRect(0, 0, cv.width, cv.height);
+        g.strokeStyle = 'rgba(220,220,220,0.9)';
+        g.lineWidth = 1;
+        g.strokeRect(0.5, 0.5, cv.width - 1, cv.height - 1);
     }
     return cv;
 }

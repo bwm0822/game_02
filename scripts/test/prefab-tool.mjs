@@ -336,6 +336,41 @@ run('prefab-tool', async t => {
         out.delCopy = [Object.keys(await pfDisk()).includes('fire_pit-copy'), await has('templates/prefabs', 'fire_pit-copy.tj'), await has('textures/prefabs', 'prefab-fire_pit-copy.png'),
             (await read(await dir(assets, 'tilesets'), 'prefabs.tsj')).tiles.some(t => t.image.includes('copy'))];
 
+        // ---------- 縮圖規則：圖＝沒寫 look 的 png、範圍＝所有狀態的 png（含角度）、畫不出東西＝框 ----------
+        const tb = (pf) => sc.thumbFor(pf);
+        const barrel = await tb({parts: [{img: 'Barrel'}]});
+        out.thumbRule = [barrel, await tb({look: 'on', parts: [{img: 'Barrel'}, {img: 'Barrel', y: -40, look: 'off'}]}),
+            await tb({parts: [{img: 'Barrel', angle: 90}]}), await tb({parts: [{img: 'Barrel', off: true}, {light: {r: 10}}]})];
+        const px = (cv, x, y) => [...cv.getContext('2d').getImageData(x, y, 1, 1).data].join();
+        const lookOnly = await sc.TL.renderThumb({look: 'on', parts: [{img: 'Barrel', look: 'on'}]}, barrel);
+        const plain = await sc.TL.renderThumb({parts: [{img: 'Barrel'}]}, barrel);
+        out.thumbDraw = [px(lookOnly, 2, 2) === px(lookOnly, barrel.w >> 1, barrel.h >> 1), px(lookOnly, 0, 0).split(',')[3] !== '0',
+            px(plain, barrel.w >> 1, barrel.h >> 1) !== px(lookOnly, barrel.w >> 1, barrel.h >> 1)];
+        // 左欄圖示：沒草稿＝縮圖（不是第一個零件），有草稿＝即時合成的 canvas
+        const libIcon = () => doc.querySelector('#lib .item[data-prefab="fire_pit"]');
+        out.libIcon = [!!libIcon()?.querySelector('canvas')];
+        sc.pickRole((await cDisk()).prefabs.find(o => o.prefab === 'fire_pit').key);
+        await sc.setPf('fire_pit', {look: 'on'});
+        out.libIcon.push(await until(() => !!libIcon()?.querySelector('canvas')));
+        sc.dropDraft();
+        // 重產：零件改了（別處手改 prefab.json），範圍變了＋地圖 t.json 在用 → 狀態列提示偏移；一筆 undo
+        const pfText = await (await (await json.getFileHandle('prefab.json')).getFile()).text();
+        const all = await pfDisk(), th0 = all.fire_pit.thumb;
+        all.fire_pit.parts.push({img: 'Barrel', y: -60, look: 'on'});
+        await write(json, 'prefab.json', JSON.stringify(all, null, 2) + '\n');
+        new BroadcastChannel('tools').postMessage({type: 'saved', file: 'prefab.json'});
+        await until(() => sc.S.prefabs.fire_pit.parts.length === all.fire_pit.parts.length);
+        const nu = sc.S.undo.length;
+        await sc.regenThumbs(['fire_pit']);
+        const th1 = (await pfDisk()).fire_pit.thumb;
+        out.regen = [th1.h > th0.h, doc.getElementById('status').textContent, sc.S.undo.length - nu];
+        await sc.undo();
+        out.regenUndo = JSON.stringify((await pfDisk()).fire_pit.thumb) === JSON.stringify(th0);
+        await write(json, 'prefab.json', pfText);
+        new BroadcastChannel('tools').postMessage({type: 'saved', file: 'prefab.json'});
+        await until(() => sc.S.prefabs.fire_pit.parts.length === all.fire_pit.parts.length - 1);
+        await sc.flush();
+
         // ---------- 草稿中拖實例：直接寫畫面位置、草稿還在；儲存不動實例（錨點編輯已拿掉）----------
         // 組成寫了 particle.json（sandbox 不重開，load 帶整份）；等實例建好
         await until(() => sc.S.ready && sb()?._insts?.f1?.go);
@@ -691,6 +726,14 @@ run('prefab-tool', async t => {
     t.check('刪除：地圖在用就擋、列出來', r.delBlocked[0] && r.delBlocked[1].includes('maps/t.json'), JSON.stringify(r.delBlocked));
     t.eq('複製：一模一樣的新一筆＋template＋縮圖', JSON.stringify(r.dup), JSON.stringify([['forge', 'fire_pit', 'fire_pit-copy'], true, true, true]));
     t.eq('刪除沒人用的：prefab.json、template、縮圖、tsj 那格都拿掉', JSON.stringify(r.delCopy), JSON.stringify([false, false, false, false]));
+    const [tBarrel, tLook, tRot, tNone] = r.thumbRule;
+    t.check('縮圖範圍：包含別的狀態的 png', tLook.h > tBarrel.h && tLook.y < tBarrel.y, JSON.stringify(r.thumbRule));
+    t.check('縮圖範圍：算旋轉後的外接框（轉 90° 寬高對調）', tRot.w === tBarrel.h && tRot.h === tBarrel.w, JSON.stringify(r.thumbRule));
+    t.eq('縮圖範圍：只有停用的 png／光源＝沒有（用預設 32×32）', tNone, null);
+    t.eq('縮圖圖：寫了 look 的 png 不畫、畫不出東西＝半透明框；沒 look 的照畫', JSON.stringify(r.thumbDraw), '[true,true,true]');
+    t.eq('左欄圖示：沒草稿＝縮圖、有草稿＝即時合成', JSON.stringify(r.libIcon), '[false,true]');
+    t.check('重產縮圖：範圍變了、地圖在用 → 提示偏移、一筆 undo', r.regen[0] && r.regen[1].includes('⚠ fire_pit') && r.regen[1].includes('maps/t.json') && r.regen[2] === 1, JSON.stringify(r.regen));
+    t.check('重產縮圖：undo 回到舊範圍', r.regenUndo);
 
     // 錨點編輯已拿掉
     t.eq('沒有移動錨點：右欄沒欄位／模式下拉／標題、草稿沒有 dx、沒有 moveAnchor', JSON.stringify(r.noAnchorEdit), JSON.stringify([null, null, false, false, 'undefined']));

@@ -17,6 +17,7 @@ import * as PSC from '../particle/schema.js';
 import * as ST from './store.js';
 import * as TL from './tiled.js';
 import {cutDialog, cutMask, cutPiece} from './cut.js';
+import {thumbOf, thumbBoxImgs} from '../../src/core/prefab.js';
 import {scan} from '../texture/scan.js';
 
 const LS = {sel: 'tools.scene.sel', grid: 'tools.scene.grid', role: 'tools.scene.lastRole', particle: 'tools.scene.lastParticle', prefab: 'tools.scene.lastPrefab', fold: 'tools.scene.fold',
@@ -263,9 +264,17 @@ const instKey = (sc = scene()) => {let i = 1; while ((sc?.prefabs ?? []).some(o 
 const PREFAB_FILES = [ST.FILE, ST.PREFAB];
 // 狀態清單：預設 look＋零件的 look＋acts 切到的
 const looksOf = (pf) => [...new Set([pf?.look, ...(pf?.parts ?? []).map(p => p.look), ...Object.values(pf?.acts ?? {})].filter(Boolean))];
+// prefab 庫的圖示＝Tiled 縮圖 prefab-<id>.png；有草稿＝照草稿即時合成（同 renderThumb）
 const pfIcon = (id, size) => {
-    const img = S.prefabs[id]?.parts?.find(p => p.img)?.img;
-    return img ? imgEl(img, size) : h('span', {class: 'dim', style: `display:inline-block; width:${size}px; text-align:center`}, '◇');
+    const d = S.draft?.id === id ? S.draft : null;
+    if (!d) return IC.iconEl(TL.thumbKey(id), size);
+    const cv = h('canvas', {width: size, height: size, style: `width:${size}px; height:${size}px; vertical-align:middle`});
+    TL.renderThumb({...d.pf, thumb: d.thumb ?? undefined}).then(src => {
+        const k = Math.min(size / src.width, size / src.height);
+        const w = src.width * k, hh = src.height * k;
+        cv.getContext('2d').drawImage(src, (size - w) / 2, (size - hh) / 2, w, hh);
+    });
+    return cv;
 };
 
 function addInst(prefab, x, y)
@@ -435,6 +444,7 @@ async function liveThumb()
     if (S.draft !== d || d.pf !== pf || str(t) === str(d.thumb)) return;
     d.thumb = t;
     syncGame();
+    renderLib();
 }
 
 function draftStep(from, to)
@@ -642,31 +652,38 @@ async function imgSize(img)
     return r && {w: r.f.w, h: r.f.h};
 }
 
-// 縮圖外框：預設狀態看得到的 png 零件（停用的不算、不算角度）聯集，相對錨點；沒有＝null
+// 縮圖外框：所有狀態的 png 零件（停用的不算）旋轉後的外接框聯集，相對錨點；沒有＝null（畫法同 tiled.js 的 renderThumb）
 async function thumbFor(pf)
 {
     let box = null;
-    for (const p of pf.parts ?? [])
+    for (const p of thumbBoxImgs(pf))
     {
-        if (!p.img || p.off || (p.look && p.look !== pf.look)) continue;
         const s = await imgSize(p.img);
         if (!s) continue;
         const k = isFile(p.img) ? (p.pct ?? 100) / 100 : 1;
-        const w = s.w * k * Math.abs(p.sx ?? 1), hh = s.h * k * Math.abs(p.sy ?? 1);
-        const l = (p.x ?? 0) - (p.ox ?? 0.5) * w, t = (p.y ?? 0) - (p.oy ?? 1) * hh;
-        box = box ? {l: Math.min(box.l, l), t: Math.min(box.t, t), r: Math.max(box.r, l + w), b: Math.max(box.b, t + hh)} : {l, t, r: l + w, b: t + hh};
+        const kx = (p.flip ? -1 : 1) * (p.sx ?? 1) * k, ky = (p.sy ?? 1) * k;
+        const a = (p.angle ?? 0) * Math.PI / 180, cos = Math.cos(a), sin = Math.sin(a);
+        const ox = p.ox ?? 0.5, oy = p.oy ?? 1;
+        for (const [u, v] of [[-ox, -oy], [1 - ox, -oy], [-ox, 1 - oy], [1 - ox, 1 - oy]])
+        {
+            const lx = u * s.w * kx, ly = v * s.h * ky;
+            const x = (p.x ?? 0) + lx * cos - ly * sin, y = (p.y ?? 0) + lx * sin + ly * cos;
+            box = box ? {l: Math.min(box.l, x), t: Math.min(box.t, y), r: Math.max(box.r, x), b: Math.max(box.b, y)} : {l: x, t: y, r: x, b: y};
+        }
     }
     if (!box) return null;
-    const x = Math.floor(box.l), y = Math.floor(box.t);
-    return {x, y, w: Math.ceil(box.r) - x, h: Math.ceil(box.b) - y};
+    const q = (v) => Math.round(v * 1e6) / 1e6;     // 轉 90° 之類的浮點誤差不要多算一格
+    const x = Math.floor(q(box.l)), y = Math.floor(q(box.t));
+    return {x, y, w: Math.ceil(q(box.r)) - x, h: Math.ceil(q(box.b)) - y};
 }
 
 // 收尾（改了 prefab 內容／組成時）：算縮圖外框；file: 圖照 pct 烤進 textures/prefabs/<id>/<id>-<檔名>.png、改寫成 texture key
 async function finishEdit(id)
 {
     const pf = S.prefabs[id];
-    if (!pf) return;
+    if (!pf) return '';
     const thumb = await thumbFor(pf);
+    const warn = await thumbShift(id, thumbOf(pf), thumbOf({thumb}));
     // Tiled 用的縮圖／tsj／template（烤圖前合成：file: 圖直接讀原圖）
     await TL.syncPrefab(S.root, id, {...pf, thumb: thumb ?? undefined});
     const baked = {};
@@ -700,6 +717,33 @@ async function finishEdit(id)
         if (thumb) p.thumb = thumb; else delete p.thumb;
     }, undefined, undefined, PREFAB_FILES);
     if (files.length) reloadGame();
+    if (warn) status(warn);
+    return warn;
+}
+
+// 縮圖範圍變了而且有地圖在用：Tiled 物件的左下角不動，錨點跟著偏（只提示，不改地圖）
+async function thumbShift(id, t0, t1)
+{
+    if (str(t0) === str(t1)) return '';
+    const used = TL.usedBy(await TL.prefabRefs(S.root, id), id);
+    if (!used.length) return '';
+    const dx = t0.x - t1.x, dy = (t0.y + t0.h) - (t1.y + t1.h);
+    return `⚠ ${id} 的縮圖範圍變了，地圖上的物件錨點會偏 (${dx}, ${dy})，要到 Tiled 重新擺：${used.join('；')}`;
+}
+
+// 重產縮圖（零件的 png 在別處改了、手改 prefab.json 之後）：ids 沒給＝全部；一筆 undo
+async function regenThumbs(ids = Object.keys(S.prefabs))
+{
+    if (S.draft && ids.includes(S.draft.id) && !await leaveDraft()) return;
+    const n0 = S.undo.length, warns = [];
+    for (const id of ids)
+    {
+        try {const w = await finishEdit(id); if (w) warns.push(w);}
+        catch (e) {warns.push(`${id} 重產失敗：${e.message}`);}
+    }
+    while (S.undo.length > n0 + 1) mergeUndo(S.undo.length - 1);
+    renderLib();
+    status(warns.length ? warns.join('　') : `重產了 ${ids.length} 個 prefab 的縮圖`);
 }
 
 async function mkdirs(path)
@@ -1196,7 +1240,8 @@ async function addToPrefab(start, fkey)
     }, undefined, fkey, pw.length ? [...PREFAB_FILES, ST.PARTICLE] : PREFAB_FILES);
     if ((S.prefabs[id]?.parts?.length ?? 0) !== n0 + parts.length) return;
     const u0 = S.undo.length;
-    try {await finishEdit(id);}
+    let warn = '';
+    try {warn = await finishEdit(id);}
     catch (e) {status(`prefab 收尾失敗：${e.message}`);}
     mergeUndo(u0);
     S.pick = fkey;
@@ -1204,7 +1249,7 @@ async function addToPrefab(start, fkey)
     S.psel = {key: fkey, boxes: [], parts: parts.map((_, j) => n0 + j)};
     if (isFolded('right.parts')) toggleFold('right.parts');
     refresh();
-    status(`加到 ${fkey}（${id}）：${chosen.map(([, x]) => x.key).join('、')}` + (pw.length ? `；粒子另存成 ${pw.map(([pid]) => pid).join('、')}` : ''));
+    status(`加到 ${fkey}（${id}）：${chosen.map(([, x]) => x.key).join('、')}` + (pw.length ? `；粒子另存成 ${pw.map(([pid]) => pid).join('、')}` : '') + (warn ? `　${warn}` : ''));
 }
 
 // 右鍵選單的「加到 prefab ▸」：子選單列場景裡的實例
@@ -1251,13 +1296,14 @@ async function partsToScene(fkey, idxs)
     }, undefined, adds[0][2].key, PREFAB_FILES);
     if ((S.prefabs[id]?.parts?.length ?? 0) === pf.parts.length) return;
     const u0 = S.undo.length;
-    try {await finishEdit(id);}
+    let warn = '';
+    try {warn = await finishEdit(id);}
     catch (e) {status(`prefab 收尾失敗：${e.message}`);}
     mergeUndo(u0);
     S.pick = adds[0][2].key;
     refresh();
     status(`${id} 的 ${adds.length} 個零件移到場景：${adds.map(([, , x]) => x.key).join('、')}` + (S.prefabs[id]?.parts ? '' : `（${id} 沒有零件了）`) +
-           (dropped.length ? `；場景沒有、沒帶過去：${dropped.join('；')}` : ''));
+           (dropped.length ? `；場景沒有、沒帶過去：${dropped.join('；')}` : '') + (warn ? `　${warn}` : ''));
 }
 
 function instPanel(o)
@@ -2239,11 +2285,11 @@ function toggleFold(k)
     renderRight();
 }
 
-function secHead(k, title, btn)
+function secHead(k, title, ...btns)
 {
     const f = isFolded(k), t = () => toggleFold(k);
     return h('div', {class: 'row2 head', dataset: {fold: k}},
-        h('span', {class: 'tw', onclick: t}, f ? '▸' : '▾'), h('span', {class: 'sec grow', onclick: t}, title), btn);
+        h('span', {class: 'tw', onclick: t}, f ? '▸' : '▾'), h('span', {class: 'sec grow', onclick: t}, title), ...btns);
 }
 
 // 右欄可摺的一段（實例／屬性／零件），摺起來只剩標題
@@ -2262,14 +2308,16 @@ function renderLib()
         oncontextmenu: (e) => menu(e, oldDef(p) ? [['移到場景（零件自己的粒子不能移）', null]] : [['移到場景', () => libPartToScene(id, i)]]),
     }, partIcon(p), h('span', {class: 'id'}, partName(p)), p.look && h('span', {class: 'lab'}, p.look));
     $('lib').replaceChildren(
-        secHead('lib', `prefab 庫（${ids.length}）`, h('button', {id: 'btnNewPrefab', title: '新增空白 prefab（有選場景就在畫面中間放一個）', onclick: () => newPrefab()}, '＋')),
+        secHead('lib', `prefab 庫（${ids.length}）`,
+            h('button', {id: 'btnRegenThumbs', title: '全部重產縮圖（零件的 png 在別處改了、手改 prefab.json 之後）', onclick: () => regenThumbs()}, '⟳'),
+            h('button', {id: 'btnNewPrefab', title: '新增空白 prefab（有選場景就在畫面中間放一個）', onclick: () => newPrefab()}, '＋')),
         ...(isFolded('lib') ? [] : ids.flatMap(id => {
             const open = isFolded(libOpen(id)), parts = pfOf(id)?.parts ?? [];
             return [h('div', {
                 class: `item${cur?.prefab === id ? ' sel' : ''}`, draggable: 'true', dataset: {prefab: id}, title: '點一下選這個場景裡用它的實例；拖進遊戲畫面放一個；▸ 展開零件',
                 onclick: () => pickPrefab(id),
                 ondragstart: (e) => {e.dataTransfer.setData('application/x-prefab', id); e.dataTransfer.effectAllowed = 'copy';},
-                oncontextmenu: (e) => menu(e, [['改名…', () => renamePrefab(id)], ['複製…', () => dupPrefab(id)], ['刪除', () => deletePrefab(id)]]),
+                oncontextmenu: (e) => menu(e, [['改名…', () => renamePrefab(id)], ['複製…', () => dupPrefab(id)], ['重產縮圖', () => regenThumbs([id])], ['刪除', () => deletePrefab(id)]]),
             }, h('span', {class: 'tw', dataset: {k: 'libOpen'}, title: open ? '收起零件' : '展開零件', onclick: (e) => {e.stopPropagation(); toggleFold(libOpen(id));}}, open ? '▾' : '▸'),
                pfIcon(id, 20), h('span', {class: 'id'}, id), S.draft?.id === id && h('span', {class: 'warn', title: '有沒存的草稿'}, '●'),
                h('span', {class: 'lab dim'}, `${prefabUses(id).reduce((n, [, c]) => n + c, 0) || ''}`)),
@@ -2730,6 +2778,7 @@ SH.onGoto(async ([id] = []) => {
     S.pick = S.data[name].prefabs.find(o => o.prefab === id).key;
     refresh();
 });
+IC.onReload(() => renderLib());     // 縮圖 prefab-<id>.png 重產後換新圖（icons.js 的 url 帶版本）
 SH.onSaved((file) => {
     if (!S.root) return;
     if (file === ST.FILE) queue(async () => {S.data = await ST.read(); refresh();});
@@ -2752,4 +2801,4 @@ refresh();
 // 給無頭測試用
 window.__sc = {S, setProject, addScene, dupScene, renameScene, deleteScene, select, undo, redo, addRole, setRole, setEquip, deleteRole, pickRole, toggleHide, arm, toGame, addProp, setProp, deleteObj, nudge, bakeProp, folderTree, exportProp: (key) => exportProp(propOf(key)), srcSize, addLight, setLight, addEmitter, setEmitter, setField, setPlaying,
                addInst, setInst, newPrefab, deletePrefab, toggleFold, setPf, setPart, addPart, movePart, delPart, delParts, openPart, moveParts, setPartOn, toggleBoxSel, togglePartSel, pselOf, pickPrefab, saveDraft, dropDraft, changePartParticle, forkPartParticle, particleUsers, pDef, composePrefab, renamePrefab, dupPrefab, cutProp, cutPart,
-               renameTex, deleteTex, texMenu, addToPrefab, partsToScene, pickLibPart, libPartToScene, IC, flush: () => S.q};
+               renameTex, deleteTex, texMenu, addToPrefab, partsToScene, pickLibPart, libPartToScene, thumbFor, regenThumbs, TL, IC, flush: () => S.q};

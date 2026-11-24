@@ -3,11 +3,17 @@
 // 縮圖外框(相對錨點，左上角＋寬高)；沒有 thumb＝錨點在底部中間的 32×32
 export const thumbOf = (pf)=>pf?.thumb ?? {x:-16, y:-32, w:32, h:32};
 
-// 預設狀態看得到的 png 零件(停用 off 的不算)，照 depth 排(同 depth 照原順序)
-export const defaultImgs = (pf)=>(pf?.parts ?? []).map((p, i)=>({p, i}))
-    .filter(({p})=>p.img && !p.off && (!p.look || p.look===pf.look))
+const byDepth = (pf, ok)=>(pf?.parts ?? []).map((p, i)=>({p, i}))
+    .filter(({p})=>p.img && !p.off && ok(p))
     .sort((a, b)=>(a.p.depth ?? 0) - (b.p.depth ?? 0) || a.i - b.i)
     .map(({p})=>p);
+
+// 預設狀態看得到的 png 零件(停用 off 的不算)，照 depth 排(同 depth 照原順序)：ghost 用
+export const defaultImgs = (pf)=>byDepth(pf, p=>!p.look || p.look===pf.look);
+
+// 縮圖畫的 png 零件：永遠出現的(沒寫 look)；範圍(thumb)另外算所有狀態的 png(thumbBoxImgs)
+export const thumbImgs = (pf)=>byDepth(pf, p=>!p.look);
+export const thumbBoxImgs = (pf)=>byDepth(pf, ()=>true);
 
 // 放置模式的 ghost：預設狀態看得到的 png 零件(不含粒子、光源)，container 原點＝錨點
 export function prefabGhost(scene, pf)

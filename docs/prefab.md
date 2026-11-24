@@ -21,11 +21,12 @@
 ```
 
 - id 一律 ASCII。座標全部相對**錨點**（＝GameObject 位置、ItemView 原點、y 排序基準）。
-- **狀態**：自由命名的單一狀態，存 `bb.look`（不用 `bb.sta`，那是現有的物件狀態）。零件沒寫 `look`＝永遠出現；寫了＝只在那個狀態出現。`look` 只能一個名稱，三狀態以上真的需要時再擴充成陣列。狀態名稱沒有任何零件用到 → `dlog` 警告、只顯示沒寫 `look` 的零件，不當掉。零件寫 `off: true`＝停用（2026-11-22，場景分頁零件列的勾選框）：資料留著，遊戲跟 sandbox 都不建、`defaultImgs()`（縮圖／ghost）不算。
+- **狀態**：自由命名的單一狀態，存 `bb.look`（不用 `bb.sta`，那是現有的物件狀態）。零件沒寫 `look`＝永遠出現；寫了＝只在那個狀態出現。`look` 只能一個名稱，三狀態以上真的需要時再擴充成陣列。狀態名稱沒有任何零件用到 → `dlog` 警告、只顯示沒寫 `look` 的零件，不當掉。零件寫 `off: true`＝停用（2026-11-22，場景分頁零件列的勾選框）：資料留著，遊戲跟 sandbox 都不建、縮圖（`thumbImgs()`／`thumbBoxImgs()`）跟 ghost（`defaultImgs()`）都不算。
 - `acts`：右鍵選單動作 id → 切到的狀態。按鈕文字＝`'<id>'.lab()`（local.json）；目標狀態＝目前狀態的那個 act 藏起來。也可以用現有的 key（`turn_on`/`turn_off`）。
 - `defAct`：選填，左鍵預設動作；沒寫的話 acts 不進左鍵預設（`ORDER`）。
 - `grid`／`zone`：占地方塊（相對錨點的 `{x,y,w,h}`，見 [anchor.md](anchor.md)），**沒寫＝沒有**（沒 grid＝不佔格、沒 zone＝點不到）；Tiled 物件寫了量邊的 `gl…`／`zl…`（量縮圖外框）就整組蓋掉。body 已拿掉。
-- `thumb`：縮圖（預設狀態下所有 png 零件的外框）左下角相對錨點的位移＋大小，Tiled tile 物件座標換算回錨點用。
+- `thumb`：縮圖範圍＝**所有狀態**的 png 零件（停用 `off` 的不算）旋轉後外接框的聯集，相對錨點的 `{x,y,w,h}`；Tiled tile 物件座標換算回錨點、`view.rect`（遮擋、點選、fx 對齊）都用它，所以要包住任何狀態會出現的 png。沒有 png＝不寫（`thumbOf()` 預設 32×32、錨點在底部中間）。工具算（`thumbFor()`），不要手改。
+- **縮圖圖**（`textures/prefabs/prefab-<id>.png`＝Tiled 圖示＝場景分頁 prefab 庫的圖示）：只畫**永遠出現**（沒寫 `look`、沒 `off`）的 png 照 depth 合成（`src/core/prefab.js` 的 `thumbImgs()`），所以掛 `look` 的零件佔範圍但不畫（留透明邊）；一張都畫不出來＝半透明底＋1px 外框。不人工挑選、沒有欄位（2026-11-24 定案）。放置道具的 ghost 不跟縮圖，照舊畫預設狀態的 png（`defaultImgs()`）。
 - 零件：
   - `img`：texture key，`sx`/`sy`/`angle`/`flip`/`ox`/`oy`/`depth`（只排 prefab 內部前後），選填 `fx`（fx.json id，跑 `fxcell.js` 的 idle，切狀態時 spawn／end）。
   - 粒子（2026-11-22 改）**只能是 `{particle: id}`**＝參照 particle.json，內容一律集中在 particle.json（粒子分頁的引用／未使用／缺粒子才算得準、方便 mod 蓋）。零件自己的 `{def}`（11-21～11-22 有過）已拿掉：遊戲只播 `DB.particle(particle)`、查不到不噴＋dlog，`{def}` 零件不建；場景分頁零件列標「⚠ 零件自己的粒子（已不支援）」、表單只能換成一個 id。原本 forge 的兩個 `{def}` 搬成 `forge-smoke`／`forge-fire`。粒子零件也能寫 `depth`（2026-11-21）：粒子勾 `local` 時跟 png 一起照零件 `depth`（同值照清單順序）排，**不管粒子自己的 `depth:'under'`**；沒勾 local 的粒子不能插在 png 中間，整個在 prefab 前面（root depth +0.5）、粒子 `depth:'under'`＝整個在後面（−0.5），零件 `depth` 無效（右欄反灰）。光源不是畫面物件、沒有前後，只照亮 Light2D 的 png（粒子不吃燈）。
@@ -140,12 +141,15 @@
    - ✅ 4b 組成 prefab＋改名／複製：擺設／粒子／光源右鍵（左欄或畫面）「組成 prefab…」→ 對話框填 id、勾要組的東西（預設勾點的那個＋跟著它的）、有自己那份（✎）的發射點選「另存成新 id（預設 `<prefab>-<原id>`）／覆寫原 id」（2026-11-21 改成帶進零件 `{def}`，2026-11-22 又改回寫 particle.json，見上面「組成」）；錨點＝第一個勾的擺設；跟著別人的先換成絕對位置；沒勾卻跟著被組走的改絕對位置；scenes.json＋prefab.json＋particle.json（store 的 `PARTICLE`）一起寫，接著 `finishEdit()` 收尾，兩步用 `mergeUndo()` 併成一筆 undo；particle.json 變了 sandbox 整個重開。prefab 庫右鍵 改名…（prefab.json key 保留順序＋所有場景實例；地圖／template／道具在第 5、6 步補）／複製…（整筆複製、不放實例）。
    - ✅ 4c 錨點十字、占地方塊畫在畫面上可拖：`gameScene()` 多送 `edit:{anchor, boxes}`，sandbox `_drawEdit()` 畫橘色十字＋body 紅／grid 藍／zone 綠框，`_editHandleAt()` 優先於其他把手；拖的時候改副本 `_editLive`，放開送 `moveAnchor {x,y}`（分頁 `moveAnchor()`：零件、方塊、thumb 反向挪，實例搬到新錨點，畫面不動）或 `editBox {k, box}`（`setPf`）；Shift 吸 16px。方塊要先在 prefab 面板勾起來才畫。
 5. ✅ Tiled：縮圖＋tsj＋template 自動產生、mapcheck（`tools/scene/tiled.js`，測試同 prefab-tool.mjs）。
-   - 縮圖檔名是 `textures/prefabs/prefab-<id>.png`（texture key `prefab-<id>`，避免跟別的圖撞名），`renderThumb()` 把預設狀態看得到的 png 零件照 depth（含 flip／angle／scale／pct）合成進 thumb 框；`finishEdit()`（離開編輯、組成）在烤圖前呼叫 `syncPrefab()`，所以 file: 圖直接讀原圖。
+   - 縮圖檔名是 `textures/prefabs/prefab-<id>.png`（texture key `prefab-<id>`，避免跟別的圖撞名），`renderThumb()` 把永遠出現的 png 零件照 depth（含 flip／angle／scale／pct）合成進 thumb 框（規則見上面「縮圖圖」）；`finishEdit()`（儲存草稿、組成、加到 prefab、零件移到場景）在烤圖前呼叫 `syncPrefab()`，所以 file: 圖直接讀原圖。
+   - 只有這四個動作會自動重產；零件的 png 在別處改了、手改 prefab.json 之後要手動：左欄 prefab 右鍵「重產縮圖」或 prefab 庫標題的 ⟳（全部，`regenThumbs()`，一筆 undo）。不做自動檢查（2026-11-24 定案）。
+   - `finishEdit()` 算出來的 thumb 跟舊的不一樣、而且有地圖在用（`prefabRefs()`）：狀態列提示「錨點會偏 (dx, dy)」＋列出地圖（Tiled 物件左下角不動算），只提示、不改地圖。
+   - 左欄 prefab 庫的圖示＝縮圖（`IC.iconEl('prefab-<id>')`，更新圖片清單後 `IC.onReload` 重畫）；有草稿那筆照草稿即時 `renderThumb()` 成 canvas。
    - `tilesets/prefabs.tsj`：圖片集合型，tile id 給了就不換（地圖裡的 gid＝firstgid＋id 才不會跑），改名只換 `image`、刪除只拿掉那格（id 空著）。
    - `templates/prefabs/<id>.tj`：`gid`、寬高＝thumb、屬性 `prefab`；已有的保留 `type` 跟其他屬性（預設 `item`）。
    - 改名（`renamePrefab()`）：`maproles.js` 的 `roleRefs`／`renameRoleRefs` 多了 `prop` 參數（`'prefab'`）改地圖物件跟 template 的屬性；自己的 template 改檔名、地圖裡 `template` 路徑指到舊檔的跟著改（廣播 `maps/...`）；縮圖 png 改名、tsj 圖路徑改。刪除：地圖物件或用它 template 的地圖還在就擋（列出來），沒人用才刪 template／縮圖／tsj 那格。複製：產生新的一套。這些檔**不進 undo**。
    - `src/data/mapcheck.js` 的 `isPrefabObj`／`prefabIssue`：`prefab` 指到 prefab.json 沒有的＝錯誤，地圖分頁的 ⚠（`summarize()`）跟 `node scripts/maps.js` 都會報。
-   - 注意：Tiled 物件的位置是縮圖左下角，prefab 的縮圖外框變了（例如零件往左加）已經擺好的物件錨點會跟著偏；不要在 Tiled 裡拉 prefab 物件的大小（寬高要等於 thumb）。
+   - 注意：Tiled 物件的位置是縮圖左下角，prefab 的縮圖外框變了（例如零件往左加、加了別的狀態的 png）已經擺好的物件錨點會跟著偏（會提示，見上）；不要在 Tiled 裡拉 prefab 物件的大小（寬高要等於 thumb）。
    - `tools/common/icons.js` 多 `reloadList()`：自己更新圖片清單時重讀（廣播不會傳回自己）。
 6. ✅ 放置道具 `item.json bb.prefab`＋ghost、其他工具的引用掃描、道具分頁選擇器（測試 prefab.mjs、prefab-tool.mjs）。
    - **位置的兩種意思**：Tiled 物件（uid ≠ -1）的位置＝縮圖中心，ItemView `modify` 把 root 挪到錨點；runtime 生的（uid -1：放置道具、存檔重建、場景分頁 sandbox）位置**就是錨點**（`ItemView._setAnchor()` 對 prefab＋uid -1 不挪），存檔記的也是錨點，重建不會漂移。sandbox 的實例因此直接 `new Item(x, y)`。
