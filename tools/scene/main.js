@@ -1361,6 +1361,59 @@ function addToItems(key, at)
     return [['加到 prefab ▸', () => menu(at, insts().map(o => [`${o.key}　${o.prefab}`, () => addToPrefab(key, o.key)]))]];
 }
 
+// ---------- 加到道具：發射點 → 道具的 equip.particle（搬走，位置相對道具實例的錨點＝握點，✎ 另存 <道具>-<原 id>）；
+//            prefab 實例 → 道具的 equip.prefab（實例留著，錨點直接對握點）；二選一，已有的先問取代；立刻寫一筆 undo、有草稿先問 ----------
+async function replaceHandOk(id, what, sure)
+{
+    const e = S.refs.items[id]?.equip;
+    if (!e) {status(`item.json 沒有 ${id} 的 equip`); return false;}
+    const had = e.prefab ? `prefab ${e.prefab}` : e.particle?.particle ? `粒子 ${e.particle.particle}` : null;
+    if (!had || sure) return true;
+    return await ask('加到道具', `${id} 手上已經有 ${had}，換成 ${what}？（equip.prefab／equip.particle 二選一）`, [['ok', '取代'], ['cancel', '取消']]) === 'ok';
+}
+
+async function addToItem(key, ikey, sure)
+{
+    if (S.draft && !await leaveDraft()) return;
+    const sc = scene(), io = itemInsts().find(x => x.key === ikey), id = io?.item;
+    if (!io) return status(`場景裡沒有 ${ikey}`);
+    const e = emOf(key), f = !e && insts().find(x => x.key === key);
+    if (!e && !f) return status(`${key} 不是發射點或 prefab 實例`);
+    if (f && !S.prefabs[f.prefab]) return status(`prefab.json 沒有 ${f.prefab}`);
+    if (!await replaceHandOk(id, e ? `粒子 ${e.id}` : `prefab ${f.prefab}`, sure)) return;
+    let pid = e?.id, write = null;
+    if (e?.def)
+    {
+        const base = `${id}-${e.id}`, ids = particleIds();
+        pid = base;
+        for (let i = 2; ids.includes(pid); i++) pid = `${base}-${i}`;
+        write = structuredClone(e.def);
+    }
+    const pos = e && absPos(sc, e), x = e && pos.x - io.x, y = e && pos.y - io.y;
+    const name = S.sel, files = [ST.FILE, ST.ITEM, ...(write ? [ST.PARTICLE] : [])];
+    await commit((scenes, items, particles) => {
+        const s = scenes[name], eq = items[id]?.equip;
+        if (!s?.items?.some(o => o.key === ikey)) throw new Error(`場景裡沒有 ${ikey}`);
+        if (!eq) throw new Error(`item.json 沒有 ${id} 的 equip`);
+        delete eq.prefab;
+        delete eq.particle;
+        if (f) {eq.prefab = f.prefab; return;}
+        if (!s.particles?.some(o => o.key === key)) throw new Error(`場景裡沒有 ${key}`);
+        if (write) particles[pid] = write;
+        eq.particle = {particle: pid, ...(x && {x}), ...(y && {y})};
+        dropFromScene(s, new Set([key]));
+    }, undefined, ikey, files);
+    status(`加到道具 ${id}：${e ? `粒子 ${pid}${write ? `（${e.id} ✎ 另存）` : ''}` : `prefab ${f.prefab}`}`);
+}
+
+// 右鍵選單的「加到道具 ▸」（發射點、prefab 實例）：子選單列場景裡的道具實例
+function toItemMenu(key, at)
+{
+    if (!isEm(key) && !isInst(key)) return [];
+    if (!itemInsts().length) return [['加到道具（場景裡沒有道具實例）', null]];
+    return [['加到道具 ▸', () => menu(at, itemInsts().map(o => [`${o.key}　${o.item}`, () => addToItem(key, o.key)]))]];
+}
+
 // ---------- 移到場景：prefab 的零件搬成場景的擺設／發射點／光源（絕對位置＝實例錨點＋零件 x/y），prefab 拿掉它們（docs/prefab.md） ----------
 // 場景沒有的 look／off／fx 丟掉（狀態列提示）；立刻寫 prefab.json＋scenes.json，收尾併成一筆 undo；有草稿先問；選起新的第一個
 async function partsToScene(fkey, idxs)
@@ -2644,7 +2697,7 @@ function renderTree()
         ...sec('particles', `粒子（${emitters().length}）`, plus('放粒子發射點', () => placeEmitter(S.center[0] * 32 + 16, S.center[1] * 32 + 16)), () => emitters().map(e => h('div', {
             class: `item${e.key === S.pick ? ' sel' : ''}${S.hidden.has(e.key) ? ' hid' : ''}`, dataset: {key: e.key},
             onclick: () => pickRole(e.key === S.pick ? null : e.key),
-            oncontextmenu: (ev) => menu(ev, [['組成 prefab…', () => composePrefab(e.key)], ...addToItems(e.key, ev), ['刪除', () => deleteObj(e.key)]]),
+            oncontextmenu: (ev) => menu(ev, [['組成 prefab…', () => composePrefab(e.key)], ...addToItems(e.key, ev), ...toItemMenu(e.key, ev), ['刪除', () => deleteObj(e.key)]]),
         }, h('button', {class: 'eye', title: '暫時藏起來（不存檔）', onclick: (ev) => {ev.stopPropagation(); toggleHide(e.key);}}, S.hidden.has(e.key) ? '◌' : '👁'),
            h('span', {class: defOf(e) ? 'id' : 'id warn', title: e.def ? '自訂（發射點自己那份）' : ''}, e.def ? `${e.id} ✎` : e.id), e.follow && h('span', {class: 'lab'}, `→ ${followName(e.follow)}`), h('span', {class: 'mark dim'}, `${e.x},${e.y}`)))),
         ...sec('lights', `光源（${lights().length}）`, plus('放光源', () => addLight(S.center[0] * 32 + 16, S.center[1] * 32 + 16)), () => lights().map(l => h('div', {
@@ -2657,7 +2710,7 @@ function renderTree()
         ...sec('prefabs', `prefab（${insts().length}）`, plus('放 prefab', () => placeInst(S.center[0] * 32 + 16, S.center[1] * 32 + 32)), () => insts().map(o => h('div', {
             class: cls(o.key), dataset: {key: o.key},
             onclick: () => pickRole(o.key === S.pick ? null : o.key),
-            oncontextmenu: (ev) => menu(ev, [['刪除', () => deleteObj(o.key)]]),
+            oncontextmenu: (ev) => menu(ev, [...toItemMenu(o.key, ev), ['刪除', () => deleteObj(o.key)]]),
         }, eye(o.key), pfIcon(o.prefab, 20), h('span', {class: S.prefabs[o.prefab] ? 'id' : 'id warn'}, o.prefab),
            o.look && h('span', {class: 'lab'}, o.look), h('span', {class: 'mark dim'}, `${o.x},${o.y}`)))),
         ...sec('items', `道具（${itemInsts().length}）`, null, () => itemInsts().map(o => h('div', {
@@ -2934,6 +2987,7 @@ addEventListener('message', (e) => {
                        ['在這裡放光源', () => addLight(m.wx, m.wy)], ['在這裡放 prefab…', () => placeInst(m.wx, m.wy)]];
         if (canCut(propOf(m.key))) items.push(['切前後片…', () => cutProp(m.key)]);
         if (m.key && (isProp(m.key) || isEm(m.key) || isLight(m.key))) items.push(['組成 prefab…', () => composePrefab(m.key)], ...addToItems(m.key, at));
+        if (m.key) items.push(...toItemMenu(m.key, at));
         // 選取的零件上按右鍵：所有選取的一起移
         if (m.part !== null && m.part !== undefined && instOf(S.pick) && !instOf(S.pick).item)
         {
@@ -3056,4 +3110,4 @@ refresh();
 // 給無頭測試用
 window.__sc = {S, setProject, addScene, dupScene, renameScene, deleteScene, select, undo, redo, addRole, setRole, setEquip, deleteRole, pickRole, toggleHide, arm, toGame, addProp, setProp, deleteObj, nudge, bakeProp, folderTree, exportProp: (key) => exportProp(propOf(key)), srcSize, addLight, setLight, addEmitter, setEmitter, setField, setPlaying,
                addInst, setInst, newPrefab, deletePrefab, toggleFold, setPf, setPart, addPart, movePart, delPart, delParts, openPart, moveParts, setPartOn, toggleBoxSel, togglePartSel, pselOf, pickPrefab, saveDraft, dropDraft, changePartParticle, forkPartParticle, particleUsers, pDef, composePrefab, renamePrefab, dupPrefab, cutProp, cutPart,
-               renameTex, deleteTex, texMenu, addToPrefab, partsToScene, pickLibPart, libPartToScene, thumbFor, regenThumbs, addItemInst, pickItem, instOf, setHand, handMode, itemEquip, TL, IC, flush: () => S.q};
+               renameTex, deleteTex, texMenu, addToPrefab, partsToScene, pickLibPart, libPartToScene, thumbFor, regenThumbs, addItemInst, pickItem, instOf, setHand, handMode, itemEquip, addToItem, TL, IC, flush: () => S.q};

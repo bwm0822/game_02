@@ -129,6 +129,35 @@ run('item-scene', async t => {
         await sc.flush();
         const e3 = await itDisk('t-torch');
         out.newPSave = [e3.prefab ?? null, JSON.stringify(e3.particle), !!(await read(json, 'particle.json'))['torch-new'], !!(await read(json, 'prefab.json'))['t-fire']];
+        await until(() => sc.S.ready && sb()?._insts?.i1);
+
+        // ---- 加到道具 ▸ ----
+        await sc.addEmitter('fire-charge', 330, 180);
+        await sc.setEmitter('e1', {def: {img: 'p-dot', mode: 'stream', speedY: -30}});
+        await sc.addInst('t-fire', 100, 100);
+        await sc.flush();
+        doc.querySelector('#tree .item[data-key="e1"]').dispatchEvent(new win.MouseEvent('contextmenu', {bubbles: true, clientX: 50, clientY: 50}));
+        const mbtn = [...doc.querySelectorAll('.ctxmenu button')].find(b => b.textContent.startsWith('加到道具'));
+        mbtn?.click();
+        out.menu = [mbtn?.textContent, [...doc.querySelectorAll('.ctxmenu button')].map(b => b.textContent)];
+        doc.querySelector('.ctxmenu')?.remove();
+        // 發射點（✎）→ t-torch：已有粒子先問取代；另存 <道具>-<原 id>、位置相對握點、發射點搬走、一筆 undo
+        const dlg = doc.getElementById('dlgAsk');
+        const u1 = sc.S.undo.length, p = sc.addToItem('e1', 'i1');
+        await until(() => dlg.open);
+        out.ask = dlg.textContent.includes('torch-new');
+        dlg.close('ok');
+        await p;
+        await sc.flush();
+        out.addE = [JSON.stringify((await itDisk('t-torch')).particle), JSON.stringify((await read(json, 'particle.json'))['t-torch-fire-charge']),
+            (await scDisk()).particles ?? null, sc.S.pick, sc.S.undo.length - u1];
+        await sc.undo();
+        out.addEUndo = [JSON.stringify((await itDisk('t-torch')).particle), (await scDisk()).particles?.length];
+        // prefab 實例 → t-wand（sure）：equip.prefab、實例留著
+        await sc.addToItem('f1', 'i2', true);
+        await sc.flush();
+        const e4 = await itDisk('t-wand');
+        out.addF = [e4.prefab, e4.particle ?? null, (await scDisk()).prefabs.map(o => o.key)];
         return out;
     });
     t.eq('道具庫只列拿在手上的、標手上掛的', JSON.stringify(r.lib), JSON.stringify(['t-torch|prefab t-fire', 't-wand|粒子 fire-charge', 't-plain|']));
@@ -152,4 +181,10 @@ run('item-scene', async t => {
     t.eq('儲存無：兩個都拿掉、其他欄位留著；undo 回來', JSON.stringify([r.noneSave, r.noneUndo]), JSON.stringify([[null, null, 'sword-bronze'], 't-fire']));
     t.eq('prefab → [新增] 粒子：範本進草稿', JSON.stringify(r.newP), JSON.stringify(['@t-torch', ['torch-new']]));
     t.eq('儲存：particle.json 寫新的、item.json 換 particle、prefab 本身留著', JSON.stringify(r.newPSave), JSON.stringify([null, '{"particle":"torch-new"}', true, true]));
+    t.eq('發射點右鍵：加到道具 ▸ 道具實例', JSON.stringify(r.menu), JSON.stringify(['加到道具 ▸', ['i1　t-torch', 'i2　t-wand']]));
+    t.check('已有粒子先問取代', r.ask);
+    t.eq('發射點 ✎ → 道具：另存 <道具>-<原 id>、相對握點、搬走、選道具實例、一筆 undo', JSON.stringify(r.addE), JSON.stringify([
+        '{"particle":"t-torch-fire-charge","x":10,"y":-20}', JSON.stringify({img: 'p-dot', mode: 'stream', speedY: -30}), null, 'i1', 1]));
+    t.eq('undo：道具回原本、發射點回來', JSON.stringify(r.addEUndo), JSON.stringify(['{"particle":"torch-new"}', 1]));
+    t.eq('prefab 實例 → 道具：equip.prefab、拿掉 particle、實例留著', JSON.stringify(r.addF), JSON.stringify(['t-fire', null, ['f1']]));
 });
