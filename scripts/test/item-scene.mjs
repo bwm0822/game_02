@@ -61,6 +61,74 @@ run('item-scene', async t => {
         out.del = [(await scDisk()).items.map(o => o.key), sc.S.pick];
         // 左欄樹：道具段
         out.tree = [...doc.querySelectorAll('#tree .item[data-key^="i"]')].map(e => e.dataset.key);
+
+        // ---- 手上（草稿）----
+        const itDisk = async (id) => (await read(json, 'item.json'))[id].equip;
+        const sbParts = (id) => (doc.getElementById('game').contentWindow.__dbg?.DB._prefabDB?.[`@item:${id}`]?.parts ?? []).map(p => p.img ?? p.particle ?? 'light');
+        // 木偶拿 t-wand：手上的粒子跟著草稿（sandbox 讀的是專案的 item.json，補進去）
+        const gdb = () => doc.getElementById('game').contentWindow.__dbg.DB;
+        gdb()._itemDB['t-wand'] = {cat: 'CAT_WEAPON', equip: {sprite: 'sword-bronze', particle: {particle: 'fire-charge', x: 3, y: -20}}};
+        gdb()._prefabDB['t-fire'] ??= {parts: [{particle: 'fire-charge', y: -25}, {light: {r: 70}, y: -25}]};
+        await sc.addRole(Object.keys(sc.S.refs.roles)[0], 20, 8);
+        await sc.flush();
+        await sc.setEquip('r1', 'CAT_WEAPON', 't-wand');
+        await sc.flush();
+        const pupHand = () => (sb().roles.find(p => p.key === 'r1')?.view?._eqPrefabs ?? []).map(l => l.pts.length);
+        await until(() => pupHand().length === 1);
+        out.pup0 = pupHand();
+
+        sc.pickRole('i2');
+        await until(() => sb()._inspect?.key === 'i2');
+        out.mode = [sc.handMode(sc.instOf('i2')), doc.querySelector('#right [data-k="hand"]')?.value, !!doc.querySelector('#right .partform [data-k="particle"]'),
+            !doc.querySelector('#right .partform [data-k="depthNote"]'), JSON.stringify(sb()._inspect?.partSel)];
+        // 木偶跟著草稿：手上換成 prefab（粒子＋光源），放棄回來（存檔會重開 sandbox，讀回專案的 item.json，所以在這裡驗）
+        await sc.setHand('i2', 'prefab', 't-fire');
+        await until(() => JSON.stringify(pupHand()) === '[2]');
+        out.pup1 = pupHand();
+        sc.dropDraft();
+        await until(() => JSON.stringify(pupHand()) === '[1]');
+        out.pup1.push(...pupHand());
+        // 粒子：改位置＝@t-wand 的草稿，sandbox 照草稿；儲存寫 item.json 的 equip.particle、一筆 undo
+        await sc.setPart('@t-wand', 0, {x: 5});
+        await until(() => sb()._insts.i2 && doc.getElementById('game').contentWindow.__dbg.DB._prefabDB['@item:t-wand'].parts[0].x === 5);
+        out.pDraft = [sc.S.draft?.id, !!doc.querySelector('#right [data-k="saveDraft"]'), JSON.stringify(sc.itemEquip('t-wand').particle)];
+        const u0 = sc.S.undo.length;
+        await sc.saveDraft();
+        await sc.flush();
+        out.pSave = [JSON.stringify(await itDisk('t-wand')), sc.S.draft, sc.S.undo.length - u0];
+        await until(() => sc.S.ready && sb()?._insts?.i2);
+
+        // 換成 prefab：草稿管 t-fire＋hand；sandbox 跟木偶跟著；儲存 equip.prefab、拿掉 particle
+        await sc.setHand('i2', 'prefab', 't-fire');
+        await until(() => sbParts('t-wand').includes('light'));
+        out.toPf = [sc.S.draft?.id, sc.S.draft?.hand?.id, sc.instOf('i2').prefab, sbParts('t-wand'), sc.itemEquip('t-wand').particle ?? null];
+        await sc.saveDraft();
+        await sc.flush();
+        const e1 = await itDisk('t-wand');
+        out.pfSave = [e1.prefab, e1.particle ?? null, sc.S.draft];
+        await until(() => sc.S.ready && sb()?._insts?.i2);
+
+        // 無：@t-wand 的空草稿，儲存兩個都拿掉
+        sc.pickRole('i2');
+        await sc.setHand('i2', 'none');
+        await until(() => sbParts('t-wand').length === 1);
+        out.none = [sc.S.draft?.id, sc.handMode(sc.instOf('i2')), sbParts('t-wand')];
+        await sc.saveDraft();
+        await sc.flush();
+        const e2 = await itDisk('t-wand');
+        out.noneSave = [e2.prefab ?? null, e2.particle ?? null, e2.sprite];
+        await sc.undo();
+        out.noneUndo = (await itDisk('t-wand')).prefab;
+        await until(() => sc.S.ready && sb()?._insts?.i2);
+
+        // t-torch（prefab）→ [新增] 粒子：範本進草稿，儲存寫 particle.json＋item.json
+        sc.pickRole('i1');
+        await sc.setHand('i1', 'particle', '[新增]', 'torch-new');
+        out.newP = [sc.S.draft?.id, Object.keys(sc.S.draft?.ps ?? {})];
+        await sc.saveDraft();
+        await sc.flush();
+        const e3 = await itDisk('t-torch');
+        out.newPSave = [e3.prefab ?? null, JSON.stringify(e3.particle), !!(await read(json, 'particle.json'))['torch-new'], !!(await read(json, 'prefab.json'))['t-fire']];
         return out;
     });
     t.eq('道具庫只列拿在手上的、標手上掛的', JSON.stringify(r.lib), JSON.stringify(['t-torch|prefab t-fire', 't-wand|粒子 fire-charge', 't-plain|']));
@@ -72,4 +140,16 @@ run('item-scene', async t => {
     t.eq('改位置寫檔、sandbox 跟著', JSON.stringify(r.move), '[320,true]');
     t.eq('刪除', JSON.stringify(r.del), JSON.stringify([['i1', 'i2'], null]));
     t.eq('左欄樹列道具實例', JSON.stringify(r.tree), JSON.stringify(['i1', 'i2']));
+    t.eq('木偶拿 t-wand：手上一個粒子', JSON.stringify(r.pup0), '[1]');
+    t.eq('手上＝粒子：右欄下拉、粒子表單沒有深度、粒子一直算選取', JSON.stringify(r.mode), JSON.stringify(['particle', 'particle', true, true, '[0]']));
+    t.eq('改粒子位置＝@t-wand 草稿、出儲存鈕、equip 照草稿', JSON.stringify(r.pDraft), JSON.stringify(['@t-wand', true, '{"particle":"fire-charge","x":5,"y":-20}']));
+    t.eq('儲存：item.json 的 equip.particle、草稿清掉、一筆 undo', JSON.stringify(r.pSave),
+         JSON.stringify([JSON.stringify({sprite: 'sword-bronze', particle: {particle: 'fire-charge', x: 5, y: -20}}), null, 1]));
+    t.eq('換成 prefab：草稿管 t-fire＋hand、sandbox 照它、equip 沒有 particle', JSON.stringify(r.toPf), JSON.stringify(['t-fire', 't-wand', 't-fire', ['fire-charge', 'light', 'sword-bronze'], null]));
+    t.eq('木偶手上跟著草稿換成 prefab（粒子＋光源）、放棄回來', JSON.stringify(r.pup1), '[2,1]');
+    t.eq('儲存 prefab：equip.prefab、particle 拿掉', JSON.stringify(r.pfSave), JSON.stringify(['t-fire', null, null]));
+    t.eq('手上＝無：@ 空草稿、sandbox 只剩道具圖', JSON.stringify(r.none), JSON.stringify(['@t-wand', 'none', ['sword-bronze']]));
+    t.eq('儲存無：兩個都拿掉、其他欄位留著；undo 回來', JSON.stringify([r.noneSave, r.noneUndo]), JSON.stringify([[null, null, 'sword-bronze'], 't-fire']));
+    t.eq('prefab → [新增] 粒子：範本進草稿', JSON.stringify(r.newP), JSON.stringify(['@t-torch', ['torch-new']]));
+    t.eq('儲存：particle.json 寫新的、item.json 換 particle、prefab 本身留著', JSON.stringify(r.newPSave), JSON.stringify([null, '{"particle":"torch-new"}', true, true]));
 });

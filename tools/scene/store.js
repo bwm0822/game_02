@@ -6,12 +6,13 @@ import * as SH from '../common/shell.js';
 export const FILE = 'scenes.json';
 export const PREFAB = 'prefab.json';
 export const PARTICLE = 'particle.json';    // prefab 草稿儲存／組成時寫（粒子分頁存的格式：結尾沒有換行）
+export const ITEM = 'item.json';            // 道具實例的手上 prefab／粒子（equip.prefab／equip.particle）草稿儲存時寫（道具分頁的格式：結尾沒有換行）
 export const EMPTY = '{}\n';
 export const newScene = () => ({map: 'sandbox'});
 
-const PATHS = {[FILE]: 'tools', [PREFAB]: 'public/assets/json', [PARTICLE]: 'public/assets/json'};
+const PATHS = {[FILE]: 'tools', [PREFAB]: 'public/assets/json', [PARTICLE]: 'public/assets/json', [ITEM]: 'public/assets/json'};
 let root = null;
-const serialize = (data, file) => JSON.stringify(data, null, 2) + (file === PARTICLE ? '' : '\n');
+const serialize = (data, file) => JSON.stringify(data, null, 2) + (file === PARTICLE || file === ITEM ? '' : '\n');
 
 export async function load(r)
 {

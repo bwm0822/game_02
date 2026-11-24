@@ -12,6 +12,7 @@ import DB from '../data/db.js'
 import {playParticle} from '../core/particle.js'
 import {setSpot} from '../core/spotlight.js'
 import {queueTextures} from '../core/texlist.js'
+import {equipPrefab} from '../core/equip.js'
 import {shapeOf, zoneEditable, rectOf, handlesOf, hitZone, edgeZone, zoneArea, dragZone, ZONE_CURSOR} from '../core/pzone.js'
 
 // 開發版的 gym 場景：工具殼「場景」分頁的 iframe 跑 /?sandbox，用 postMessage 操作（訊息帶 sb 欄位，見 docs/scene-tool.md）
@@ -121,7 +122,38 @@ export class Sandbox extends GameScene
         // 粒子、光源可以跟著擺設：擺設建好（sprite 換新）才套
         this._applyEmitters(scene.particles ?? [], force);
         this._applyLights(scene.lights ?? [], force);
+        this._syncHands();
         this._send({sb:'loaded', map:this.mapName, w:this.map.map.width, h:this.map.map.height});
+    }
+
+    // 場景分頁的道具手上草稿（load 訊息的 items＝{道具 id: equip}）：蓋掉 DB 的 equip，上次蓋的先還原
+    _itemEquips(items)
+    {
+        const db = DB._itemDB ?? {};
+        for(const [id, e] of Object.entries(this._eqOrig ?? {})) {if(db[id]) {db[id] = {...db[id], equip:e};}}
+        this._eqOrig = {};
+        for(const [id, e] of Object.entries(items))
+        {
+            if(!db[id]) {continue;}
+            this._eqOrig[id] = db[id].equip;
+            db[id] = {...db[id], equip:e};
+        }
+    }
+
+    // 木偶手上的 prefab／粒子（道具的 equip、prefab 草稿、粒子內容）變了就重穿（RoleView 只在穿上時建）
+    _syncHands()
+    {
+        for(const p of this.roles)
+        {
+            const sig = JSON.stringify((p.bb?.equips ?? []).map(e=>{
+                const q = e && DB.item(e.id ?? e)?.equip;
+                if(!q?.prefab && !q?.particle) {return null;}
+                const pf = equipPrefab(q, id=>DB.prefab(id));
+                return [q, pf, (pf?.parts ?? []).map(x=>(x.particle ? DB.particle(x.particle) ?? null : null))];
+            }));
+            if(p._handSig!==undefined && sig!==p._handSig) {p.view?._updateEquips?.();}
+            p._handSig = sig;
+        }
     }
 
     //------------------------------------------------------
@@ -1278,6 +1310,7 @@ export class Sandbox extends GameScene
             case 'load':
                 if(m.prefabs) {DB._prefabDB = Sandbox._pfFiles(m.prefabs);}
                 if(m.particles) {DB._particleDB = m.particles;}   // particle.json＋prefab 草稿的粒子副本
+                this._itemEquips(m.items ?? {});
                 if((m.scene.map ?? 'sandbox') !== this.mapName) {this._saveCam(); this.scene.restart({map:m.scene.map, scene:m.scene, grid:this._gridOn, sel:this._sel, hidden:[...this._hidden]});}
                 else {this._apply(m.scene);}
                 break;
