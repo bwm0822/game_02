@@ -68,7 +68,6 @@ export const FIELDS = {
         particle: {label: '粒子', type: 'nums', keys: ['particle', 'x', 'y'], types: {particle: 'list'}, hint: () => ({x: 0, y: 0}), opt: true,
             offer: (it) => it.cat === 'CAT_WEAPON' || it.cat === 'CAT_EQUIP'}}},
     drop: {label: '掉落圖', type: 'obj', fields: SPRITE},
-    light: {label: '光源', type: 'obj', fields: {color: {label: '顏色', type: 'color'}, radius: {label: '半徑', type: 'int'}}},
     cook: {label: '烹煮成', type: 'obj', fields: {id: {label: 'id', type: 'itemref'}}},
     make: {label: '製作材料', type: 'obj', fields: {items: {label: '材料', type: 'map'}}},
     device: {label: '裝置', type: 'obj', fields: {class: {label: 'class', type: 'list', suggest: ['pot', 'dummy']}}},

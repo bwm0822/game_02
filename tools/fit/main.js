@@ -19,7 +19,7 @@ import {fillBg, ANCHOR, drawBoxes, drawAnchor} from '../role/preview.js';
 import {DEPTH, BACK_DEPTH, REAR_DEPTH, BACK_NODE, CAT, roleTree, nodeOf, depthOf, ANIM_LIFT} from '../role/schema.js';
 import {treeEls} from '../common/views.js';
 import {EASE, dirTo, animTrack, animEnd, poseAt as trackPose, trackEnd, weaponAnim as animOf} from '../../src/core/pose.js';
-import {equipFor, equipPrefab, partFor, sexOk, hiddenParts, PIVOTS, WRISTS, pivotOf, atPivot, fromPivot, rigOf, handOf, heldOf, handItems, isHandheld} from '../../src/core/equip.js';
+import {equipFor, equipParts, partFor, sexOk, hiddenParts, PIVOTS, WRISTS, pivotOf, atPivot, fromPivot, rigOf, handOf, heldOf, handItems, isHandheld} from '../../src/core/equip.js';
 
 const FILES = ['role.json', 'part.json', 'item.json', 'anim.json'];
 const PARTS = [['body', '身體'], ['shoes', '鞋子'], ['cloth', '衣服'], ['head', '頭'], ['hair', '頭髮'], ['hat', '帽子'], ['handF', '前手'], ['handB', '後手']];
@@ -169,7 +169,6 @@ async function setRoot(dir)
     for (const f of FILES) if (!await FS.tryFile(json, f)) throw new Error(`「${dir.name}」裡沒有 public/assets/json/${f}`);
     S.json = json;
     for (const f of FILES) await load(f);
-    await loadPrefabs();
     // 數字欄的步進看 tools/settings.json，讀不到用內建值
     await ST.load(dir).catch(e => status(`tools/settings.json 讀不到：${e.message}`));
     resetHist();
@@ -223,16 +222,8 @@ async function save()
 }
 
 // 別的分頁存了檔：沒改過就重讀（undo 紀錄從現在重算），改過就只提示（存檔時會合併）
-// prefab.json 只讀（畫裝備 equip.prefab 的零件記號），沒有就當空的
-async function loadPrefabs()
-{
-    try {S.prefabs = JSON.parse(await FS.readText(S.json, 'prefab.json'));}
-    catch {S.prefabs = {};}
-}
-
 async function onSaved(file)
 {
-    if (file === 'prefab.json' && S.json) {await loadPrefabs(); return drawPreview();}
     if (!FILES.includes(file) || !S.json) return;
     if (dirtyOf(file)) return status(`${file} 在別的分頁存過了，存檔時會合併`);
     await load(file);
@@ -730,7 +721,7 @@ function partsOf(r, lift = false)
         const node = nodeOf(k, raw);
         const p = k === 'body' ? {...raw, x: 0, y: 0, a: 0} : atPivot(raw, pivotOf(body, node, heldEquip()));
         const o = {p, k, node, alpha: S.alpha[cat ?? k] ?? 1};
-        if (p.sprite) out.push({...o, sprite: p.sprite, d: depthOf(k, raw) ?? 0, main: true, ...(cat && (raw.prefab || raw.particle) && {hand: raw})});
+        if (p.sprite) out.push({...o, sprite: p.sprite, d: depthOf(k, raw) ?? 0, main: true, ...(cat && raw.parts?.length && {hand: raw})});
         if (p.ext) out.push({...o, sprite: p.ext, d: DEPTH.ext});
         if (p.back) out.push({...o, sprite: p.back, d: BACK_DEPTH[k] ?? DEPTH.back, node: BACK_NODE[k] ?? node});
         // 手套的 handB 用同一組數字相對 wristB
@@ -818,27 +809,25 @@ async function drawPreview()
         g.globalAlpha = 1;
         n++;
     });
-    // 裝備的 equip.prefab／equip.particle（如火把的火焰）：錨點＝握點、跟著道具轉、不乘 scale；只畫記號（粒子菱形、光源圓、png 小方塊），試穿跑不了粒子
+    // 裝備的 equip.parts（如火把的火焰＋光）：位置相對握點、跟著道具轉、不乘 scale；只畫記號（粒子菱形、光源圓），試穿跑不了粒子
     for (const pt of parts)
     {
-        const pf = pt.hand && equipPrefab(pt.hand, id => S.prefabs?.[id]);
-        if (!pf) continue;
+        const hp = pt.hand ? equipParts(pt.hand) : [];
+        if (!hp.length) continue;
         const inOther = on && pt.node === on, w = inOther ? ow : tr && pt.node === wn ? wr : null;
         local(() => {
             if (w) {const pv = inOther ? op : wp; g.translate(w.x, w.y); g.rotate(rad(w.angle - pv.a)); g.translate(-pv.x, -pv.y);}
             g.translate(pt.p.x ?? 0, pt.p.y ?? 0);
             g.rotate(rad(pt.p.a ?? 0));
             g.lineWidth = 1.5 * px;
-            for (const q of pf.parts ?? [])
+            for (const q of hp)
             {
-                if (q.off || (q.look && q.look !== pf.look)) continue;
                 const [x, y, s] = [q.x ?? 0, q.y ?? 0, 4 * px];
                 g.strokeStyle = '#000';
-                g.fillStyle = q.particle ? '#ff9933' : q.light ? '#ffe066' : '#66ccff';
+                g.fillStyle = q.particle ? '#ff9933' : '#ffe066';
                 g.beginPath();
                 if (q.particle) {g.moveTo(x, y - s); g.lineTo(x + s, y); g.lineTo(x, y + s); g.lineTo(x - s, y); g.closePath();}
-                else if (q.light) g.arc(x, y, s, 0, Math.PI * 2);
-                else g.rect(x - s * 0.75, y - s * 0.75, s * 1.5, s * 1.5);
+                else g.arc(x, y, s, 0, Math.PI * 2);
                 g.fill();
                 g.stroke();
             }

@@ -161,7 +161,6 @@
     "forge-back": "textures/prefabs/forge/forge-back.png",
     "forge-front": "textures/prefabs/forge/forge-front.png",
     "prefab-forge": "textures/prefabs/prefab-forge.png",
-    "prefab-torch-fire": "textures/prefabs/prefab-torch-fire.png",
     "Barrel": "textures/props/Barrel.png",
     "bed_h": "textures/props/bed_h.png",
     "bed_v": "textures/props/bed_v.png",

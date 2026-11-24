@@ -59,21 +59,5 @@
       "w": 48,
       "h": 32
     }
-  },
-  "torch-fire": {
-    "parts": [
-      {
-        "particle": "torch-fire",
-        "y": 0
-      },
-      {
-        "light": {
-          "r": 70,
-          "color": "#ffcc88",
-          "i": 0.6
-        },
-        "y": 0
-      }
-    ]
   }
 }

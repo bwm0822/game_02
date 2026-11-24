@@ -1638,10 +1638,6 @@
     "icon": "torch-icon",
     "gold": 10,
     "endurance": 360,
-    "light": {
-      "color": 16755200,
-      "radius": 300
-    },
     "lab": "火把",
     "des": "可以照明",
     "equip": {
@@ -1657,10 +1653,20 @@
         "y": -5,
         "a": -30
       },
-      "prefab": {
-        "prefab": "torch-fire",
-        "y": -25
-      }
+      "parts": [
+        {
+          "particle": "torch-fire",
+          "y": -25
+        },
+        {
+          "light": {
+            "r": 70,
+            "color": "#ffcc88",
+            "i": 0.6
+          },
+          "y": -25
+        }
+      ]
     },
     "drop": {
       "sprite": "torch",
@@ -1975,10 +1981,12 @@
       "scale": 0.25,
       "oy": 0.85,
       "a": 90,
-      "particle": {
-        "particle": "sword-1-sword-fire",
-        "y": -9
-      }
+      "parts": [
+        {
+          "particle": "sword-1-sword-fire",
+          "y": -9
+        }
+      ]
     },
     "icon": "sword-bronze-icon",
     "drop": {

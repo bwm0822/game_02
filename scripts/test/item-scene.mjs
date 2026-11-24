@@ -72,7 +72,7 @@ run('item-scene', async t => {
         await sc.flush();
         await sc.setEquip('r1', 'CAT_WEAPON', 't-wand');
         await sc.flush();
-        const pupHand = () => (sb().roles.find(p => p.key === 'r1')?.view?._eqPrefabs ?? []).map(l => l.pts.length);
+        const pupHand = () => (sb().roles.find(p => p.key === 'r1')?.view?._eqParts ?? []).map(l => l.pts.length);
         await until(() => pupHand().length === 1);
         out.pup0 = pupHand();
 

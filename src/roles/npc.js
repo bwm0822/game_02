@@ -16,7 +16,6 @@ import {COM_Favor} from '../components/com_favor.js'
 import {COM_Ability} from '../components/com_ability.js'
 import {COM_Stolen} from '../components/com_stolen.js'
 import {COM_Loot} from '../components/com_loot.js'
-import {COM_Light} from '../components/com_light.js'
 import DB from '../data/db.js'
 import {GM} from '../core/setting.js'
 import Role from './role.js'
@@ -100,7 +99,6 @@ export class Npc extends Role
         // 加入元件
         this.addCom(new RoleView(this.scene),{modify:modify})
             .addCom(new COM_Inventory(),{enable:bb.meta.inv!==undefined})
-            .addCom(new COM_Light())
             .addCom(new COM_Anim())
             .addCom(new COM_Action())
             .addCom(new COM_Nav())

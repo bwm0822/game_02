@@ -48,42 +48,31 @@ run('手持道具', async t => {
         out.drawn = [has(wb, 'sword-iron'), has(wf, 'sword-bronze'), !has(wf, 'sword-iron'),
                      Math.round(wb.pivot.x - (body.wristB?.x ?? 0)), Math.round(wb.pivot.y - (body.wristB?.y ?? 0))];
 
-        // equip.prefab：png 零件在握點的 holder 裡、粒子發射點／光源每幀跟著零件的世界位置、後手排在角色後面；卸下清掉
+        // equip.parts：粒子發射點／光源每幀跟著零件的世界位置；不 local 的在 rig 裡、排在後手節點正上方（under＝正下方）；
+        // local 的進 holder（道具前面，under＝道具後面的另一個 holder）；off／什麼都不是的不建；卸下清掉
         d.DB._particleDB['t-fire'] = {img: 'p-square', speedY: -20, lifespan: 300, frequency: 50};
-        d.DB._prefabDB['t-fire'] = {parts: [{img: 'sword-bronze', x: 0, y: -20}, {particle: 't-fire', x: 0, y: -30}, {light: {r: 60}, x: 0, y: -30}, {img: 'bow-short', look: 'off'}]};
-        it('t-torch').equip.prefab = {prefab: 't-fire', x: 3, y: -5};
-        p.view._updateEquips();
+        d.DB._particleDB['t-loc'] = {img: 'p-square', speedY: -20, lifespan: 300, frequency: 50, local: true};
+        it('t-torch').equip.parts = [{particle: 't-fire', x: 3, y: -35}, {light: {r: 60}, x: 3, y: -35}, {particle: 't-fire', y: -10, under: true},
+                                     {particle: 't-loc'}, {particle: 't-loc', under: true}, {light: {r: 60}, off: true}, {particle: 't-fire', off: true}, {x: 1}];
         const lights0 = p.scene.lights.lights.length;
+        p.view._updateEquips();
         {
-            const live = p.view._eqPrefabs?.[0], holder = live?.holder;
+            const live = p.view._eqParts?.[0], holder = live?.holder;
             const w = holder.getWorldTransformMatrix().transformPoint(3, -35);
-            const em = live.pts.find(o => o.fx).fx.emitter, lt = live.pts.find(o => o.light), rig = wb.parentContainer;
+            const ems = live.pts.filter(o => o.fx).map(o => o.fx.emitter), lt = live.pts.find(o => o.light), rig = wb.parentContainer;
             const l = rig.getWorldTransformMatrix().applyInverse(w.x, w.y);
-            out.prefab = [holder.parentContainer === wb, holder.list.length, holder.list[0].texture.key, holder.list[0].x, holder.list[0].y,
-                          Math.round(em.x) === Math.round(l.x) && Math.round(em.y) === Math.round(l.y),
-                          Math.round(lt.light.x) === Math.round(w.x) && Math.round(lt.light.y) === Math.round(w.y),
-                          em.parentContainer === rig && rig.getIndex(em) === rig.getIndex(wb) + 1, !!em.active];
+            const under = wb.list.find(c => c !== holder && c.type === 'Container');
+            const sprite = wb.list.find(c => c.texture?.key === 'sword-iron');
+            out.parts = [holder.parentContainer === wb, live.pts.length, ems.length, p.scene.lights.lights.length - lights0,
+                         Math.round(ems[0].x) === Math.round(l.x) && Math.round(ems[0].y) === Math.round(l.y),
+                         Math.round(lt.light.x) === Math.round(w.x) && Math.round(lt.light.y) === Math.round(w.y),
+                         ems[0].parentContainer === rig && rig.getIndex(ems[0]) === rig.getIndex(wb) + 1,
+                         ems[1].parentContainer === rig && rig.getIndex(ems[1]) === rig.getIndex(wb) - 1,
+                         holder.list.length, under?.list.length, wb.getIndex(under) < wb.getIndex(sprite), wb.getIndex(holder) > wb.getIndex(sprite)];
             p.view._removeEquips();
-            out.prefab.push(p.scene.lights.lights.length === lights0 - 1, !p.view._eqPrefabs);
-            delete it('t-torch').equip.prefab;
+            out.parts.push(p.scene.lights.lights.length === lights0, !p.view._eqParts);
+            delete it('t-torch').equip.parts;
             p.view._updateEquips();
-        }
-
-        // equip.particle：單一粒子零件（握點＋x/y），跟 prefab 二選一、都寫用 prefab
-        {
-            const {equipPrefab} = await import('/src/core/equip.js');
-            it('t-torch').equip.particle = {particle: 't-fire', x: 2, y: -12};
-            p.view._updateEquips();
-            const live = p.view._eqPrefabs?.[0], holder = live?.holder;
-            const w = holder.getWorldTransformMatrix().transformPoint(2, -12);
-            const em = live.pts.find(o => o.fx)?.fx.emitter, rig = wb.parentContainer;
-            const l = rig.getWorldTransformMatrix().applyInverse(w.x, w.y);
-            out.particle = [live.pts.length, holder.list.length, Math.round(em.x) === Math.round(l.x) && Math.round(em.y) === Math.round(l.y),
-                            equipPrefab({prefab: {prefab: 't-fire'}, particle: {particle: 't-fire'}}, id => d.DB.prefab(id))?.parts.length,
-                            equipPrefab({particle: {}}, id => d.DB.prefab(id))];
-            delete it('t-torch').equip.particle;
-            p.view._updateEquips();
-            out.particle.push(!p.view._eqPrefabs);
         }
 
         // 舊存檔／NPC 撞手（弓＋火把）：武器優先、火把不畫
@@ -103,7 +92,6 @@ run('手持道具', async t => {
     t.eq('拿著後手火把：武器格擋弓、劍可以', JSON.stringify(r.swap), '[false,true]');
     t.eq('火把畫在後手腕、劍在前手腕、後手腕加上劍跟火把的位移', JSON.stringify(r.drawn), '[true,true,true,11,-3]');
     t.eq('舊資料撞手：只畫弓', JSON.stringify(r.old), '[true,false]');
-    t.eq('equip.prefab：掛在後手腕、只建預設狀態的 png、整組加上 x/y 偏移、粒子（rig 裡、緊接在後手節點上面＝蓋過火把被身體擋）／光源跟著零件位置；卸下清掉光源',
-         JSON.stringify(r.prefab), '[true,1,"sword-bronze",3,-25,true,true,true,true,true,true]');
-    t.eq('equip.particle：一個粒子跟著握點＋x/y；都寫用 prefab；沒 id＝沒有；卸下清掉', JSON.stringify(r.particle), '[1,0,true,4,null,true]');
+    t.eq('equip.parts：掛在後手腕、off 跟空的不建、粒子（rig 裡、後手節點正上方／under 正下方）／光源跟著零件位置、local 進 holder（under 在道具後面）；卸下清掉',
+         JSON.stringify(r.parts), '[true,3,2,1,true,true,true,true,1,1,true,true,true,true]');
 });

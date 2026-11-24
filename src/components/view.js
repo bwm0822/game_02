@@ -8,7 +8,7 @@ import FxCell, {zoneDelays} from '../core/fxcell.js'
 import {playParticle} from '../core/particle.js'
 import {setSpot} from '../core/spotlight.js'
 import {thumbOf} from '../core/prefab.js'
-import {equipFor, equipPrefab, hiddenParts, heldOf, handItems, isHandheld, handOf, ROLE_PARTS, WRISTS, pivotOf, atPivot, fromPivot, rigOf} from '../core/equip.js'
+import {equipFor, equipParts, hiddenParts, heldOf, handItems, isHandheld, handOf, ROLE_PARTS, WRISTS, pivotOf, atPivot, fromPivot, rigOf} from '../core/equip.js'
 const _tag = 'view';
 const ONE_TILE = {x:0, y:0, w:GM.TILE_W, h:GM.TILE_H, hw:GM.TILE_W/2, hh:GM.TILE_H/2};
 // 單張圖道具量圖邊的欄位，照 _edgeBox() 的參數順序(左、右、寬、上、下、高)
@@ -1206,42 +1206,37 @@ export class RoleView extends View
         if(!item.equip) {return;}
         const e = equipFor(item.equip, this.meta.sex, item.sex), node = nodeFor(item.cat, item.equip);
         let sps = this._addPart(e, item.cat, node);
-        if(e.prefab || e.particle) {sps.push(...this._addEquipPrefab(e, item.cat, node));}
+        if(e.parts?.length) {sps.push(...this._addEquipParts(e, item.cat, node));}
         this._sortParts();
         this._equips.push(...sps);
         if(item.cat===GM.CAT.WEAPON) {this._weapon = sps;}
         else if(isHandheld(item, GM.CAT)) {(this._handSps ??= []).push(...sps);}
     }
 
-    // equip.prefab({prefab: prefab.json 的 id, x, y}，如火把的火焰)：錨點＝握點＋x/y(equip 的 x/y/a，掛在同一個節點)、跟著道具轉／翻面，零件座標是道具直立時的、不乘 equip.scale；
-    // png 零件在 holder 裡(排在道具前面)；粒子在世界座標噴、發射點每幀跟著零件位置(local 的粒子進 holder)，前後跟著節點(後手在角色後面)；光源每幀挪到零件位置
-    // 只用 prefab 的預設 look，零件 off 不建；卸下／換裝(_removeEquips)時清掉；equip.particle 當成只有一個粒子零件的 prefab(跟 prefab 二選一)
-    _addEquipPrefab(e, type, node)
+    // equip.parts(粒子／光源，如火把的火焰＋光)：位置相對握點(equip 的 x/y/a，掛在同一個節點)、跟著道具轉／翻面，座標是道具直立時的、不乘 equip.scale；
+    // local 的粒子進 holder(排在道具前面，under＝道具後面)；不 local 的在 rig 裡噴、發射點每幀跟著零件位置，排在節點正上方(under＝正下方)；
+    // 光源每幀挪到零件位置；off 不建；卸下／換裝(_removeEquips)時清掉
+    _addEquipParts(e, type, node)
     {
-        const scene = this.scene, pf = equipPrefab(e, id=>DB.prefab(id)), tag = e.prefab?.prefab ?? e.particle?.particle;
-        if(e.prefab && e.particle) {dlog(T.WARN)(`equip.prefab ${tag} 跟 equip.particle 都有，用 prefab`);}
-        if(!pf) {dlog(T.WARN)(`equip.prefab ${tag} 不存在`); return [];}
-        const n = this._nodes[node] ?? this._rig;
-        const holder = scene.add.container(e.x ?? 0, e.y ?? 0).setAngle(e.a ?? 0);
-        holder.depth = (PART_DEPTH[type] ?? 0) + 0.01;
-        n.add(holder);
+        const scene = this.scene, parts = equipParts(e);
+        const n = this._nodes[node] ?? this._rig, d = PART_DEPTH[type] ?? 0;
+        const mk = (dz)=>{const c = scene.add.container(e.x ?? 0, e.y ?? 0).setAngle(e.a ?? 0); c.depth = d + dz; n.add(c); return c;};
+        const holder = mk(0.01);
         const live = {holder, n, pts:[]}, out = [holder];
-        for(const p of pf.parts ?? [])
+        let under;
+        for(const p of parts)
         {
-            if(p.off || (p.look && p.look!==pf.look)) {continue;}
-            if(p.img)
-            {
-                const [key, frame] = p.img.split(':');
-                if(!scene.textures.exists(key)) {dlog(T.WARN)(`prefab ${tag}：沒有圖 ${p.img}`); continue;}
-                holder.add(scene.add.image(p.x ?? 0, p.y ?? 0, key, frame).setOrigin(p.ox ?? 0.5, p.oy ?? 1).setScale(p.sx ?? 1, p.sy ?? 1)
-                    .setFlipX(!!p.flip).setAngle(p.angle ?? 0).setPipeline('Light2D'));
-            }
-            else if(p.particle)
+            if(p.particle)
             {
                 const def = DB.particle(p.particle);
-                if(!def) {dlog(T.WARN)(`${tag}：粒子 ${p.particle} 不存在`); continue;}
-                if(def.local) {playParticle(scene, {...def, depth:undefined}, {parent:holder, ox:p.x ?? 0, oy:p.y ?? 0}); continue;}
-                // 不 local：emitter 進 rig、排在那隻手的節點正上方(蓋過道具、被身體擋)，發射點每幀挪到零件位置，粒子設定不跟著道具轉(火往上冒)
+                if(!def) {dlog(T.WARN)(`${e.sprite}：粒子 ${p.particle} 不存在`); continue;}
+                if(def.local)
+                {
+                    const c = p.under ? (under ??= (out.push(mk(-0.01)), out.at(-1))) : holder;
+                    playParticle(scene, {...def, depth:undefined}, {parent:c, ox:p.x ?? 0, oy:p.y ?? 0});
+                    continue;
+                }
+                // 不 local：emitter 進 rig、排在那隻手的節點正上方(蓋過道具、被身體擋)／under＝正下方，發射點每幀挪到零件位置，粒子設定不跟著道具轉(火往上冒)
                 const fx = playParticle(scene, {...def, local:true, depth:undefined}, {parent:this._rig});
                 if(!fx) {continue;}
                 live.pts.push({p, fx});
@@ -1254,23 +1249,23 @@ export class RoleView extends View
                 live.pts.push(pt);
             }
         }
-        (this._eqPrefabs ??= []).push(live);
-        this._trackEquipPrefabs();
+        (this._eqParts ??= []).push(live);
+        this._trackEquipParts();
         if(!this._eqTick)
         {
-            this._eqTick = ()=>this._trackEquipPrefabs();
+            this._eqTick = ()=>this._trackEquipParts();
             scene.events.on('update', this._eqTick);
         }
         return out;
     }
 
     // 光源跟著零件的世界位置；rig 裡的 emitter 挪到零件在 rig 的位置、排在節點正上方(播動畫節點搬前後時跟著)
-    _trackEquipPrefabs()
+    _trackEquipParts()
     {
         const rig = this._rig;
         if(!rig) {return;}
         const rm = rig.getWorldTransformMatrix();
-        for(const {holder, n, pts} of this._eqPrefabs ?? [])
+        for(const {holder, n, pts} of this._eqParts ?? [])
         {
             if(!holder.active) {continue;}
             const m = holder.getWorldTransformMatrix();
@@ -1282,15 +1277,16 @@ export class RoleView extends View
                 if(!em?.active) {continue;}
                 const l = rm.applyInverse(w.x, w.y);
                 em.setPosition(l.x, l.y);
-                em.depth = n.depth + 0.01;
-                if(n.parentContainer===rig && rig.getIndex(em)!==rig.getIndex(n) + 1) {rig.moveAbove(em, n);}
+                const u = !!pt.p.under;
+                em.depth = n.depth + (u ? -0.01 : 0.01);
+                if(n.parentContainer===rig && rig.getIndex(em)!==rig.getIndex(n) + (u ? -1 : 1)) {u ? rig.moveBelow(em, n) : rig.moveAbove(em, n);}
             }
         }
     }
 
-    _clearEquipPrefabs()
+    _clearEquipParts()
     {
-        for(const {pts} of this._eqPrefabs ?? [])
+        for(const {pts} of this._eqParts ?? [])
         {
             for(const pt of pts)
             {
@@ -1298,13 +1294,13 @@ export class RoleView extends View
                 else {pt.fx?.stop(true);}
             }
         }
-        this._eqPrefabs = null;
+        this._eqParts = null;
         if(this._eqTick) {this.scene?.events.off('update', this._eqTick); this._eqTick = null;}
     }
 
     _removeEquips()
     {
-        this._clearEquipPrefabs();
+        this._clearEquipParts();
         this._equips.forEach((equip)=>{equip.destroy();})
         this._equips = [];
         this._weapon = null;
@@ -1345,7 +1341,7 @@ export class RoleView extends View
     _remove()
     {
         super._remove();
-        this._clearEquipPrefabs();
+        this._clearEquipParts();
         // 移除 parts
         this._shape.getAll().forEach((child)=>{child.destroy();});
         this._rig = null;

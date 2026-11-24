@@ -12,7 +12,7 @@ import DB from '../data/db.js'
 import {playParticle} from '../core/particle.js'
 import {setSpot} from '../core/spotlight.js'
 import {queueTextures} from '../core/texlist.js'
-import {equipPrefab} from '../core/equip.js'
+import {equipParts} from '../core/equip.js'
 import {shapeOf, zoneEditable, rectOf, handlesOf, hitZone, edgeZone, zoneArea, dragZone, ZONE_CURSOR} from '../core/pzone.js'
 
 // 開發版的 gym 場景：工具殼「場景」分頁的 iframe 跑 /?sandbox，用 postMessage 操作（訊息帶 sb 欄位，見 docs/scene-tool.md）
@@ -56,7 +56,7 @@ export class Sandbox extends GameScene
         this.named = {};
         GameObject.gid = 0;
         TimeSystem.load();
-        TimeSystem.register(()=>this._ambient());   // 排第一個：燈（com_lamp／com_light）照環境光算亮度，要先換好
+        TimeSystem.register(()=>this._ambient());   // 排第一個：燈（com_lamp）照環境光算亮度，要先換好
         this.lights.enable();
         this._sceneTime = null;
         this._amb = null;
@@ -140,16 +140,15 @@ export class Sandbox extends GameScene
         }
     }
 
-    // 木偶手上的 prefab／粒子（道具的 equip、prefab 草稿、粒子內容）變了就重穿（RoleView 只在穿上時建）
+    // 木偶手上的零件（道具的 equip.parts、粒子內容）變了就重穿（RoleView 只在穿上時建）
     _syncHands()
     {
         for(const p of this.roles)
         {
             const sig = JSON.stringify((p.bb?.equips ?? []).map(e=>{
                 const q = e && DB.item(e.id ?? e)?.equip;
-                if(!q?.prefab && !q?.particle) {return null;}
-                const pf = equipPrefab(q, id=>DB.prefab(id));
-                return [q, pf, (pf?.parts ?? []).map(x=>(x.particle ? DB.particle(x.particle) ?? null : null))];
+                if(!q?.parts?.length) {return null;}
+                return [q, equipParts(q).map(x=>(x.particle ? DB.particle(x.particle) ?? null : null))];
             }));
             if(p._handSig!==undefined && sig!==p._handSig) {p.view?._updateEquips?.();}
             p._handSig = sig;

@@ -25,19 +25,8 @@ export const handOf = (held) => (held?.hand === 'B' ? 'wristB' : 'wristF');
 // 拿在手上的道具＝武器、CAT_EQUIP（如火把），有 equip 才佔 equip.hand 那隻手；同一隻手只能拿一樣
 export const isHandheld = (it, cat) => !!it?.equip && (it.cat === cat.WEAPON || it.cat === cat.EQUIP);
 export const handClash = (a, b, cat) => a !== b && isHandheld(a, cat) && isHandheld(b, cat) && handOf(a.equip) === handOf(b.equip);
-// 手上掛的東西：equip.prefab（{prefab: prefab.json id, x, y}＝整組相對握點偏移）或 equip.particle（{particle, x, y}＝單一粒子零件），
-//  二選一、都寫用 prefab；回傳 prefab 物件（偏移已加進零件）或 null
-export function equipPrefab(e, prefabOf)
-{
-    if (e?.prefab)
-    {
-        const {prefab, x = 0, y = 0} = e.prefab, pf = prefabOf(prefab);
-        if (!pf) return null;
-        return x || y ? {...pf, parts: (pf.parts ?? []).map(p => ({...p, x: (p.x ?? 0) + x, y: (p.y ?? 0) + y}))} : pf;
-    }
-    if (e?.particle?.particle) return {parts: [{particle: e.particle.particle, x: e.particle.x ?? 0, y: e.particle.y ?? 0}]};
-    return null;
-}
+// 手上掛的東西：equip.parts＝[{particle, x, y, under?} | {light:{r, color, i, spot?}, x, y}]，位置相對握點，off＝不建
+export const equipParts = (e) => (e?.parts ?? []).filter(p => !p.off && (p.particle || p.light));
 // 畫得出來的手持道具（NPC／舊存檔可能撞手：武器優先，其他先到先得）
 export function handItems(items, cat)
 {
