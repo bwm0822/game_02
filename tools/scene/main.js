@@ -2358,7 +2358,7 @@ function renderTree()
             onclick: () => pickRole(l.key === S.pick ? null : l.key),
             oncontextmenu: (ev) => menu(ev, [['組成 prefab…', () => composePrefab(l.key)], ...addToItems(l.key, ev), ['刪除', () => deleteObj(l.key)]]),
         }, h('button', {class: 'eye', title: '暫時藏起來（不存檔）', onclick: (ev) => {ev.stopPropagation(); toggleHide(l.key);}}, S.hidden.has(l.key) ? '◌' : '👁'),
-           h('span', {class: 'swatch', style: `background:${l.color ?? '#ffcc88'}`}), h('span', {class: 'id'}, l.key),
+           h('span', {title: `光色 ${l.color ?? '#ffcc88'}`}, '💡'), h('span', {class: 'id'}, l.key),
            l.follow && h('span', {class: 'lab'}, `→ ${followName(l.follow)}`), h('span', {class: 'mark dim'}, `${l.x},${l.y}`)))),
         ...sec('prefabs', `prefab（${insts().length}）`, plus('放 prefab', () => placeInst(S.center[0] * 32 + 16, S.center[1] * 32 + 32)), () => insts().map(o => h('div', {
             class: cls(o.key), dataset: {key: o.key},
