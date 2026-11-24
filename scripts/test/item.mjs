@@ -712,7 +712,7 @@ run('item', async t => {
     t.check('atlas 沒寫 frame 有警告', r.atlas[1]);
     t.check('atlas frame 不存在有警告', r.atlas[2]);
     t.eq('atlas frame 畫得出來', r.atlas[3], 51);
-    t.eq('選圖器分頁是第一層資料夾', r.pickTabs, 'equips,icons,items,others,props,roles,weapons');
+    t.eq('選圖器分頁是第一層資料夾', r.pickTabs, 'equips,icons,items,others,prefabs,props,roles,weapons');
     t.eq('單張圖開在所在資料夾並反白', JSON.stringify(r.pickImage), JSON.stringify(['roles / npcs', 'macron']));
     t.eq('sheet 直接開格子畫面', JSON.stringify(r.pickSheet), JSON.stringify(['icons / icons', true]));
     t.check('子資料夾點進去、麵包屑點回上層', r.pickNav[0].includes('rogues ▦') && r.pickNav[1] === 'roles' && r.pickNav[2].startsWith('animals,'), JSON.stringify(r.pickNav));
