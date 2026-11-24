@@ -17,6 +17,7 @@ import * as PSC from '../particle/schema.js';
 import * as ST from './store.js';
 import * as TL from './tiled.js';
 import {cutDialog, cutMask, cutPiece} from './cut.js';
+import {scan} from '../texture/scan.js';
 
 const LS = {sel: 'tools.scene.sel', grid: 'tools.scene.grid', role: 'tools.scene.lastRole', particle: 'tools.scene.lastParticle', prefab: 'tools.scene.lastPrefab', fold: 'tools.scene.fold',
             anchor: 'tools.scene.anchor', lightIcon: 'tools.scene.lightIcon', particleIcon: 'tools.scene.particleIcon', sizeLock: 'tools.scene.sizeLock', exportMode: 'tools.scene.exportMode', exportDir: 'tools.scene.exportDir'};
@@ -103,14 +104,22 @@ const editScene = (fn, pick) => {
     }, undefined, pick);
 };
 
+// u.fops＝這一步搬過的檔（prefab 的圖改名／刪除）[{from, to}]：先確定搬得動、退 json、再搬檔
 const step = (from, to, i) => queue(async () => {
     const u = from.pop();
     if (!u) return;
-    try {gotData(await ST.restore(u.files, i === 0));}
+    const ops = u.fops && (i === 0 ? [...u.fops].reverse().map(o => ({from: o.to, to: o.from})) : u.fops);
+    try
+    {
+        for (const o of ops ?? []) await checkMove(o.from, o.to);
+        gotData(await ST.restore(u.files, i === 0));
+        for (const o of ops ?? []) await moveTex(o.from, o.to);
+    }
     catch (e) {from.push(u); throw e;}
     to.push(u);
     select(u.sel[i] in S.data ? u.sel[i] : null, false);
     S.pick = u.pick[i];
+    if (ops) {await updateTextures(); reloadGame();}
     refresh();
 });
 // 有 prefab 草稿時退／重做的是草稿裡的步驟
@@ -1441,7 +1450,7 @@ async function askImg(cur)
 {
     const v = await ask('擺設的圖', h('div', {class: 'hint'}, 'textures 的圖（遊戲已經有的）或專案裡任一張 png（還沒放進 textures/ 也行；專案外的會複製到 images/scene/）'),
         [['tex', 'textures 圖…'], ['file', '外部 png…'], ['cancel', '取消']]);
-    if (v === 'tex') return IC.pickIcon(cur?.startsWith(FILE) ? '' : cur);
+    if (v === 'tex') return IC.pickIcon(cur?.startsWith(FILE) ? '' : cur, {menu: texMenu});
     if (v === 'file') return pickFile();
     return null;
 }
@@ -1582,6 +1591,185 @@ async function updateTextures()
         else status(`圖片清單沒更新：${r.errors.join('；')}`);
     }
     catch (e) {status(`圖片清單沒更新：${e.message}`);}
+}
+
+// ---------- prefab 的圖（textures/prefabs/<id>/ 的單張圖）：選圖器右鍵改名／刪除（docs/prefab.md） ----------
+// prefabs/ 底下直接放的是 Tiled 縮圖 prefab-<id>.png（tiled.js 管），不算；改名＝prefab.json／scenes.json／草稿的引用一起改，
+// 別處有引用就擋；刪除＝搬到 textures/.tbd/（有引用就擋）；檔案動作記在 undo 那一步的 fops
+const PF_TEX = `${TEX}/prefabs/`;
+const IMG_FIELDS = new Set(['icon', 'sprite', 'back', 'img']);
+const pfTexDir = (key) => {
+    const d = IC.IMAGES[key] && !IC.SHEETS[key] && !IC.ATLASES[key] && texDirOf(key);
+    return d?.startsWith(PF_TEX) ? d : null;
+};
+const splitPath = (p) => [p.slice(0, p.lastIndexOf('/')), p.slice(p.lastIndexOf('/') + 1)];
+
+// obj 裡放圖欄位（IMG_FIELDS）的值是 key（key:frame 也算）的位置：['props.0.img', …]
+function imgRefs(obj, key, at = [], out = [])
+{
+    if (!obj || typeof obj !== 'object') return out;
+    for (const [k, v] of Object.entries(obj))
+    {
+        const p = [...at, k];
+        if (typeof v === 'string') {if (!Array.isArray(obj) && IMG_FIELDS.has(k) && v.split(':')[0] === key) out.push(p.join('.'));}
+        else imgRefs(v, key, p, out);
+    }
+    return out;
+}
+
+function swapImg(pf, from, to)
+{
+    for (const p of pf?.parts ?? []) if (p.img === from) p.img = to;
+}
+
+function swapDraft(d, from, to)
+{
+    for (const s of [d, ...d.undo, ...d.redo]) swapImg(s.pf, from, to);
+    const b = JSON.parse(d.base ?? 'null');
+    if (b) {swapImg(b, from, to); d.base = str(b);}
+}
+
+// 引用：auto＝改名會跟著改的（prefab 零件、場景擺設、草稿零件），block＝別處（改名、刪除都擋）
+async function texRefs(key)
+{
+    const auto = [], block = [];
+    const {uses, paths} = await scan(S.root);
+    for (const l of uses.get(key) ?? []) (/^prefab\.json：[^.]+\.parts\.\d+\.img$/.test(l.text) ? auto : block).push(l.text);
+    const rel = `${pfTexDir(key).slice('public/assets/'.length)}/${key}.png`;
+    for (const l of paths.get(rel) ?? []) block.push(l.text);
+    for (const [name, sc] of Object.entries(S.data))
+        for (const p of imgRefs(sc, key)) (/^props\.\d+\.img$/.test(p) ? auto : block).push(`scenes.json：${name} ${p}`);
+    const d = S.draft;
+    if (d)
+    {
+        if ([d, ...d.undo, ...d.redo].some(s => s.pf?.parts?.some(p => p.img === key))) auto.push(`prefab ${d.id} 的草稿（含草稿的 undo 紀錄）`);
+        for (const p of imgRefs(d.ps, key)) block.push(`prefab ${d.id} 草稿的粒子 ${p}`);
+    }
+    return {auto, block};
+}
+
+const refsList = (list) => h('ul', null, list.slice(0, 20).map(t => h('li', null, t)), list.length > 20 && h('li', {class: 'dim'}, `…還有 ${list.length - 20} 處`));
+
+async function checkMove(from, to)
+{
+    const [fd, fn] = splitPath(from), [td, tn] = splitPath(to);
+    const src = await FS.resolveDir(S.root, fd).catch(() => null);
+    if (!src || !await FS.tryFile(src, fn)) throw new Error(`${from} 不見了`);
+    const dst = await FS.resolveDir(S.root, td).catch(() => null);
+    if (dst && await FS.tryFile(dst, tn)) throw new Error(`${to} 已經存在`);
+}
+
+async function moveTex(from, to)
+{
+    await checkMove(from, to);
+    const [fd, fn] = splitPath(from), [td, tn] = splitPath(to);
+    const src = await FS.resolveDir(S.root, fd);
+    await FS.writeFile(await mkdirs(td), tn, await (await src.getFileHandle(fn)).getFile());
+    await src.removeEntry(fn);
+}
+
+function texNameError(name, from)
+{
+    if (!name) return '檔名不能空白';
+    if (/[\\/:*?"<>|\s]/.test(name)) return '檔名不能有空白或 \\ / : * ? " < > |';
+    if (/^prefab-/i.test(name)) return 'prefab- 開頭是 Tiled 縮圖專用的';
+    if (name === from) return '';
+    if (name.toLowerCase() === from.toLowerCase()) return '只差大小寫不支援';
+    const hit = [IC.IMAGES, IC.SHEETS, IC.ATLASES].flatMap(o => Object.keys(o)).find(k => k.toLowerCase() === name.toLowerCase());
+    if (hit) return `textures 已經有 ${hit}（texture key 不能撞名）`;
+    return '';
+}
+
+async function askTexName(from)
+{
+    const inp = h('input', {size: 28, value: from, dataset: {k: 'texName'}}), err = h('div', {style: 'color: #f88; min-height: 1.4em'});
+    const p = ask(`改名 ${from}`, [h('div', {class: 'dim'}, '改 png 檔名＝改 texture key；prefab.json、scenes.json、草稿的引用一起改（可以 undo）'),
+        h('label', null, '檔名 ', inp, '.png'), err], [['ok', '確定'], ['cancel', '取消']]);
+    const ok = $('dlgAsk').querySelector('.buttons button[value=ok]');
+    const check = () => {err.textContent = texNameError(inp.value.trim(), from); ok.disabled = !!err.textContent;};
+    inp.oninput = check;
+    check();
+    inp.select();
+    return await p === 'ok' ? inp.value.trim() : null;
+}
+
+async function blocked(key, list, verb)
+{
+    if (!list.length) return false;
+    await ask(`${key} 不能${verb}`, [h('div', null, '這些地方還在用：'), refsList(list)], [['ok', '知道了']]);
+    return true;
+}
+
+// 回傳 {to}｜null
+async function renameTex(key, to)
+{
+    const dir = pfTexDir(key);
+    if (!dir || !S.root) return null;
+    status(`找 ${key} 的引用…`);
+    const refs = await texRefs(key);
+    status('');
+    if (await blocked(key, refs.block, '改名')) return null;
+    to ??= await askTexName(key);
+    if (to === null || to === key) return null;
+    const err = texNameError(to, key);
+    if (err) return status(err), null;
+    let done = false;
+    await queue(async () => {
+        const hit = await findTexKey(await FS.resolveDir(S.root, TEX), to);
+        if (hit) throw new Error(`textures/${hit}.png 已經有了（texture key 不能撞名）`);
+        const from = `${dir}/${key}.png`, dest = `${dir}/${to}.png`;
+        await moveTex(from, dest);
+        let r;
+        try
+        {
+            r = await ST.edit((scenes, pfs) => {
+                for (const sc of Object.values(scenes)) for (const p of sc.props ?? []) if (p.img === key) p.img = to;
+                for (const pf of Object.values(pfs)) swapImg(pf, key, to);
+            }, PREFAB_FILES);
+        }
+        catch (e) {await moveTex(dest, from); throw e;}
+        S.undo.push({files: r?.files ?? {}, sel: [S.sel, S.sel], pick: [S.pick, S.pick], fops: [{from, to: dest}]});
+        S.redo = [];
+        if (r) gotData(r.data);
+        if (S.draft) swapDraft(S.draft, key, to);
+        await updateTextures();
+        reloadGame();
+        refresh();
+        status(`${key} 改名成 ${to}` + (refs.auto.length ? `（引用 ${refs.auto.length} 處一起改）` : ''));
+        done = true;
+    });
+    return done ? {to} : null;
+}
+
+// 回傳 {gone}｜null
+async function deleteTex(key, sure)
+{
+    const dir = pfTexDir(key);
+    if (!dir || !S.root) return null;
+    status(`找 ${key} 的引用…`);
+    const refs = await texRefs(key);
+    status('');
+    if (await blocked(key, [...refs.auto, ...refs.block], '刪除')) return null;
+    const dest = `${TEX}/.tbd/${dir.slice(TEX.length + 1)}/${key}.png`;
+    if (!sure && await ask(`刪除 ${key}`, `搬到 ${dest.slice('public/assets/'.length)}（可以 undo，圖片分頁也能搬回原位）`, [['ok', '刪除'], ['cancel', '取消']]) !== 'ok') return null;
+    let done = false;
+    await queue(async () => {
+        const from = `${dir}/${key}.png`;
+        await moveTex(from, dest);
+        S.undo.push({files: {}, sel: [S.sel, S.sel], pick: [S.pick, S.pick], fops: [{from, to: dest}]});
+        S.redo = [];
+        await updateTextures();
+        status(`${key} 搬到 .tbd/`);
+        done = true;
+    });
+    return done ? {gone: true} : null;
+}
+
+// 選圖器（場景分頁的「textures 圖…」）右鍵
+function texMenu(key, e)
+{
+    if (!pfTexDir(key)) return null;
+    return new Promise(res => menu(e, [['改名…', async () => res(await renameTex(key))], ['刪除（搬到 .tbd）', async () => res(await deleteTex(key))]], $('dlgIcon')));
 }
 
 // 資料夾樹（懶載入，資料夾後面列 .png）：root＝相對專案的根，cur＝預設選的資料夾，self＝標灰的檔（擺設的原圖）；
@@ -1909,12 +2097,13 @@ async function placeAt(tx, ty)
 }
 
 // ---------- 畫面 ----------
-function menu(e, items)
+// parent：開著的 modal dialog 裡要掛在 dialog 上（body 會被蓋在下面）
+function menu(e, items, parent = document.body)
 {
     e.preventDefault?.();
     document.querySelector('.ctxmenu')?.remove();
-    const m = h('div', {class: 'ctxmenu'}, items.map(([t, fn]) => h('button', {onclick: () => {m.remove(); fn();}}, t)));
-    document.body.append(m);
+    const m = h('div', {class: 'ctxmenu'}, items.map(([t, fn]) => h('button', {type: 'button', onclick: () => {m.remove(); fn();}}, t)));
+    parent.append(m);
     const r = m.getBoundingClientRect();
     m.style.left = `${Math.min(e.clientX, innerWidth - r.width - 4)}px`;
     m.style.top = `${Math.min(e.clientY, innerHeight - r.height - 4)}px`;
@@ -2397,4 +2586,4 @@ refresh();
 // 給無頭測試用
 window.__sc = {S, setProject, addScene, dupScene, renameScene, deleteScene, select, undo, redo, addRole, setRole, setEquip, deleteRole, pickRole, toggleHide, arm, toGame, addProp, setProp, deleteObj, nudge, bakeProp, folderTree, exportProp: (key) => exportProp(propOf(key)), srcSize, addLight, setLight, addEmitter, setEmitter, setField, setPlaying,
                addInst, setInst, newPrefab, deletePrefab, toggleFold, setPf, setPart, addPart, movePart, delPart, delParts, openPart, moveParts, setPartOn, toggleBoxSel, togglePartSel, pselOf, pickPrefab, saveDraft, dropDraft, changePartParticle, forkPartParticle, particleUsers, pDef, composePrefab, renamePrefab, dupPrefab, cutProp, cutPart,
-               flush: () => S.q};
+               renameTex, deleteTex, texMenu, IC, flush: () => S.q};

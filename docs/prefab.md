@@ -103,6 +103,12 @@
 - 鍵盤：有選取的零件時 Del 刪掉所有選取的（`delParts()`，一筆 undo）、方向鍵一起移（`nudgeParts()`，1px、Shift 一格，連按併一步 undo）；沒選零件時作用在實例。Esc 一層一層退：收起展開的零件 → 清掉所有選取（零件＋方塊）→ 取消選取實例（有草稿先問）。
 - 改名：連帶改 template／縮圖／tsj／所有地圖跟 template 的 `prefab`、scenes.json、item.json，一筆 undo。刪除：地圖或道具有用到就擋（列出來）；只有 scenes.json 用到就連實例一起拿掉。
 - `textures/prefabs/` 不再被用到的圖不自動刪，交給圖片分頁的「未使用」。
+- **prefab 的圖改名／刪除**（2026-11-24）：場景分頁的選圖器（「換圖…」／＋png／放擺設 →「textures 圖…」，`IC.pickIcon(cur, {menu: texMenu})`，別的分頁的選圖器沒有）對 `textures/prefabs/<id>/` 的單張圖右鍵「改名…／刪除（搬到 .tbd）」；`prefabs/` 底下直接放的 Tiled 縮圖 `prefab-<id>.png`、其他資料夾沒有選單（`pfTexDir()`）。
+  - 引用（`texRefs()`）：圖片分頁的 `scan.js`（資料 json、地圖／template／tsj、src）＋scenes.json＋草稿。prefab.json 零件的 `img`、scenes.json 擺設的 `img`、草稿（含草稿 undo 快照）的零件＝改名會跟著改；其他地方（item／particle／fx／地圖、scenes.json 其他欄位、草稿的粒子副本）有引用就**擋**、列出來。刪除＝任何引用都擋。
+  - 改名：只改檔名（資料夾不變）＝改 texture key；不能空白／有空白或 `\ / : * ? " < > |`／`prefab-` 開頭／只差大小寫／撞任何 texture key（不分大小寫），不合法標紅、確定反灰。png 先改名，再改 prefab.json＋scenes.json（同一次寫），草稿的 `pf`／`base`／undo 快照裡的舊 key 一起換、草稿留著；更新圖片清單、sandbox 重開。
+  - 刪除：搬到 `textures/.tbd/prefabs/<id>/`（圖片分頁能搬回原位）。
+  - undo：這一步記在全域 undo、多一個 `fops: [{from, to}]`（檔案路徑相對專案）；undo／redo 先確定搬得動（`checkMove()`）、退／進 json、再搬檔（`moveTex()`）。草稿中 Ctrl+Z 只退草稿，所以草稿中做的改名要離開草稿後才退得到。
+  - 測試：`scripts/test/prefab-tex.mjs`。
 
 > 下面「實作順序」第 4 步的編輯模式（`S.edit`／`editView()`／`locked`／拖錨點十字與方塊）2026-11-18 已整個換成上面的右欄編輯＋草稿，留著當紀錄。
 

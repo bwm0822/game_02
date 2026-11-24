@@ -190,7 +190,8 @@ async function sizeText(key)
 // ---------- 選圖器 ----------
 // 分頁是 textures/ 第一層資料夾，裡面像檔案總管：子資料夾點進去、sheet／atlas 點進去選格子
 // 點圖只是選中（填進輸入框），按確定才回傳；取消回傳 null
-export function pickIcon(cur)
+// menu(key, e)：單張圖右鍵（呼叫端自己出選單；場景分頁用來改名／刪除 prefab 的圖），回傳 {to}＝改名、{gone}＝刪了、其他＝沒動
+export function pickIcon(cur, {menu} = {})
 {
     const dlg = document.getElementById('dlgIcon');
     const tabs = dlg.querySelector('.tabs'), body = dlg.querySelector('.body'), txt = dlg.querySelector('input'), info = dlg.querySelector('.info');
@@ -246,11 +247,22 @@ export function pickIcon(cur)
         }
         for (const f of [...n.files].sort((a, b) => a.key.localeCompare(b.key)))
         {
-            if (f.kind === 'image') body.append(cell(iconEl(f.key, 48), f.key, f.key === r.key, (e) => {
-                choose(f.key);
-                for (const c of body.querySelectorAll('.imgCell.sel')) c.classList.remove('sel');
-                e.currentTarget.classList.add('sel');
-            }, f.key));
+            if (f.kind === 'image')
+            {
+                const c = cell(iconEl(f.key, 48), f.key, f.key === r.key, (e) => {
+                    choose(f.key);
+                    for (const c of body.querySelectorAll('.imgCell.sel')) c.classList.remove('sel');
+                    e.currentTarget.classList.add('sel');
+                }, f.key);
+                if (menu) c.oncontextmenu = async (e) => {
+                    e.preventDefault();
+                    const v = await menu(f.key, e);
+                    if (!v?.to && !v?.gone) return;
+                    if (txt.value.trim() === f.key) choose(v.to ?? '');
+                    if (dlg.open) show();
+                };
+                body.append(c);
+            }
             else body.append(cell(fitCanvas((SHEETS[f.key] ?? ATLASES[f.key]).url, 48, f.key), `${f.key} ▦`, f.key === r.key, () => go(path, f.key), f.key));
         }
     };
@@ -285,6 +297,9 @@ export function pickIcon(cur)
     };
 
     const show = () => {
+        // 資料夾的圖刪光了（清單裡就沒有那層）：退到還在的那層
+        while (path.length > 1 && !path.reduce((n, d) => n?.dirs[d], TREE)) path = path.slice(0, -1);
+        if (!TREE.dirs[path[0]]) path = [top[0]];
         tabs.replaceChildren(...top.map(d => {
             const b = document.createElement('button');
             b.type = 'button';
