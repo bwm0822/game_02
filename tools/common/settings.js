@@ -35,6 +35,8 @@ export const DEF = {
         ...OUTFIT,
         ...HEAD,
         weapon: Object.fromEntries(WCLS.map(([k, , o]) => [k, {...WEAPON, ...o}])),
+        // 手持道具（CAT_EQUIP，如火把）：一組，預設拿在後手（畫布座標在 body-man 的 wristB 附近）
+        tool: {...WEAPON, pct: 12, x: 18, y: 16.5, a: 60},
         // 女版：自動面板「套用：女」拆圖時整組用（存檔% 也是）；右鍵「新增女版」只拿 scale/x/y（PNG 跟存檔% 跟男版共用）
         f: structuredClone({...ARMOR, ...OUTFIT, ...HEAD}),
     },

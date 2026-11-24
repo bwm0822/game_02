@@ -19,12 +19,13 @@ import {fillBg, ANCHOR, drawBoxes, drawAnchor} from '../role/preview.js';
 import {DEPTH, BACK_DEPTH, REAR_DEPTH, BACK_NODE, CAT, roleTree, nodeOf, depthOf, ANIM_LIFT} from '../role/schema.js';
 import {treeEls} from '../common/views.js';
 import {EASE, dirTo, animTrack, animEnd, poseAt as trackPose, trackEnd, weaponAnim as animOf} from '../../src/core/pose.js';
-import {equipFor, partFor, sexOk, hiddenParts, PIVOTS, WRISTS, pivotOf, atPivot, fromPivot, rigOf, handOf} from '../../src/core/equip.js';
+import {equipFor, partFor, sexOk, hiddenParts, PIVOTS, WRISTS, pivotOf, atPivot, fromPivot, rigOf, handOf, heldOf, handItems, isHandheld} from '../../src/core/equip.js';
 
 const FILES = ['role.json', 'part.json', 'item.json', 'anim.json'];
 const PARTS = [['body', '身體'], ['shoes', '鞋子'], ['cloth', '衣服'], ['head', '頭'], ['hair', '頭髮'], ['hat', '帽子'], ['handF', '前手'], ['handB', '後手']];
 // 空格剪影同遊戲 setting.js 的 CAT2ICON
-const SLOTS = [['CAT_WEAPON', '武器', 'icons:80'], ['CAT_HELMET', '頭盔', 'icons:113'], ['CAT_CHESTPLATE', '護甲', 'icons:119'], ['CAT_GLOVES', '手套', 'icons:128'], ['CAT_BOOTS', '靴子', 'icons:130']];
+const SLOTS = [['CAT_WEAPON', '武器', 'icons:80'], ['CAT_HELMET', '頭盔', 'icons:113'], ['CAT_CHESTPLATE', '護甲', 'icons:119'], ['CAT_GLOVES', '手套', 'icons:128'], ['CAT_BOOTS', '靴子', 'icons:130'],
+    ['CAT_EQUIP', '道具', 'icons:170']];
 const NUMS = [['scale', '1'], ['x', '0'], ['y', '0'], ['a', '0'], ['ox', '0.5'], ['oy', '1']];
 const {PIVOT_NAMES, PIVOT_COLOR} = HD;
 // 顯示選項（view、錨點、b/g/z、支點）在 showmenu.js 的 show，跟角色／部位分頁共用
@@ -85,13 +86,25 @@ const SEX_NAMES = {m: '限男', f: '限女'};
 const sexKey = () => {const s = role()?.sex; return s && s !== 'm' ? s : null;};
 const equipOf = (id) => equipFor(items()[id]?.equip, role()?.sex, items()[id]?.sex);
 const bodyId = () => role()?.body;
-// 實際的支點＝body 的支點＋武器的手腕位移（equip.wristF／wristB，男女共用）；支點表跟拖 body 十字改的是 bodyPivot
-const heldEquip = () => items()[S.slots.CAT_WEAPON]?.equip;
+// 實際的支點＝body 的支點＋手持道具的手腕位移（武器 equip.wristF／wristB＋道具格它那隻手的，男女共用，同遊戲 heldOf）；支點表跟拖 body 十字改的是 bodyPivot
+const slotItems = () => SLOTS.map(([cat]) => items()[S.slots[cat]]).filter(Boolean);
+const heldEquip = () => heldOf(slotItems(), CAT);
+// 畫得出來的手持道具：道具格跟武器搶同一隻手就不畫（遊戲裡擋著不能一起裝）
+const handDrawn = () => handItems(slotItems(), CAT);
+const toolClash = () => {const t = items()[S.slots.CAT_EQUIP]; return isHandheld(t, CAT) && !handDrawn().includes(t);};
+// 手腕位移欄／拖十字改的是哪一件：選中道具格（而且畫得出來）＝道具，其他＝武器
+const wristId = () => {
+    const t = S.slots.CAT_EQUIP, w = S.slots.CAT_WEAPON;
+    if (S.cur === 'CAT_EQUIP' && t && isObj(items()[t]?.equip) && !toolClash()) return t;
+    return w && isObj(items()[w]?.equip) ? w : null;
+};
+// 道具只能改它那隻手的位移（heldOf 只加那隻手）；武器兩隻手都能改
+const wristKeys = () => {const id = wristId(); return id && items()[id].cat === 'CAT_EQUIP' ? [handOf(items()[id].equip)] : WRISTS;};
 const bodyPivot = (k) => pivotOf(partFor(parts(), role(), 'body'), k);
 const rigNow = () => rigOf(partFor(parts(), role(), 'body'));
 const pivot = (k) => pivotOf(partFor(parts(), role(), 'body'), k, heldEquip());
-// 擺放分頁拖青／橘十字改武器的位移（脖子鎖住）；沒武器時照身體
-const dragWeapon = () => S.dragW && !!heldEquip();
+// 擺放分頁拖青／橘十字改武器（或道具）的位移（脖子鎖住）；沒有時照身體
+const dragWeapon = () => S.dragW && !!wristId();
 const r1 = (v) => Math.round(v * 10) / 10;
 const r4 = (v) => Math.round(v * 1e4) / 1e4;
 
@@ -233,7 +246,7 @@ function select(rid)
 const origEquips = () => (role()?.inv?.equips ?? []).map(e => isObj(e) ? e.id : e)
     .filter(id => isObj(items()[id]?.equip) && SLOTS.some(([c]) => c === items()[id].cat));
 
-// 穿原裝：五格整組換成角色的 inv.equips，原裝沒有的格子清空
+// 穿原裝：六格整組換成角色的 inv.equips，原裝沒有的格子清空
 function wearOrig()
 {
     S.slots = {};
@@ -393,7 +406,7 @@ function drawView()
         h('div', {class: 'slot' + (cat === S.cur ? ' sel' : ''), dataset: {cat}, title: S.slots[cat] ? `${name}：${S.slots[cat]}` : name,
             onclick: () => pickEquip(cat), oncontextmenu: (e) => {e.preventDefault(); S.cur = S.pick = cat; render();}}, slotIcon(cat, 40)),
         S.mode === 'fit' && alphaBar(cat))),
-        h('button', {class: 'orig', disabled: !orig, title: orig ? '五格換成這個角色的 inv.equips' : '這個角色沒有原裝', onclick: wearOrig}, '穿原裝'));
+        h('button', {class: 'orig', disabled: !orig, title: orig ? '六格換成這個角色的 inv.equips' : '這個角色沒有原裝', onclick: wearOrig}, '穿原裝'));
     $('view').replaceChildren(h('div', null,
         h('div', {class: 'tabs'}, tab('fit', '擺放'), tab('anim', '動畫')),
         h('div', {class: 'head'}, IC.iconEl(r.icon, 48), h('span', {class: 'bigid'}, S.rid), h('span', {class: 'dim'}, r.lab ?? '')),
@@ -439,6 +452,7 @@ function fitView(r, slots)
         h('div', {class: 'equipname'}, h('span', {class: 'k'}, name),
             id ? [h('span', {class: 'bigid'}, id), h('span', {class: 'dim'}, it.lab ?? ''),
                 !sexOk(it, r.sex) && h('span', {class: 'warn sexwarn'}, `⚠ ${SEX_NAMES[it.sex] ?? it.sex}`),
+                S.cur === 'CAT_EQUIP' && toolClash() && h('span', {class: 'warn handwarn'}, `⚠ 跟武器 ${S.slots.CAT_WEAPON} 同一隻手，遊戲裡不能一起裝（預覽不畫）`),
                 h('label', {class: 'hidehair'}, h('input', {type: 'checkbox', checked: !!it.equip?.hideHair, dataset: {k: `item.json|${id}|equip.hideHair`},
                     onchange: (e) => commit(() => setAt(S.doc['item.json'].data[id], ['equip', 'hideHair'], e.target.checked || undefined))}), '藏頭髮'),
                 S.cur === 'CAT_GLOVES' && h('label', {class: 'hidehand'}, h('input', {type: 'checkbox', checked: !!it.equip?.hideHand, dataset: {k: `item.json|${id}|equip.hideHand`},
@@ -455,8 +469,8 @@ function pivotTable()
 {
     const pid = bodyId(), p = parts()[pid];
     if (!p) return null;
-    const wid = heldEquip() && S.slots.CAT_WEAPON;
-    const wcells = (k) => !wid ? null : WRISTS.includes(k)
+    const wid = wristId(), wn = wid && items()[wid].cat === 'CAT_EQUIP' ? '道具' : '武器';
+    const wcells = (k) => !wid ? null : wristKeys().includes(k)
         ? ['x', 'y', 'a'].map(c => h('td', {class: 'wrist'}, numInput('item.json', wid, ['equip', k, c], '0')))
         : ['x', 'y', 'a'].map(() => h('td'));
     const row = (k) => {
@@ -474,12 +488,12 @@ function pivotTable()
             wcells(k));
     };
     const dragTab = (w, text) => h('button', {class: 'tab' + (!!S.dragW === w ? ' sel' : ''), dataset: {drag: w ? 'weapon' : 'body'},
-        disabled: w && !heldEquip(), title: w && !heldEquip() ? '武器格沒有東西' : '', onclick: () => {S.dragW = w; render();}}, text);
+        disabled: w && !wid, title: w && !wid ? '武器格沒有東西（選道具格＝改道具的）' : '', onclick: () => {S.dragW = w; render();}}, text);
     return [
         h('div', {class: 'title'}, `支點（body ${pid}，男女共用；畫布上拖十字也可以；a＝靜止角度；掛在上面的部位、裝備數字相對支點，會跟著一起移動、轉）`
-            + (wid ? `；武器欄＝${wid} 的手腕位移 equip.wristF／wristB，疊在 body 支點上、男女共用` : '')),
-        h('div', {class: 'dragmode'}, h('span', {class: 'dim'}, '拖十字改：'), dragTab(false, '身體'), dragTab(true, '武器')),
-        h('table', {class: 'fit pivots'}, h('tr', null, ['支點', '', 'x', 'y', 'a', ...(wid ? ['武器 x', '武器 y', '武器 a'] : [])].map(t => h('th', null, t))), PIVOTS.map(row)),
+            + (wid ? `；${wn}欄＝${wid} 的手腕位移 equip.${wristKeys().join('／')}，疊在 body 支點上、男女共用（選道具格改道具的、其他格改武器的）` : '')),
+        h('div', {class: 'dragmode'}, h('span', {class: 'dim'}, '拖十字改：'), dragTab(false, '身體'), dragTab(true, wid ? wn : '武器')),
+        h('table', {class: 'fit pivots'}, h('tr', null, ['支點', '', 'x', 'y', 'a', ...(wid ? [`${wn} x`, `${wn} y`, `${wn} a`] : [])].map(t => h('th', null, t))), PIVOTS.map(row)),
     ];
 }
 
@@ -717,7 +731,8 @@ function partsOf(r, lift = false)
     };
     const hide = hiddenNow();
     for (const [k] of PARTS) if (!hide.has(k)) add(partFor(parts(), r, k), k);
-    for (const [cat] of SLOTS) add(equipOf(S.slots[cat]), cat, cat);
+    const drawn = handDrawn();
+    for (const [cat] of SLOTS) if (!isHandheld(items()[S.slots[cat]], CAT) || drawn.includes(items()[S.slots[cat]])) add(equipOf(S.slots[cat]), cat, cat);
     const dd = lift ? ANIM_LIFT[hand()] ?? 0 : 0;
     if (dd) for (const o of out) if (o.node === hand()) o.d += dd;
     return out.sort((a, b) => a.d - b.d);
@@ -888,7 +903,7 @@ function onDown(e)
 
 // 擺放分頁拖 body 的支點十字：寫基準（不分男女）；切到武器時拖的是武器 equip 的手腕位移（男女共用，脖子不能拖）
 // 拖十字＝移位置、拖白點＝轉角度 a（Shift 吸 15°）
-const dragKeys = () => dragWeapon() ? WRISTS : PIVOTS;
+const dragKeys = () => dragWeapon() ? wristKeys() : PIVOTS;
 function pivotHit(l)
 {
     const near = (p, r) => Math.hypot(l.x - p.x, l.y - p.y) <= r / geo.K;
@@ -929,7 +944,7 @@ function onLeave(e)
 function onDownFit(e)
 {
     const w = dragWeapon(), l = toLocal(e), hit = pivotHit(l);
-    const p = w ? items()[S.slots.CAT_WEAPON] : parts()[bodyId()];
+    const p = w ? items()[wristId()] : parts()[bodyId()];
     if (!hit || !p) return;
     if (e.isTrusted) e.currentTarget.setPointerCapture(e.pointerId);
     const {k, kind} = hit, c = geo.pts[k];

@@ -592,6 +592,7 @@ export const PART_DEPTH = Object.freeze({
     [GM.CAT.GLOVES] : 5,
     [GM.CAT.BOOTS] : 0.5,
     [GM.CAT.WEAPON] :4,
+    [GM.CAT.EQUIP] :4,
 });
 
 // role.json 的部位欄位 → GM.PART
@@ -627,8 +628,8 @@ export const PART_NODE = Object.freeze({
 // back 後片預設跟本體同節點、depth 用 PART_DEPTH[BACK]（手、手套的後片在武器後面，前片在武器前面）；頭髮後片進 neckB
 export const BACK_NODE = Object.freeze({[GM.PART.HAIR] : 'neckB'});
 
-// 部位／裝備掛的節點：武器照 equip.hand(後手＝wristB)，其他照 PART_NODE
-export const nodeFor = (type, equip)=>type===GM.CAT.WEAPON ? handOf(equip) : PART_NODE[type];
+// 部位／裝備掛的節點：手持道具(武器、CAT_EQUIP 如火把)照 equip.hand(後手＝wristB)，其他照 PART_NODE
+export const nodeFor = (type, equip)=>type===GM.CAT.WEAPON || type===GM.CAT.EQUIP ? handOf(equip) : PART_NODE[type];
 
 // 靜態合成(角色面板、ghost)不建節點、攤成一層時的 depth：節點整組的 depth＋節點裡的 depth/100
 const _flat = (node, d)=>node ? NODE_DEPTH[node] + d/100 : d;

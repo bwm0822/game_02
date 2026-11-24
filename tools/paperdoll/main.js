@@ -562,6 +562,7 @@ const AUTO_PARTS = [
     {key: 'armor', kind: 'armor', name: '護甲', quad: '左下', qx: 0, qy: 1},
     {key: 'boots', kind: 'armor', name: '靴子', quad: '右下', qx: 1, qy: 1},
     {key: 'weapon', kind: 'weapon', name: '武器'},
+    {key: 'tool', kind: 'tool', name: '道具'},
     {key: 'head', kind: 'head', name: '頭', side: 0},
     {key: 'hair', kind: 'head', name: '頭髮', side: 1},
     {key: 'hat', kind: 'outfit', name: '帽子', quad: '右上', qx: 1, qy: 0, opt: true, split: true},
@@ -570,9 +571,12 @@ const AUTO_PARTS = [
     {key: 'handF', kind: 'glove', name: '前手', quad: '右欄下', glove: 'F', opt: true},
     {key: 'handB', kind: 'glove', name: '後手', quad: '右欄上', glove: 'B', opt: true},
 ];
-const AUTO_KINDS = ['armor', 'armorh', 'weapon', 'head', 'outfit'];
+const AUTO_KINDS = ['armor', 'armorh', 'weapon', 'tool', 'head', 'outfit'];
+// 手持道具（tool，CAT_EQUIP 如火把）拆法、欄位同武器（單一零件、alpha 不去綠），差在：數字只有一組（S.auto.tool）、拿哪隻手（S.auto.hand／零件 auto.hand：'F'／'B'，
+// 存 item 寫 equip.hand、換算用那隻手腕）、PNG 存 textures/items/、存讀 item 只列 CAT_EQUIP
+const isWpn = (kind) => kind === 'weapon' || kind === 'tool';
 // pct＝存檔%（原圖縮成幾 % 烤成 PNG），scale＝遊戲的 equip.scale／role 的 head.scale…；畫面大小＝原圖 × pct% × scale，兩個不互相換算
-const AUTO_F = {armor: ['pct', 'scale', 'x', 'y'], weapon: ['pct', 'scale', 'x', 'y', 'a', 'ox', 'oy'], head: ['pct', 'scale', 'x', 'y'], outfit: ['pct', 'scale', 'x', 'y'], glove: ['pct', 'scale', 'x', 'y']};
+const AUTO_F = {armor: ['pct', 'scale', 'x', 'y'], weapon: ['pct', 'scale', 'x', 'y', 'a', 'ox', 'oy'], tool: ['pct', 'scale', 'x', 'y', 'a', 'ox', 'oy'], head: ['pct', 'scale', 'x', 'y'], outfit: ['pct', 'scale', 'x', 'y'], glove: ['pct', 'scale', 'x', 'y']};
 // 分男女兩組的種類；服飾零件自動標 pool（key 就是 pool 的 kind）
 const AUTO_SEXED = ['armor', 'armorh', 'outfit'];
 // 有女版全域預設（S.auto.f）的種類：面板「套用：女」整組用它拆（零件記 auto.sex = 'f'）
@@ -582,7 +586,7 @@ const AUTO_FF = ['scale', 'x', 'y'];
 // 數字的內建值在 tools/common/settings.js（ST.DEF.auto），目前的數字存在 tools/settings.json；localStorage 只記 AUTO_UI 這些介面狀態
 const AUTO_DEF = ST.DEF.auto;
 const AUTO_KEY = 'paperdoll.auto';
-const AUTO_UI = ['cls', 'split', 'splitG', 'spm', 'kind', 'headLink', 'headSmall'];
+const AUTO_UI = ['cls', 'hand', 'split', 'splitG', 'spm', 'kind', 'headLink', 'headSmall'];
 const AUTO_NUM = [...AUTO_PARTS.filter(P => P.kind !== 'weapon').map(P => P.key), 'weapon', 'f'];
 // 武器數字照分類各存一組（S.auto.weapon[cls]），cls 是目前的分類；分類從名字第一個 -／_ 前面猜，猜不到歸 default
 // 舊格式 weapon 直接放數字：複製到每個分類
@@ -595,7 +599,7 @@ const AUTO_SPLIT = {true: 'split', false: 'none'};
 // spm：上次在自動面板選的切法，頭盔／帽子（split）跟手套（splitG）各一組，每組前後片（split）、挖除（cut）各一個；沒記過＝spPreset 的預設
 const SPM_DEF = {split: 'trace', cut: 'wand'}, SPM_OK = ['trace', 'wand', 'hand'];
 const spmFrom = (o) => Object.fromEntries(Object.entries(SPM_DEF).map(([k, d]) => [k, SPM_OK.includes(o?.[k]) ? o[k] : d]));
-const autoFrom = (v) => ({...Object.fromEntries(AUTO_PARTS.map(P => [P.key, {...AUTO_DEF[P.key], ...v?.[P.key]}])), weapon: wclsFrom(v?.weapon), cls: wclsOk(v?.cls),
+const autoFrom = (v) => ({...Object.fromEntries(AUTO_PARTS.map(P => [P.key, {...AUTO_DEF[P.key], ...v?.[P.key]}])), weapon: wclsFrom(v?.weapon), cls: wclsOk(v?.cls), hand: v?.hand === 'F' ? 'F' : 'B',
                           split: AUTO_SPLIT[v?.split] ?? v?.split ?? 'split', splitG: v?.splitG ?? 'split', kind: AUTO_KINDS.includes(v?.kind) ? v.kind : 'armor',
                           spm: {split: spmFrom(v?.spm?.split), splitG: spmFrom(v?.spm?.splitG)},
                           headLink: v?.headLink ?? true, headSmall: v?.headSmall ?? true,
@@ -655,6 +659,7 @@ function autoSet(v)
     document.querySelector(`[name=auHow][value=${S.auto.split}]`).checked = true;
     document.querySelector(`[name=auHowG][value=${S.auto.splitG}]`).checked = true;
     document.querySelector(`[name=auKind][value=${S.auto.kind}]`).checked = true;
+    document.querySelector(`[name=auHand][value=${S.auto.hand}]`).checked = true;
 }
 
 // 拆出的零件記 auto = {key, gid}、原圖記 autoSrc = gid；裁切、縮小分兩步，存檔% 記在縮小的 xform 上（pct），
@@ -667,7 +672,7 @@ function autoBase(C)
     let i = C.ops.length - 1;
     while (C.ops[i]?.type === 'paint') i--;
     const s = C.ops[i], c = C.ops[i - 1], k = C.ops[i - 2]?.type === 'blobs' ? 3 : 2;
-    const g = C.ops[i - k]?.type === (C.auto?.key === 'weapon' ? 'alpha' : 'removeGreen');
+    const g = C.ops[i - k]?.type === (isWpn(C.auto?.key) ? 'alpha' : 'removeGreen');
     return s?.type === 'xform' && s.pct && c?.type === 'xform' && !c.pct && g ? i : -1;
 }
 
@@ -699,7 +704,7 @@ const autoLayers = (parts) => parts.flatMap(p => linked(p.C));
 const autoSnap = (parts) => ({group: [hist.snapList(S), ...autoLayers(parts).map(L => hist.snap(L, true))]});
 const AUTO_STEPS = 50;
 const autoRow = ({P, C}) => ({pct: C.ops[autoBase(C)].pct, scale: round(C.scale, 10000), x: round(C.x), y: round(C.y),
-                              ...(P.kind === 'weapon' && {a: round(C.a, 10), ox: C.ox, oy: C.oy})});
+                              ...(isWpn(P.kind) && {a: round(C.a, 10), ox: C.ox, oy: C.oy})});
 const autoSame = (P, a, b) => AUTO_F[P.kind].every(f => a[f] === b[f]);
 
 function autoScale(T, part, pct)
@@ -720,7 +725,7 @@ function autoShift(C, x, y)
 
 function autoPlace({P, C}, {scale, x, y, a, ox, oy})
 {
-    if (P.kind === 'weapon') Object.assign(C, {a, ox, oy});
+    if (isWpn(P.kind)) Object.assign(C, {a, ox, oy});
     for (const L of linked(C)) L.scale = scale;
     autoShift(C, x, y);
 }
@@ -728,7 +733,7 @@ function autoPlace({P, C}, {scale, x, y, a, ox, oy})
 // 模式內的步驟：每個動作（改一個數字、拖一次、按一下方向鍵、改一下頭盔切線）記零件（含前後片、圖層清單）改之前的樣子和切線；
 // 離開時還有步驟才記一筆全域 undo
 const autoState = (m) => ({group: m.parts ? [hist.snapList(S), ...autoLayers(m.parts).map(L => hist.snap(L, true))] : [],
-                           sps: m.sps && Object.fromEntries(Object.entries(m.sps).map(([k, sp]) => [k, splitState(sp)])), cls: S.auto.cls, link: S.auto.headLink,
+                           sps: m.sps && Object.fromEntries(Object.entries(m.sps).map(([k, sp]) => [k, splitState(sp)])), cls: S.auto.cls, hand: S.auto.hand, link: S.auto.headLink,
                            sex: S.doll.sex});
 
 function autoStep(m, s = autoState(m))
@@ -765,7 +770,8 @@ function autoUndo(m, from, to)
     }
     if (!m.parts) return true;
     for (const p of m.parts) if (p.P.kind === 'weapon') p.C.auto = {...p.C.auto, cls: s.cls};
-    autoSet(m.parts.reduce((a, p) => autoWith(a, p.P, autoRow(p), p.C), {...S.auto, cls: s.cls, headLink: s.link}));
+    for (const p of m.parts) if (p.P.kind === 'tool') p.C.auto = {...p.C.auto, hand: s.hand};
+    autoSet(m.parts.reduce((a, p) => autoWith(a, p.P, autoRow(p), p.C), {...S.auto, cls: s.cls, hand: s.hand, headLink: s.link}));
     return true;
 }
 
@@ -831,7 +837,7 @@ function autoPlan(L, kind)
         return {P, box: {sx: x0, sy: y0, sw: Math.max(...mine.map(b => b.x1)) + 1 - x0, sh: Math.max(...mine.map(b => b.y1)) + 1 - y0},
                 keep: {type: 'blobs', t: trimT(), pts: mine.map(b => [b.sx, b.sy]), ...(erode ? {erode} : {})}};
     };
-    if (kind === 'weapon')
+    if (isWpn(kind))
     {
         const blobs = split(0);
         return {T, plan: blobs.length ? [part(autoParts(kind)[0], blobs, 0)] : [], skipped: []};
@@ -945,7 +951,7 @@ function autoPose(m, part, v, step = true)
     return true;
 }
 
-const autoWeapon = (m) => m.type === 'auto' && m.parts?.find(p => p.P.kind === 'weapon') || null;
+const autoWeapon = (m) => m.type === 'auto' && m.parts?.find(p => isWpn(p.P.kind)) || null;
 const autoSave = (part) => {
     autoSet(autoWith(S.auto, part.P, autoRow(part), part.C));
     const H = hairOf(part.C);
@@ -996,6 +1002,7 @@ function autoOpen(g)
         return {P: AUTO_PARTS.find(P => P.key === C.auto.key), C, box: {sx, sy, sw, sh}, keep: autoKeep(C)};
     });
     if (kind === 'weapon') autoSet({...S.auto, cls: wclsOk(C0.auto.cls ?? wclsOf(C0.name))});
+    if (kind === 'tool') autoSet({...S.auto, hand: C0.auto.hand === 'F' ? 'F' : 'B'});
     return {type: 'auto', kind, layer: null, gid: g.gid, src: g.src, T, parts, sp: null, snap: autoSnap(parts), hist: [], fut: [], use: autoUse(C0)};
 }
 
@@ -1004,7 +1011,7 @@ function autoOpen(g)
 function autoSplit(m)
 {
     const L = m.layer, {T, plan, skipped} = m;
-    if (!plan.length) return status(`${m.kind === 'weapon' ? '清除透明' : '去綠'}之後找不到零件`);
+    if (!plan.length) return status(`${isWpn(m.kind) ? '清除透明' : '去綠'}之後找不到零件`);
     const open = Object.entries(m.sps ?? {}).find(([, sp]) => sp.method === 'hand' && !sp.poly?.closed);
     if (open)
     {
@@ -1015,9 +1022,9 @@ function autoSplit(m)
     const undo = {group: [hist.snapList(S), hist.snap(L, true)]};
     const gid = L.autoSrc ?? autoGid();
     const parts = plan.map(({P, box, keep}) => {
-        const C = cloneAbove(L, P.glove ? gloveName(`${L.name}-gloves`, P.glove) : P.kind === 'weapon' ? L.name : AUTO_POOL.includes(P.kind) ? `${P.key}-${L.name}` : `${L.name}-${P.key}`);
+        const C = cloneAbove(L, P.glove ? gloveName(`${L.name}-gloves`, P.glove) : isWpn(P.kind) ? L.name : AUTO_POOL.includes(P.kind) ? `${P.key}-${L.name}` : `${L.name}-${P.key}`);
         if (P.glove) for (const M of S.layers) if (M.glove === P.glove) delete M.glove;
-        Object.assign(C, {a: 0, ox: 0.5, oy: 1, visible: true, opacity: 1, auto: {key: P.key, gid, ...(P.kind === 'weapon' && {cls: S.auto.cls}), ...(AUTO_FEM.includes(P.kind) && m.use === 'f' && {sex: 'f'})},
+        Object.assign(C, {a: 0, ox: 0.5, oy: 1, visible: true, opacity: 1, auto: {key: P.key, gid, ...(P.kind === 'weapon' && {cls: S.auto.cls}), ...(P.kind === 'tool' && {hand: S.auto.hand}), ...(AUTO_FEM.includes(P.kind) && m.use === 'f' && {sex: 'f'})},
                           ...(AUTO_POOL.includes(P.kind) && {pool: P.key}),
                           // 手的靜止角度在各自的手腕，圖層照它轉，存到 item 才是 a=0
                           ...(P.glove && {glove: P.glove, oy: 0.5, a: dollBody(dollParts, 'm')?.[gloveWrist(P.glove)]?.a ?? 0})});
@@ -3306,9 +3313,12 @@ function refreshAuto(m)
     $('au-small').disabled = !!m.parts;
     $('auUseL').hidden = !AUTO_FEM.includes(m.kind);
     document.querySelectorAll('[name=auUse]').forEach(r => {r.disabled = !!m.parts; r.checked = r.value === (m.use ?? 'm');});
-    for (const [k, ids] of [['armor', ['auHintArmor']], ['armorh', ['auHintArmorH']], ['weapon', ['auWeapon', 'auHintWeapon', 'auClsL']],
+    for (const [k, ids] of [['armor', ['auHintArmor']], ['armorh', ['auHintArmorH']], ['weapon', ['auHintWeapon', 'auClsL']], ['tool', ['auHintTool', 'auHandL']],
                             ['head', ['auHead', 'auSmallL', 'auHintHead']], ['outfit', ['auHintOutfit']]])
         for (const id of ids) $(id).hidden = m.kind !== k;
+    $('auWeapon').hidden = !isWpn(m.kind);
+    for (const e of $('auWeapon').querySelectorAll('[data-kind]')) e.hidden = e.dataset.kind !== m.kind;
+    document.querySelectorAll('[name=auHand]').forEach(r => {r.checked = r.value === S.auto.hand;});
     $('auTable').hidden = $('auSplit').hidden = !AUTO_SEXED.includes(m.kind);
     $('auSpName').textContent = autoParts(m.kind).find(P => P.split)?.name ?? '';
     for (const e of $('auTable').querySelectorAll('[data-kind]')) e.hidden = !autoParts(m.kind).some(P => P.kind === e.dataset.kind);
@@ -4422,8 +4432,10 @@ function setSplit(it, name, g, icon)
 // 沒有 a 欄位的（equip.f 只有 scale/x/y）只轉位置、不寫 a；a 是 0 就刪；node null＝身體自己（它的 x/y/a 就是 rig，不換）
 const PIVOT_BODY = {m: 'body-man', f: 'body-woman'};
 const ITEM_NODE = {CAT_HELMET: 'neck', CAT_WEAPON: 'wristF', CAT_GLOVES: 'wristF'};
-// 武器掛哪隻手照 item.json 的 equip.hand（弓＝後手 wristB），新道具沒有＝前手
-const itemNode = (cat, equip) => (cat === 'CAT_WEAPON' ? handOf(equip) : ITEM_NODE[cat]);
+// 手持道具（武器、CAT_EQUIP）掛哪隻手照 item.json 的 equip.hand（弓＝後手 wristB），新道具沒有＝前手
+const itemNode = (cat, equip) => (cat === 'CAT_WEAPON' || cat === 'CAT_EQUIP' ? handOf(equip) : ITEM_NODE[cat]);
+// 自動拆的道具零件拿哪隻手（面板「拿在」），寫成 equip.hand 的樣子
+const toolHand = (C) => (C.auto?.hand === 'F' ? {} : {hand: 'B'});
 const PART_NODE = {body: null, head: 'neck', hair: 'neck', hat: 'neck', handF: 'wristF', handB: 'wristB'};
 function pivotShift(o, parts, node, sex, sign = 1, withA = true)
 {
@@ -4482,12 +4494,12 @@ async function saveLayer()
 // ---------- 自動零件存到 item.json ----------
 // 每個零件一列：選同 cat 的 item 或新增，可改 png 檔名、各自勾要不要更新圖（PNG＋sprite）／更新設定（scale/x/y/a/ox/oy＋drop.scale）
 
-const ITEM_CAT = {helmet: 'CAT_HELMET', armor: 'CAT_CHESTPLATE', boots: 'CAT_BOOTS', weapon: 'CAT_WEAPON', gloves: 'CAT_GLOVES'};
+const ITEM_CAT = {helmet: 'CAT_HELMET', armor: 'CAT_CHESTPLATE', boots: 'CAT_BOOTS', weapon: 'CAT_WEAPON', tool: 'CAT_EQUIP', gloves: 'CAT_GLOVES'};
 // 護具＋手的手套在存讀 item 是一列（前後手同一件 item）；r.F／r.B 是前手／後手零件
 const GLOVE_P = {key: 'gloves', kind: 'glove', name: '手套'};
-const itemDir = (P) => P.kind === 'weapon' ? 'weapons' : 'equips';
-// 武器的 icon 是另外產的斜擺圖 <名>-icon（ICON_AUTO），護具的 icon 就是完整的原圖
-const iconKey = (r) => r.P.kind === 'weapon' ? `${r.name}-icon` : r.name;
+const itemDir = (P) => P.kind === 'weapon' ? 'weapons' : P.kind === 'tool' ? 'items' : 'equips';
+// 武器／道具的 icon 是另外產的斜擺圖 <名>-icon（ICON_AUTO），護具的 icon 就是完整的原圖
+const iconKey = (r) => isWpn(r.P.kind) ? `${r.name}-icon` : r.name;
 const TEX_SKIP = ['.tbd', 'minimap'];
 
 // texture key → 所在資料夾（相對 textures/）；不讀 textures.json，因為新圖可能還沒更新清單
@@ -4573,9 +4585,9 @@ function insertAfter(obj, after, id, val)
     return out;
 }
 
-// 武器多認 id＝圖層名（新武器還沒有 equip）
+// 武器／道具多認 id＝圖層名（新武器還沒有 equip）
 const itemMatch = (items, P, name) => Object.keys(items).find(id => items[id].cat === ITEM_CAT[P.key] && splitBase(items[id].equip?.sprite) === name)
-    ?? (P.kind === 'weapon' && items[name]?.cat === ITEM_CAT[P.key] ? name : null);
+    ?? (isWpn(P.kind) && items[name]?.cat === ITEM_CAT[P.key] ? name : null);
 
 // 存讀 item 的列：護具＋手的前後手併成一列 GLOVE_P（part＝前手，沒有前手才放後手）
 function itemParts(m)
@@ -4601,7 +4613,7 @@ function itemDialog(m, items, keys)
     const rows = itemParts(m).map(({P, part, F, B}) => {
         const name = part?.C.name ?? '', glove = P === GLOVE_P;
         return {P, part, ...(glove && {F, B}), on: !!part, id: glove ? gloveMatch(items, F) : itemMatch(items, P, name), name, png: true, place: true, icon: true,
-                newId: P.kind === 'weapon' ? '' : `${P.key}-${src}`, lab: ''};
+                newId: isWpn(P.kind) ? '' : `${P.key}-${src}`, lab: ''};
     });
     const reset = (r) => {
         r.name = (r.id && splitBase(items[r.id].equip?.sprite)) || r.part.C.name;
@@ -4729,7 +4741,13 @@ async function loadItems()
         const flat = (e, sex) => pivotShift({...e}, pjson, node, sex, -1);
         const pick = (e) => ({scale: e.scale ?? cur.scale, x: e.x ?? 0, y: e.y ?? 0});
         hit.push(`${part.C.name} ← ${id}`);
-        if (part.P.kind === 'weapon')
+        if (part.P.kind === 'tool' && (e0.hand === 'B' ? 'B' : 'F') !== (part.C.auto.hand === 'F' ? 'F' : 'B'))
+        {
+            autoStep(m);
+            part.C.auto = {...part.C.auto, hand: e0.hand === 'B' ? 'B' : 'F'};
+            autoSet({...S.auto, hand: part.C.auto.hand});
+        }
+        if (isWpn(part.P.kind))
         {
             const e = flat(e0, S.doll.sex);
             rows.push([part, {...cur, ...pick(e), a: e.a ?? 0, ox: e.ox ?? 0.5, oy: e.oy ?? 1}, e0.sprite]);
@@ -4849,7 +4867,7 @@ function autoApplyAll(m, rows)
 }
 
 // 存讀模式的 item 作用在選取圖層所屬的那組自動零件（選原圖、零件、前後片都算），要是 kinds 裡的種類
-const ITEM_KINDS = ['armor', 'armorh', 'weapon'];
+const ITEM_KINDS = ['armor', 'armorh', 'weapon', 'tool'];
 
 function slGroup(kinds)
 {
@@ -4928,9 +4946,11 @@ async function commitItems(rows, bake, all = false)
     for (const r of act)
     {
         const {C} = r.part, g = splitNew(C), ik = iconKey(r);
-        const node = itemNode(ITEM_CAT[r.P.key], r.id && items[r.id]?.equip), sex = rowSex(r);
+        const tool = r.P.kind === 'tool' && toolHand(C);
+        const node = itemNode(ITEM_CAT[r.P.key], tool || r.id && items[r.id]?.equip), sex = rowSex(r);
         const place = (e) => {
             writeEquip(e, C);
+            if (tool) {delete e.hand; Object.assign(e, tool);}
             if (r.only === 'f' && AUTO_SEXED.includes(r.P.kind)) Object.assign(e, femaleOf(r.P, C));
             pivotShift(e, pjson, node, sex);
         };
@@ -5991,7 +6011,7 @@ $('auTable').append(...dimSpans(['', '象限', '存檔%', 'scale', 'x', 'y']));
 $('auWeapon').append(...dimSpans(['', '存檔%', 'scale', 'x', 'y', 'a', 'ox', 'oy']));
 $('auHead').append(...dimSpans(['', '存檔%', 'scale', '', 'x', 'y']));
 // 護具跟服飾共用一張表，refreshAuto() 照 data-kind 藏另一種的列
-const AUTO_BOX = {armor: 'auTable', weapon: 'auWeapon', head: 'auHead', outfit: 'auTable', glove: 'auTable'};
+const AUTO_BOX = {armor: 'auTable', weapon: 'auWeapon', tool: 'auWeapon', head: 'auHead', outfit: 'auTable', glove: 'auTable'};
 const AUTO_POS = ['pct', 'scale'];
 const linkBox = Object.assign(el('label'), {title: '跟頭連動（單向）：頭移動、縮放時頭髮跟著（存檔%／scale 乘一樣的倍率、位置跟著走）；頭髮自己照樣能調'});
 linkBox.append(Object.assign(el('input'), {type: 'checkbox', id: 'au-link'}), '🔗');
@@ -6044,7 +6064,7 @@ ST.onChange(() => {
 });
 // 換分類：拆過就把那組數字套到武器上（記一步），沒拆只換顯示的數字
 $('auCls').onchange = () => {
-    const m = S.mode, part = autoWeapon(m), cls = $('auCls').value;
+    const m = S.mode, part = autoWeapon(m)?.P.kind === 'weapon' ? autoWeapon(m) : null, cls = $('auCls').value;
     if (part) autoStep(m);
     autoSet({...S.auto, cls});
     if (part)
@@ -6069,6 +6089,14 @@ $('auReset').onclick = () => {
     autoSpSync(m);
     refreshAll();
 };
+// 道具拿哪隻手：拆過就改零件的 auto.hand（記一步），只影響存讀 item 的換算跟 equip.hand，圖層不動
+document.querySelectorAll('[name=auHand]').forEach(r => {r.onchange = () => {
+    const m = S.mode, part = autoWeapon(m)?.P.kind === 'tool' ? autoWeapon(m) : null;
+    if (part) autoStep(m);
+    autoSet({...S.auto, hand: r.value});
+    if (part) part.C.auto = {...part.C.auto, hand: r.value};
+    refreshAll();
+};});
 // 還沒拆才能切：照新的種類重算零件範圍
 document.querySelectorAll('[name=auKind]').forEach(r => {r.onchange = () => {
     autoSet({...S.auto, kind: r.value});

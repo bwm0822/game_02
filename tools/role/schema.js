@@ -121,14 +121,15 @@ export const REAR_DEPTH = {sprite: -0.95, back: -0.985};
 // 掛在支點節點的部位（跟 setting.js 的 PART_NODE／BACK_NODE 一樣），試穿播動畫時 wristF 上的一起動
 export const NODE = {head: 'neck', hair: 'neck', hat: 'neck', CAT_HELMET: 'neck', handF: 'wristF', CAT_WEAPON: 'wristF', CAT_GLOVES: 'wristF', handB: 'wristB'};
 export const BACK_NODE = {hair: 'neckB'};
-// 武器掛哪隻手照 equip.hand（後手＝wristB，畫在身體後面、後手蓋住握把），同 setting.js 的 nodeFor()
+// 手持道具（武器、CAT_EQUIP 如火把）掛哪隻手照 equip.hand（後手＝wristB，畫在身體後面、後手蓋住握把），同 setting.js 的 nodeFor()
 const WEAPON_DEPTH = {wristF: 4.04, wristB: -0.96};
 // 武器動畫在動這個節點時整組加的 depth（setting.js 的 NODE_DEPTH_ANIM：wristB -1 → 3，舉到頭、身體前面、前手後面）
 export const ANIM_LIFT = {wristB: 4};
-export const nodeOf =(k, equip) => (k === 'CAT_WEAPON' ? handOf(equip) : NODE[k]);
-export const depthOf = (k, equip) => (k === 'CAT_WEAPON' ? WEAPON_DEPTH[handOf(equip)] : DEPTH[k]);
-// equip.js 的 hiddenParts 用：item.json 的 cat 是字串
-export const CAT = {HELMET: 'CAT_HELMET', CHESTPLATE: 'CAT_CHESTPLATE', BOOTS: 'CAT_BOOTS', GLOVES: 'CAT_GLOVES', WEAPON: 'CAT_WEAPON'};
+export const HANDHELD = ['CAT_WEAPON', 'CAT_EQUIP'];
+export const nodeOf =(k, equip) => (HANDHELD.includes(k) ? handOf(equip) : NODE[k]);
+export const depthOf = (k, equip) => (HANDHELD.includes(k) ? WEAPON_DEPTH[handOf(equip)] : DEPTH[k]);
+// equip.js 的 hiddenParts／heldOf／handItems 用：item.json 的 cat 是字串
+export const CAT = {HELMET: 'CAT_HELMET', CHESTPLATE: 'CAT_CHESTPLATE', BOOTS: 'CAT_BOOTS', GLOVES: 'CAT_GLOVES', WEAPON: 'CAT_WEAPON', EQUIP: 'CAT_EQUIP'};
 
 // ---------- 總覽表 ----------
 // kind: null＝全部；欄位可以是 attrs.atk 這種路徑；# 開頭是唯讀摘要

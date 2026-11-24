@@ -856,6 +856,10 @@
     "lab": "{#who} 水壺已滿",
     "grp": "msg"
   },
+  "_hand_busy": {
+    "lab": "那隻手已經拿著 {#item}",
+    "grp": "msg"
+  },
   "_learn_confirm": {
     "lab": "學習此技能?",
     "grp": "msg"

@@ -1156,7 +1156,7 @@ run('paperdoll', async t => {
         return out;
     });
     t.eq('自動：數字只存跟內建不一樣的進 tools/settings.json、localStorage 只剩介面狀態', JSON.stringify(au.stored),
-         JSON.stringify([{pct: 50, x: -2, y: 2}, 'cls,headLink,headSmall,kind,split,splitG,spm']));
+         JSON.stringify([{pct: 50, x: -2, y: 2}, 'cls,hand,headLink,headSmall,kind,split,splitG,spm']));
     t.eq('自動：進模式什麼都不動、確定可以按', JSON.stringify(au.enter), JSON.stringify(['auto', true, true, false]));
     t.eq('自動：還沒拆時取消＝離開', JSON.stringify(au.revokeEarly), JSON.stringify(['move', true]));
     t.eq('自動：確定才拆、留在模式、確定反灰、記一筆 undo、空的零件那行反灰', JSON.stringify(au.split), JSON.stringify([true, true, 1, true]));
@@ -1272,7 +1272,7 @@ run('paperdoll', async t => {
     t.eq('男女：undo 連性別一起退、兩組數字各自還原、有女版的男模式標♂', JSON.stringify(sx.undo), JSON.stringify([30, 0.25, 1, 2, 'm', '50', 1, 3, '♂']));
     t.eq('男女：redo 回女版', JSON.stringify(sx.redo), JSON.stringify([30, 0.125, 3, 4, 'f']));
     t.eq('男女：還原預設只還原目前性別（存檔% 共用不動）', JSON.stringify(sx.reset), JSON.stringify([0.25, 50, 30, -1.75]));
-    t.eq('男女：性別存進專案、自動數字不存（只存介面狀態）', JSON.stringify(sx.saved), JSON.stringify(['f', 'cls,headLink,headSmall,kind,split,splitG,spm']));
+    t.eq('男女：性別存進專案、自動數字不存（只存介面狀態）', JSON.stringify(sx.saved), JSON.stringify(['f', 'cls,hand,headLink,headSmall,kind,split,splitG,spm']));
     t.eq('專案：舊專案的自動數字開的時候忽略、介面狀態照讀', JSON.stringify(sx.oldProj), JSON.stringify([true, 'head']));
 
     // 套用：女＝用女版那組（含存檔%）拆，零件記 auto.sex、只有一組、不能新增女版、改數字／還原預設寫女版
@@ -2005,6 +2005,79 @@ run('paperdoll', async t => {
     t.eq('自動（武器）：只勾更新ICON 也會產 -icon', JSON.stringify(aw.iconOnly), JSON.stringify(['sword-1-icon', true]));
     t.eq('自動（武器）：-icon 撞到 weapons/ 以外的圖就擋', aw.clash, 'textures/icons/sword-1-icon.png 已經有了，換個檔名');
     t.eq('自動（武器）：新增沒有流水號、要填 id', JSON.stringify(aw.newId), JSON.stringify(['', '要填 id']));
+
+    // 自動（道具）：拆法同武器、數字一組、拿在 前手｜後手（預設後手）寫 equip.hand，存讀 item 只列 CAT_EQUIP、PNG 在 textures/items
+    const at = await ev(async () => {
+        const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
+        const root = await navigator.storage.getDirectory(), assets = await root.getDirectoryHandle('assets');
+        const json = await assets.getDirectoryHandle('json'), tex = await assets.getDirectoryHandle('textures');
+        const put = async (dir, name, text) => {const w = await (await dir.getFileHandle(name, {create: true})).createWritable(); await w.write(text); await w.close();};
+        await put(json, 'item.json', JSON.stringify({torch: {cat: 'CAT_EQUIP', lab: '火把', light: {radius: 300}}, 'sword-1': {cat: 'CAT_WEAPON'}, bag: {cat: 'CAT_BAG'}}, null, 2));
+        const hadParts = !!await json.getFileHandle('part.json').catch(() => null);
+        const partsText = hadParts ? await (await (await json.getFileHandle('part.json')).getFile()).text() : null;
+        await put(json, 'part.json', JSON.stringify({'body-man': {kind: 'body', sprite: 'body-man', x: 0, y: 16, wristF: {x: -12, y: -12}, wristB: {x: 12, y: -12}}}, null, 2));
+        const readItems = async () => JSON.parse(await (await (await json.getFileHandle('item.json')).getFile()).text());
+        const frame = () => new Promise(r => requestAnimationFrame(r));
+        const until = async (f) => {for (let i = 0; i < 100 && !f(); i++) await frame();};
+        const pick = (name, v) => {const e = document.querySelector(`[name=${name}][value=${v}]`); e.checked = true; e.dispatchEvent(new Event('change'));};
+        const open = async () => {const p = pd.saveItems(); await until(() => $('dlgItems').open); return {p};};
+        const close = async ({p}, v) => {$('dlgItems').close(v); await p;};
+        const key = (k) => document.body.dispatchEvent(new KeyboardEvent('keydown', {key: k, ctrlKey: true, bubbles: true}));
+
+        const c = document.createElement('canvas'); c.width = 100; c.height = 200;
+        const g = c.getContext('2d');
+        g.fillStyle = '#8a5a2b'; g.fillRect(45, 40, 10, 150);
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        const L = pd.addLayer(await createImageBitmap(c), 'torch', null, null);
+        await pd.setAssets(assets);
+        pd.autoSet({kind: 'tool'});
+        pd.setMode('auto');
+        const rowShown = (k) => !$(`au-${k}-name`).hidden;
+        out.enter = [pd.S.mode.kind, $('auWeapon').hidden, $('auHandL').hidden, $('auClsL').hidden, rowShown('tool'), rowShown('weapon'),
+                     document.querySelector('[name=auHand]:checked').value, +$('au-tool-x').value];
+        pd.applyMode();
+        const T = pd.S.layers.find(M => M.auto?.key === 'tool');
+        out.made = [pd.S.layers.filter(M => M.auto).length, T.name, T.auto.hand, T.ops[0].type, T.ops.some(o => o.type === 'removeGreen'), L.visible];
+
+        // 拆完改拿哪隻手：記一步、圖層不動
+        const x0 = T.x;
+        pick('auHand', 'F');
+        out.hand = [T.auto.hand, pd.S.auto.hand, T.x === x0];
+        key('z');
+        out.hand.push(T.auto.hand, document.querySelector('[name=auHand]:checked').value);
+
+        let p = await open();
+        out.rows = [$('di-tool-sel').value, [...$('di-tool-sel').options].map(o => o.value).join(), $('di-tool-name').value];
+        await close(p, 'ok');
+        const items = await tex.getDirectoryHandle('items'), it = (await readItems()).torch;
+        out.saved = [it.equip.sprite, it.equip.hand, it.icon, it.drop.sprite, !!await items.getFileHandle('torch.png').catch(() => null),
+                     !!await items.getFileHandle('torch-icon.png').catch(() => null), it.light.radius];
+        const xB = it.equip.x;
+        // 前手：不寫 hand、換算用前手腕（x 不一樣）
+        pick('auHand', 'F');
+        p = await open();
+        await close(p, 'ok');
+        const itF = (await readItems()).torch;
+        out.front = ['hand' in itF.equip, itF.equip.x !== xB];
+
+        // 載入 item：equip.hand 'B' 帶回後手
+        await put(json, 'item.json', JSON.stringify({torch: it}, null, 2));
+        await pd.loadItems();
+        out.load = [T.auto.hand, document.querySelector('[name=auHand]:checked').value];
+        pd.cancelMode();
+        pd.autoSet({});
+        if (hadParts) await put(json, 'part.json', partsText);
+        else await json.removeEntry('part.json');
+        return out;
+    });
+    t.eq('自動（道具）：進模式顯示道具那一行（不是武器的）、拿在預設後手、沒有分類下拉', JSON.stringify(at.enter), JSON.stringify(['tool', false, false, true, true, false, 'B', 18]));
+    t.eq('自動（道具）：一個零件（名字＝原圖名）、記拿哪隻手、不去綠、原圖藏起來', JSON.stringify(at.made), JSON.stringify([1, 'torch', 'B', 'alpha', false, false]));
+    t.eq('自動（道具）：拆完改拿哪隻手記一步、圖層不動、可以 undo', JSON.stringify(at.hand), JSON.stringify(['F', 'F', true, 'B', 'B']));
+    t.eq('自動（道具）：存到 item 只列 CAT_EQUIP、id＝圖層名就配到', JSON.stringify(at.rows), JSON.stringify(['torch', ',torch', 'torch']));
+    t.eq('自動（道具）：寫 equip.hand B、icon 指 -icon、PNG 在 textures/items、其他欄位保留', JSON.stringify(at.saved),
+         JSON.stringify(['torch', 'B', 'torch-icon', 'torch', true, true, 300]));
+    t.eq('自動（道具）：前手不寫 hand、照前手腕換算', JSON.stringify(at.front), JSON.stringify([false, true]));
+    t.eq('自動（道具）：載入 item 照 equip.hand 帶回拿哪隻手', JSON.stringify(at.load), JSON.stringify(['B', 'B']));
 
     // 自動（頭像）：左光頭右頭髮（臉是綠洞），共用 scale%，零件自動標 pool、存到 pool／載入 pool
     const ah = await ev(async () => {

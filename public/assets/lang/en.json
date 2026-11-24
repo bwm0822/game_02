@@ -1374,6 +1374,12 @@
       "r": "mt"
     }
   },
+  "ui._hand_busy": {
+    "那隻手已經拿著 {#item}": {
+      "t": "That hand is already holding {#item}",
+      "r": "mt"
+    }
+  },
   "ui._learn_confirm": {
     "學習此技能?": {
       "t": "Learn this skill?",

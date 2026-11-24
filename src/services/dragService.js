@@ -8,6 +8,7 @@ import UiMain from '../ui/uimain.js'
 import UiInfo from '../ui/uiinfo.js'
 import UiCover from '../ui/uicover.js'
 import UiDragged from '../ui/uidragged.js'
+import UiMessage from '../ui/uimessage.js'
 
 
 export default class DragService 
@@ -30,7 +31,12 @@ export default class DragService
 
     static _dropOnSlot(slot) 
     {
-        if (!slot.isValid) { return; }
+        if (!slot.isValid)
+        {
+            const o = UiDragged.checkCat(slot.cat) && slot.handBlock?.(UiDragged.dat);
+            if (o) { UiMessage.push('_hand_busy'.lab({item:o.lab})); }
+            return;
+        }
         const from = UiDragged.obj;
         // 由外部移到player時，觸發
         const result = InventoryService.handleDrop({ from, to: slot });

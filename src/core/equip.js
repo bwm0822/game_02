@@ -18,10 +18,38 @@ export function pivotOf(body, k, held)
     const o = WRISTS.includes(k) ? held?.[k] : null;
     return {x: (body?.[k]?.x ?? 0) + (o?.x ?? 0), y: (body?.[k]?.y ?? 0) + (o?.y ?? 0), a: (body?.[k]?.a ?? 0) + (o?.a ?? 0)};
 }
-// 穿著的道具裡武器的 equip（只有武器的手腕位移會生效）；cat 同 hiddenParts
+// 穿著的道具裡武器的 equip；cat 同 hiddenParts
 export const weaponOf = (items, cat) => items.find(it => it?.cat === cat.WEAPON)?.equip;
 // 手上那把東西掛在哪個手腕節點：equip.hand 'B'＝後手（如弓），沒寫＝前手；武器動畫也動這隻手
 export const handOf = (held) => (held?.hand === 'B' ? 'wristB' : 'wristF');
+// 拿在手上的道具＝武器、CAT_EQUIP（如火把），有 equip 才佔 equip.hand 那隻手；同一隻手只能拿一樣
+export const isHandheld = (it, cat) => !!it?.equip && (it.cat === cat.WEAPON || it.cat === cat.EQUIP);
+export const handClash = (a, b, cat) => a !== b && isHandheld(a, cat) && isHandheld(b, cat) && handOf(a.equip) === handOf(b.equip);
+// 畫得出來的手持道具（NPC／舊存檔可能撞手：武器優先，其他先到先得）
+export function handItems(items, cat)
+{
+    const out = [];
+    for (const it of [...items.filter(it => it?.cat === cat.WEAPON), ...items.filter(it => it?.cat !== cat.WEAPON)])
+    {
+        if (isHandheld(it, cat) && !out.some(o => handClash(o, it, cat))) out.push(it);
+    }
+    return out;
+}
+// 手腕位移：武器的 equip（前後手都算，如弓的拉弦手）＋其他手持道具自己那隻手的；回傳的 hand＝武器的手
+export function heldOf(items, cat)
+{
+    const hs = handItems(items, cat), w = hs.find(it => it.cat === cat.WEAPON)?.equip;
+    let out = w;
+    for (const it of hs)
+    {
+        if (it.cat === cat.WEAPON) continue;
+        const k = handOf(it.equip), o = it.equip[k];
+        if (!o) continue;
+        const b = out?.[k];
+        out = {...out, [k]: {x: (b?.x ?? 0) + (o.x ?? 0), y: (b?.y ?? 0) + (o.y ?? 0), a: (b?.a ?? 0) + (o.a ?? 0)}};
+    }
+    return out;
+}
 
 const rot = (x, y, deg) => {const r = deg * Math.PI / 180, c = Math.cos(r), s = Math.sin(r); return [x * c - y * s, x * s + y * c];};
 const still = (pv) => !pv.x && !pv.y && !pv.a;
@@ -47,7 +75,7 @@ export const unflatPart = (p, body, node, held) => {const q = fromPivot(p, rigOf
 
 // 穿著的裝備（有 equip 的道具）會藏掉哪些部位：hideHair 藏頭髮、hideHand 藏兩隻手（手套用）、任何頭盔藏帽子、任何護甲藏衣服、任何靴子藏鞋子
 // hat＝角色的帽子條目：沒被頭盔藏掉時它的 hideHair 才生效
-// cat 是分類常數（遊戲傳 GM.CAT，工具傳 {HELMET: 'CAT_HELMET', CHESTPLATE: 'CAT_CHESTPLATE', BOOTS: 'CAT_BOOTS', GLOVES: 'CAT_GLOVES', WEAPON: 'CAT_WEAPON'}）
+// cat 是分類常數（遊戲傳 GM.CAT，工具傳 tools/role/schema.js 的 CAT＝字串版，handItems／heldOf 也一樣）
 export function hiddenParts(items, cat, hat)
 {
     const out = new Set();

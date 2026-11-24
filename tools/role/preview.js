@@ -9,7 +9,7 @@ import {show, showMenu} from '../common/showmenu.js';
 import * as PZ from '../common/panzoom.js';
 import {hidden, hideChecks} from '../common/headhide.js';
 import {DEPTH, BACK_DEPTH, REAR_DEPTH, CAT, nodeOf, depthOf} from './schema.js';
-import {equipFor, partFor, hiddenParts, weaponOf, ROLE_PARTS, PIVOTS, pivotOf, atPivot, fromPivot, rigOf, flatPart} from '../../src/core/equip.js';
+import {equipFor, partFor, hiddenParts, heldOf, handItems, isHandheld, ROLE_PARTS, PIVOTS, pivotOf, atPivot, fromPivot, rigOf, flatPart} from '../../src/core/equip.js';
 
 const P = {equips: true, flip: false, bg: null};   // 開關跨角色保留；bg null＝棋盤格；view／錨點／框／支點看 showmenu.js 的 show；倍率／位置看 panzoom.js
 const COLOR = {grid: '#55dd55', zone: '#5599ff'};
@@ -42,7 +42,7 @@ export function partsOf(r, items, parts)
     const out = [];
     const body = partFor(parts, r, 'body');
     const equips = P.equips ? (r.inv?.equips ?? []).map(e => items[isObj(e) ? e.id : e]).filter(it => it?.equip) : [];
-    const held = weaponOf(equips, CAT);
+    const held = heldOf(equips, CAT), hands = handItems(equips, CAT);
     const add = (p, k) => {
         if (!isObj(p)) return;
         const d = depthOf(k, p);
@@ -57,7 +57,7 @@ export function partsOf(r, items, parts)
     };
     const hide = hiddenParts(equips, CAT, partFor(parts, r, 'hat'));
     for (const k of ROLE_PARTS) if (!hide.has(k)) add(partFor(parts, r, k), k);
-    for (const it of equips) add(equipFor(it.equip, r.sex, it.sex), it.cat);
+    for (const it of equips) if (!isHandheld(it, CAT) || hands.includes(it)) add(equipFor(it.equip, r.sex, it.sex), it.cat);
     return out.sort((a, b) => a.d - b.d);
 }
 

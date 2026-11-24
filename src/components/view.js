@@ -8,7 +8,7 @@ import FxCell, {zoneDelays} from '../core/fxcell.js'
 import {playParticle} from '../core/particle.js'
 import {setSpot} from '../core/spotlight.js'
 import {thumbOf} from '../core/prefab.js'
-import {equipFor, hiddenParts, weaponOf, handOf, ROLE_PARTS, WRISTS, pivotOf, atPivot, fromPivot, rigOf} from '../core/equip.js'
+import {equipFor, hiddenParts, heldOf, handItems, isHandheld, handOf, ROLE_PARTS, WRISTS, pivotOf, atPivot, fromPivot, rigOf} from '../core/equip.js'
 const _tag = 'view';
 const ONE_TILE = {x:0, y:0, w:GM.TILE_W, h:GM.TILE_H, hw:GM.TILE_W/2, hh:GM.TILE_H/2};
 // 單張圖道具量圖邊的欄位，照 _edgeBox() 的參數順序(左、右、寬、上、下、高)
@@ -1272,10 +1272,11 @@ export class RoleView extends View
         this._removeEquips();
         const dats = (bb.equips ?? []).filter(Boolean).map(eq=>DB.item(eq.id??eq));
         const held = this._holdId ? DB.item(this._holdId) : null;
-        const inHand = held ? held.equip : weaponOf(dats, GM.CAT);
+        const hands = handItems(dats, GM.CAT);
+        const inHand = held ? held.equip : heldOf(dats, GM.CAT);
         this._hand = handOf(inHand);
         this._placeWrists(inHand);
-        dats.forEach((dat)=>{this._addEquip(dat);});
+        dats.forEach((dat)=>{if(!isHandheld(dat, GM.CAT) || hands.includes(dat)) {this._addEquip(dat);}});
         this._held = null;
         if(held)
         {

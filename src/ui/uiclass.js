@@ -3,7 +3,7 @@ import {GM, UI, CAT2ICON, ROLE_PART, PART_NODE, flatDepth, nodeFor} from '../cor
 import {T,dlog} from '../core/debug.js'
 import DB from '../data/db.js'
 import Utility from '../core/utility.js'
-import {equipFor, sexOk, hiddenParts, weaponOf, ROLE_PARTS, flatPart} from '../core/equip.js'
+import {equipFor, sexOk, hiddenParts, heldOf, handItems, isHandheld, handClash, ROLE_PARTS, flatPart} from '../core/equip.js'
 import Ui from './uicommon.js'
 import UiInv from './uiinv.js'
 import UiInfo from './uiinfo.js'
@@ -402,8 +402,15 @@ export class EquipSlot extends Slot
         Ui.refreshAll();
     }
 
-    // 拖過來的道具限定性別（item.sex）跟這格的主人不符就不能放
-    get isValid() {return super.isValid && sexOk(UiDragged.dat, this.owner?.bb.meta?.sex);}
+    // 拖過來的道具限定性別（item.sex）跟這格的主人不符、或跟別格拿著的東西搶同一隻手就不能放
+    get isValid() {return super.isValid && sexOk(UiDragged.dat, this.owner?.bb.meta?.sex) && !this.handBlock(UiDragged.dat);}
+
+    // 別格裡跟 dat 搶同一隻手的道具（弓跟火把都在後手）
+    handBlock(dat)
+    {
+        return (this.owner?.equips ?? []).map((eq, i)=>i!==this._i && eq ? DB.item(eq.id??eq) : null)
+                .find(o=>handClash(o, dat, GM.CAT));
+    }
 
     _isSameCat(cat)   {return (this.cat & cat) == cat;}
 
@@ -413,7 +420,7 @@ export class EquipSlot extends Slot
     // 檢查裝備欄位，是否有是符合類別的裝備，是，設置背景顏色為 COLOR_SLOT_DRAG，否，設置為 COLOR_SLOT
     checkIfSameCat(cat, dat)
     {
-        this.setBgColor( this._isSameCat(cat) && sexOk(dat, this.owner?.bb.meta?.sex) ? GM.COLOR.SLOT_DRAG : GM.COLOR.SLOT);
+        this.setBgColor( this._isSameCat(cat) && sexOk(dat, this.owner?.bb.meta?.sex) && !this.handBlock(dat) ? GM.COLOR.SLOT_DRAG : GM.COLOR.SLOT);
     }
 
     setIcon(icon)
@@ -835,14 +842,15 @@ export class Doll extends Pic
                 parts[k] = p ? this._addPart(p, ROLE_PART[k]) : [];
             }
         };
-        // 縮放照空手算(武器會挪手腕)，再照武器的手腕重擺
+        // 縮放照空手算(手持道具會挪手腕)，再照手腕重擺
         this._held = null;
         addParts();
         this._fit();
-        this._held = weaponOf(dats, GM.CAT);
+        this._held = heldOf(dats, GM.CAT);
         if(this._held) {this._shape.removeAll(true); addParts();}
 
-        dats.forEach((dat)=>{this._addPart(equipFor(dat.equip, meta.sex, dat.sex), dat.cat, nodeFor(dat.cat, dat.equip));});
+        const hands = handItems(dats, GM.CAT);
+        dats.filter(dat=>!isHandheld(dat, GM.CAT) || hands.includes(dat)).forEach((dat)=>{this._addPart(equipFor(dat.equip, meta.sex, dat.sex), dat.cat, nodeFor(dat.cat, dat.equip));});
         const hide = hiddenParts(dats, GM.CAT, DB.rolePart(meta, 'hat'));
         for(const [k, sps] of Object.entries(parts)) {sps.forEach((sp)=>{sp.setVisible(!hide.has(k));});}
 
