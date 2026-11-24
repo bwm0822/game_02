@@ -13,6 +13,10 @@
     #list { flex: none; max-height: 35%; overflow: auto; }
     #lib { flex: none; max-height: 30%; overflow: auto; border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 4px; }
     #lib .item { cursor: grab; }
+    #lib .item > .tw { cursor: pointer; width: 12px; flex: none; }
+    #lib .libpart { padding-left: 28px; cursor: pointer; }
+    #lib .libpart.off > .id, #lib .libpart.off > .lab { opacity: .45; }
+    #lib .libpart .id { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .head .tw, .head .sec { cursor: pointer; user-select: none; }
     .head .tw { width: 16px; color: #aaa; font-size: 16px; }
     #tree { flex: 1; overflow: auto; border-top: 1px solid #333; padding-top: 6px; }
@@ -92,6 +96,7 @@
     .ctxmenu { position: fixed; z-index: 20; display: flex; flex-direction: column; min-width: 140px; padding: 4px 0; background: #2b2d31; border: 1px solid #666; box-shadow: 0 4px 12px rgba(0,0,0,.5); }
     .ctxmenu button { border: 0; border-radius: 0; background: none; text-align: left; padding: 3px 12px; white-space: nowrap; }
     .ctxmenu button:hover:not(:disabled) { background: #2f6db5; }
+    .ctxmenu button:disabled { color: #777; }
 </style>
 </head>
 <body>

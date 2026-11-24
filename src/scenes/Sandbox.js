@@ -1432,7 +1432,10 @@ export class Sandbox extends GameScene
             const hit = this._pickAt(p.worldX, p.worldY);
             if(p.rightButtonDown())
             {
-                this._send({sb:'ctx', tx, ty, wx:Math.round(p.worldX), wy:Math.round(p.worldY), key:hit?.key ?? null, cx:p.event.clientX, cy:p.event.clientY});
+                // 選中實例的選取零件上按右鍵：多回報 part（分頁出「移到場景」）
+                const ri = this._inspected();
+                const part = ri ? this._partAt(ri, p.worldX, p.worldY) : null;
+                this._send({sb:'ctx', tx, ty, wx:Math.round(p.worldX), wy:Math.round(p.worldY), key:hit?.key ?? null, part, cx:p.event.clientX, cy:p.event.clientY});
                 return;
             }
             // zone 框線蓋過角色／擺設（記號除外）；框內要沒點到別的東西才輪到 zone 本體（大片的 zone 不擋底下的角色）
