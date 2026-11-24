@@ -37,22 +37,9 @@ export class Sandbox extends GameScene
     init(data)
     {
         super.init({...data, map:data?.map ?? 'sandbox'});
-        this._eqRef = null;
     }
 
-    update() {this._syncLights(); this._syncEquipRef(); this._drawSel();}
-
-    // 選中的 prefab 實例被道具的 equip.prefab 用到（如火把的火焰）：錨點＝握點，畫那個道具的 equip.sprite（直立、半透明、點不到、不存檔）當對位置的參考
-    _syncEquipRef()
-    {
-        const fi = this._insts?.[this._sel], id = fi?.go.active && fi.data.prefab;
-        const e = id ? Object.values(DB._itemDB ?? {}).find(it=>it?.equip?.prefab===id)?.equip : null;
-        const [key, frame] = (e?.sprite ?? '').split(':');
-        if(!key || !this.textures.exists(key) || this._hidden.has(this._sel)) {this._eqRef?.setVisible(false); return;}
-        const img = this._eqRef ??= this.add.image(0, 0, key).setAlpha(0.45);
-        img.setTexture(key, frame).setOrigin(e.ox ?? 0.5, e.oy ?? 1).setScale(e.scale ?? 1)
-           .setPosition(fi.go.x, fi.go.y).setDepth(fi.go.depth - 0.01).setVisible(true);
-    }
+    update() {this._syncLights(); this._drawSel();}
 
     async create()
     {

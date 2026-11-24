@@ -12,7 +12,8 @@
     #left .sec { color: #aaa; font-weight: bold; font-size: 14px; }
     #list { flex: none; max-height: 35%; overflow: auto; }
     #lib { flex: none; max-height: 30%; overflow: auto; border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 4px; }
-    #lib .item { cursor: grab; }
+    #itemLib { flex: none; max-height: 20%; overflow: auto; border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 4px; }
+    #lib .item, #itemLib .item { cursor: grab; }
     #lib .item > .tw { cursor: pointer; width: 12px; flex: none; }
     #lib .libpart { padding-left: 28px; cursor: pointer; }
     #lib .libpart.off > .id, #lib .libpart.off > .lab { opacity: .45; }
@@ -102,6 +103,7 @@
 <main>
     <aside id="left">
         <div id="lib"></div>
+        <div id="itemLib"></div>
         <div id="scenesHead"></div>
         <div id="list"></div>
         <div id="tree" hidden></div>

@@ -61,7 +61,7 @@
 - `com_light`：有 `equip.prefab` 的道具不再開角色中心那盞燈（光交給 prefab 的光源零件）；沒有 prefab 的發光道具照舊。
 - 工具：
   - 場景分頁木偶有第六格「道具」（sandbox 跑真的 `RoleView`，看得到火焰／光跟著手）。
-  - 選中 prefab 實例時，有道具的 `equip.prefab` 指向它，sandbox 在錨點畫那個道具的 `equip.sprite`（直立、`scale`／`ox`／`oy`、半透明、點不到、不存檔，`Sandbox._syncEquipRef()`）當對位置的參考。
+  - **道具實例**（2026-11-24，取代之前選中 prefab 實例時畫的半透明參考圖 `_syncEquipRef()`）：左欄「道具」庫（有 equip 的武器／CAT_EQUIP）拖進畫面＝`scenes.json` 的 `items:[{key:'i<n>', item, x, y}]`，錨點＝握點。分頁裡 `instOf()` 把它當 prefab 實例（`prefab`＝編的那筆：`equip.prefab` 的 id，或 `@<道具>`＝`equip.particle` 合成的單零件 prefab `synPf()`），sandbox 收到的是 `@item:<道具>`＝那筆的零件＋**最後**墊一張直立的 `equip.sprite`（`scale`／`ox`／`oy`，depth −1e4，零件 index 不變，`itemSandboxPf()`），所以選取／拖零件／zone／光源把手全部沿用 prefab 實例那套；沒有占地方塊。
   - 刪 prefab 時有道具的 `equip.prefab` 在用就擋，改名只提示要去道具分頁改。
   - 試穿只畫記號（粒子橘菱形、光源黃圓、png 藍小方塊，跟著道具轉），跑不了粒子。
   - 道具分頁 equip 多「手上 prefab」（`opt`，只給武器／`CAT_EQUIP`）。

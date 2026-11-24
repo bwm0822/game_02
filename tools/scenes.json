@@ -8,10 +8,12 @@
         "prefab": "forge",
         "x": 560,
         "y": 336
-      },
+      }
+    ],
+    "items": [
       {
-        "key": "f2",
-        "prefab": "torch-fire",
+        "key": "i1",
+        "item": "torch",
         "x": 400,
         "y": 288
       }
