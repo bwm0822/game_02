@@ -162,7 +162,7 @@ function renderDetail()
         info.textContent = txt.join('　');
     };
     const LIMIT = 100;
-    $('detail').replaceChildren(
+    $('detail').replaceChildren(h('div', null,
         big,
         h('div', {class: 'path'}, e.path),
         e.metas.length > 0 && h('div', {class: 'dim'}, `＋ ${e.metas.join('、')}`),
@@ -173,7 +173,7 @@ function renderDetail()
         S.refs && !refs.length && h('div', {class: 'dim'}, '（沒找到；用字串組出來的 key 掃不到，刪之前自己再確認）'),
         refs.length > 0 && h('ul', {class: 'refs'}, refs.slice(0, LIMIT).map(r => h('li', null, r.text,
             r.go && h('a', {class: 'go', title: '跳過去', onclick: () => SH.gotoTab(...r.go)}, ' ↗')))),
-        refs.length > LIMIT && h('div', {class: 'dim'}, `…還有 ${refs.length - LIMIT} 處`));
+        refs.length > LIMIT && h('div', {class: 'dim'}, `…還有 ${refs.length - LIMIT} 處`)));
 }
 
 function renderButtons()

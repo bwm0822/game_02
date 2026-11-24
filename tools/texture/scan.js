@@ -8,6 +8,8 @@ const IMG = /\.(png|jpe?g)$/i;
 const SKIP_JSON = ['textures.json', 'navgraph.json'];
 const FIELDS = new Set(['icon', 'sprite', 'back', 'img']);
 const TILED = new Set(['value']);
+// Tiled 自訂屬性裡放 id 不放圖的（值剛好跟圖同名會誤判，如 prefab 的 template 屬性 prefab=forge）
+const NOT_IMG = new Set(['prefab', 'id', 'nid', 'map', 'port']);
 const LIT = /(['"`])([\w-]+)(:[\w.-]*)?\1/g;
 const CTX = /image|sprite|texture|icon|img|pic|background|frame|portrait|cursor/i;
 // 能跳過去的分頁：資料 json 裡的 path → [分頁, 那個分頁 onGoto 收的 path]
@@ -73,15 +75,15 @@ export async function scan(root)
     // fields：算 key 的欄位名（陣列裡的看上一層）；base：tsj 所在資料夾，image 欄照它解析成路徑
     const visit = (file, data, fields, base = null) => {
         const go = GOTO[file];
-        const rec = (v, at) => {
+        const rec = (v, at, parent) => {
             if (typeof v === 'string')
             {
                 const loc = {text: `${file}：${at.join('.')}`, go: go?.(at)};
                 if (base && at.at(-1) === 'image') add(paths, norm(`${base}/${v}`), loc);
-                else if (fields.has(at.findLast(s => typeof s === 'string'))) add(uses, keyOf(v), loc);
+                else if (fields.has(at.findLast(s => typeof s === 'string')) && !(fields === TILED && NOT_IMG.has(parent?.name))) add(uses, keyOf(v), loc);
             }
             else if (v && typeof v === 'object')
-                for (const [k, c] of Object.entries(v)) rec(c, [...at, Array.isArray(v) ? +k : k]);
+                for (const [k, c] of Object.entries(v)) rec(c, [...at, Array.isArray(v) ? +k : k], v);
         };
         rec(data, []);
     };

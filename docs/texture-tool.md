@@ -13,7 +13,7 @@
 字串剛好等於檔名（去副檔名）才算，`key:frame` 取冒號前；而且只認放圖的地方，不然 `type: "well"`、`align: "top"`、`_tag = 'well'` 這種同名字串會被當成引用：
 
 - 資料 json（`public/assets/json/*.json`，`textures.json`、`navgraph.json` 除外）：欄位名在 `FIELDS`（`icon`、`sprite`、`back`、`img`）裡的字串值，陣列看上一層的欄位名；物件 key 不算。**遊戲加了放圖的新欄位要加進 `FIELDS`**，不然那些圖會被當成未使用。
-- 地圖／template／tsj（`maps/**/*.json`、`templates/**/*.tj`、`tilesets/*.tsj`）：Tiled 自訂屬性的 `value`；tsj 的 `image`（相對 .tsj 解析）比路徑，不追那個 tsj 有沒有地圖在用。
+- 地圖／template／tsj（`maps/**/*.json`、`templates/**/*.tj`、`tilesets/*.tsj`）：Tiled 自訂屬性的 `value`（放 id 的屬性 `prefab`／`id`／`nid`／`map`／`port` 不算，`scan.js` 的 `NOT_IMG`：prefab template 的 `prefab=forge` 會誤判成圖 forge）；tsj 的 `image`（相對 .tsj 解析）比路徑，不追那個 tsj 有沒有地圖在用。
 - `src/**/*.js`（`src/old`、`//` 開頭的行不算）：字串字面量要是 `key:frame` 寫法，或那一行有圖片相關的字（`CTX`：image／sprite／texture／icon／img／pic／background／frame／portrait／cursor）。
 - sheet／atlas 以整個檔案為單位。
 - 還是會誤判：用字串組出來的 key（`${名}-icon`）抓不到，會被當成未使用；同一行剛好有圖片相關字的同名字串會被當成有用。所以沒有「全部刪掉」，一張張看。
