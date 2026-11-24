@@ -57,6 +57,7 @@
   - 光源每幀挪到零件的世界位置。
   - 只用 prefab 的預設 `look`（不切狀態），`off` 不建。
   - 卸下／換裝（`_removeEquips()`）、`_remove()` 清掉粒子、光源、update 監聽；跟武器撞手不畫的道具不建。部位範圍 `_measure()` 不算手持道具跟它的 prefab。
+- `equip.particle: {particle, x, y}`（2026-11-24）：只掛一個粒子時不用另開 prefab，`equip.js` 的 `equipPrefab()` 把它當成只有一個粒子零件的 prefab 走同一條路；跟 `equip.prefab` 二選一（都寫：遊戲用 prefab＋dlog）。沒有光源，所以 `com_light` 照舊開燈。
 - `com_light`：有 `equip.prefab` 的道具不再開角色中心那盞燈（光交給 prefab 的光源零件）；沒有 prefab 的發光道具照舊。
 - 工具：
   - 場景分頁木偶有第六格「道具」（sandbox 跑真的 `RoleView`，看得到火焰／光跟著手）。

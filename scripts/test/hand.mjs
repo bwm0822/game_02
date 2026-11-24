@@ -69,6 +69,23 @@ run('手持道具', async t => {
             p.view._updateEquips();
         }
 
+        // equip.particle：單一粒子零件（握點＋x/y），跟 prefab 二選一、都寫用 prefab
+        {
+            const {equipPrefab} = await import('/src/core/equip.js');
+            it('t-torch').equip.particle = {particle: 't-fire', x: 2, y: -12};
+            p.view._updateEquips();
+            const live = p.view._eqPrefabs?.[0], holder = live?.holder;
+            const w = holder.getWorldTransformMatrix().transformPoint(2, -12);
+            const em = live.pts.find(o => o.fx)?.fx.emitter, rig = wb.parentContainer;
+            const l = rig.getWorldTransformMatrix().applyInverse(w.x, w.y);
+            out.particle = [live.pts.length, holder.list.length, Math.round(em.x) === Math.round(l.x) && Math.round(em.y) === Math.round(l.y),
+                            equipPrefab({prefab: 't-fire', particle: {particle: 't-fire'}}, id => d.DB.prefab(id))?.parts.length,
+                            equipPrefab({particle: {}}, id => d.DB.prefab(id))];
+            delete it('t-torch').equip.particle;
+            p.view._updateEquips();
+            out.particle.push(!p.view._eqPrefabs);
+        }
+
         // 舊存檔／NPC 撞手（弓＋火把）：武器優先、火把不畫
         p.bb.equips[wslot._i] = {id: 't-bow', count: 1};
         p.view._updateEquips();
@@ -88,4 +105,5 @@ run('手持道具', async t => {
     t.eq('舊資料撞手：只畫弓', JSON.stringify(r.old), '[true,false]');
     t.eq('equip.prefab：掛在後手腕、只建預設狀態的 png、粒子（rig 裡、緊接在後手節點上面＝蓋過火把被身體擋）／光源跟著零件位置；卸下清掉光源',
          JSON.stringify(r.prefab), '[true,1,"sword-bronze",true,true,true,true,true,true]');
+    t.eq('equip.particle：一個粒子跟著握點＋x/y；都寫用 prefab；沒 id＝沒有；卸下清掉', JSON.stringify(r.particle), '[1,0,true,4,null,true]');
 });

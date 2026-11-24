@@ -8,7 +8,7 @@ import FxCell, {zoneDelays} from '../core/fxcell.js'
 import {playParticle} from '../core/particle.js'
 import {setSpot} from '../core/spotlight.js'
 import {thumbOf} from '../core/prefab.js'
-import {equipFor, hiddenParts, heldOf, handItems, isHandheld, handOf, ROLE_PARTS, WRISTS, pivotOf, atPivot, fromPivot, rigOf} from '../core/equip.js'
+import {equipFor, equipPrefab, hiddenParts, heldOf, handItems, isHandheld, handOf, ROLE_PARTS, WRISTS, pivotOf, atPivot, fromPivot, rigOf} from '../core/equip.js'
 const _tag = 'view';
 const ONE_TILE = {x:0, y:0, w:GM.TILE_W, h:GM.TILE_H, hw:GM.TILE_W/2, hh:GM.TILE_H/2};
 // 單張圖道具量圖邊的欄位，照 _edgeBox() 的參數順序(左、右、寬、上、下、高)
@@ -1206,7 +1206,7 @@ export class RoleView extends View
         if(!item.equip) {return;}
         const e = equipFor(item.equip, this.meta.sex, item.sex), node = nodeFor(item.cat, item.equip);
         let sps = this._addPart(e, item.cat, node);
-        if(e.prefab) {sps.push(...this._addEquipPrefab(e, item.cat, node));}
+        if(e.prefab || e.particle) {sps.push(...this._addEquipPrefab(e, item.cat, node));}
         this._sortParts();
         this._equips.push(...sps);
         if(item.cat===GM.CAT.WEAPON) {this._weapon = sps;}
@@ -1215,10 +1215,11 @@ export class RoleView extends View
 
     // equip.prefab(prefab.json 的 id，如火把的火焰)：錨點＝握點(equip 的 x/y/a，掛在同一個節點)、跟著道具轉／翻面，零件座標是道具直立時的、不乘 equip.scale；
     // png 零件在 holder 裡(排在道具前面)；粒子在世界座標噴、發射點每幀跟著零件位置(local 的粒子進 holder)，前後跟著節點(後手在角色後面)；光源每幀挪到零件位置
-    // 只用 prefab 的預設 look，零件 off 不建；卸下／換裝(_removeEquips)時清掉
+    // 只用 prefab 的預設 look，零件 off 不建；卸下／換裝(_removeEquips)時清掉；equip.particle 當成只有一個粒子零件的 prefab(跟 prefab 二選一)
     _addEquipPrefab(e, type, node)
     {
-        const scene = this.scene, pf = DB.prefab(e.prefab);
+        const scene = this.scene, pf = equipPrefab(e, id=>DB.prefab(id)), tag = e.prefab ?? e.particle?.particle;
+        if(e.prefab && e.particle) {dlog(T.WARN)(`equip.prefab ${e.prefab} 跟 equip.particle 都有，用 prefab`);}
         if(!pf) {dlog(T.WARN)(`equip.prefab ${e.prefab} 不存在`); return [];}
         const n = this._nodes[node] ?? this._rig;
         const holder = scene.add.container(e.x ?? 0, e.y ?? 0).setAngle(e.a ?? 0);
@@ -1231,14 +1232,14 @@ export class RoleView extends View
             if(p.img)
             {
                 const [key, frame] = p.img.split(':');
-                if(!scene.textures.exists(key)) {dlog(T.WARN)(`prefab ${e.prefab}：沒有圖 ${p.img}`); continue;}
+                if(!scene.textures.exists(key)) {dlog(T.WARN)(`prefab ${tag}：沒有圖 ${p.img}`); continue;}
                 holder.add(scene.add.image(p.x ?? 0, p.y ?? 0, key, frame).setOrigin(p.ox ?? 0.5, p.oy ?? 1).setScale(p.sx ?? 1, p.sy ?? 1)
                     .setFlipX(!!p.flip).setAngle(p.angle ?? 0).setPipeline('Light2D'));
             }
             else if(p.particle)
             {
                 const def = DB.particle(p.particle);
-                if(!def) {continue;}
+                if(!def) {dlog(T.WARN)(`${tag}：粒子 ${p.particle} 不存在`); continue;}
                 if(def.local) {playParticle(scene, {...def, depth:undefined}, {parent:holder, ox:p.x ?? 0, oy:p.y ?? 0}); continue;}
                 // 不 local：emitter 進 rig、排在那隻手的節點正上方(蓋過道具、被身體擋)，發射點每幀挪到零件位置，粒子設定不跟著道具轉(火往上冒)
                 const fx = playParticle(scene, {...def, local:true, depth:undefined}, {parent:this._rig});
