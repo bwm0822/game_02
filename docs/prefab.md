@@ -61,10 +61,10 @@
 - `com_light`：有 `equip.prefab` 的道具不再開角色中心那盞燈（光交給 prefab 的光源零件）；沒有 prefab 的發光道具照舊。
 - 工具：
   - 場景分頁木偶有第六格「道具」（sandbox 跑真的 `RoleView`，看得到火焰／光跟著手）。
-  - **道具實例**（2026-11-24，取代之前選中 prefab 實例時畫的半透明參考圖 `_syncEquipRef()`）：左欄「道具」庫（有 equip 的武器／CAT_EQUIP）拖進畫面＝`scenes.json` 的 `items:[{key:'i<n>', item, x, y}]`，錨點＝握點。分頁裡 `instOf()` 把它當 prefab 實例（`prefab`＝編的那筆：`equip.prefab` 的 id，或 `@<道具>`＝`equip.particle` 合成的單零件 prefab `synPf()`），sandbox 收到的是 `@item:<道具>`＝那筆的零件＋**最後**墊一張直立的 `equip.sprite`（`scale`／`ox`／`oy`，depth −1e4，零件 index 不變，`itemSandboxPf()`），所以選取／拖零件／zone／光源把手全部沿用 prefab 實例那套；沒有占地方塊。
-  - 刪 prefab 時有道具的 `equip.prefab` 在用就擋，改名只提示要去道具分頁改。
-  - 試穿只畫記號（粒子橘菱形、光源黃圓、png 藍小方塊，跟著道具轉），跑不了粒子。
-  - 道具分頁 equip 多「手上 prefab」（`opt`，只給武器／`CAT_EQUIP`）。
+  - **道具實例**（2026-11-24，取代之前選中 prefab 實例時畫的半透明參考圖 `_syncEquipRef()`）：左欄「道具」庫（有 equip 的武器／CAT_EQUIP）拖進畫面＝`scenes.json` 的 `items:[{key:'i<n>', item, x, y}]`，錨點＝握點。分頁裡 `instOf()` 把它當 prefab 實例（`prefab`＝編的那筆：`equip.prefab` 的 id，或 `@<道具>`＝`equip.particle` 合成的單零件 prefab `synPf()`），sandbox 收到的是 `@item:<道具>`＝那筆的零件＋**最後**墊一張直立的 `equip.sprite`（`scale`／`ox`／`oy`，depth −1e4，零件 index 不變，`itemSandboxPf()`），所以選取／拖零件／zone／光源把手全部沿用 prefab 實例那套；沒有占地方塊。右欄「手上：無｜prefab｜粒子」直接編（草稿，儲存一筆寫 item.json＋prefab.json＋particle.json）、發射點／prefab 實例右鍵「加到道具 ▸」，見 [scene-tool.md](scene-tool.md)「道具實例」。
+  - 刪 prefab 時有道具的 `equip.prefab` 在用就擋，改名只提示要去道具分頁改；粒子分頁刪粒子時有道具的 `equip.particle` 在用也擋（改名只列）。
+  - 試穿只畫記號（粒子橘菱形、光源黃圓、png 藍小方塊，跟著道具轉；`equip.particle` 一樣畫），跑不了粒子。
+  - 道具分頁 equip 多「手上 prefab」「手上粒子」（`opt`，只給武器／`CAT_EQUIP`；兩個都寫、指到不存在的標 ⚠），表單標題列「↗ 場景」跳到場景分頁打開這個道具。
 
 ## Tiled
 

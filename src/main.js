@@ -41,7 +41,8 @@ const config = {
     // height: 600,
     parent: 'game-container',
     backgroundColor: '#000000',//'#028af8',
-    scale: SANDBOX ? {mode: Phaser.Scale.RESIZE} : {
+    // sandbox 的分頁藏起來時 iframe 是 0×0：RESIZE 跟著縮成 0 會讓 WebGL framebuffer 建不出來（Incomplete Attachment），最小留 1px
+    scale: SANDBOX ? {mode: Phaser.Scale.RESIZE, min: {width: 1, height: 1}} : {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH
     },

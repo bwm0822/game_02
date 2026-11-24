@@ -5,6 +5,7 @@ import {fieldInput, createForm} from '../common/form.js';
 import {createViews, renderDatalists} from '../common/views.js';
 import * as IC from '../common/icons.js';
 import * as JE from '../common/jsonedit.js';
+import * as SH from '../common/shell.js';
 import '../common/combo.js';
 import '../common/splitter.js';
 import * as SC from './schema.js';
@@ -20,6 +21,7 @@ const D = createDoc({
         if (file === 'fx.json') loadKeys(file).then(fx => {S.fx = fx; render();});
         if (file === 'anim.json') loadKeys(file).then(a => {S.anims = a; render();});
         if (file === 'prefab.json') loadKeys(file).then(p => {S.prefabs = p; render();});
+        if (file === 'particle.json') loadKeys(file).then(p => {S.particles = p; render();});
         if (file === 'role.json' || file === 'part.json') loadJson(file).then(o => {S[file === 'role.json' ? 'roles' : 'parts'] = o; render();});
     },
 });
@@ -31,6 +33,7 @@ Object.defineProperty(S, 'items', {get: () => S.data, set: (v) => {S.data = v;}}
 S.fx = [];
 S.anims = null;
 S.prefabs = [];
+S.particles = null;
 S.roles = {};       // 唯讀：role.json、part.json（預覽的人偶）
 S.parts = {};
 const SEX_KEY = 'tools.item.sex';
@@ -98,6 +101,11 @@ function validate(id)
     if (it.bb?.harvest?.id && !S.items[it.bb.harvest.id]) out.push(`bb.harvest.id 指到不存在的道具：${it.bb.harvest.id}`);
     if (it.anim && S.anims && !S.anims.includes(it.anim)) out.push(`anim 指到 anim.json 沒有的動畫：${it.anim}`);
     if (it.sex && isObj(it.equip?.f)) out.push('有限定 sex，女版 equip.f 不會用到');
+    if (it.equip?.prefab && it.equip?.particle) out.push('手上 prefab 跟手上粒子只能二選一（遊戲用 prefab）');
+    if (it.equip?.prefab && !S.prefabs.includes(it.equip.prefab)) out.push(`手上 prefab 指到 prefab.json 沒有的：${it.equip.prefab}`);
+    const hp = it.equip?.particle?.particle;
+    if (it.equip?.particle && !hp) out.push('手上粒子沒有填粒子 id');
+    if (hp && S.particles && !S.particles.includes(hp)) out.push(`手上粒子指到 particle.json 沒有的：${hp}`);
     for (const [rid, r] of Object.entries(S.roles))
         if ((r.inv?.equips ?? []).some(e => (e?.id ?? e) === id) && !sexOk(it, r.sex)) out.push(`${rid} 穿著，但這件${SC.FIELDS.sex.names[it.sex] ?? it.sex}`);
     return out;
@@ -265,6 +273,8 @@ function renderForm()
             D.dirty(id) && h('span', {class: 'dirty'}, '●'),
             h('span', {class: 'grow'}),
             F.modeBtn(),
+            it.equip && (it.cat === 'CAT_WEAPON' || it.cat === 'CAT_EQUIP') && h('button', {type: 'button', dataset: {k: 'gotoScene'},
+                title: '到場景分頁打開這個道具，編手上的 prefab／粒子（場景裡沒有就放一個）', onclick: () => SH.gotoTab('scene', [`item:${id}`])}, '↗ 場景'),
             h('button', {type: 'button', onclick: () => D.askRename(id)}, '改名…'),
             h('button', {type: 'button', onclick: () => D.dup(id)}, '複製'),
             h('button', {type: 'button', onclick: () => D.remove(id)}, '刪除…')),
@@ -350,6 +360,7 @@ function draw()
         id: [...SC.EFF_FIELDS.id.suggest, ...S.fx, ...effs.map(e => e.id)],
         anim: S.anims ?? [],
         prefab: S.prefabs,
+        particle: S.particles ?? [],
     }, {items: o => S.items[o]?.lab});
 
     const ids = Object.keys(S.items);
@@ -368,7 +379,7 @@ function draw()
 }
 
 (async () => {
-    [S.fx, S.anims, S.roles, S.parts, S.prefabs] = await Promise.all([loadKeys('fx.json'), loadKeys('anim.json'), loadJson('role.json'), loadJson('part.json'), loadKeys('prefab.json')]);
+    [S.fx, S.anims, S.roles, S.parts, S.prefabs, S.particles] = await Promise.all([loadKeys('fx.json'), loadKeys('anim.json'), loadJson('role.json'), loadJson('part.json'), loadKeys('prefab.json'), loadKeys('particle.json')]);
     render();
     IC.ready.then(render);
     D.listenGoto();

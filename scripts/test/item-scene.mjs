@@ -3,8 +3,7 @@ import {run} from './harness.mjs'
 
 run('item-scene', async t => {
     await t.page.goto(new URL('/tools/#scene', t.page.url()).href);
-    await t.page.waitForFunction(() => window.__tools && document.querySelector('iframe')?.contentWindow.__sc);
-    const r = await t.page.evaluate(async () => {
+    await t.page.waitForFunction(() => window.__tools && document.querySelector('iframe')?.contentWindow.__sc);    const r = await t.page.evaluate(async () => {
         const T = window.__tools, out = {};
         const sleep = (ms) => new Promise(res => setTimeout(res, ms));
         const until = async (f, n = 500) => {for (let i = 0; i < n && !await f(); i++) await sleep(20); return f();};
@@ -158,6 +157,38 @@ run('item-scene', async t => {
         await sc.flush();
         const e4 = await itDisk('t-wand');
         out.addF = [e4.prefab, e4.particle ?? null, (await scDisk()).prefabs.map(o => o.key)];
+
+        // ---- 道具分頁：手上粒子欄位、二選一 ⚠、↗ 場景 ----（寫了 item.json 的 sandbox 重開完才切分頁，藏著的 canvas 0 大小）
+        await until(() => sc.S.ready && sb()?._insts?.i2);
+        T.show('item');
+        const iw = () => T.S.frames.item?.contentWindow, ie = () => iw()?.__ie;
+        await until(() => ie()?.S.items?.['t-wand']?.equip?.prefab === 't-fire', 1000);
+        ie().S.sel = 't-wand';
+        ie().S.view = 'form';
+        ie().set('t-wand', ['equip', 'particle'], {particle: 'fire-charge', x: 1});
+        await until(() => iw().document.querySelector('#view .warns'));
+        const idoc = iw().document;
+        out.itemTab = [[...idoc.querySelectorAll('#view .warns li')].some(li => li.textContent.includes('二選一')),
+            idoc.getElementById('view').textContent.includes('手上粒子'), !!idoc.querySelector('#view [data-k="gotoScene"]')];
+        ie().undo();
+        sc.pickRole(null);
+        idoc.querySelector('#view [data-k="gotoScene"]').click();
+        await until(() => sc.S.pick === 'i2');
+        out.goto = [T.S.tab ?? location.hash, sc.S.pick];
+
+        // ---- 粒子分頁：道具拿在手上用的不能刪 ----
+        await until(() => sc.S.ready && sb()?._insts?.i2);
+        T.show('particle');
+        const pw = () => T.S.frames.particle?.contentWindow, pt = () => pw()?.__pt;
+        await until(() => pt()?.S.data?.['torch-new'], 1000);
+        pt().S.ext.items = {'t-torch': {equip: {particle: {particle: 'torch-new'}}}};
+        const pd = pw().document.getElementById('dlgAsk'), rm = pt().D.remove('torch-new');
+        await until(() => pd.open);
+        out.pDel = [pd.textContent.includes('不能刪'), pd.textContent.includes('道具 t-torch')];
+        pd.close('ok');
+        await rm;
+        out.pDel.push(!!pt().S.data['torch-new']);
+        T.show('scene');
         return out;
     });
     t.eq('道具庫只列拿在手上的、標手上掛的', JSON.stringify(r.lib), JSON.stringify(['t-torch|prefab t-fire', 't-wand|粒子 fire-charge', 't-plain|']));
@@ -187,4 +218,7 @@ run('item-scene', async t => {
         '{"particle":"t-torch-fire-charge","x":10,"y":-20}', JSON.stringify({img: 'p-dot', mode: 'stream', speedY: -30}), null, 'i1', 1]));
     t.eq('undo：道具回原本、發射點回來', JSON.stringify(r.addEUndo), JSON.stringify(['{"particle":"torch-new"}', 1]));
     t.eq('prefab 實例 → 道具：equip.prefab、拿掉 particle、實例留著', JSON.stringify(r.addF), JSON.stringify(['t-fire', null, ['f1']]));
+    t.eq('道具分頁：兩個都寫標二選一、有手上粒子欄位、有 ↗ 場景', JSON.stringify(r.itemTab), '[true,true,true]');
+    t.eq('↗ 場景：選起場景裡那個道具實例', r.goto[1], 'i2');
+    t.eq('粒子分頁：道具拿在手上用的擋刪除', JSON.stringify(r.pDel), '[true,true,true]');
 });

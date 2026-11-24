@@ -19,7 +19,7 @@ import {fillBg, ANCHOR, drawBoxes, drawAnchor} from '../role/preview.js';
 import {DEPTH, BACK_DEPTH, REAR_DEPTH, BACK_NODE, CAT, roleTree, nodeOf, depthOf, ANIM_LIFT} from '../role/schema.js';
 import {treeEls} from '../common/views.js';
 import {EASE, dirTo, animTrack, animEnd, poseAt as trackPose, trackEnd, weaponAnim as animOf} from '../../src/core/pose.js';
-import {equipFor, partFor, sexOk, hiddenParts, PIVOTS, WRISTS, pivotOf, atPivot, fromPivot, rigOf, handOf, heldOf, handItems, isHandheld} from '../../src/core/equip.js';
+import {equipFor, equipPrefab, partFor, sexOk, hiddenParts, PIVOTS, WRISTS, pivotOf, atPivot, fromPivot, rigOf, handOf, heldOf, handItems, isHandheld} from '../../src/core/equip.js';
 
 const FILES = ['role.json', 'part.json', 'item.json', 'anim.json'];
 const PARTS = [['body', '身體'], ['shoes', '鞋子'], ['cloth', '衣服'], ['head', '頭'], ['hair', '頭髮'], ['hat', '帽子'], ['handF', '前手'], ['handB', '後手']];
@@ -730,7 +730,7 @@ function partsOf(r, lift = false)
         const node = nodeOf(k, raw);
         const p = k === 'body' ? {...raw, x: 0, y: 0, a: 0} : atPivot(raw, pivotOf(body, node, heldEquip()));
         const o = {p, k, node, alpha: S.alpha[cat ?? k] ?? 1};
-        if (p.sprite) out.push({...o, sprite: p.sprite, d: depthOf(k, raw) ?? 0, main: true, ...(cat && raw.prefab && {prefab: raw.prefab})});
+        if (p.sprite) out.push({...o, sprite: p.sprite, d: depthOf(k, raw) ?? 0, main: true, ...(cat && (raw.prefab || raw.particle) && {hand: raw})});
         if (p.ext) out.push({...o, sprite: p.ext, d: DEPTH.ext});
         if (p.back) out.push({...o, sprite: p.back, d: BACK_DEPTH[k] ?? DEPTH.back, node: BACK_NODE[k] ?? node});
         // 手套的 handB 用同一組數字相對 wristB
@@ -818,10 +818,10 @@ async function drawPreview()
         g.globalAlpha = 1;
         n++;
     });
-    // 裝備的 equip.prefab（如火把的火焰）：錨點＝握點、跟著道具轉、不乘 scale；只畫記號（粒子菱形、光源圓、png 小方塊），試穿跑不了粒子
+    // 裝備的 equip.prefab／equip.particle（如火把的火焰）：錨點＝握點、跟著道具轉、不乘 scale；只畫記號（粒子菱形、光源圓、png 小方塊），試穿跑不了粒子
     for (const pt of parts)
     {
-        const pf = pt.prefab && S.prefabs?.[pt.prefab];
+        const pf = pt.hand && equipPrefab(pt.hand, id => S.prefabs?.[id]);
         if (!pf) continue;
         const inOther = on && pt.node === on, w = inOther ? ow : tr && pt.node === wn ? wr : null;
         local(() => {

@@ -61,7 +61,10 @@ export const FIELDS = {
         hand: {label: '拿在', type: 'enum', options: ['', 'B'], names: {'': '前手（預設）', B: '後手'}, opt: true, offer: (it) => it.cat === 'CAT_WEAPON' || it.cat === 'CAT_EQUIP'},
         wristF: {label: '前手腕', ...XYA}, wristB: {label: '後手腕', ...XYA},
         // 拿在手上時疊在道具上的 prefab（如火把的火焰＋光），錨點＝握點、跟著道具轉，見 docs/prefab.md
-        prefab: {label: '手上 prefab', type: 'list', opt: true, offer: (it) => it.cat === 'CAT_WEAPON' || it.cat === 'CAT_EQUIP'}}},
+        prefab: {label: '手上 prefab', type: 'list', opt: true, offer: (it) => it.cat === 'CAT_WEAPON' || it.cat === 'CAT_EQUIP'},
+        // 只掛一個粒子（particle.json 的 id＋相對握點的 x/y），跟手上 prefab 二選一
+        particle: {label: '手上粒子', type: 'obj', opt: true, offer: (it) => it.cat === 'CAT_WEAPON' || it.cat === 'CAT_EQUIP',
+            fields: {particle: {label: '粒子', type: 'list'}, x: {label: 'x', type: 'num'}, y: {label: 'y', type: 'num'}}}}},
     drop: {label: '掉落圖', type: 'obj', fields: SPRITE},
     light: {label: '光源', type: 'obj', fields: {color: {label: '顏色', type: 'color'}, radius: {label: '半徑', type: 'int'}}},
     cook: {label: '烹煮成', type: 'obj', fields: {id: {label: 'id', type: 'itemref'}}},

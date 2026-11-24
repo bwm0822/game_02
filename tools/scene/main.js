@@ -2616,6 +2616,25 @@ function renderItemLib()
         }, IC.iconEl(S.refs.items[id].icon, 20), h('span', {class: 'id'}, id), h('span', {class: 'lab dim'}, handOf1(id))))));
 }
 
+async function gotoItem(id)
+{
+    const name = Object.keys(S.data).find(n => S.data[n].items?.some(o => o.item === id));
+    if (name !== undefined)
+    {
+        select(name, false);
+        S.pick = S.data[name].items.find(o => o.item === id).key;
+        refresh();
+        return toGame({sb: 'focus', key: S.pick});
+    }
+    if (S.sel === null)
+    {
+        const first = Object.keys(S.data)[0];
+        if (first === undefined) return status('還沒有場景，先新增一個');
+        select(first, false);
+    }
+    await addItemInst(id, S.center[0] * 32 + 16, S.center[1] * 32 + 16);
+}
+
 function pickItem(id)
 {
     if (S.sel === null) return status('先選或新增一個場景');
@@ -3081,6 +3100,8 @@ SH.onProject(setProject);
 // 別的分頁 ↗ 跳過來（粒子／特效／圖片分頁的 prefab 引用）：選第一個放了這個 prefab 的場景、選起那個實例
 SH.onGoto(async ([id] = []) => {
     if (!id || !await leaveDraft()) return;
+    // 道具分頁「↗ 場景」：item:<道具>＝選第一個放了它的場景的道具實例；都沒有就放在目前場景（沒選＝第一個）中間
+    if (id.startsWith(ITEM_DRAG)) return gotoItem(id.slice(ITEM_DRAG.length));
     const name = Object.keys(S.data).find(n => S.data[n].prefabs?.some(o => o.prefab === id));
     if (name === undefined) return status(`prefab ${id} 還沒放在任何場景（從左上 prefab 庫拖進畫面）`);
     select(name, false);

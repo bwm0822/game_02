@@ -26,8 +26,9 @@
 
 手寫來源檔（工具寫），進 git，`{<場景名>: {...}}` 可多組；遊戲不讀。存：底圖、時間（＋自訂環境色）、角色實例、擺設、粒子發射點、角色身上的狀態特效。
 
-- 一筆＝`{map, time?, ambient?, roles?, props?, particles?, lights?, prefabs?}`（`time`／`ambient` 見「日夜」）；角色 key 是 `r<n>`、擺設是 `p<n>`、粒子發射點是 `e<n>`、光源是 `l<n>`、prefab 實例是 `f<n>`，選取／👁／Del 共用同一套 key：
+- 一筆＝`{map, time?, ambient?, roles?, props?, particles?, lights?, prefabs?, items?}`（`time`／`ambient` 見「日夜」）；角色 key 是 `r<n>`、擺設是 `p<n>`、粒子發射點是 `e<n>`、光源是 `l<n>`、prefab 實例是 `f<n>`、道具實例是 `i<n>`，選取／👁／Del 共用同一套 key：
   - `prefabs`：`[{key, prefab, x, y, look?}]`（x/y＝錨點），見 [prefab.md](prefab.md)；prefab.json 本身也由這個分頁寫（選中實例時右欄改、先存草稿，按儲存才寫），跟 scenes.json 同一個 undo。
+  - `items`：`[{key, item, x, y}]`（x/y＝握點），見下面「道具實例」。
   - `particles`：見「特效」；角色另有 `fx: [fx.json id]`。
   - `props`：`[{key, img, x, y, sx?, sy?, pct?, flip?, angle?, ox?, oy?, depth?}]`，見「擺設」。
   - `lights`：`[{key, x, y, r, color, i?, follow?, dir?, arc?, soft?}]`，見「光源」。
@@ -50,6 +51,18 @@
 - 木偶：`src/roles/puppet.js`（`Puppet`，照 `Dummy` 木樁的組法）掛 `RoleView`＋`COM_Inventory`＋`COM_Anim`＋`COM_Action`＋`COM_Nav`＋`COM_Stats`＋`COM_Disp`＋`COM_Ability`，不掛 AI／作息／感知、不進回合、不讀寫存檔、`bb.interactive=false`（點選是 sandbox 自己判斷：身體方塊包住游標的最上面那個，沒有就看站在那格的）；`bb.meta` 是 role.json 那筆的淺拷貝、`inv.equips` 換成套完覆寫的（`Puppet.equipsOf()`）。只在 Sandbox 用到，正式版一起被 tree-shake 掉。
 - sandbox 套場景時照 `key` 比對：那筆資料（JSON）沒變的角色留著，變了（換角色、格子、面向、裝備）或不見的就 `dismiss()` 重建（重新登記路網權重）。
 - 操作：畫面上左鍵點選（白框）＋拖曳（跟著格子跳、放開才寫檔）、右鍵「在這裡放角色…」（挑角色對話框：照 kind／grp 分組、搜尋、雙擊確定、預設上次挑的 `tools.scene.lastRole`）／「刪除」；左欄角色清單（👁 暫藏只在這次開著時、不寫檔、藏著點不到；右鍵刪除；「＋」放在地圖中間）；右欄 角色（換 id）、格子、面向、裝備六格（下拉＝（原本：…）／（空）／那一類有 `equip` 的道具，限定性別不符的不列）、刪除；Del 刪選中的（分頁或 sandbox 有焦點都行）。
+
+## 道具實例（2026-11-24：直接編道具手上的 prefab／粒子）
+
+- 左欄 prefab 庫下面「道具」庫：拿在手上的道具（有 `equip` 的 `CAT_WEAPON`／`CAT_EQUIP`），標手上掛的（`prefab x`／`粒子 x`）；拖進畫面＝放道具實例、點一下＝選這個場景裡第一個；樹多一段「道具」（👁、右鍵刪除）。道具分頁的「↗ 場景」跳過來（`item:<道具>`）：選第一個放了它的場景的實例，都沒有就放在目前場景（沒選＝第一個）中間。
+- sandbox 畫**直立的 `equip.sprite`**（`scale`／`ox`／`oy`）＋手上的零件，錨點＝握點、零件座標 1:1（遊戲裡零件不乘 `equip.scale`）。做法：分頁的 `instOf()` 把道具實例當 prefab 實例（`prefab`＝`equip.prefab` 的 id，或 `@<道具>`＝`equip.particle` 合成的單零件 prefab），sandbox 收到 `@item:<道具>`＝那筆的零件＋**最後**墊道具圖（depth −1e4，零件 index 不變），所以選取、拖零件、zone、光源把手都沿用 prefab 實例那套；沒有占地方塊、沒有「移到場景」。
+- 右欄：「道具 `i<n>`」（換道具、位置，立刻寫 scenes.json）＋「手上：（無）｜prefab｜粒子」（`equip.prefab`／`equip.particle` 二選一）：
+  - prefab：下拉（最上面 `[新增]`＝問 id、立刻寫一筆空的 prefab.json）＋「共用 n 處」，下面嵌**跟 prefab 實例一樣的屬性＋零件區**，改的是 prefab 本身。
+  - 粒子：嵌 prefab 粒子零件的表單（粒子下拉含 `[新增]`／x／y／粒子內容，沒有深度、狀態），粒子一直算選取（sandbox 拖點、拖 zone）。
+  - **草稿**：無／粒子＝`@<道具>` 的草稿（零件 0／1 個）；prefab＝那筆 prefab 的草稿＋`d.hand`（道具的 equip.prefab 換成它）；`itemEquip()` 照草稿算道具的 equip。換手上時，原本的草稿改過 prefab 內容或粒子先問 儲存／放棄／取消（只換過手上的直接換掉），換回硬碟上那樣＝沒有草稿。儲存（`saveDraft()`）一筆寫 item.json（`equip.prefab`／`equip.particle` 換掉，其他欄位不動）＋prefab.json（`@` 的不寫）＋particle.json；寫了 item.json 重開 sandbox。別的分頁改了那個道具的手上一起問保留／用新的。
+  - sandbox 的木偶也跟著草稿：load 訊息帶 `items`（`{道具: equip}`，蓋 DB、上次蓋的先還原），木偶手上的 prefab／粒子（equip、prefab、粒子內容）變了就重穿（`Sandbox._syncHands()`）。
+- **加到道具 ▸**（發射點、prefab 實例右鍵，左欄或畫面）：子選單列場景裡的道具實例；發射點＝搬走變成 `equip.particle`（位置相對握點，✎ 自己那份另存 `<道具>-<原 id>`）、prefab 實例＝`equip.prefab` 換成它（實例留著、錨點直接對握點）；道具已有手上的先問取代；立刻寫 item.json＋scenes.json（＋particle.json）一筆 undo，有草稿先問。不做反過來的「移到場景」（手上切成無＝拿掉）。
+- 測試：`scripts/test/item-scene.mjs`。
 
 ## 動作（表演，不進 undo、不改場景檔）
 
