@@ -58,6 +58,7 @@ function checkVal(def, v, where, out)
         else for (const [c, n] of Object.entries(v))
         {
             if (!def.keys.includes(c)) out.push(`${where} 只能有 ${def.keys.join('／')}：${c}`);
+            else if (def.types?.[c]) checkVal({type: def.types[c]}, n, `${where}.${c}`, out);
             else if (typeof n !== 'number') out.push(`${where}.${c} 不是數字：${str(n)}`);
         }
     }
@@ -101,11 +102,13 @@ function validate(id)
     if (it.bb?.harvest?.id && !S.items[it.bb.harvest.id]) out.push(`bb.harvest.id 指到不存在的道具：${it.bb.harvest.id}`);
     if (it.anim && S.anims && !S.anims.includes(it.anim)) out.push(`anim 指到 anim.json 沒有的動畫：${it.anim}`);
     if (it.sex && isObj(it.equip?.f)) out.push('有限定 sex，女版 equip.f 不會用到');
-    if (it.equip?.prefab && it.equip?.particle) out.push('手上 prefab 跟手上粒子只能二選一（遊戲用 prefab）');
-    if (it.equip?.prefab && !S.prefabs.includes(it.equip.prefab)) out.push(`手上 prefab 指到 prefab.json 沒有的：${it.equip.prefab}`);
+    if (it.equip?.prefab && it.equip?.particle) out.push('equip.prefab 跟 equip.particle 只能二選一（遊戲用 prefab）');
+    const hpf = it.equip?.prefab?.prefab;
+    if (it.equip?.prefab && !hpf) out.push('equip.prefab 沒有填 prefab id');
+    if (hpf && !S.prefabs.includes(hpf)) out.push(`equip.prefab 指到 prefab.json 沒有的：${hpf}`);
     const hp = it.equip?.particle?.particle;
-    if (it.equip?.particle && !hp) out.push('手上粒子沒有填粒子 id');
-    if (hp && S.particles && !S.particles.includes(hp)) out.push(`手上粒子指到 particle.json 沒有的：${hp}`);
+    if (it.equip?.particle && !hp) out.push('equip.particle 沒有填粒子 id');
+    if (hp && S.particles && !S.particles.includes(hp)) out.push(`equip.particle 指到 particle.json 沒有的：${hp}`);
     for (const [rid, r] of Object.entries(S.roles))
         if ((r.inv?.equips ?? []).some(e => (e?.id ?? e) === id) && !sexOk(it, r.sex)) out.push(`${rid} 穿著，但這件${SC.FIELDS.sex.names[it.sex] ?? it.sex}`);
     return out;

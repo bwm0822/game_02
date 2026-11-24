@@ -1,7 +1,7 @@
 // item.json 的欄位定義：表單、總覽表、檢查都看這份；沒列到的 key 不會被丟掉（道具層級進原始 JSON 區、effect 進額外欄位）
 // type：text / textarea / int / num / bool / enum（下拉，options 固定）/ list（自由輸入＋建議）/ tags（字串陣列）
 //       icon / sprite（選圖器）/ itemref（道具 id）/ color（0xRRGGBB 整數）/ obj（fields 子欄位）/ map（道具 id → 數量）/ effects
-//       nums（一排數字存成物件，keys 是哪幾格，如 {x, y, a}）
+//       nums（一排數字存成物件，keys 是哪幾格，如 {x, y, a}；types:{key: 型別} 那格改用別的型別、不掛小標籤）
 // obj 子欄位的 opt（選填）：沒值就不畫（key 還是算認得的，不會進「其他」），從框裡的「加欄位」叫出來，有值時列尾有「刪除」
 // obj 子欄位的 hint(o)：o 是整個 obj，回傳空格的灰字
 
@@ -61,10 +61,12 @@ export const FIELDS = {
         hand: {label: '拿在', type: 'enum', options: ['', 'B'], names: {'': '前手（預設）', B: '後手'}, opt: true, offer: (it) => it.cat === 'CAT_WEAPON' || it.cat === 'CAT_EQUIP'},
         wristF: {label: '前手腕', ...XYA}, wristB: {label: '後手腕', ...XYA},
         // 拿在手上時疊在道具上的 prefab（如火把的火焰＋光），錨點＝握點、跟著道具轉，見 docs/prefab.md
-        prefab: {label: '手上 prefab', type: 'list', opt: true, offer: (it) => it.cat === 'CAT_WEAPON' || it.cat === 'CAT_EQUIP'},
-        // 只掛一個粒子（particle.json 的 id＋相對握點的 x/y），跟手上 prefab 二選一
-        particle: {label: '手上粒子', type: 'obj', opt: true, offer: (it) => it.cat === 'CAT_WEAPON' || it.cat === 'CAT_EQUIP',
-            fields: {particle: {label: '粒子', type: 'list'}, x: {label: 'x', type: 'num'}, y: {label: 'y', type: 'num'}}}}},
+        // x/y＝整組相對握點的偏移（只影響這個道具，不動 prefab.json）
+        prefab: {label: 'prefab', type: 'nums', keys: ['prefab', 'x', 'y'], types: {prefab: 'list'}, hint: () => ({x: 0, y: 0}), opt: true,
+            offer: (it) => it.cat === 'CAT_WEAPON' || it.cat === 'CAT_EQUIP'},
+        // 只掛一個粒子（particle.json 的 id＋相對握點的 x/y），跟 prefab 二選一
+        particle: {label: '粒子', type: 'nums', keys: ['particle', 'x', 'y'], types: {particle: 'list'}, hint: () => ({x: 0, y: 0}), opt: true,
+            offer: (it) => it.cat === 'CAT_WEAPON' || it.cat === 'CAT_EQUIP'}}},
     drop: {label: '掉落圖', type: 'obj', fields: SPRITE},
     light: {label: '光源', type: 'obj', fields: {color: {label: '顏色', type: 'color'}, radius: {label: '半徑', type: 'int'}}},
     cook: {label: '烹煮成', type: 'obj', fields: {id: {label: 'id', type: 'itemref'}}},

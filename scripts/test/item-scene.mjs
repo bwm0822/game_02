@@ -17,7 +17,7 @@ run('item-scene', async t => {
         const proj = await dir(opfs, 'game');
         const json = await dir(proj, 'public', 'assets', 'json');
         await write(json, 'item.json', JSON.stringify({
-            't-torch': {cat: 'CAT_EQUIP', icon: 'sword-iron', equip: {sprite: 'sword-iron', scale: 0.5, prefab: 't-fire'}},
+            't-torch': {cat: 'CAT_EQUIP', icon: 'sword-iron', equip: {sprite: 'sword-iron', scale: 0.5, prefab: {prefab: 't-fire'}}},
             't-wand': {cat: 'CAT_WEAPON', icon: 'sword-bronze', equip: {sprite: 'sword-bronze', particle: {particle: 'fire-charge', x: 3, y: -20}}},
             't-plain': {cat: 'CAT_WEAPON', icon: 'sword-bronze', equip: {sprite: 'sword-bronze'}},
             't-bag': {cat: 'CAT_BAG', icon: 'Barrel'},
@@ -101,6 +101,17 @@ run('item-scene', async t => {
         await sc.setHand('i2', 'prefab', 't-fire');
         await until(() => sbParts('t-wand').includes('light'));
         out.toPf = [sc.S.draft?.id, sc.S.draft?.hand?.id, sc.instOf('i2').prefab, sbParts('t-wand'), sc.itemEquip('t-wand').particle ?? null];
+        // 偏移：草稿的 hand、sandbox 錨點＝握點＋偏移、道具圖挪回握點；undo 一起退
+        const gx = sc.instOf('i2').x, gy = sc.instOf('i2').y;
+        sc.setHandOff('i2', {x: 3});
+        sc.setHandOff('i2', {y: -4});
+        await until(() => sb()?._insts?.i2?.data.y === gy - 4);
+        const refPart = () => doc.getElementById('game').contentWindow.__dbg.DB._prefabDB['@item:t-wand'].parts.at(-1);
+        out.off = [JSON.stringify(sc.itemEquip('t-wand').prefab), sb()._insts.i2.data.x - gx, refPart().x, refPart().y,
+            !!doc.querySelector('#right [data-k="handOff.x"]') && doc.querySelector('#right [data-k="handOff.y"]').value];
+        sc.undo();
+        out.offUndo = JSON.stringify(sc.itemEquip('t-wand').prefab);
+        sc.redo();
         await sc.saveDraft();
         await sc.flush();
         const e1 = await itDisk('t-wand');
@@ -158,19 +169,21 @@ run('item-scene', async t => {
         const e4 = await itDisk('t-wand');
         out.addF = [e4.prefab, e4.particle ?? null, (await scDisk()).prefabs.map(o => o.key)];
 
-        // ---- 道具分頁：手上粒子欄位、二選一 ⚠、↗ 場景 ----（寫了 item.json 的 sandbox 重開完才切分頁，藏著的 canvas 0 大小）
+        // ---- 道具分頁：粒子欄位（id／x／y 同一列）、二選一 ⚠、↗ 場景 ----（寫了 item.json 的 sandbox 重開完才切分頁，藏著的 canvas 0 大小）
         await until(() => sc.S.ready && sb()?._insts?.i2);
         T.show('item');
         const iw = () => T.S.frames.item?.contentWindow, ie = () => iw()?.__ie;
-        await until(() => ie()?.S.items?.['t-wand']?.equip?.prefab === 't-fire', 1000);
+        await until(() => ie()?.S.items?.['t-wand']?.equip?.prefab?.prefab === 't-fire', 1000);
         ie().S.sel = 't-wand';
         ie().S.view = 'form';
         ie().set('t-wand', ['equip', 'particle'], {particle: 'fire-charge', x: 1});
         await until(() => iw().document.querySelector('#view .warns'));
+        ie().S.open.equip = true;
+        ie().render();
         const idoc = iw().document;
         out.itemTab = [[...idoc.querySelectorAll('#view .warns li')].some(li => li.textContent.includes('二選一')),
-            idoc.getElementById('view').textContent.includes('手上粒子'), !!idoc.querySelector('#view [data-k="gotoScene"]')];
-        ie().undo();
+            idoc.querySelector('#view [data-k="equip.particle.particle"]')?.closest('.nums')?.querySelector('[data-k="equip.particle.y"]') != null,
+            !!idoc.querySelector('#view [data-k="gotoScene"]')];        ie().undo();
         sc.pickRole(null);
         idoc.querySelector('#view [data-k="gotoScene"]').click();
         await until(() => sc.S.pick === 'i2');
@@ -207,9 +220,12 @@ run('item-scene', async t => {
          JSON.stringify([JSON.stringify({sprite: 'sword-bronze', particle: {particle: 'fire-charge', x: 5, y: -20}}), null, 1]));
     t.eq('換成 prefab：草稿管 t-fire＋hand、sandbox 照它、equip 沒有 particle', JSON.stringify(r.toPf), JSON.stringify(['t-fire', 't-wand', 't-fire', ['fire-charge', 'light', 'sword-bronze'], null]));
     t.eq('木偶手上跟著草稿換成 prefab（粒子＋光源）、放棄回來', JSON.stringify(r.pup1), '[2,1]');
-    t.eq('儲存 prefab：equip.prefab、particle 拿掉', JSON.stringify(r.pfSave), JSON.stringify(['t-fire', null, null]));
+    t.eq('手上 prefab 偏移：equip.prefab 的 x/y、sandbox 錨點＝握點＋偏移、道具圖挪回握點、右欄 x/y', JSON.stringify(r.off),
+         JSON.stringify(['{"prefab":"t-fire","x":3,"y":-4}', 3, -3, 4, '-4']));
+    t.eq('偏移 undo 一步', r.offUndo, '{"prefab":"t-fire","x":3}');
+    t.eq('儲存 prefab：equip.prefab（含偏移）、particle 拿掉', JSON.stringify(r.pfSave), JSON.stringify([{prefab: 't-fire', x: 3, y: -4}, null, null]));
     t.eq('手上＝無：@ 空草稿、sandbox 只剩道具圖', JSON.stringify(r.none), JSON.stringify(['@t-wand', 'none', ['sword-bronze']]));
-    t.eq('儲存無：兩個都拿掉、其他欄位留著；undo 回來', JSON.stringify([r.noneSave, r.noneUndo]), JSON.stringify([[null, null, 'sword-bronze'], 't-fire']));
+    t.eq('儲存無：兩個都拿掉、其他欄位留著；undo 回來', JSON.stringify([r.noneSave, r.noneUndo]), JSON.stringify([[null, null, 'sword-bronze'], {prefab: 't-fire', x: 3, y: -4}]));
     t.eq('prefab → [新增] 粒子：範本進草稿', JSON.stringify(r.newP), JSON.stringify(['@t-torch', ['torch-new']]));
     t.eq('儲存：particle.json 寫新的、item.json 換 particle、prefab 本身留著', JSON.stringify(r.newPSave), JSON.stringify([null, '{"particle":"torch-new"}', true, true]));
     t.eq('發射點右鍵：加到道具 ▸ 道具實例', JSON.stringify(r.menu), JSON.stringify(['加到道具 ▸', ['i1　t-torch', 'i2　t-wand']]));
@@ -217,8 +233,8 @@ run('item-scene', async t => {
     t.eq('發射點 ✎ → 道具：另存 <道具>-<原 id>、相對握點、搬走、選道具實例、一筆 undo', JSON.stringify(r.addE), JSON.stringify([
         '{"particle":"t-torch-fire-charge","x":10,"y":-20}', JSON.stringify({img: 'p-dot', mode: 'stream', speedY: -30}), null, 'i1', 1]));
     t.eq('undo：道具回原本、發射點回來', JSON.stringify(r.addEUndo), JSON.stringify(['{"particle":"torch-new"}', 1]));
-    t.eq('prefab 實例 → 道具：equip.prefab、拿掉 particle、實例留著', JSON.stringify(r.addF), JSON.stringify(['t-fire', null, ['f1']]));
-    t.eq('道具分頁：兩個都寫標二選一、有手上粒子欄位、有 ↗ 場景', JSON.stringify(r.itemTab), '[true,true,true]');
+    t.eq('prefab 實例 → 道具：equip.prefab、拿掉 particle、實例留著', JSON.stringify(r.addF), JSON.stringify([{prefab: 't-fire'}, null, ['f1']]));
+    t.eq('道具分頁：兩個都寫標二選一、粒子欄位同一列、有 ↗ 場景', JSON.stringify(r.itemTab), '[true,true,true]');
     t.eq('↗ 場景：選起場景裡那個道具實例', r.goto[1], 'i2');
     t.eq('粒子分頁：道具拿在手上用的擋刪除', JSON.stringify(r.pDel), '[true,true,true]');
 });

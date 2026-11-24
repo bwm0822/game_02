@@ -42,11 +42,13 @@ export function fieldInput(def, val, put, k)
         case 'nums':
         {
             const o = isObj(val) ? val : {};
-            const one = (c) => h('label', null, c, numInput(`${k}.${c}`, c, 'num', o[c], def.hint?.[c], v => {
+            const set = (c) => (v) => {
                 const n = {...o, [c]: v};
                 if (n[c] === undefined) delete n[c];
                 put(Object.keys(n).length ? n : undefined);
-            }));
+            };
+            const one = (c) => def.types?.[c] ? fieldInput({type: def.types[c]}, o[c], set(c), `${k}.${c}`)
+                : h('label', null, c, numInput(`${k}.${c}`, c, 'num', o[c], def.hint?.[c], set(c)));
             return h('span', {class: 'nums'}, def.keys.map(one),
                 val !== undefined && h('button', {type: 'button', dataset: {del: k}, onclick: () => put(undefined)}, '刪除'));
         }

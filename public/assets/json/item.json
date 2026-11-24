@@ -1657,7 +1657,10 @@
         "y": -5,
         "a": -30
       },
-      "prefab": "torch-fire"
+      "prefab": {
+        "prefab": "torch-fire",
+        "y": -25
+      }
     },
     "drop": {
       "sprite": "torch",
@@ -1971,7 +1974,11 @@
       "sprite": "sword-bronze",
       "scale": 0.25,
       "oy": 0.85,
-      "a": 90
+      "a": 90,
+      "particle": {
+        "particle": "sword-1-sword-fire",
+        "y": -9
+      }
     },
     "icon": "sword-bronze-icon",
     "drop": {

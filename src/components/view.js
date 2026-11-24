@@ -1213,14 +1213,14 @@ export class RoleView extends View
         else if(isHandheld(item, GM.CAT)) {(this._handSps ??= []).push(...sps);}
     }
 
-    // equip.prefab(prefab.json 的 id，如火把的火焰)：錨點＝握點(equip 的 x/y/a，掛在同一個節點)、跟著道具轉／翻面，零件座標是道具直立時的、不乘 equip.scale；
+    // equip.prefab({prefab: prefab.json 的 id, x, y}，如火把的火焰)：錨點＝握點＋x/y(equip 的 x/y/a，掛在同一個節點)、跟著道具轉／翻面，零件座標是道具直立時的、不乘 equip.scale；
     // png 零件在 holder 裡(排在道具前面)；粒子在世界座標噴、發射點每幀跟著零件位置(local 的粒子進 holder)，前後跟著節點(後手在角色後面)；光源每幀挪到零件位置
     // 只用 prefab 的預設 look，零件 off 不建；卸下／換裝(_removeEquips)時清掉；equip.particle 當成只有一個粒子零件的 prefab(跟 prefab 二選一)
     _addEquipPrefab(e, type, node)
     {
-        const scene = this.scene, pf = equipPrefab(e, id=>DB.prefab(id)), tag = e.prefab ?? e.particle?.particle;
-        if(e.prefab && e.particle) {dlog(T.WARN)(`equip.prefab ${e.prefab} 跟 equip.particle 都有，用 prefab`);}
-        if(!pf) {dlog(T.WARN)(`equip.prefab ${e.prefab} 不存在`); return [];}
+        const scene = this.scene, pf = equipPrefab(e, id=>DB.prefab(id)), tag = e.prefab?.prefab ?? e.particle?.particle;
+        if(e.prefab && e.particle) {dlog(T.WARN)(`equip.prefab ${tag} 跟 equip.particle 都有，用 prefab`);}
+        if(!pf) {dlog(T.WARN)(`equip.prefab ${tag} 不存在`); return [];}
         const n = this._nodes[node] ?? this._rig;
         const holder = scene.add.container(e.x ?? 0, e.y ?? 0).setAngle(e.a ?? 0);
         holder.depth = (PART_DEPTH[type] ?? 0) + 0.01;

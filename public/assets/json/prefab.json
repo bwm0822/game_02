@@ -64,7 +64,7 @@
     "parts": [
       {
         "particle": "torch-fire",
-        "y": -25
+        "y": 0
       },
       {
         "light": {
@@ -72,7 +72,7 @@
           "color": "#ffcc88",
           "i": 0.6
         },
-        "y": -25
+        "y": 0
       }
     ]
   }

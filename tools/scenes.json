@@ -1,7 +1,7 @@
 {
   "場景": {
     "map": "sandbox",
-    "time": "04:01",
+    "time": "05:14",
     "prefabs": [
       {
         "key": "f1",
@@ -10,23 +10,29 @@
         "y": 336
       }
     ],
-    "items": [
-      {
-        "key": "i1",
-        "item": "torch",
-        "x": 400,
-        "y": 288
-      }
-    ],
     "roles": [
       {
         "key": "r1",
         "id": "wick",
-        "tx": 15,
-        "ty": 8,
+        "tx": 3,
+        "ty": 10,
         "equip": {
-          "CAT_EQUIP": "torch"
+          "CAT_WEAPON": "sword-1"
         }
+      }
+    ],
+    "items": [
+      {
+        "key": "i1",
+        "item": "torch",
+        "x": 275,
+        "y": 283
+      },
+      {
+        "key": "i2",
+        "item": "sword-1",
+        "x": 359,
+        "y": 317
       }
     ]
   }
