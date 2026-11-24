@@ -7,7 +7,7 @@
  "margin":0,
  "name":"prefabs",
  "spacing":0,
- "tilecount":1,
+ "tilecount":2,
  "tiledversion":"1.11.0",
  "tileheight":48,
  "tiles":[
@@ -16,6 +16,12 @@
          "image":"..\/textures\/prefabs\/prefab-forge.png",
          "imagewidth":64,
          "imageheight":48
+        }, 
+        {
+         "id":1,
+         "image":"..\/textures\/prefabs\/prefab-torch-fire.png",
+         "imagewidth":32,
+         "imageheight":32
         }],
  "tilewidth":64,
  "type":"tileset",

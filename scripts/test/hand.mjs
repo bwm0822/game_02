@@ -48,6 +48,27 @@ run('手持道具', async t => {
         out.drawn = [has(wb, 'sword-iron'), has(wf, 'sword-bronze'), !has(wf, 'sword-iron'),
                      Math.round(wb.pivot.x - (body.wristB?.x ?? 0)), Math.round(wb.pivot.y - (body.wristB?.y ?? 0))];
 
+        // equip.prefab：png 零件在握點的 holder 裡、粒子發射點／光源每幀跟著零件的世界位置、後手排在角色後面；卸下清掉
+        d.DB._particleDB['t-fire'] = {img: 'p-square', speedY: -20, lifespan: 300, frequency: 50};
+        d.DB._prefabDB['t-fire'] = {parts: [{img: 'sword-bronze', x: 0, y: -20}, {particle: 't-fire', x: 0, y: -30}, {light: {r: 60}, x: 0, y: -30}, {img: 'bow-short', look: 'off'}]};
+        it('t-torch').equip.prefab = 't-fire';
+        p.view._updateEquips();
+        const lights0 = p.scene.lights.lights.length;
+        {
+            const live = p.view._eqPrefabs?.[0], holder = live?.holder;
+            const w = holder.getWorldTransformMatrix().transformPoint(0, -30);
+            const em = live.pts.find(o => o.fx).fx.emitter, lt = live.pts.find(o => o.light), rig = wb.parentContainer;
+            const l = rig.getWorldTransformMatrix().applyInverse(w.x, w.y);
+            out.prefab = [holder.parentContainer === wb, holder.list.length, holder.list[0].texture.key,
+                          Math.round(em.x) === Math.round(l.x) && Math.round(em.y) === Math.round(l.y),
+                          Math.round(lt.light.x) === Math.round(w.x) && Math.round(lt.light.y) === Math.round(w.y),
+                          em.parentContainer === rig && rig.getIndex(em) === rig.getIndex(wb) + 1, !!em.active];
+            p.view._removeEquips();
+            out.prefab.push(p.scene.lights.lights.length === lights0 - 1, !p.view._eqPrefabs);
+            delete it('t-torch').equip.prefab;
+            p.view._updateEquips();
+        }
+
         // 舊存檔／NPC 撞手（弓＋火把）：武器優先、火把不畫
         p.bb.equips[wslot._i] = {id: 't-bow', count: 1};
         p.view._updateEquips();
@@ -65,4 +86,6 @@ run('手持道具', async t => {
     t.eq('拿著後手火把：武器格擋弓、劍可以', JSON.stringify(r.swap), '[false,true]');
     t.eq('火把畫在後手腕、劍在前手腕、後手腕加上劍跟火把的位移', JSON.stringify(r.drawn), '[true,true,true,11,-3]');
     t.eq('舊資料撞手：只畫弓', JSON.stringify(r.old), '[true,false]');
+    t.eq('equip.prefab：掛在後手腕、只建預設狀態的 png、粒子（rig 裡、緊接在後手節點上面＝蓋過火把被身體擋）／光源跟著零件位置；卸下清掉光源',
+         JSON.stringify(r.prefab), '[true,1,"sword-bronze",true,true,true,true,true,true]');
 });

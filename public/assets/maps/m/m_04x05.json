@@ -156,12 +156,6 @@
                  "template":"..\/..\/templates\/buildings\/house-1.tj",
                  "x":2000,
                  "y":1872
-                }, 
-                {
-                 "id":190,
-                 "template":"..\/..\/templates\/prefabs\/forge.tj",
-                 "x":1312,
-                 "y":1664
                 }],
          "opacity":1,
          "properties":[

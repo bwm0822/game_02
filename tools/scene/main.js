@@ -26,7 +26,7 @@ const ls = {
     get: (k) => {try {return localStorage.getItem(k);} catch {return null;}},
     set: (k, v) => {try {localStorage.setItem(k, v);} catch { /* 私密視窗 */ }},
 };
-const SLOTS = [['CAT_WEAPON', '武器'], ['CAT_HELMET', '頭盔'], ['CAT_CHESTPLATE', '護甲'], ['CAT_GLOVES', '手套'], ['CAT_BOOTS', '靴子']];
+const SLOTS = [['CAT_WEAPON', '武器'], ['CAT_HELMET', '頭盔'], ['CAT_CHESTPLATE', '護甲'], ['CAT_GLOVES', '手套'], ['CAT_BOOTS', '靴子'], ['CAT_EQUIP', '道具']];
 // 這些檔改了 sandbox 的 DB 就舊了：整個重開
 // （particle.json 不用：load 訊息帶整份，DB._particleDB 直接換）
 const GAME_FILES = ['role.json', 'item.json', 'part.json', 'anim.json', 'fx.json', 'ability.json', 'local.json', 'textures.json'];
@@ -348,10 +348,14 @@ function pickPrefab(id)
 
 // 用到這個 prefab 的實例：[[場景名, 個數]]
 const prefabUses = (id) => Object.entries(S.data).map(([n, sc]) => [n, (sc.prefabs ?? []).filter(o => o.prefab === id).length]).filter(([, c]) => c);
+// 拿在手上時疊這個 prefab 的道具（item.json 的 equip.prefab，如火把的火焰）
+const equipUsers = (id) => Object.keys(S.refs.items ?? {}).filter(k => S.refs.items[k]?.equip?.prefab === id);
 
 async function deletePrefab(id, sure)
 {
     if (S.draft?.id === id && !await leaveDraft()) return;
+    const eq = equipUsers(id);
+    if (eq.length) return status(`prefab ${id} 還有道具的 equip.prefab 在用，不能刪：${eq.join('、')}`);
     const used = TL.usedBy(await TL.prefabRefs(S.root, id), id);
     if (used.length) return status(`prefab ${id} 還有地圖在用，不能刪：${used.join('；')}`);
     const uses = prefabUses(id);
@@ -1052,7 +1056,8 @@ async function renamePrefab(from, to)
         const done = await TL.renamePrefab(S.root, from, to);
         for (const rel of done.filter(r => r.startsWith('maps/'))) SH.notifySaved(rel);
         await updateTextures();
-        if (done.length) status(`連帶改了：${done.join('、')}`);
+        const eq = equipUsers(from);
+        status([done.length && `連帶改了：${done.join('、')}`, eq.length && `道具的 equip.prefab 還指著 ${from}，要去道具分頁改：${eq.join('、')}`].filter(Boolean).join('；'));
     }
     catch (e) {status(`地圖／template 沒改完：${e.message}`);}
 }

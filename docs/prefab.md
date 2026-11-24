@@ -48,6 +48,23 @@
   - 放置道具：`item.json` 的 `bb.prefab`（`init_runtime` 本來就 `Object.assign(bb, dat.bb)`），runtime 存檔帶 `look`，放置 ghost 用縮圖。
 - 不做（以後再談）：story 指令／條件控制狀態、使用中自動切換、runtime 用程式任意 spawn、光源閃爍、`look` 陣列、`drop.prefab`。
 
+### 拿在手上：`equip.prefab`（2026-11-24）
+
+- 手持道具（武器、`CAT_EQUIP` 如火把）的 `item.json` `equip.prefab: "<id>"`：**疊在** `equip.sprite` 上（本體照舊是紙娃娃拆的 png，prefab 放火焰粒子、光源，也可以有 png）。
+- `RoleView._addEquipPrefab()`：錨點＝握點（equip 的 x/y/a，掛在同一個手腕節點的 holder），**跟著道具轉、翻面、播動畫**；零件座標是道具直立時的、遊戲單位、**不乘 `equip.scale`**。
+  - png 零件進 holder（排在道具前面）。
+  - 粒子：local 的進 holder（跟著道具轉）；其他的 emitter 進角色的 `rig`、緊接在那隻手的節點上面（depth＝節點＋0.01，`moveAbove`）＝蓋過道具、被身體擋，播動畫節點搬前後時跟著；發射點每幀（`scene` 的 `update`，`_trackEquipPrefabs()`）把零件點從 holder 換到 rig 座標，粒子設定不跟著道具轉（火焰往上冒，翻面由 shape 鏡像）。代價：已噴出的粒子在角色容器裡，走路時跟著角色、沒有拖尾。（第一版是世界座標＋排在整個角色前／後，後手時火焰被火把一起蓋住，2026-11-24 改掉）
+  - 光源每幀挪到零件的世界位置。
+  - 只用 prefab 的預設 `look`（不切狀態），`off` 不建。
+  - 卸下／換裝（`_removeEquips()`）、`_remove()` 清掉粒子、光源、update 監聽；跟武器撞手不畫的道具不建。部位範圍 `_measure()` 不算手持道具跟它的 prefab。
+- `com_light`：有 `equip.prefab` 的道具不再開角色中心那盞燈（光交給 prefab 的光源零件）；沒有 prefab 的發光道具照舊。
+- 工具：
+  - 場景分頁木偶有第六格「道具」（sandbox 跑真的 `RoleView`，看得到火焰／光跟著手）。
+  - 選中 prefab 實例時，有道具的 `equip.prefab` 指向它，sandbox 在錨點畫那個道具的 `equip.sprite`（直立、`scale`／`ox`／`oy`、半透明、點不到、不存檔，`Sandbox._syncEquipRef()`）當對位置的參考。
+  - 刪 prefab 時有道具的 `equip.prefab` 在用就擋，改名只提示要去道具分頁改。
+  - 試穿只畫記號（粒子橘菱形、光源黃圓、png 藍小方塊，跟著道具轉），跑不了粒子。
+  - 道具分頁 equip 多「手上 prefab」（`opt`，只給武器／`CAT_EQUIP`）。
+
 ## Tiled
 
 存 prefab 時自動產生：

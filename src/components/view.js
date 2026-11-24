@@ -1089,7 +1089,7 @@ export class RoleView extends View
         return {x:2*this._pivot.x - r.x - r.w, y:r.y, w:r.w, h:r.h};
     }
 
-    // 量部位合成的範圍(相對錨點，不含武器、手上的工具)：建立跟換裝時量一次，量的時候 shape 暫時回到靜止姿勢、不翻面
+    // 量部位合成的範圍(相對錨點，不含武器、手持道具(連它的 prefab)、手上的工具)：建立跟換裝時量一次，量的時候 shape 暫時回到靜止姿勢、不翻面
     _measure()
     {
         const sh = this._shape;
@@ -1097,7 +1097,8 @@ export class RoleView extends View
         const keep = {x:sh.x, y:sh.y, a:sh.angle, sx:sh.scaleX, sy:sh.scaleY};
         const p = this.pivot;
         sh.setPosition(p.x, p.y).setAngle(0).setScale(1);
-        const skip = new Set([...(this._weapon ?? []), ...(this._held ?? [])]);
+        const flat = (c)=>c.list ? c.list.flatMap(flat) : [c];
+        const skip = new Set([...(this._weapon ?? []), ...(this._held ?? []), ...(this._handSps ?? [])].flatMap(flat));
         const o = this.parentContainer ? {x:this.parentContainer.x, y:this.parentContainer.y} : {x:0, y:0};
         let [l, t, r, b] = [Infinity, Infinity, -Infinity, -Infinity];
         for(const sp of this.sprites)
@@ -1203,17 +1204,110 @@ export class RoleView extends View
     _addEquip(item)
     {
         if(!item.equip) {return;}
-        let sps = this._addPart(equipFor(item.equip, this.meta.sex, item.sex), item.cat, nodeFor(item.cat, item.equip));
+        const e = equipFor(item.equip, this.meta.sex, item.sex), node = nodeFor(item.cat, item.equip);
+        let sps = this._addPart(e, item.cat, node);
+        if(e.prefab) {sps.push(...this._addEquipPrefab(e, item.cat, node));}
         this._sortParts();
         this._equips.push(...sps);
         if(item.cat===GM.CAT.WEAPON) {this._weapon = sps;}
+        else if(isHandheld(item, GM.CAT)) {(this._handSps ??= []).push(...sps);}
+    }
+
+    // equip.prefab(prefab.json 的 id，如火把的火焰)：錨點＝握點(equip 的 x/y/a，掛在同一個節點)、跟著道具轉／翻面，零件座標是道具直立時的、不乘 equip.scale；
+    // png 零件在 holder 裡(排在道具前面)；粒子在世界座標噴、發射點每幀跟著零件位置(local 的粒子進 holder)，前後跟著節點(後手在角色後面)；光源每幀挪到零件位置
+    // 只用 prefab 的預設 look，零件 off 不建；卸下／換裝(_removeEquips)時清掉
+    _addEquipPrefab(e, type, node)
+    {
+        const scene = this.scene, pf = DB.prefab(e.prefab);
+        if(!pf) {dlog(T.WARN)(`equip.prefab ${e.prefab} 不存在`); return [];}
+        const n = this._nodes[node] ?? this._rig;
+        const holder = scene.add.container(e.x ?? 0, e.y ?? 0).setAngle(e.a ?? 0);
+        holder.depth = (PART_DEPTH[type] ?? 0) + 0.01;
+        n.add(holder);
+        const live = {holder, n, pts:[]}, out = [holder];
+        for(const p of pf.parts ?? [])
+        {
+            if(p.off || (p.look && p.look!==pf.look)) {continue;}
+            if(p.img)
+            {
+                const [key, frame] = p.img.split(':');
+                if(!scene.textures.exists(key)) {dlog(T.WARN)(`prefab ${e.prefab}：沒有圖 ${p.img}`); continue;}
+                holder.add(scene.add.image(p.x ?? 0, p.y ?? 0, key, frame).setOrigin(p.ox ?? 0.5, p.oy ?? 1).setScale(p.sx ?? 1, p.sy ?? 1)
+                    .setFlipX(!!p.flip).setAngle(p.angle ?? 0).setPipeline('Light2D'));
+            }
+            else if(p.particle)
+            {
+                const def = DB.particle(p.particle);
+                if(!def) {continue;}
+                if(def.local) {playParticle(scene, {...def, depth:undefined}, {parent:holder, ox:p.x ?? 0, oy:p.y ?? 0}); continue;}
+                // 不 local：emitter 進 rig、排在那隻手的節點正上方(蓋過道具、被身體擋)，發射點每幀挪到零件位置，粒子設定不跟著道具轉(火往上冒)
+                const fx = playParticle(scene, {...def, local:true, depth:undefined}, {parent:this._rig});
+                if(!fx) {continue;}
+                live.pts.push({p, fx});
+                out.push(fx.emitter);
+            }
+            else if(p.light)
+            {
+                const l = p.light, color = Phaser.Display.Color.HexStringToColor(l.color ?? '#ffcc88').color;
+                const pt = {p, light:setSpot(scene.lights.addLight(0, 0, l.r ?? 120, color, l.i ?? GM.LIGHT), l)};
+                live.pts.push(pt);
+            }
+        }
+        (this._eqPrefabs ??= []).push(live);
+        this._trackEquipPrefabs();
+        if(!this._eqTick)
+        {
+            this._eqTick = ()=>this._trackEquipPrefabs();
+            scene.events.on('update', this._eqTick);
+        }
+        return out;
+    }
+
+    // 光源跟著零件的世界位置；rig 裡的 emitter 挪到零件在 rig 的位置、排在節點正上方(播動畫節點搬前後時跟著)
+    _trackEquipPrefabs()
+    {
+        const rig = this._rig;
+        if(!rig) {return;}
+        const rm = rig.getWorldTransformMatrix();
+        for(const {holder, n, pts} of this._eqPrefabs ?? [])
+        {
+            if(!holder.active) {continue;}
+            const m = holder.getWorldTransformMatrix();
+            for(const pt of pts)
+            {
+                const w = m.transformPoint(pt.p.x ?? 0, pt.p.y ?? 0);
+                if(pt.light) {pt.light.setPosition(w.x, w.y); continue;}
+                const em = pt.fx.emitter;
+                if(!em?.active) {continue;}
+                const l = rm.applyInverse(w.x, w.y);
+                em.setPosition(l.x, l.y);
+                em.depth = n.depth + 0.01;
+                if(n.parentContainer===rig && rig.getIndex(em)!==rig.getIndex(n) + 1) {rig.moveAbove(em, n);}
+            }
+        }
+    }
+
+    _clearEquipPrefabs()
+    {
+        for(const {pts} of this._eqPrefabs ?? [])
+        {
+            for(const pt of pts)
+            {
+                if(pt.light) {this.scene?.lights.removeLight(pt.light);}
+                else {pt.fx?.stop(true);}
+            }
+        }
+        this._eqPrefabs = null;
+        if(this._eqTick) {this.scene?.events.off('update', this._eqTick); this._eqTick = null;}
     }
 
     _removeEquips()
     {
+        this._clearEquipPrefabs();
         this._equips.forEach((equip)=>{equip.destroy();})
         this._equips = [];
         this._weapon = null;
+        this._handSps = null;
     }
 
     // 手腕節點照 body 支點＋手上那把東西(held＝它的 equip)的位移；節點正在播動畫(不在舊的靜止姿勢)只換 pivot，收回時才過去
@@ -1250,6 +1344,7 @@ export class RoleView extends View
     _remove()
     {
         super._remove();
+        this._clearEquipPrefabs();
         // 移除 parts
         this._shape.getAll().forEach((child)=>{child.destroy();});
         this._rig = null;

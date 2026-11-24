@@ -28,7 +28,8 @@ export class COM_Light extends Com
             this.scene.events.off('update', this._onUpdate);
         }
 
-        const equipped = root.findEquip?.(eq => DB.item(eq.id)?.light);
+        // 有 equip.prefab 的（如火把）光由 prefab 的光源零件畫在道具上（view.js 的 _addEquipPrefab），這裡不另外開
+        const equipped = root.findEquip?.(eq => DB.item(eq.id)?.light && !DB.item(eq.id).equip?.prefab);
         if (!equipped) {return;}
 
         const {color = 0xffaa00, radius = 300} = DB.item(equipped.id).light;

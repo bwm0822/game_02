@@ -1635,7 +1635,7 @@
   },
   "torch": {
     "cat": "CAT_EQUIP",
-    "icon": "icons:170",
+    "icon": "torch-icon",
     "gold": 10,
     "endurance": 360,
     "light": {
@@ -1643,7 +1643,26 @@
       "radius": 300
     },
     "lab": "火把",
-    "des": "可以照明"
+    "des": "可以照明",
+    "equip": {
+      "sprite": "torch",
+      "scale": 0.25,
+      "x": 0,
+      "y": 0,
+      "a": 90,
+      "oy": 0.8,
+      "hand": "B",
+      "wristB": {
+        "x": 0,
+        "y": -5,
+        "a": -30
+      },
+      "prefab": "torch-fire"
+    },
+    "drop": {
+      "sprite": "torch",
+      "scale": 0.25
+    }
   },
   "bottle": {
     "cat": "CAT_ITEM",
