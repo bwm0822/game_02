@@ -24,15 +24,15 @@ const D = createDoc({
     draw, validateAll: () => validateAll(), onNew: () => askNew(),
     innerRefs: () => [], renameRefs: () => {},
     onSaved: (file) => {if ([...REF_FILES, 'role.json', 'part.json'].includes(file)) loadRefs().then(render);},
-    // 道具拿在手上用的（item.json 的 equip.particle）：刪除擋、改名只列
+    // 道具拿在手上用的（item.json 的 equip.parts）：刪除擋、改名只列
     ext: {
-        title: '拿在手上的道具（equip.particle，不會改，要自己處理）',
-        blockDelete: '有道具拿在手上用它（item.json 的 equip.particle）：先到道具分頁或場景分頁換掉',
+        title: '拿在手上的道具（equip.parts，不會改，要自己處理）',
+        blockDelete: '有道具拿在手上用它（item.json 的 equip.parts）：先到場景分頁換掉',
         refs: async (id) => {
-            const lines = Object.entries(S.ext.items ?? {}).filter(([, it]) => it?.equip?.particle?.particle === id).map(([k]) => `道具 ${k}`);
+            const lines = Object.entries(S.ext.items ?? {}).filter(([, it]) => it?.equip?.parts?.some?.(p => p?.particle === id)).map(([k]) => `道具 ${k}`);
             return {lines, n: lines.length, data: null};
         },
-        rename: () => status('拿在手上的道具還指著舊 id：到道具分頁或場景分頁改'),
+        rename: () => status('拿在手上的道具還指著舊 id：到場景分頁改'),
     },
 });
 const {S, render, commit, set} = D;

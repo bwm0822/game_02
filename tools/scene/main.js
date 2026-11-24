@@ -260,8 +260,8 @@ const isEm = (key) => /^e\d+$/.test(key ?? '');
 const emKey = () => {let i = 1; while (emOf(`e${i}`)) i++; return `e${i}`;};
 const listOf = (key) => (isProp(key) ? 'props' : isEm(key) ? 'particles' : isLight(key) ? 'lights' : isInst(key) ? 'prefabs' : isItemInst(key) ? 'items' : 'roles');
 
-// ---------- 道具實例 {key: 'i<n>', item, x, y（錨點＝握點）}：直立的 equip.sprite＋手上掛的 equip.prefab／equip.particle（docs/scene-tool.md） ----------
-// 分頁裡當成 prefab 實例用（instOf() 回傳帶 prefab＝編的那筆：equip.prefab 的 id，或 @<道具>＝equip.particle 合成的單零件 prefab），
+// ---------- 道具實例 {key: 'i<n>', item, x, y（錨點＝握點）}：直立的 equip.sprite＋手上的零件 equip.parts（docs/scene-tool.md） ----------
+// 分頁裡當成 prefab 實例用（instOf() 回傳帶 prefab＝@<道具>＝equip.parts 合成的 prefab，零件只有粒子／光源），
 //  sandbox 收到的是 @item:<道具>＝那筆的零件＋最後墊一張道具圖（零件 index 不變）
 const itemInsts = () => scene()?.items ?? [];
 const isItemInst = (key) => /^i\d+$/.test(key ?? '');
@@ -270,43 +270,34 @@ const isHandItem = (it) => !!it?.equip && (it.cat === 'CAT_WEAPON' || it.cat ===
 const handItemIds = () => Object.keys(S.refs.items).filter(id => isHandItem(S.refs.items[id]));
 const SYN = '@';
 const isSyn = (id) => !!id?.startsWith(SYN);
-// equip.particle ⇄ 單零件 prefab（沒有＝空的）
-const eqToPf = (q) => (q?.particle ? {parts: [{particle: q.particle, ...(q.x && {x: q.x}), ...(q.y && {y: q.y})}]} : {});
-const pfToEq = (pf) => {const p = pf?.parts?.[0]; return p?.particle ? {particle: p.particle, ...(p.x && {x: p.x}), ...(p.y && {y: p.y})} : undefined;};
-// 草稿管的是哪個道具的手上（@<道具> 的草稿，或手上換成 prefab 的 d.hand）
-const draftItem = (d) => (!d ? null : isSyn(d.id) ? d.id.slice(SYN.length) : d.hand?.id ?? null);
-// equip.prefab 的偏移 {x, y}（只留非 0 的）
-const offOf = (q) => ({...(q?.x && {x: q.x}), ...(q?.y && {y: q.y})});
-const diskOff = (id) => offOf(S.refs.items[id]?.equip?.prefab);
-// 道具的 equip（照草稿：@ 草稿＝零件換回 equip.particle、沒有 prefab；d.hand＝equip.prefab 換成草稿那筆＋d.hand 的偏移）
+// equip.parts ⇄ 合成 prefab（沒有＝空的）
+const eqToPf = (e) => (e?.parts?.length ? {parts: structuredClone(e.parts)} : {});
+// 草稿管的是哪個道具的手上（@<道具> 的草稿）
+const draftItem = (d) => (d && isSyn(d.id) ? d.id.slice(SYN.length) : null);
+// 道具的 equip（照草稿：@ 草稿的零件換成 equip.parts，沒零件＝拿掉）
 function itemEquip(id)
 {
     const e = S.refs.items[id]?.equip, d = S.draft;
     if (!e || draftItem(d) !== id) return e;
-    const {prefab, particle, ...out} = e;
-    if (isSyn(d.id)) {const q = pfToEq(d.pf); if (q) out.particle = q;}
-    else out.prefab = {prefab: d.id, ...offOf(d.hand)};
+    const {parts, ...out} = e;
+    if (d.pf?.parts?.length) out.parts = structuredClone(d.pf.parts);
     return out;
 }
-const eqPair = (e) => str({prefab: e?.prefab, particle: e?.particle});
+const eqParts = (e) => str(e?.parts ?? null);
 const pidBase = (id) => (isSyn(id) ? id.slice(SYN.length) : id);
-const itemPfId = (id) => itemEquip(id)?.prefab?.prefab ?? `${SYN}${id}`;
-const itemOff = (id) => offOf(itemEquip(id)?.prefab);
-const synPf = (id) => eqToPf(itemEquip(id.slice(SYN.length))?.particle);
+const itemPfId = (id) => `${SYN}${id}`;
+const synPf = (id) => eqToPf(S.refs.items[id.slice(SYN.length)]?.equip);
 const itemSandboxId = (id) => `@item:${id}`;
-// sandbox 的道具實例：錨點放在握點＋偏移（prefab 零件照自己的座標、拖零件不用換算），道具圖往回挪到握點
+// sandbox 的道具實例：錨點＝握點、零件照自己的座標，最後墊道具圖；under 的 local 粒子排在道具圖後面（零件 depth），不 local 的 ItemView 看 under
 function itemSandboxPf(id)
 {
-    const e = itemEquip(id) ?? {}, pf = pfOf(itemPfId(id)) ?? {}, {x = 0, y = 0} = itemOff(id);
-    const ref = e.sprite && {img: e.sprite, ...(x && {x: -x}), ...(y && {y: -y}), ...(e.ox !== undefined && {ox: e.ox}), ...(e.oy !== undefined && {oy: e.oy}),
+    const e = itemEquip(id) ?? {}, pf = pfOf(itemPfId(id)) ?? {};
+    const ref = e.sprite && {img: e.sprite, ...(e.ox !== undefined && {ox: e.ox}), ...(e.oy !== undefined && {oy: e.oy}),
         sx: e.scale ?? 1, sy: e.scale ?? 1, depth: -1e4};
-    return {...(pf.look && {look: pf.look}), parts: [...(pf.parts ?? []), ...(ref ? [ref] : [])]};
+    return {parts: [...(pf.parts ?? []).map(p => (p.under ? {...p, depth: -2e4} : p)), ...(ref ? [ref] : [])]};
 }
 // 送 sandbox 的場景：道具實例接在 prefab 實例後面
-const sceneMsg = (sc) => (sc.items?.length ? {...sc, prefabs: [...(sc.prefabs ?? []), ...sc.items.map(o => {
-    const {x = 0, y = 0} = itemOff(o.item);
-    return {key: o.key, prefab: itemSandboxId(o.item), x: o.x + x, y: o.y + y};
-})]} : sc);
+const sceneMsg = (sc) => (sc.items?.length ? {...sc, prefabs: [...(sc.prefabs ?? []), ...sc.items.map(o => ({key: o.key, prefab: itemSandboxId(o.item), x: o.x, y: o.y}))]} : sc);
 
 function addItemInst(item, x, y)
 {
@@ -411,14 +402,9 @@ function pickPrefab(id)
 
 // 用到這個 prefab 的實例：[[場景名, 個數]]
 const prefabUses = (id) => Object.entries(S.data).map(([n, sc]) => [n, (sc.prefabs ?? []).filter(o => o.prefab === id).length]).filter(([, c]) => c);
-// 拿在手上時疊這個 prefab 的道具（item.json 的 equip.prefab，如火把的火焰）
-const equipUsers = (id) => Object.keys(S.refs.items ?? {}).filter(k => S.refs.items[k]?.equip?.prefab?.prefab === id);
-
 async function deletePrefab(id, sure)
 {
     if (S.draft?.id === id && !await leaveDraft()) return;
-    const eq = equipUsers(id);
-    if (eq.length) return status(`prefab ${id} 還有道具的 equip.prefab 在用，不能刪：${eq.join('、')}`);
     const used = TL.usedBy(await TL.prefabRefs(S.root, id), id);
     if (used.length) return status(`prefab ${id} 還有地圖在用，不能刪：${used.join('；')}`);
     const uses = prefabUses(id);
@@ -486,15 +472,14 @@ function prefabsMsg()
     return out;
 }
 
-// 硬碟上那筆（@<道具>＝item.json 的 equip.particle 合成；道具有 equip.prefab 時是空的）
-const diskPf = (id) => (isSyn(id) ? eqToPf(S.refs.items[id.slice(SYN.length)]?.equip?.particle) : S.prefabs[id]);
-// 新草稿；hand＝道具 id（道具實例的手上換成 prefab id 這筆），off＝equip.prefab 的偏移（沒給＝item.json 的），
-//  ibase＝那時 item.json 的 equip.prefab／particle（偵測別處改過）
-function newDraft(id, src, hand, off)
+// 硬碟上那筆（@<道具>＝item.json 的 equip.parts 合成）
+const diskPf = (id) => (isSyn(id) ? synPf(id) : S.prefabs[id]);
+// 新草稿；ibase＝那時 item.json 的 equip.parts（@<道具> 的，偵測別處改過）
+function newDraft(id, src)
 {
-    const iid = isSyn(id) ? id.slice(SYN.length) : hand;
+    const iid = isSyn(id) ? id.slice(SYN.length) : null;
     return {id, key: S.pick, base: str(diskPf(id)), pf: structuredClone(src), ps: {}, pbase: {}, thumb: src?.thumb ?? null, undo: [], redo: [],
-            ...(hand && {hand: {id: hand, ...(off ?? diskOff(hand))}}), ...(iid && {ibase: eqPair(S.refs.items[iid]?.equip)})};
+            ...(iid && {ibase: eqParts(S.refs.items[iid]?.equip)})};
 }
 
 // 改 prefab 內容：fn(那筆 prefab 的副本, 粒子副本 {id: def})，回傳 false＝沒改；第一次改才開始草稿
@@ -508,7 +493,7 @@ function editPf(id, fn)
     S.draft ??= newDraft(id, src);
     const d = S.draft;
     for (const pid of Object.keys(ps)) if (!(pid in d.pbase)) d.pbase[pid] = str(S.refs.particles[pid] ?? null);
-    if (!(H.take() && d.undo.length)) d.undo.push({pf: d.pf ?? structuredClone(src), ps: d.ps, part: S.part, hand: d.hand});
+    if (!(H.take() && d.undo.length)) d.undo.push({pf: d.pf ?? structuredClone(src), ps: d.ps, part: S.part});
     d.redo = [];
     d.pf = next;
     d.ps = ps;
@@ -533,8 +518,8 @@ function draftStep(from, to)
 {
     const d = S.draft, u = d[from].pop();
     if (!u) return status('草稿最早的一步了（再往前要先儲存或放棄）');
-    d[to].push({pf: d.pf, ps: d.ps, part: S.part, hand: d.hand});
-    ({pf: d.pf, ps: d.ps, part: S.part, hand: d.hand} = u);
+    d[to].push({pf: d.pf, ps: d.ps, part: S.part});
+    ({pf: d.pf, ps: d.ps, part: S.part} = u);
     liveThumb();
     refresh();
 }
@@ -555,19 +540,16 @@ async function saveDraft()
             pfs[d.id] = structuredClone(d.pf);
         }
         for (const [pid, def] of ps) particles[pid] = structuredClone(def);
-        // 道具的手上：equip.prefab／equip.particle 二選一
+        // 道具的手上：equip.parts（沒零件＝拿掉）
         if (iid)
         {
             const e = items[iid]?.equip;
             if (!e) throw new Error(`item.json 沒有 ${iid} 的 equip`);
-            delete e.prefab;
-            delete e.particle;
-            if (eq.prefab) e.prefab = structuredClone(eq.prefab);
-            if (eq.particle) e.particle = structuredClone(eq.particle);
+            if (eq.parts) e.parts = structuredClone(eq.parts); else delete e.parts;
         }
     }, undefined, undefined, files);
     if ((!syn && str(S.prefabs[d.id]) !== str(d.pf)) || ps.some(([pid, def]) => str(S.refs.particles[pid]) !== str(def)) ||
-        (iid && eqPair(S.refs.items[iid]?.equip) !== eqPair(eq))) return false;
+        (iid && eqParts(S.refs.items[iid]?.equip) !== eqParts(eq))) return false;
     S.draft = null;
     if (!syn)
     {
@@ -590,7 +572,7 @@ function dropDraft()
 async function leaveDraft()
 {
     if (!S.draft) return true;
-    const iid = draftItem(S.draft), what = isSyn(S.draft.id) ? `道具 ${iid} 的手上` : `prefab ${S.draft.id}${iid ? `（道具 ${iid} 的手上）` : ''}`;
+    const iid = draftItem(S.draft), what = iid ? `道具 ${iid} 的手上` : `prefab ${S.draft.id}`;
     const v = await ask('還沒存', `${what} 改了還沒存`, [['save', '儲存'], ['drop', '放棄'], ['cancel', '取消']]);
     if (v === 'save') return saveDraft();
     if (v === 'drop') {dropDraft(); return true;}
@@ -604,7 +586,7 @@ async function draftConflict()
     if (!d) return;
     const iid = draftItem(d), syn = isSyn(d.id);
     const pfChanged = !syn && str(S.prefabs[d.id]) !== d.base;
-    const itemChanged = !!iid && eqPair(S.refs.items[iid]?.equip) !== d.ibase;
+    const itemChanged = !!iid && eqParts(S.refs.items[iid]?.equip) !== d.ibase;
     const pids = livePs(d).map(([pid]) => pid).filter(pid => str(S.refs.particles[pid] ?? null) !== d.pbase[pid]);
     if (!pfChanged && !itemChanged && !pids.length) return;
     if (!syn && !S.prefabs[d.id]) {status(`prefab ${d.id} 在別處被刪了，草稿丟掉`); return dropDraft();}
@@ -614,7 +596,7 @@ async function draftConflict()
     if (S.draft !== d) return;
     if (v === 'theirs') return dropDraft();
     if (!syn) d.base = str(S.prefabs[d.id]);
-    if (iid) d.ibase = eqPair(S.refs.items[iid]?.equip);
+    if (iid) d.ibase = eqParts(S.refs.items[iid]?.equip);
     for (const pid of pids) d.pbase[pid] = str(S.refs.particles[pid] ?? null);
 }
 
@@ -725,10 +707,8 @@ function inspectMsg()
 }
 
 // 選取的零件（停用的不算）
-// 道具手上的單一粒子（@<道具>）一直算選取（沒有零件清單可以點）
 const selParts = () => {
     const o = instOf(S.pick), parts = o && pfOf(o.prefab)?.parts;
-    if (o?.item && isSyn(o.prefab)) return parts?.length ? [0] : [];
     return parts ? pselOf().parts.filter(i => parts[i] && !parts[i].off) : [];
 };
 
@@ -1057,7 +1037,7 @@ function partsPanel(o)
     const id = o.prefab, pf = pfOf(id) ?? {}, parts = pf.parts ?? [], look = o.look ?? pf.look;
     const btn = (t, title, fn) => h('button', {title, onclick: (e) => {e.stopPropagation(); fn();}}, t);
     const add = (k, kind, t) => h('button', {dataset: {k}, onclick: () => addPart(id, kind)}, t);
-    return foldSec('right.parts', `零件（${parts.length}）`, () => [
+    return foldSec('right.parts', `${o.item ? '手上零件' : '零件'}（${parts.length}）`, () => [
         ...parts.flatMap((p, i) => [
             h('div', {class: `part${(p.look && p.look !== look) || p.off ? ' off' : ''}${pselOf().parts.includes(i) && !p.off ? ' picked' : ''}`, dataset: {part: i},
                 title: '左鍵：選取（sandbox 外框、拖曳、方向鍵、Del），再點取消，可多選；右鍵：展開／收起表單',
@@ -1067,16 +1047,17 @@ function partsPanel(o)
                 partIcon(p), h('span', {class: 'id'}, partName(p)), p.look && h('span', {class: 'lab'}, p.look), h('span', {class: 'grow'}),
                 btn('↑', '往前（同深度時畫在下面）', () => movePart(id, i, -1)), btn('↓', '往後', () => movePart(id, i, 1)), btn('✕', '拿掉這個零件', () => delPart(id, i))),
             i === S.part && h('div', {class: 'partform'},
-                !oldDef(p) && !o.item && h('div', {class: 'row2'}, h('button', {dataset: {k: 'toScene'}, title: '從 prefab 拿掉，變成場景的擺設／發射點／光源（位置不動；狀態／特效不帶過去；立刻寫檔）',
+                !oldDef(p) && h('div', {class: 'row2'}, h('button', {dataset: {k: 'toScene'}, title: '從 prefab 拿掉，變成場景的擺設／發射點／光源（位置不動；狀態／特效不帶過去；立刻寫檔）',
                     onclick: () => partsToScene(o.key, [i])}, '移到場景')),
                 ...partRows(id, i, p)),
         ]),
-    ], [add('addPng', 'png', '＋png'), add('addParticle', 'particle', '＋粒子'), add('addLight', 'light', '＋光源')]);
+    ], [!o.item && add('addPng', 'png', '＋png'), add('addParticle', 'particle', '＋粒子'), add('addLight', 'light', '＋光源')].filter(Boolean));
 }
 
-// lite＝道具手上的單一粒子（equip.particle 只有 粒子／x／y）：不出深度、狀態
-function partRows(id, i, p, lite = false)
+// 道具手上的零件（@<道具>＝equip.parts）：粒子不出深度、狀態，多一個 under；光源不出狀態
+function partRows(id, i, p)
 {
+    const lite = isSyn(id);
     const set = (patch) => setPart(id, i, patch);
     const row = (k, ...v) => h('tr', null, h('td', {class: 'k'}, k), h('td', null, ...v));
     const n = (k, step, ph, src = p) => h('input', {type: 'number', step, value: src[k] ?? '', placeholder: ph, class: 'n', dataset: {k},
@@ -1117,6 +1098,8 @@ function partRows(id, i, p, lite = false)
                 !lite && row('深度', Object.assign(n('depth', 1, '0'), {disabled: !def?.local}),
                     h('span', {class: 'dim', dataset: {k: 'depthNote'}}, def?.local ? ' 跟 png 一起排（大的在前），下面的「深度」不管'
                         : ' 勾 local 才能排進零件；沒勾＝整個在 prefab 前面（下面「深度」選目標底下＝後面）')),
+                lite && row('後面', h('input', {type: 'checkbox', checked: !!p.under, dataset: {k: 'under'}, onchange: (e) => set({under: e.target.checked || undefined})}),
+                    h('span', {class: 'dim'}, def?.local ? ' 畫在道具後面' : ' 畫在手（整個手腕節點）後面')),
                 !lite && look),
             ...foldSec('right.partParticle',
                 h('span', {dataset: {k: 'defState'}}, `粒子內容：${pid}`,
@@ -1136,7 +1119,7 @@ function partRows(id, i, p, lite = false)
             row('柔和', Object.assign(n('soft', 0.05, '0.2', l), {disabled: point})),
             row('顏色', h('input', {type: 'color', value: l.color ?? '#ffcc88', dataset: {k: 'color'}, onchange: (e) => set({color: e.target.value})})),
             row('強度', n('i', 0.1, '1', l)),
-            look),
+            !lite && look),
         h('div', {class: 'hint dim'}, '選取時 sandbox 畫範圍＋藍色把手：拖把手改半徑（聚光燈：中線末端的把手連方向一起改、弧兩端的把手改光錐；Shift 吸 16px／15°）'),
     ];
 }
@@ -1164,8 +1147,7 @@ async function renamePrefab(from, to)
         const done = await TL.renamePrefab(S.root, from, to);
         for (const rel of done.filter(r => r.startsWith('maps/'))) SH.notifySaved(rel);
         await updateTextures();
-        const eq = equipUsers(from);
-        status([done.length && `連帶改了：${done.join('、')}`, eq.length && `道具的 equip.prefab 還指著 ${from}，要去道具分頁改：${eq.join('、')}`].filter(Boolean).join('；'));
+        if (done.length) status(`連帶改了：${done.join('、')}`);
     }
     catch (e) {status(`地圖／template 沒改完：${e.message}`);}
 }
@@ -1372,26 +1354,16 @@ function addToItems(key, at)
     return [['加到 prefab ▸', () => menu(at, insts().map(o => [`${o.key}　${o.prefab}`, () => addToPrefab(key, o.key)]))]];
 }
 
-// ---------- 加到道具：發射點 → 道具的 equip.particle（搬走，位置相對道具實例的錨點＝握點，✎ 另存 <道具>-<原 id>）；
-//            prefab 實例 → 道具的 equip.prefab（實例留著，錨點直接對握點）；二選一，已有的先問取代；立刻寫一筆 undo、有草稿先問 ----------
-async function replaceHandOk(id, what, sure)
-{
-    const e = S.refs.items[id]?.equip;
-    if (!e) {status(`item.json 沒有 ${id} 的 equip`); return false;}
-    const had = e.prefab ? `prefab ${e.prefab.prefab}` : e.particle?.particle ? `粒子 ${e.particle.particle}` : null;
-    if (!had || sure) return true;
-    return await ask('加到道具', `${id} 手上已經有 ${had}，換成 ${what}？（equip.prefab／equip.particle 二選一）`, [['ok', '取代'], ['cancel', '取消']]) === 'ok';
-}
-
-async function addToItem(key, ikey, sure)
+// ---------- 加到道具：發射點／光源 → 道具的 equip.parts 加一筆（從場景搬走，位置相對道具實例的錨點＝握點，✎ 發射點另存 <道具>-<原 id>）；
+//            follow 丟掉；立刻寫 item.json＋scenes.json（＋particle.json）一筆 undo、有草稿先問 ----------
+async function addToItem(key, ikey)
 {
     if (S.draft && !await leaveDraft()) return;
     const sc = scene(), io = itemInsts().find(x => x.key === ikey), id = io?.item;
     if (!io) return status(`場景裡沒有 ${ikey}`);
-    const e = emOf(key), f = !e && insts().find(x => x.key === key);
-    if (!e && !f) return status(`${key} 不是發射點或 prefab 實例`);
-    if (f && !S.prefabs[f.prefab]) return status(`prefab.json 沒有 ${f.prefab}`);
-    if (!await replaceHandOk(id, e ? `粒子 ${e.id}` : `prefab ${f.prefab}`, sure)) return;
+    if (!S.refs.items[id]?.equip) return status(`item.json 沒有 ${id} 的 equip`);
+    const e = emOf(key), l = !e && lightOf(key);
+    if (!e && !l) return status(`${key} 不是發射點或光源`);
     let pid = e?.id, write = null;
     if (e?.def)
     {
@@ -1400,33 +1372,31 @@ async function addToItem(key, ikey, sure)
         for (let i = 2; ids.includes(pid); i++) pid = `${base}-${i}`;
         write = structuredClone(e.def);
     }
-    const pos = e && absPos(sc, e), x = e && pos.x - io.x, y = e && pos.y - io.y;
+    const [raw] = toParts(sc, [[e ? 'particles' : 'lights', e ?? l]], io.x, io.y, e?.def ? {[key]: pid} : {});
+    const part = Object.fromEntries(Object.entries(raw).filter(([k]) => ['particle', 'light', 'x', 'y'].includes(k)));
     const name = S.sel, files = [ST.FILE, ST.ITEM, ...(write ? [ST.PARTICLE] : [])];
     await commit((scenes, items, particles) => {
         const s = scenes[name], eq = items[id]?.equip;
         if (!s?.items?.some(o => o.key === ikey)) throw new Error(`場景裡沒有 ${ikey}`);
         if (!eq) throw new Error(`item.json 沒有 ${id} 的 equip`);
-        delete eq.prefab;
-        delete eq.particle;
-        if (f) {eq.prefab = {prefab: f.prefab}; return;}
-        if (!s.particles?.some(o => o.key === key)) throw new Error(`場景裡沒有 ${key}`);
+        if (!s[e ? 'particles' : 'lights']?.some(o => o.key === key)) throw new Error(`場景裡沒有 ${key}`);
         if (write) particles[pid] = write;
-        eq.particle = {particle: pid, ...(x && {x}), ...(y && {y})};
+        (eq.parts ??= []).push(part);
         dropFromScene(s, new Set([key]));
     }, undefined, ikey, files);
-    status(`加到道具 ${id}：${e ? `粒子 ${pid}${write ? `（${e.id} ✎ 另存）` : ''}` : `prefab ${f.prefab}`}`);
+    status(`加到道具 ${id}：${e ? `粒子 ${pid}${write ? `（${e.id} ✎ 另存）` : ''}` : '光源'}`);
 }
 
-// 右鍵選單的「加到道具 ▸」（發射點、prefab 實例）：子選單列場景裡的道具實例
+// 右鍵選單的「加到道具 ▸」（發射點、光源）：子選單列場景裡的道具實例
 function toItemMenu(key, at)
 {
-    if (!isEm(key) && !isInst(key)) return [];
+    if (!isEm(key) && !isLight(key)) return [];
     if (!itemInsts().length) return [['加到道具（場景裡沒有道具實例）', null]];
     return [['加到道具 ▸', () => menu(at, itemInsts().map(o => [`${o.key}　${o.item}`, () => addToItem(key, o.key)]))]];
 }
 
-// ---------- 移到場景：prefab 的零件搬成場景的擺設／發射點／光源（絕對位置＝實例錨點＋零件 x/y），prefab 拿掉它們（docs/prefab.md） ----------
-// 場景沒有的 look／off／fx 丟掉（狀態列提示）；立刻寫 prefab.json＋scenes.json，收尾併成一筆 undo；有草稿先問；選起新的第一個
+// ---------- 移到場景：prefab（或道具實例的 equip.parts）的零件搬成場景的擺設／發射點／光源（絕對位置＝實例錨點＋零件 x/y），拿掉它們（docs/prefab.md） ----------
+// 場景沒有的 look／off／fx／under 丟掉（狀態列提示）；立刻寫 prefab.json（道具＝item.json）＋scenes.json，收尾併成一筆 undo；有草稿先問；選起新的第一個
 async function partsToScene(fkey, idxs)
 {
     idxs = [...new Set(idxs)].sort((a, b) => a - b);
@@ -1435,15 +1405,15 @@ async function partsToScene(fkey, idxs)
     const want = idxs.map(i => str(pfOf(id)?.parts?.[i]));
     if (!idxs.length || want.includes(undefined)) return;
     if (S.draft && !await leaveDraft()) return;
-    const o = instOf(fkey), pf = S.prefabs[id];
+    const iid = isSyn(id) ? id.slice(SYN.length) : null, o = instOf(fkey), pf = iid ? (S.refs.items[iid]?.equip && diskPf(id)) : S.prefabs[id];
     if (!o || o.prefab !== id || !pf) return status(`${fkey} 不見了`);
     // 放棄草稿後零件可能不一樣了：不一樣就不搬
     if (idxs.some((i, j) => str(pf.parts?.[i]) !== want[j])) return status(`${id} 的零件變了（草稿放棄了），沒有移`);
     const sc = scene(), taken = new Set(), dropped = [];
     const free = (pre, list) => {let i = 1; while (taken.has(`${pre}${i}`) || (sc?.[list] ?? []).some(x => x.key === `${pre}${i}`)) i++; taken.add(`${pre}${i}`); return `${pre}${i}`;};
     const adds = idxs.filter(i => !oldDef(pf.parts[i])).map(i => {
-        const {x, y, look, off, fx, img, particle, def, light, ...rest} = pf.parts[i];
-        const lost = [look && `狀態 ${look}`, off && '停用', fx && `特效 ${fx}`].filter(Boolean);
+        const {x, y, look, off, fx, under, img, particle, def, light, ...rest} = pf.parts[i];
+        const lost = [look && `狀態 ${look}`, off && '停用', fx && `特效 ${fx}`, under && '後面'].filter(Boolean);
         if (lost.length) dropped.push(`零件 ${i + 1}：${lost.join('、')}`);
         const pos = {x: o.x + (x ?? 0), y: o.y + (y ?? 0)};
         if (img) return [i, 'props', {key: free('p', 'props'), img, ...pos, ...rest}];
@@ -1453,22 +1423,26 @@ async function partsToScene(fkey, idxs)
     if (!adds.length) return status('零件自己的粒子（已不支援）不能移');
     const name = S.sel, gone = new Set(adds.map(([i]) => i));
     await commit((scenes, pfs) => {
-        const s = scenes[name], p = pfs[id];
+        const s = scenes[name], p = iid ? pfs[iid]?.equip : pfs[id];
         if (!s) throw new Error(`找不到場景「${name}」`);
         if (!p || idxs.some((i, j) => str(p.parts?.[i]) !== want[j])) throw new Error(`${id} 的零件在別處改了，沒有移`);
         p.parts = p.parts.filter((_, i) => !gone.has(i));
         if (!p.parts.length) delete p.parts;
         for (const [, k, x] of adds) (s[k] ??= []).push(x);
-    }, undefined, adds[0][2].key, PREFAB_FILES);
-    if ((S.prefabs[id]?.parts?.length ?? 0) === pf.parts.length) return;
+    }, undefined, adds[0][2].key, iid ? [ST.FILE, ST.ITEM] : PREFAB_FILES);
+    const left = (iid ? diskPf(id) : S.prefabs[id])?.parts;
+    if ((left?.length ?? 0) === pf.parts.length) return;
     const u0 = S.undo.length;
     let warn = '';
-    try {warn = await finishEdit(id);}
-    catch (e) {status(`prefab 收尾失敗：${e.message}`);}
+    if (!iid)
+    {
+        try {warn = await finishEdit(id);}
+        catch (e) {status(`prefab 收尾失敗：${e.message}`);}
+    }
     mergeUndo(u0);
     S.pick = adds[0][2].key;
     refresh();
-    status(`${id} 的 ${adds.length} 個零件移到場景：${adds.map(([, , x]) => x.key).join('、')}` + (S.prefabs[id]?.parts ? '' : `（${id} 沒有零件了）`) +
+    status(`${id} 的 ${adds.length} 個零件移到場景：${adds.map(([, , x]) => x.key).join('、')}` + (left ? '' : `（${id} 沒有零件了）`) +
            (dropped.length ? `；場景沒有、沒帶過去：${dropped.join('；')}` : '') + (warn ? `　${warn}` : ''));
 }
 
@@ -1501,123 +1475,7 @@ function instPanel(o)
     ], draft || null);
 }
 
-// ---------- 道具實例的手上（equip.prefab／equip.particle 二選一，草稿：儲存才寫 item.json＋prefab.json＋particle.json） ----------
-// 無／粒子＝@<道具> 的草稿（零件 0 個／1 個粒子）；prefab＝那筆 prefab 的草稿＋d.hand（道具的 equip.prefab 換成它）
-const NEW_PREFAB = '[新增]';
-const handMode = (o) => (!isSyn(o.prefab) ? 'prefab' : pfOf(o.prefab)?.parts?.length ? 'particle' : 'none');
-const freePfId = (base) => {let n = base; for (let i = 2; n in S.prefabs; i++) n = `${base}-${i}`; return n;};
-
-const handDirty = (d) => !!d && (livePs(d).length > 0 || (!isSyn(d.id) && str(d.pf) !== d.base));
-// 草稿換成管 to（prefab id 或 @<道具>）；原本的草稿改了 prefab 內容或粒子先問 儲存／放棄／取消（只換過手上的直接換掉），回傳 false＝取消
-async function switchHand(key, to)
-{
-    const o = instOf(key), id = o.item, off = itemOff(id);
-    if (o.prefab === to) return true;
-    if (handDirty(S.draft) && !await leaveDraft()) {renderRight(); return false;}
-    S.draft = null;
-    // 換 prefab 時偏移照帶（換成 item.json 那筆、偏移也一樣＝不用草稿）
-    if (to !== (S.refs.items[id]?.equip?.prefab?.prefab ?? `${SYN}${id}`) || (!isSyn(to) && str(off) !== str(diskOff(id))))
-    {
-        if (!isSyn(to) && !S.prefabs[to]) {status(`prefab.json 沒有 ${to}`); refresh(); return false;}
-        S.draft = newDraft(to, diskPf(to) ?? {}, isSyn(to) ? undefined : id, off);
-    }
-    S.part = null;
-    clearSel();
-    refresh();
-    return true;
-}
-
-// 手上換成 mode（none／prefab／particle），v＝prefab id／粒子 id（沒給就問；[新增]＝再問新 id＝nid：prefab 立刻寫一筆空的、粒子放範本進草稿）
-async function setHand(key, mode, v, nid)
-{
-    const o = instOf(key);
-    if (!o?.item) return;
-    const id = o.item, syn = `${SYN}${id}`;
-    if (mode === 'prefab')
-    {
-        v ??= await askId('手上的 prefab（[新增]＝新建一筆空的 prefab）', Object.keys(S.prefabs), isSyn(o.prefab) ? ls.get(LS.prefab) : o.prefab, [NEW_PREFAB]);
-        if (!v) return renderRight();
-        if (v === NEW_PREFAB)
-        {
-            v = nid ?? await askName('新 prefab（id：英數字、_、-）', freePfId(`${id}-hand`));
-            if (v === null) return renderRight();
-            const err = prefabIdError(v);
-            if (err) {status(err); return renderRight();}
-            if (handDirty(S.draft) && !await leaveDraft()) return renderRight();
-            await commit((scenes, pf) => {pf[v] = {};}, undefined, undefined, PREFAB_FILES);
-            if (!S.prefabs[v]) return;
-        }
-        ls.set(LS.prefab, v);
-        return switchHand(key, v);
-    }
-    if (mode === 'particle')
-    {
-        v ??= await askId('手上的粒子（[新增]＝新建一筆 particle.json，存的時候一起寫）', particleIds(), ls.get(LS.particle), [NEW_PARTICLE]);
-        if (!v) return renderRight();
-        if (v === NEW_PARTICLE)
-        {
-            v = await askParticleId('新粒子 id', freePid(id, true), nid);
-            if (!v) return renderRight();
-            nid = v;
-        }
-        else nid = null;
-        ls.set(LS.particle, v);
-    }
-    if (!await switchHand(key, syn)) return;
-    return editPf(syn, (pf, ps) => {
-        if (mode === 'none') {delete pf.parts; return;}
-        pf.parts = [{particle: v}];
-        if (nid) ps[nid] = PSC.template();
-    });
-}
-
-// 手上 prefab 的偏移（equip.prefab 的 x/y）：草稿的 d.hand，跟零件同一疊 undo；還沒草稿（或草稿只改 prefab 內容）就補上 hand
-function setHandOff(key, patch)
-{
-    const o = instOf(key), id = o?.item;
-    if (!id || isSyn(o.prefab)) return;
-    if (S.draft && S.draft.id !== o.prefab) return status('先儲存或放棄別的草稿');
-    const cur = offOf({...itemOff(id), ...patch});
-    if (str(cur) === str(itemOff(id))) return renderRight();
-    if (!S.draft) S.draft = newDraft(o.prefab, diskPf(o.prefab) ?? {}, id);
-    const d = S.draft;
-    if (!(H.take() && d.undo.length)) d.undo.push({pf: d.pf, ps: d.ps, part: S.part, hand: d.hand});
-    d.redo = [];
-    if (!d.hand) d.ibase = eqPair(S.refs.items[id]?.equip);
-    d.hand = {id, ...cur};
-    refresh();
-}
-
-function handPanel(o)
-{
-    const mode = handMode(o);
-    const row = (k, ...v) => h('tr', null, h('td', {class: 'k'}, k), h('td', null, ...v));
-    const modeSel = h('select', {dataset: {k: 'hand'}, onchange: () => setHand(o.key, modeSel.value)},
-        h('option', {value: 'none'}, '（無）'), h('option', {value: 'prefab'}, 'prefab'), h('option', {value: 'particle'}, '粒子'));
-    modeSel.value = mode;
-    let pfSel = null;
-    if (mode === 'prefab')
-    {
-        pfSel = h('select', {dataset: {k: 'handPrefab'}, onchange: () => setHand(o.key, 'prefab', pfSel.value)}, [NEW_PREFAB, ...Object.keys(S.prefabs)].map(v => h('option', {value: v}, v)));
-        if (!S.prefabs[o.prefab]) pfSel.append(h('option', {value: o.prefab}, `⚠ ${o.prefab}`));
-        pfSel.value = o.prefab;
-    }
-    const p = mode === 'particle' && pfOf(o.prefab).parts[0];
-    const users = mode === 'prefab' ? equipUsers(o.prefab).length + prefabUses(o.prefab).reduce((n, [, c]) => n + c, 0) : 0;
-    return [
-        h('table', {class: 'props'},
-            row('手上', modeSel, h('span', {class: 'dim'}, ' equip.prefab／equip.particle 二選一')),
-            pfSel && row('prefab', pfSel, ...['x', 'y'].flatMap(k => [h('span', {class: 'dim'}, ` ${k} `),
-                h('input', {type: 'number', step: 1, value: itemOff(o.item)[k] ?? '', placeholder: '0', class: 'n', dataset: {k: `handOff.${k}`},
-                    title: '整組相對握點的偏移（equip.prefab 的 x/y，只影響這個道具）',
-                    onchange: (e) => setHandOff(o.key, {[k]: e.target.value === '' ? undefined : +e.target.value})})]),
-                users > 1 && h('span', {class: 'warn', dataset: {k: 'pfShared'}, title: '改的是 prefab 本身：其他道具／場景裡的實例一起變'}, ` 共用 ${users} 處`))),
-        ...(mode === 'prefab' ? [prefabPanel(o.prefab), partsPanel(o)] : []),
-        ...(p ? [h('div', {class: 'partform flat'}, ...partRows(o.prefab, 0, p, true))] : []),
-    ];
-}
-
-// 道具實例：換道具、位置（立刻寫 scenes.json）＋手上（草稿）
+// 道具實例：換道具、位置（立刻寫 scenes.json）＋手上零件（草稿）
 function itemPanel(o)
 {
     const it = S.refs.items[o.item];
@@ -1628,7 +1486,7 @@ function itemPanel(o)
     idSel.value = o.item;
     const d = draftOf(o.prefab);
     const draft = d && h('span', {class: 'draft', dataset: {k: 'draft'}}, h('span', {class: 'warn'}, '● 未存 '),
-        h('button', {dataset: {k: 'saveDraft'}, title: '寫進 item.json／prefab.json／particle.json（Ctrl+S）', onclick: () => saveDraft()}, '儲存'), ' ',
+        h('button', {dataset: {k: 'saveDraft'}, title: '寫進 item.json（＋particle.json）（Ctrl+S）', onclick: () => saveDraft()}, '儲存'), ' ',
         h('button', {dataset: {k: 'dropDraft'}, title: '丟掉沒存的改動', onclick: () => dropDraft()}, '放棄'));
     return [
         ...foldSec('right.inst', [`道具 ${o.key}`, isHandItem(it) ? null : h('span', {class: 'warn'}, `　item.json 沒有拿在手上的 ${o.item}`)], () => [
@@ -1638,7 +1496,7 @@ function itemPanel(o)
                 row('位置', n('x'), ' ', n('y'))),
             h('div', {class: 'acts'}, h('button', {onclick: () => deleteObj(o.key)}, '刪除實例（Del）')),
         ], draft || null),
-        ...(isHandItem(it) ? handPanel(o) : []),
+        ...(isHandItem(it) ? [partsPanel(o)] : []),
     ];
 }
 
@@ -2636,14 +2494,18 @@ function renderLib()
 
 // 道具庫：拿在手上的道具（有 equip 的武器／CAT_EQUIP）；拖進畫面＝放道具實例、點一下＝選場景裡第一個
 const ITEM_DRAG = 'item:';
-const handOf1 = (id) => {const e = itemEquip(id); return e?.prefab ? `prefab ${e.prefab.prefab}` : e?.particle?.particle ? `粒子 ${e.particle.particle}` : '';};
+// 手上零件數（停用的不算）：🔥 粒子 💡 光源
+const handOf1 = (id) => {
+    const ps = (itemEquip(id)?.parts ?? []).filter(p => !p.off), np = ps.filter(p => p.particle).length, nl = ps.filter(p => p.light).length;
+    return [np && `🔥${np}`, nl && `💡${nl}`].filter(Boolean).join(' ');
+};
 function renderItemLib()
 {
     const ids = handItemIds(), cur = itemInsts().find(o => o.key === S.pick);
     $('itemLib').replaceChildren(
         secHead('itemLib', `道具（${ids.length}）`),
         ...(isFolded('itemLib') ? [] : ids.map(id => h('div', {
-            class: `item${cur?.item === id ? ' sel' : ''}`, draggable: 'true', dataset: {item: id}, title: '點一下選這個場景裡的道具實例；拖進遊戲畫面放一個（編手上的 prefab／粒子）',
+            class: `item${cur?.item === id ? ' sel' : ''}`, draggable: 'true', dataset: {item: id}, title: '點一下選這個場景裡的道具實例；拖進遊戲畫面放一個（編手上的粒子／光源）',
             onclick: () => pickItem(id),
             ondragstart: (e) => {e.dataTransfer.setData('application/x-prefab', ITEM_DRAG + id); e.dataTransfer.effectAllowed = 'copy';},
         }, IC.iconEl(S.refs.items[id].icon, 20), h('span', {class: 'id'}, id), h('span', {class: 'lab dim'}, handOf1(id))))));
@@ -2755,7 +2617,7 @@ function renderTree()
         ...sec('lights', `光源（${lights().length}）`, plus('放光源', () => addLight(S.center[0] * 32 + 16, S.center[1] * 32 + 16)), () => lights().map(l => h('div', {
             class: `item${l.key === S.pick ? ' sel' : ''}${S.hidden.has(l.key) ? ' hid' : ''}`, dataset: {key: l.key},
             onclick: () => pickRole(l.key === S.pick ? null : l.key),
-            oncontextmenu: (ev) => menu(ev, [['組成 prefab…', () => composePrefab(l.key)], ...addToItems(l.key, ev), ['刪除', () => deleteObj(l.key)]]),
+            oncontextmenu: (ev) => menu(ev, [['組成 prefab…', () => composePrefab(l.key)], ...addToItems(l.key, ev), ...toItemMenu(l.key, ev), ['刪除', () => deleteObj(l.key)]]),
         }, h('button', {class: 'eye', title: '暫時藏起來（不存檔）', onclick: (ev) => {ev.stopPropagation(); toggleHide(l.key);}}, S.hidden.has(l.key) ? '◌' : '👁'),
            h('span', {title: `光色 ${l.color ?? '#ffcc88'}`}, '💡'), h('span', {class: 'id'}, l.key),
            l.follow && h('span', {class: 'lab'}, `→ ${followName(l.follow)}`), h('span', {class: 'mark dim'}, `${l.x},${l.y}`)))),
@@ -3011,9 +2873,7 @@ addEventListener('message', (e) => {
     else if (m.sb === 'box' && instOf(m.key) && BOXES.some(([k]) => k === m.k)) setPf(instOf(m.key).prefab, {[m.k]: m.box});
     else if (m.sb === 'moveInst')
     {
-        // 道具實例在 sandbox 的錨點＝握點＋equip.prefab 偏移
-        const io = isItemInst(m.key) && itemInsts().find(o => o.key === m.key), {x = 0, y = 0} = io ? itemOff(io.item) : {};
-        setInst(m.key, {x: m.x - x, y: m.y - y}).then(syncGame);
+        setInst(m.key, {x: m.x, y: m.y}).then(syncGame);
     }
     else if (m.sb === 'dropPrefab')
     {
@@ -3046,7 +2906,7 @@ addEventListener('message', (e) => {
         if (m.key && (isProp(m.key) || isEm(m.key) || isLight(m.key))) items.push(['組成 prefab…', () => composePrefab(m.key)], ...addToItems(m.key, at));
         if (m.key) items.push(...toItemMenu(m.key, at));
         // 選取的零件上按右鍵：所有選取的一起移
-        if (m.part !== null && m.part !== undefined && instOf(S.pick) && !instOf(S.pick).item)
+        if (m.part !== null && m.part !== undefined && m.part < (pfOf(instOf(S.pick)?.prefab)?.parts?.length ?? 0))
         {
             const idxs = selParts().includes(m.part) ? selParts() : [m.part];
             items.unshift([`移到場景（${idxs.length > 1 ? `選取的 ${idxs.length} 個零件` : `零件 ${m.part + 1}`}）`, () => partsToScene(S.pick, idxs)]);
@@ -3169,4 +3029,4 @@ refresh();
 // 給無頭測試用
 window.__sc = {S, setProject, addScene, dupScene, renameScene, deleteScene, select, undo, redo, addRole, setRole, setEquip, deleteRole, pickRole, toggleHide, arm, toGame, addProp, setProp, deleteObj, nudge, bakeProp, folderTree, exportProp: (key) => exportProp(propOf(key)), srcSize, addLight, setLight, addEmitter, setEmitter, setField, setPlaying,
                addInst, setInst, newPrefab, deletePrefab, toggleFold, setPf, setPart, addPart, movePart, delPart, delParts, openPart, moveParts, setPartOn, toggleBoxSel, togglePartSel, pselOf, pickPrefab, saveDraft, dropDraft, changePartParticle, forkPartParticle, particleUsers, pDef, composePrefab, renamePrefab, dupPrefab, cutProp, cutPart,
-               renameTex, deleteTex, texMenu, addToPrefab, partsToScene, pickLibPart, libPartToScene, thumbFor, regenThumbs, addItemInst, pickItem, instOf, setHand, setHandOff, handMode, itemEquip, addToItem, TL, IC, flush: () => S.q};
+               renameTex, deleteTex, texMenu, addToPrefab, partsToScene, pickLibPart, libPartToScene, thumbFor, regenThumbs, addItemInst, pickItem, instOf, itemEquip, addToItem, TL, IC, flush: () => S.q};

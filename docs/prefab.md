@@ -48,24 +48,29 @@
   - 放置道具：`item.json` 的 `bb.prefab`（`init_runtime` 本來就 `Object.assign(bb, dat.bb)`），runtime 存檔帶 `look`，放置 ghost 用縮圖。
 - 不做（以後再談）：story 指令／條件控制狀態、使用中自動切換、runtime 用程式任意 spawn、光源閃爍、`look` 陣列、`drop.prefab`。
 
-### 拿在手上：`equip.prefab`（2026-11-24）
+### 拿在手上：`equip.parts`（2026-11-24）
 
-- 手持道具（武器、`CAT_EQUIP` 如火把）的 `item.json` `equip.prefab: {prefab: "<id>", x?, y?}`：**疊在** `equip.sprite` 上（本體照舊是紙娃娃拆的 png，prefab 放火焰粒子、光源，也可以有 png）。
-  - `x`/`y`（2026-11-24）＝整組相對握點的偏移（座標系同零件：道具直立時、不乘 scale），只影響這個道具、不動 prefab.json；同一個 prefab 給不同道具用時各填各的。`equipPrefab()` 直接把偏移加進零件座標。舊的字串寫法 `"prefab": "<id>"` 已不支援（只有火把一筆，已搬）。
-- `RoleView._addEquipPrefab()`：錨點＝握點＋偏移（equip 的 x/y/a，掛在同一個手腕節點的 holder），**跟著道具轉、翻面、播動畫**；零件座標是道具直立時的、遊戲單位、**不乘 `equip.scale`**。
-  - png 零件進 holder（排在道具前面）。
-  - 粒子：local 的進 holder（跟著道具轉）；其他的 emitter 進角色的 `rig`、緊接在那隻手的節點上面（depth＝節點＋0.01，`moveAbove`）＝蓋過道具、被身體擋，播動畫節點搬前後時跟著；發射點每幀（`scene` 的 `update`，`_trackEquipPrefabs()`）把零件點從 holder 換到 rig 座標，粒子設定不跟著道具轉（火焰往上冒，翻面由 shape 鏡像）。代價：已噴出的粒子在角色容器裡，走路時跟著角色、沒有拖尾。（第一版是世界座標＋排在整個角色前／後，後手時火焰被火把一起蓋住，2026-11-24 改掉）
+道具手上**不掛 prefab**（`equip.prefab`／`equip.particle` 都拿掉了），改成直接寫多個粒子跟光源：
+
+- 手持道具（武器、`CAT_EQUIP` 如火把）的 `item.json` `equip.parts: [...]`，**疊在** `equip.sprite` 上（本體照舊是紙娃娃拆的 png）。每一筆：
+  - 粒子 `{particle: "<particle.json id>", x?, y?, under?, off?}`
+  - 光源 `{light: {r, color, i, dir?, arc?, soft?}, x?, y?, off?}`
+  - 位置相對握點（道具直立時、遊戲單位、**不乘 `equip.scale`**）；不能放 png，沒有 look／depth／整組偏移。
+  - `under: true`（只有粒子）：local 的粒子排在**道具圖後面**；不 local 的 emitter 排在**手腕節點正下方**（被道具跟手擋住）。沒寫＝道具前面／節點正上方。
+  - `off: true`＝不建（資料留著，場景分頁沒勾）。
+  - 火把＝火焰粒子＋光源（`y:-25`）；`sword-1`＝一個粒子。原本火把用的 `torch-fire` prefab 已刪。
+- `equip.js` 的 `equipParts(equip)`＝濾掉 `off` 跟不是粒子／光源的。
+- `RoleView._addEquipParts()`：holder＝握點（equip 的 x/y/a，掛在同一個手腕節點），**跟著道具轉、翻面、播動畫**。
+  - 粒子：local 的進 holder（`under` 的進另一個排在道具圖後面的 holder）；其他的 emitter 進角色的 `rig`、緊接在那隻手的節點上面（depth＝節點＋0.01，`moveAbove`；`under`＝節點－0.01、`moveBelow`），播動畫節點搬前後時跟著；發射點每幀（`scene` 的 `update`，`_trackEquipParts()`）把零件點從 holder 換到 rig 座標，粒子設定不跟著道具轉（火焰往上冒，翻面由 shape 鏡像）。代價：已噴出的粒子在角色容器裡，走路時跟著角色、沒有拖尾。
   - 光源每幀挪到零件的世界位置。
-  - 只用 prefab 的預設 `look`（不切狀態），`off` 不建。
-  - 卸下／換裝（`_removeEquips()`）、`_remove()` 清掉粒子、光源、update 監聽；跟武器撞手不畫的道具不建。部位範圍 `_measure()` 不算手持道具跟它的 prefab。
-- `equip.particle: {particle, x, y}`（2026-11-24）：只掛一個粒子時不用另開 prefab，`equip.js` 的 `equipPrefab()` 把它當成只有一個粒子零件的 prefab 走同一條路；跟 `equip.prefab` 二選一（都寫：遊戲用 prefab＋dlog）。沒有光源，所以 `com_light` 照舊開燈。
-- `com_light`：有 `equip.prefab` 的道具不再開角色中心那盞燈（光交給 prefab 的光源零件）；沒有 prefab 的發光道具照舊。
+  - 卸下／換裝（`_removeEquips()`）、`_remove()` 清掉粒子、光源、update 監聽；跟武器撞手不畫的道具不建。部位範圍 `_measure()` 不算手持道具跟它的零件。
+- 舊的 `com_light`（道具 `light` 欄位、角色中心一盞燈）已刪；道具發光一律走 `equip.parts` 的光源。
 - 工具：
   - 場景分頁木偶有第六格「道具」（sandbox 跑真的 `RoleView`，看得到火焰／光跟著手）。
-  - **道具實例**（2026-11-24，取代之前選中 prefab 實例時畫的半透明參考圖 `_syncEquipRef()`）：左欄「道具」庫（有 equip 的武器／CAT_EQUIP）拖進畫面＝`scenes.json` 的 `items:[{key:'i<n>', item, x, y}]`，錨點＝握點。分頁裡 `instOf()` 把它當 prefab 實例（`prefab`＝編的那筆：`equip.prefab` 的 id，或 `@<道具>`＝`equip.particle` 合成的單零件 prefab `synPf()`），sandbox 收到的是 `@item:<道具>`＝那筆的零件＋**最後**墊一張直立的 `equip.sprite`（`scale`／`ox`／`oy`，depth −1e4，零件 index 不變，`itemSandboxPf()`），所以選取／拖零件／zone／光源把手全部沿用 prefab 實例那套；沒有占地方塊。右欄「手上：無｜prefab｜粒子」直接編（草稿，儲存一筆寫 item.json＋prefab.json＋particle.json）、發射點／prefab 實例右鍵「加到道具 ▸」，見 [scene-tool.md](scene-tool.md)「道具實例」。
-  - 刪 prefab 時有道具的 `equip.prefab` 在用就擋，改名只提示要去道具分頁改；粒子分頁刪粒子時有道具的 `equip.particle` 在用也擋（改名只列）。
-  - 試穿只畫記號（粒子橘菱形、光源黃圓、png 藍小方塊，跟著道具轉；`equip.particle` 一樣畫），跑不了粒子。
-  - 道具分頁 equip 多「prefab」「粒子」（`opt`；兩個都是 `nums` 一列＝id 下拉＋x／y（`types:{prefab|particle:'list'}`），只給武器／`CAT_EQUIP`；兩個都寫、指到不存在的標 ⚠），表單標題列「↗ 場景」跳到場景分頁打開這個道具。
+  - **道具實例**：左欄「道具」庫拖進畫面＝`scenes.json` 的 `items:[{key:'i<n>', item, x, y}]`，錨點＝握點；右欄＝零件清單（＋粒子／＋光源、勾選＝off、粒子表單多「後面」＝under），草稿儲存寫 item.json（＋particle.json）；發射點／光源右鍵「加到道具 ▸」、零件「移到場景」，見 [scene-tool.md](scene-tool.md)「道具實例」。
+  - 道具分頁 equip 裡「手上零件」只唯讀列出（🔥 粒子／💡 光源、x,y、後面／停用；粒子不存在、不是粒子也不是光源標 ⚠），「↗ 場景」去編；還寫著舊的 `equip.prefab`／`equip.particle` 標 ⚠。
+  - 粒子分頁刪粒子時有道具的 `equip.parts` 在用就擋（改名只列）。
+  - 試穿只畫記號（粒子橘菱形、光源黃圓，跟著道具轉，`off` 不畫），跑不了粒子。
 
 ## Tiled
 

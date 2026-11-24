@@ -60,13 +60,9 @@ export const FIELDS = {
         hideHand: {label: '藏手', type: 'bool', opt: true, offer: (it) => it.cat === 'CAT_GLOVES'},
         hand: {label: '拿在', type: 'enum', options: ['', 'B'], names: {'': '前手（預設）', B: '後手'}, opt: true, offer: (it) => it.cat === 'CAT_WEAPON' || it.cat === 'CAT_EQUIP'},
         wristF: {label: '前手腕', ...XYA}, wristB: {label: '後手腕', ...XYA},
-        // 拿在手上時疊在道具上的 prefab（如火把的火焰＋光），錨點＝握點、跟著道具轉，見 docs/prefab.md
-        // x/y＝整組相對握點的偏移（只影響這個道具，不動 prefab.json）
-        prefab: {label: 'prefab', type: 'nums', keys: ['prefab', 'x', 'y'], types: {prefab: 'list'}, hint: () => ({x: 0, y: 0}), opt: true,
-            offer: (it) => it.cat === 'CAT_WEAPON' || it.cat === 'CAT_EQUIP'},
-        // 只掛一個粒子（particle.json 的 id＋相對握點的 x/y），跟 prefab 二選一
-        particle: {label: '粒子', type: 'nums', keys: ['particle', 'x', 'y'], types: {particle: 'list'}, hint: () => ({x: 0, y: 0}), opt: true,
-            offer: (it) => it.cat === 'CAT_WEAPON' || it.cat === 'CAT_EQUIP'}}},
+        // 拿在手上時的粒子／光源（如火把的火焰＋光），位置相對握點、跟著道具轉，見 docs/prefab.md「手持道具」；
+        // 這裡只唯讀列出，到場景分頁編（「加欄位」不出）
+        parts: {label: '手上零件', type: 'handParts', opt: true, offer: () => false}}},
     drop: {label: '掉落圖', type: 'obj', fields: SPRITE},
     cook: {label: '烹煮成', type: 'obj', fields: {id: {label: 'id', type: 'itemref'}}},
     make: {label: '製作材料', type: 'obj', fields: {items: {label: '材料', type: 'map'}}},

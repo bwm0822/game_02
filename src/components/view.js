@@ -804,11 +804,12 @@ export class ItemView extends View
     _particleOn(e, on)
     {
         // 粒子零件只認 particle.json 的 id（查不到 DB.particle 會 dlog）；
-        // local＝放進 _shape 跟 png 照零件 depth 排(不管 def.depth)，world＝跟著 root 的 depth(under 在後、否則在前)
+        // local＝放進 _shape 跟 png 照零件 depth 排(不管 def.depth)，world＝跟著 root 的 depth(under 在後、否則在前；
+        // 零件的 under 也算＝場景分頁道具實例預覽 equip.parts 用)
         if(!on) {e.em?.stop(); e.em = null; return;}
         const def = DB.particle(e.p.particle);
         if(!def) {return;}
-        e.em = playParticle(this.scene, def.local ? {...def, depth:undefined} : def,
+        e.em = playParticle(this.scene, def.local ? {...def, depth:undefined} : e.p.under ? {...def, depth:'under'} : def,
                             {target:this.root, parent:this._shape, followDepth:true, ox:e.p.x ?? 0, oy:e.p.y ?? 0});
         if(def.local) {this._sortParts();}
     }

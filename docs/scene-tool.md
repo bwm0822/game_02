@@ -46,22 +46,23 @@
 ## 角色
 
 - 從 role.json 挑 id（照 kind／grp 分組），同 id 可多隻。
-- 實例可覆寫：裝備六格（武器／頭盔／護甲／手套／靴子／道具（CAT_EQUIP，如火把：equip.prefab 的火焰／光跟著手，見 prefab.md），空＝用 role.json 的）、面向、位置；不寫回 role.json。
+- 實例可覆寫：裝備六格（武器／頭盔／護甲／手套／靴子／道具（CAT_EQUIP，如火把：equip.parts 的火焰／光跟著手，見 prefab.md），空＝用 role.json 的）、面向、位置；不寫回 role.json。
 - 位置永遠在格子中心（遊戲的走路／擊退靠它）。
 - 木偶：`src/roles/puppet.js`（`Puppet`，照 `Dummy` 木樁的組法）掛 `RoleView`＋`COM_Inventory`＋`COM_Anim`＋`COM_Action`＋`COM_Nav`＋`COM_Stats`＋`COM_Disp`＋`COM_Ability`，不掛 AI／作息／感知、不進回合、不讀寫存檔、`bb.interactive=false`（點選是 sandbox 自己判斷：身體方塊包住游標的最上面那個，沒有就看站在那格的）；`bb.meta` 是 role.json 那筆的淺拷貝、`inv.equips` 換成套完覆寫的（`Puppet.equipsOf()`）。只在 Sandbox 用到，正式版一起被 tree-shake 掉。
 - sandbox 套場景時照 `key` 比對：那筆資料（JSON）沒變的角色留著，變了（換角色、格子、面向、裝備）或不見的就 `dismiss()` 重建（重新登記路網權重）。
 - 操作：畫面上左鍵點選（白框）＋拖曳（跟著格子跳、放開才寫檔）、右鍵「在這裡放角色…」（挑角色對話框：照 kind／grp 分組、搜尋、雙擊確定、預設上次挑的 `tools.scene.lastRole`）／「刪除」；左欄角色清單（👁 暫藏只在這次開著時、不寫檔、藏著點不到；右鍵刪除；「＋」放在地圖中間）；右欄 角色（換 id）、格子、面向、裝備六格（下拉＝（原本：…）／（空）／那一類有 `equip` 的道具，限定性別不符的不列）、刪除；Del 刪選中的（分頁或 sandbox 有焦點都行）。
 
-## 道具實例（2026-11-24：直接編道具手上的 prefab／粒子）
+## 道具實例（2026-11-24：直接編道具手上的粒子／光源 `equip.parts`）
 
-- 左欄 prefab 庫下面「道具」庫：拿在手上的道具（有 `equip` 的 `CAT_WEAPON`／`CAT_EQUIP`），標手上掛的（`prefab x`／`粒子 x`）；拖進畫面＝放道具實例、點一下＝選這個場景裡第一個；樹多一段「道具」（👁、右鍵刪除）。道具分頁的「↗ 場景」跳過來（`item:<道具>`）：選第一個放了它的場景的實例，都沒有就放在目前場景（沒選＝第一個）中間。
-- sandbox 畫**直立的 `equip.sprite`**（`scale`／`ox`／`oy`）＋手上的零件，錨點＝握點、零件座標 1:1（遊戲裡零件不乘 `equip.scale`）。做法：分頁的 `instOf()` 把道具實例當 prefab 實例（`prefab`＝`equip.prefab.prefab` 的 id，或 `@<道具>`＝`equip.particle` 合成的單零件 prefab），sandbox 收到 `@item:<道具>`＝那筆的零件＋**最後**墊道具圖（depth −1e4，零件 index 不變），有 `equip.prefab` 的 x/y 偏移時 sandbox 的錨點放在握點＋偏移、道具圖往回挪（零件照自己的座標，拖零件不用換算；`moveInst` 回來減掉偏移），所以選取、拖零件、zone、光源把手都沿用 prefab 實例那套；沒有占地方塊、沒有「移到場景」。
-- 右欄：「道具 `i<n>`」（換道具、位置，立刻寫 scenes.json）＋「手上：（無）｜prefab｜粒子」（`equip.prefab`／`equip.particle` 二選一）：
-  - prefab：下拉（最上面 `[新增]`＝問 id、立刻寫一筆空的 prefab.json）＋「共用 n 處」，下面嵌**跟 prefab 實例一樣的屬性＋零件區**，改的是 prefab 本身。
-  - 粒子：嵌 prefab 粒子零件的表單（粒子下拉含 `[新增]`／x／y／粒子內容，沒有深度、狀態），粒子一直算選取（sandbox 拖點、拖 zone）。
-  - **草稿**：無／粒子＝`@<道具>` 的草稿（零件 0／1 個）；prefab＝那筆 prefab 的草稿＋`d.hand`＝`{id: 道具, x?, y?}`（道具的 equip.prefab 換成它＋偏移；「prefab」那列的 x/y＝`setHandOff()`，跟零件同一疊 undo，沒草稿就開一個、換 prefab 時偏移照帶）；`itemEquip()` 照草稿算道具的 equip。換手上時，原本的草稿改過 prefab 內容或粒子先問 儲存／放棄／取消（只換過手上的直接換掉），換回硬碟上那樣＝沒有草稿。儲存（`saveDraft()`）一筆寫 item.json（`equip.prefab`／`equip.particle` 換掉，其他欄位不動）＋prefab.json（`@` 的不寫）＋particle.json；寫了 item.json 重開 sandbox。別的分頁改了那個道具的手上一起問保留／用新的。
-  - sandbox 的木偶也跟著草稿：load 訊息帶 `items`（`{道具: equip}`，蓋 DB、上次蓋的先還原），木偶手上的 prefab／粒子（equip、prefab、粒子內容）變了就重穿（`Sandbox._syncHands()`）。
-- **加到道具 ▸**（發射點、prefab 實例右鍵，左欄或畫面）：子選單列場景裡的道具實例；發射點＝搬走變成 `equip.particle`（位置相對握點，✎ 自己那份另存 `<道具>-<原 id>`）、prefab 實例＝`equip.prefab` 換成 `{prefab: 它}`（實例留著、錨點直接對握點、沒有偏移）；道具已有手上的先問取代；立刻寫 item.json＋scenes.json（＋particle.json）一筆 undo，有草稿先問。不做反過來的「移到場景」（手上切成無＝拿掉）。
+- 左欄 prefab 庫下面「道具」庫：拿在手上的道具（有 `equip` 的 `CAT_WEAPON`／`CAT_EQUIP`），標手上零件數（`🔥n 💡n`，停用的不算）；拖進畫面＝放道具實例、點一下＝選這個場景裡第一個；樹多一段「道具」（👁、右鍵刪除）。道具分頁的「↗ 場景」跳過來（`item:<道具>`）：選第一個放了它的場景的實例，都沒有就放在目前場景（沒選＝第一個）中間。
+- sandbox 畫**直立的 `equip.sprite`**（`scale`／`ox`／`oy`）＋手上的零件，錨點＝握點、零件座標 1:1（遊戲裡零件不乘 `equip.scale`）。做法：分頁的 `instOf()` 把道具實例當 prefab 實例（`prefab`＝`@<道具>`＝`equip.parts` 合成的 prefab，`synPf()`），sandbox 收到 `@item:<道具>`＝那筆的零件＋**最後**墊道具圖（depth −1e4，零件 index 不變，`itemSandboxPf()`；`under` 的粒子補 depth −2e4＝排在道具圖後面，不 local 的 `ItemView` 看零件的 `under` 排到目標底下），所以選取、拖零件、zone、光源把手都沿用 prefab 實例那套；沒有占地方塊、沒有屬性區。
+- 右欄：「道具 `i<n>`」（換道具、位置，立刻寫 scenes.json）＋「手上零件」＝prefab 的零件清單（標題列只有 ＋粒子／＋光源；勾選＝`off`、左鍵選取、右鍵展開表單、↑↓✕、Del／方向鍵）：
+  - 粒子表單：粒子下拉（含 `[新增]`）／x／y／☐ 後面（`under`）／粒子內容（共用 n 處、另存新 id，同 prefab），沒有深度、狀態。
+  - 光源表單：同 prefab 光源零件，沒有狀態。
+  - **草稿**＝`@<道具>` 的草稿；`itemEquip()` 照草稿算道具的 equip（沒零件＝拿掉 `parts`）。儲存（`saveDraft()`）一筆寫 item.json（只換 `equip.parts`，其他欄位不動）＋particle.json；寫了 item.json 重開 sandbox。別的分頁改了那個道具的 `equip.parts` 一起問保留／用新的。
+  - sandbox 的木偶也跟著草稿：load 訊息帶 `items`（`{道具: equip}`，蓋 DB、上次蓋的先還原），木偶手上的零件（equip.parts、粒子內容）變了就重穿（`Sandbox._syncHands()`）。
+- **加到道具 ▸**（發射點、光源右鍵，左欄或畫面；prefab 實例沒有）：子選單列場景裡的道具實例；`equip.parts` **加一筆**（不問取代），從場景搬走、位置相對握點、`follow` 丟掉，✎ 發射點自己那份另存 `<道具>-<原 id>`；立刻寫 item.json＋scenes.json（＋particle.json）一筆 undo，有草稿先問。
+- **移到場景**：道具零件（表單鈕、畫面上選取的零件右鍵）搬成場景的發射點／光源（絕對位置＝道具實例錨點＋零件 x/y，`under`／`off` 丟掉提示），立刻寫 item.json＋scenes.json 一筆 undo（`partsToScene()` 跟 prefab 共用）。
 - 測試：`scripts/test/item-scene.mjs`。
 
 ## 動作（表演，不進 undo、不改場景檔）
@@ -87,7 +88,7 @@
 - `lights: [{key:'l<n>', x, y, r, color, i?, follow?, dir?, arc?, soft?}]`：Light2D 光源（擺設、角色、地形都是 Light2D）。`arc`（光錐全寬，度）有填且 <360＝聚光燈，`dir`＝方向（度，0 右、順時針）、`soft`＝錐邊淡出比例（0～1，預設 0.2），沒填＝點光源；`Light2D` 已換成 `src/core/spotlight.js` 的 pipeline（`light.spot`，sandbox `_lightSpot()` 寫）。跟著角色時資料＝角色朝右的樣子，角色 `faceDir()` 是 −1 就鏡像（x 偏移取負、方向 `180−dir`，`_mirror()`；拖曳／把手寫回的是鏡像前的數字），跟著擺設不翻。`i` 沒寫＝`GM.LIGHT`（1，同 `com_lamp`／`com_light`），寫了用它；強度不跟日夜變，天越亮燈越加不上去是 shader 的柔性壓縮做的（見下面）。新的預設 `{r:120, color:'#ffcc88'}`。擺設原本的 `light`（黏在圖上的發光）拿掉了，燈＝擺設＋跟著它的光源。
 - 畫面：每個光源一個太陽記號（2026-11-23，`Sandbox._drawSun()`：光色實心圓半徑 6 螢幕 px＋圈外 8 條光線 8～12 px，黑框、選中白框；prefab 選取的光源零件也是太陽，藍色空心）；選中時畫虛線圈＝半徑、圈右邊一個白色把手拖 `r`（游標到圓心的距離，整數、最少 1，Shift 吸 16 的倍數，放開送 `radiusLight`）；聚光燈改畫扇形虛線（兩條邊＋弧，中線淡淡的），半徑把手在中線末端、拖它連 `dir` 一起改（Shift 吸 15°），弧兩端各一個把手拖 `arc`（＝兩倍的游標跟中線夾角，1～359，Shift 吸 15°，放開送 `arcLight`）。把手位置、範圍畫法、拖曳數學是靜態函式（`_lightHandles()`／`_drawLightRange()`／`_radiusFrom()`／`_arcFrom()`），prefab 選取的光源零件也用（藍色，見 [prefab.md](prefab.md)）。點選優先於角色／擺設（排在發射點後面）、拖曳（Shift 吸 16px）、方向鍵、Del、👁（藏＝強度 0、點不到）。右鍵「在這裡放光源」、左欄「光源（n）」＋（地圖中間），不問東西直接放。
 - 右欄：位置（跟著時是相對）、半徑、光錐／方向／柔和（光錐空白＝點光源，方向跟柔和反灰）、顏色、強度（空白＝自動）、跟著。
-- 遊戲裡 Tiled 的燈（`com_lamp`）照讀自訂屬性 `dir`／`arc`／`soft`（不能叫 `angle`：Phaser 會直接設到 Container 本身的 angle）；`com_light`（道具 `light`）還沒支援。shader 另外把「環境光＋燈光」每通道超過起壓點（0.8 跟環境光取大的）的部分柔性壓縮、不超過 1（疊燈不爆白、環境光本身不被壓暗、白天燈自然加不上去）；燈的強度因此固定 `GM.LIGHT`，不再照環境光算（舊的 `GM.LIGHT − 環境光.r`、`regTS`／`UPDATETIME` 重算都拿掉了）。
+- 遊戲裡 Tiled 的燈（`com_lamp`）照讀自訂屬性 `dir`／`arc`／`soft`（不能叫 `angle`：Phaser 會直接設到 Container 本身的 angle）；道具手上的光源是 `equip.parts` 的光源零件（同欄位，見 prefab.md），舊的 `com_light` 已刪。shader 另外把「環境光＋燈光」每通道超過起壓點（0.8 跟環境光取大的）的部分柔性壓縮、不超過 1（疊燈不爆白、環境光本身不被壓暗、白天燈自然加不上去）；燈的強度因此固定 `GM.LIGHT`，不再照環境光算（舊的 `GM.LIGHT − 環境光.r`、`regTS`／`UPDATETIME` 重算都拿掉了）。
 
 ## 記號開關（光源、粒子）
 

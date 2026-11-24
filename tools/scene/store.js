@@ -6,7 +6,7 @@ import * as SH from '../common/shell.js';
 export const FILE = 'scenes.json';
 export const PREFAB = 'prefab.json';
 export const PARTICLE = 'particle.json';    // prefab 草稿儲存／組成時寫（粒子分頁存的格式：結尾沒有換行）
-export const ITEM = 'item.json';            // 道具實例的手上 prefab／粒子（equip.prefab／equip.particle）草稿儲存時寫（道具分頁的格式：結尾沒有換行）
+export const ITEM = 'item.json';            // 道具實例的手上零件（equip.parts）草稿儲存時寫（道具分頁的格式：結尾沒有換行）
 export const EMPTY = '{}\n';
 export const newScene = () => ({map: 'sandbox'});
 

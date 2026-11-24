@@ -102,13 +102,13 @@ function validate(id)
     if (it.bb?.harvest?.id && !S.items[it.bb.harvest.id]) out.push(`bb.harvest.id 指到不存在的道具：${it.bb.harvest.id}`);
     if (it.anim && S.anims && !S.anims.includes(it.anim)) out.push(`anim 指到 anim.json 沒有的動畫：${it.anim}`);
     if (it.sex && isObj(it.equip?.f)) out.push('有限定 sex，女版 equip.f 不會用到');
-    if (it.equip?.prefab && it.equip?.particle) out.push('equip.prefab 跟 equip.particle 只能二選一（遊戲用 prefab）');
-    const hpf = it.equip?.prefab?.prefab;
-    if (it.equip?.prefab && !hpf) out.push('equip.prefab 沒有填 prefab id');
-    if (hpf && !S.prefabs.includes(hpf)) out.push(`equip.prefab 指到 prefab.json 沒有的：${hpf}`);
-    const hp = it.equip?.particle?.particle;
-    if (it.equip?.particle && !hp) out.push('equip.particle 沒有填粒子 id');
-    if (hp && S.particles && !S.particles.includes(hp)) out.push(`equip.particle 指到 particle.json 沒有的：${hp}`);
+    const hps = it.equip?.parts;
+    if (hps !== undefined && !Array.isArray(hps)) out.push('equip.parts 應該是陣列');
+    else (hps ?? []).forEach((p, i) => {
+        if (!p?.particle && !p?.light) out.push(`equip.parts[${i}] 不是粒子也不是光源`);
+        else if (p.particle && S.particles && !S.particles.includes(p.particle)) out.push(`equip.parts[${i}] 指到 particle.json 沒有的：${p.particle}`);
+    });
+    if (it.equip?.prefab || it.equip?.particle) out.push('equip.prefab／equip.particle 已不支援（改用 equip.parts，到場景分頁編）');
     for (const [rid, r] of Object.entries(S.roles))
         if ((r.inv?.equips ?? []).some(e => (e?.id ?? e) === id) && !sexOk(it, r.sex)) out.push(`${rid} 穿著，但這件${SC.FIELDS.sex.names[it.sex] ?? it.sex}`);
     return out;
@@ -226,7 +226,7 @@ function fieldRow(id, it, k)
             open && h('div', {class: 'fields'},
                 subs.filter(([, , on]) => on).map(([f, d]) => [
                     h('span', {class: 'k' + (o[f] === undefined ? ' unset' : ''), title: `${k}.${f}`}, d.label),
-                    d.type === 'map' ? mapEditor(id, [k, f], o[f]) : d.type === 'obj' ? subObj(d, o[f], `${k}.${f}`, val => put(f, val)) : F.withDrop(fieldInput(d.hint ? {...d, hint: d.hint(o)} : d, o[f], val => put(f, val), `${k}.${f}`), id, `${k}.${f}`, o[f],
+                    d.type === 'handParts' ? handPartsView(id, o[f]) : d.type === 'map' ? mapEditor(id, [k, f], o[f]) : d.type === 'obj' ? subObj(d, o[f], `${k}.${f}`, val => put(f, val)) : F.withDrop(fieldInput(d.hint ? {...d, hint: d.hint(o)} : d, o[f], val => put(f, val), `${k}.${f}`), id, `${k}.${f}`, o[f],
                         d.opt && d.type !== 'nums' && (() => put(f, undefined))),
                 ]),
                 hidden.length && [h('span', {class: 'k unset'}, '加欄位'),
@@ -245,6 +245,20 @@ function fieldRow(id, it, k)
             open && effs.map((_, i) => effCard(id, effs, i)));
     }
     return [label, F.withDrop(fieldInput(def, v, val => set(id, [k], val), k), id, k, v)];
+}
+
+// equip.parts：一列一個（🔥 粒子 id／💡 光源 r＋顏色、x,y、後面／停用），粒子不存在標 ⚠；到場景分頁編
+function handPartsView(id, parts)
+{
+    const xy = (p) => h('span', {class: 'dim'}, ` ${p.x ?? 0},${p.y ?? 0}`);
+    const tag = (on, t) => on && h('span', {class: 'lab'}, t);
+    return h('div', {class: 'handParts', dataset: {k: 'equip.parts'}},
+        (Array.isArray(parts) ? parts : []).map(p => h('div', {class: p.off ? 'dim' : ''},
+            p.particle ? [h('span', null, '🔥 '), h('span', {class: S.particles && !S.particles.includes(p.particle) ? 'warn' : ''}, p.particle)]
+                : p.light ? [h('span', null, '💡 '), h('span', {style: `display:inline-block; width:10px; height:10px; background:${p.light.color ?? '#ffcc88'}`}), ` r${p.light.r ?? 120}`]
+                : h('span', {class: 'warn'}, '⚠ 不是粒子也不是光源'),
+            xy(p), tag(p.under, '後面'), tag(p.off, '停用'))),
+        h('button', {type: 'button', title: '到場景分頁打開這個道具編手上的粒子／光源', onclick: () => SH.gotoTab('scene', [`item:${id}`])}, '↗ 場景編'));
 }
 
 function otherBox(id, it, known)
@@ -277,7 +291,7 @@ function renderForm()
             h('span', {class: 'grow'}),
             F.modeBtn(),
             it.equip && (it.cat === 'CAT_WEAPON' || it.cat === 'CAT_EQUIP') && h('button', {type: 'button', dataset: {k: 'gotoScene'},
-                title: '到場景分頁打開這個道具，編手上的 prefab／粒子（場景裡沒有就放一個）', onclick: () => SH.gotoTab('scene', [`item:${id}`])}, '↗ 場景'),
+                title: '到場景分頁打開這個道具，編手上的粒子／光源（場景裡沒有就放一個）', onclick: () => SH.gotoTab('scene', [`item:${id}`])}, '↗ 場景'),
             h('button', {type: 'button', onclick: () => D.askRename(id)}, '改名…'),
             h('button', {type: 'button', onclick: () => D.dup(id)}, '複製'),
             h('button', {type: 'button', onclick: () => D.remove(id)}, '刪除…')),
