@@ -1,6 +1,6 @@
 import Com from './com.js'
 import {GM} from '../core/setting.js'
-import {setSpot} from '../core/spotlight.js'
+import {setSpot, setBreath, breathOf} from '../core/spotlight.js'
 // import TimeSystem from '../systems/time.js'
 const _tag = 'lamp';
 
@@ -15,6 +15,7 @@ const _tag = 'lamp';
 //   radius   : number  光源半徑，預設 200
 //   lit      : bool    初始狀態是否點亮，預設 false
 //   dir/arc/soft : 聚光燈（見 core/spotlight.js），沒寫 arc＝點光源
+//   breath_t/breath_min : 呼吸（亮度在 min～1 倍之間來回，t 秒一次），沒寫＝不呼吸
 //--------------------------------------------------
 export class COM_Lamp extends Com
 {
@@ -33,7 +34,7 @@ export class COM_Lamp extends Com
         const color = bb.color ?? 0xffaa00;
         const radius = bb.radius ?? 200;
         const pos = root.pos;
-        this._light = setSpot(this.scene.lights.addLight(pos.x, pos.y, radius, color, GM.LIGHT), bb);
+        this._light = setBreath(setSpot(this.scene.lights.addLight(pos.x, pos.y, radius, color, GM.LIGHT), bb), breathOf(bb), GM.LIGHT);
         if (bb.lamp_on) {root.setTexture?.(bb.lamp_on);}
     }
 

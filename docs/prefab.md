@@ -30,13 +30,13 @@
 - 零件：
   - `img`：texture key，`sx`/`sy`/`angle`/`flip`/`ox`/`oy`/`depth`（只排 prefab 內部前後），選填 `fx`（fx.json id，跑 `fxcell.js` 的 idle，切狀態時 spawn／end）。
   - 粒子（2026-11-22 改）**只能是 `{particle: id}`**＝參照 particle.json，內容一律集中在 particle.json（粒子分頁的引用／未使用／缺粒子才算得準、方便 mod 蓋）。零件自己的 `{def}`（11-21～11-22 有過）已拿掉：遊戲只播 `DB.particle(particle)`、查不到不噴＋dlog，`{def}` 零件不建；場景分頁零件列標「⚠ 零件自己的粒子（已不支援）」、表單只能換成一個 id。原本 forge 的兩個 `{def}` 搬成 `forge-smoke`／`forge-fire`。粒子零件也能寫 `depth`（2026-11-21）：粒子勾 `local` 時跟 png 一起照零件 `depth`（同值照清單順序）排，**不管粒子自己的 `depth:'under'`**；沒勾 local 的粒子不能插在 png 中間，整個在 prefab 前面（root depth +0.5）、粒子 `depth:'under'`＝整個在後面（−0.5），零件 `depth` 無效（右欄反灰）。光源不是畫面物件、沒有前後，只照亮 Light2D 的 png（粒子不吃燈）。
-  - `light`：寫在 prefab 裡（`r`/`color`/`i?`/`dir`/`arc`/`soft`）。光源閃爍以後再說。
+  - `light`：寫在 prefab 裡（`r`/`color`/`i?`/`dir`/`arc`/`soft`/`breath?`）。`breath:{t, min}`＝呼吸（2026-11-25，見 [scene-tool.md](scene-tool.md)「光源呼吸」）；閃爍（不規則）以後再說。
 - png 零件可以在場景分頁切前後片（展開的零件表單「切前後片…」，見 [scene-tool.md](scene-tool.md)「切前後片」）：切成兩個獨立的 png 零件，後片插在前面、其他欄位照抄，遊戲照一般零件畫。
 - 實例不能覆寫零件；要不一樣就另做一個 prefab。
 
 ## 遊戲
 
-- `ItemView`（`src/components/view.js`）看到 `bb.prefab` 就整個接手（不另開 com，所有掛 ItemView 的物件自動支援）：`_setData()` 套縮圖大小、錨點、沒被 Tiled 覆寫的占地方塊；`_addShape()` 不建單張圖，`_shape`＝放在錨點的 container，png 零件各包一個 holder（fx tween 動 holder）照 `depth` 排；粒子 `playParticle({target:root, parent:_shape, followDepth:true})`：local 的 emitter 進 `_shape`，`_sortParts()` 照零件順序 `bringToTop` 排回去（一開始就有的跟切 look 才出現的同一個位置；以前加進 root 時 view 還沒加進 root，所以被 png 蓋住、切 look 出現的又跑到上面），world 的 depth 每幀跟著 root；光源 `scene.lights.addLight`＋`setSpot`（`i` 沒寫＝`GM.LIGHT`）。outline／遮擋半透明照舊作用在 `_shape`。`root.setTexture`／`setShape` 對 prefab 無效。
+- `ItemView`（`src/components/view.js`）看到 `bb.prefab` 就整個接手（不另開 com，所有掛 ItemView 的物件自動支援）：`_setData()` 套縮圖大小、錨點、沒被 Tiled 覆寫的占地方塊；`_addShape()` 不建單張圖，`_shape`＝放在錨點的 container，png 零件各包一個 holder（fx tween 動 holder）照 `depth` 排；粒子 `playParticle({target:root, parent:_shape, followDepth:true})`：local 的 emitter 進 `_shape`，`_sortParts()` 照零件順序 `bringToTop` 排回去（一開始就有的跟切 look 才出現的同一個位置；以前加進 root 時 view 還沒加進 root，所以被 png 蓋住、切 look 出現的又跑到上面），world 的 depth 每幀跟著 root；光源 `scene.lights.addLight`＋`setSpot`＋`setBreath`（`i` 沒寫＝`GM.LIGHT`）。outline／遮擋半透明照舊作用在 `_shape`。`root.setTexture`／`setShape` 對 prefab 無效。
 - `root.setLook(x)`／`root.getLook()` 切狀態（遊戲中切換播 fx 的 spawn／end，讀檔直接建不播）；ItemView 的 `save()`／`load()` 存讀 `look`（`Item` 也補了 `this.load()`）。
 - 純裝飾的 prefab 用現有的 `type:"item"`（`Item`：不可互動、SOLID 遮擋）。
 - `acts`：ItemView `_bindActs()` 用 `_setAct` 註冊、`root.on(<act>)` → `setLook`；有 acts 的 prefab 自動 `interactive`（純裝飾的 `item` 也點得到）。`defAct` 存 `root._defAct`，`GameObject.act`（左鍵／游標）先看它可用就用，否則照舊 `ORDER`（所以 acts 預設不搶左鍵）。
@@ -46,7 +46,7 @@
 - 來源：
   - Tiled：物件屬性 `prefab`（自動產生的 template 帶），可覆寫 `look`、`type`（行為照舊由 `type` 決定）。
   - 放置道具：`item.json` 的 `bb.prefab`（`init_runtime` 本來就 `Object.assign(bb, dat.bb)`），runtime 存檔帶 `look`，放置 ghost 用縮圖。
-- 不做（以後再談）：story 指令／條件控制狀態、使用中自動切換、runtime 用程式任意 spawn、光源閃爍、`look` 陣列、`drop.prefab`。
+- 不做（以後再談）：story 指令／條件控制狀態、使用中自動切換、runtime 用程式任意 spawn、光源閃爍（呼吸有了）、`look` 陣列、`drop.prefab`。
 
 ### 拿在手上：`equip.parts`（2026-11-24）
 

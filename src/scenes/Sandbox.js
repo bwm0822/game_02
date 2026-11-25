@@ -10,7 +10,7 @@ import Puppet from '../roles/puppet.js'
 import Item from '../items/item.js'
 import DB from '../data/db.js'
 import {playParticle} from '../core/particle.js'
-import {setSpot} from '../core/spotlight.js'
+import {setSpot, setBreath} from '../core/spotlight.js'
 import {queueTextures} from '../core/texlist.js'
 import {equipParts} from '../core/equip.js'
 import {shapeOf, zoneEditable, rectOf, handlesOf, hitZone, edgeZone, zoneArea, dragZone, ZONE_CURSOR} from '../core/pzone.js'
@@ -661,7 +661,7 @@ export class Sandbox extends GameScene
     }
 
     //------------------------------------------------------
-    //  光源：{key, x, y, r, color（'#rrggbb'）, i?（沒寫＝GM.LIGHT，同 com_lamp）, follow?（角色／擺設 key：x/y 變成相對它）,
+    //  光源：{key, x, y, r, color（'#rrggbb'）, i?（沒寫＝GM.LIGHT，同 com_lamp）, breath?（{t, min} 呼吸）, follow?（角色／擺設 key：x/y 變成相對它）,
     //        dir?/arc?/soft?（聚光燈，core/spotlight.js；跟著角色時資料＝朝右的樣子，朝左鏡像）}
     //  畫面上畫一個光色圓點讓它點得到、拖得動；選中時虛線圈＝半徑、圈上的把手拖 r
     //------------------------------------------------------
@@ -701,10 +701,10 @@ export class Sandbox extends GameScene
         setSpot(o.light, {dir:this._mirror(o) ? 180 - dir : dir, arc, soft});
     }
 
-    // 亮度：藏著＝0、有寫 i 用它、沒寫＝GM.LIGHT（日夜交給 shader：起壓點至少是環境光，白天燈自然加不上去）
+    // 亮度：藏著＝0、有寫 i 用它、沒寫＝GM.LIGHT（日夜交給 shader：起壓點至少是環境光，白天燈自然加不上去）；breath＝呼吸（core/spotlight.js）
     _lightI(o)
     {
-        o.light.intensity = this._hidden.has(o.data.key) ? 0 : o.data.i ?? GM.LIGHT;
+        setBreath(o.light, o.data.breath, this._hidden.has(o.data.key) ? 0 : o.data.i ?? GM.LIGHT);
     }
 
     _dropLight(k)

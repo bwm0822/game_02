@@ -1,4 +1,4 @@
-// 聚光燈：取代 Phaser 的 Light2D pipeline（同名，現有 setPipeline('Light2D') 不用改），每盞燈多吃 light.spot
+// 聚光燈：取代 Phaser 的 Light2D pipeline（同名，現有 setPipeline('Light2D') 不用改），每盞燈多吃 light.spot、light.breath（呼吸，見 setBreath）
 //   light.spot = {dir（度，0 右、順時針）, arc（光錐全寬，度；沒寫或 ≥360＝點光源）, soft（0～1，錐側邊淡出比例，預設 0.2）}
 //   不叫 angle：Tiled 自訂屬性撞到 Container 本身的 angle 會直接轉物件、進不了 bb
 // 距離衰減照 Phaser 原本的公式，錐的淡出跟它相乘
@@ -117,6 +117,28 @@ export function setSpot(light, {dir, arc, soft} = {})
     return light;
 }
 
+// 呼吸：light.breath＝{t（一次暗→亮→暗幾秒）, min（最暗＝基準的幾成，0～1）, ph（隨機起點）, base（基準亮度）}，
+//  pipeline 每幀照時間算 intensity；addLight 會從池子拿舊的燈，所以每個 addLight 都要跟著 setBreath（沒有＝清掉），同 setSpot
+//  base 沒給＝燈現在的 intensity；改基準（藏起來＝0）再叫一次，起點不變
+export const BREATH_MIN = 0.6;
+export function setBreath(light, breath, base)
+{
+    if(!light) {return light;}
+    if(base !== undefined) {light.intensity = base;}
+    else if(light.breath) {light.intensity = light.breath.base;}
+    const t = +breath?.t;
+    if(!(t > 0)) {light.breath = null; return light;}
+    const min = Math.min(1, Math.max(0, breath.min ?? BREATH_MIN));
+    light.breath = {t:Math.max(0.1, t), min, ph:light.breath?.ph ?? Math.random(), base:light.intensity};
+    return light;
+}
+
+// 呼吸的倍率（min～1，平滑 cos），sec＝秒
+export const breathAt = (b, sec) => b.min + (1 - b.min) * (0.5 + 0.5 * Math.cos(2 * Math.PI * (sec / b.t + b.ph)));
+
+// Tiled 自訂屬性是平的：breath_t／breath_min
+export const breathOf = (bb) => (bb?.breath ?? (bb?.breath_t ? {t:bb.breath_t, min:bb.breath_min} : null));
+
 class SpotLightPipeline extends Phaser.Renderer.WebGL.Pipelines.LightPipeline
 {
     constructor(game)
@@ -126,6 +148,8 @@ class SpotLightPipeline extends Phaser.Renderer.WebGL.Pipelines.LightPipeline
 
     onRender(scene, camera)
     {
+        const sec = this.game.loop.time / 1000;
+        for(const l of scene.sys.lights?.lights ?? []) {if(l.breath) {l.intensity = l.breath.base * breathAt(l.breath, sec);}}
         super.onRender(scene, camera);
         if(!this.lightsActive) {return;}
         const lights = scene.sys.lights.getLights(camera);

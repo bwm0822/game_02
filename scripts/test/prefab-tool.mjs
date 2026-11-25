@@ -197,6 +197,11 @@ run('prefab-tool', async t => {
         addBtn.click();
         await until(() => draft().parts.length === 4);
         out.addLight = [draft().parts.at(-1), sc.S.part, fold('right.parts'), doc.querySelectorAll('#right .partform').length];
+        // 光源零件表單的「呼吸」：勾＝寫進 light.breath（草稿）、取消勾拿掉
+        doc.querySelector('#right .partform [data-k="breath"]').click();
+        out.partBreath = [draft().parts[3].light.breath, await until(() => inst()?.go?.view?._parts?.find(e => e.light)?.light?.breath?.t === 2)];
+        doc.querySelector('#right .partform [data-k="breath"]').click();
+        out.partBreath.push(draft().parts[3].light.breath ?? null);
         await sc.setPart('forge', 3, {r: 90, look: 'on'});
         out.setLight = draft().parts[3];
         await sc.movePart('forge', 3, -1);
@@ -701,6 +706,7 @@ run('prefab-tool', async t => {
     t.check('sandbox 照草稿重建', r.sbDraft);
     t.eq('零件標題列右邊：＋png／＋粒子／＋光源（摺著也在）', JSON.stringify(r.addBtns), JSON.stringify(['＋png', '＋粒子', '＋光源']));
     t.eq('摺著按＋光源：在錨點、沒有 look、自動打開並展開它', JSON.stringify(r.addLight), JSON.stringify([{light: {r: 120, color: '#ffcc88'}}, 3, '▾', 1]));
+    t.eq('光源零件勾呼吸：寫進 light.breath（預設）、sandbox 的燈跟著；取消勾拿掉', JSON.stringify(r.partBreath), JSON.stringify([{t: 2, min: 0.6}, true, null]));
     t.eq('光源欄位寫進 light、狀態寫在零件上', JSON.stringify(r.setLight), JSON.stringify({light: {r: 90, color: '#ffcc88'}, look: 'on'}));
     t.eq('零件往前：順序換、展開的跟著', JSON.stringify(r.movePart), JSON.stringify([['Barrel', 'Crate', 90, 80], 2]));
     t.eq('刪零件：展開的收起', JSON.stringify(r.delPart), JSON.stringify([3, null]));

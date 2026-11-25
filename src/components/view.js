@@ -6,7 +6,7 @@ import {uPic,uBbc,uImage} from '../ui/uicomponents.js'
 import Utility from '../core/utility.js'
 import FxCell, {zoneDelays} from '../core/fxcell.js'
 import {playParticle} from '../core/particle.js'
-import {setSpot} from '../core/spotlight.js'
+import {setSpot, setBreath} from '../core/spotlight.js'
 import {thumbOf} from '../core/prefab.js'
 import {equipFor, equipParts, hiddenParts, heldOf, handItems, isHandheld, handOf, ROLE_PARTS, WRISTS, pivotOf, atPivot, fromPivot, rigOf} from '../core/equip.js'
 const _tag = 'view';
@@ -830,7 +830,7 @@ export class ItemView extends View
         {
             const l = e.p.light, pos = this.root.pos;
             const color = Phaser.Display.Color.HexStringToColor(l.color ?? '#ffcc88').color;
-            e.light = setSpot(lights.addLight(pos.x + (e.p.x ?? 0), pos.y + (e.p.y ?? 0), l.r ?? 120, color, l.i ?? GM.LIGHT), l);
+            e.light = setBreath(setSpot(lights.addLight(pos.x + (e.p.x ?? 0), pos.y + (e.p.y ?? 0), l.r ?? 120, color, l.i ?? GM.LIGHT), l), l.breath, l.i ?? GM.LIGHT);
         }
         else if(e.light) {lights.removeLight(e.light); e.light = null;}
     }
@@ -1246,7 +1246,7 @@ export class RoleView extends View
             else if(p.light)
             {
                 const l = p.light, color = Phaser.Display.Color.HexStringToColor(l.color ?? '#ffcc88').color;
-                const pt = {p, light:setSpot(scene.lights.addLight(0, 0, l.r ?? 120, color, l.i ?? GM.LIGHT), l)};
+                const pt = {p, light:setBreath(setSpot(scene.lights.addLight(0, 0, l.r ?? 120, color, l.i ?? GM.LIGHT), l), l.breath, l.i ?? GM.LIGHT)};
                 live.pts.push(pt);
             }
         }

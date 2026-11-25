@@ -412,7 +412,7 @@ async function deletePrefab(id, sure)
 }
 
 // ---------- prefab 內容（選中實例時右欄：prefab 欄位＋零件清單；docs/prefab.md） ----------
-const LIGHT_KEYS = ['r', 'color', 'i', 'dir', 'arc', 'soft'];
+const LIGHT_KEYS = ['r', 'color', 'i', 'dir', 'arc', 'soft', 'breath'];
 const KINDS3 = ['props', 'particles', 'lights'];
 
 // 組成 prefab：場景的擺設／發射點／光源（絕對座標）→ 零件（相對錨點 ax, ay）
@@ -1106,6 +1106,7 @@ function partRows(id, i, p)
             row('柔和', Object.assign(n('soft', 0.05, '0.2', l), {disabled: point})),
             row('顏色', h('input', {type: 'color', value: l.color ?? '#ffcc88', dataset: {k: 'color'}, onchange: (e) => set({color: e.target.value})})),
             row('強度', n('i', 0.1, '1', l)),
+            breathRow(row, l.breath, set),
             !lite && look),
         h('div', {class: 'hint dim'}, '選取時 sandbox 畫範圍＋藍色把手：拖把手改半徑（聚光燈：中線末端的把手連方向一起改、弧兩端的把手改光錐；Shift 吸 16px／15°）'),
     ];
@@ -1499,6 +1500,21 @@ function addLight(x, y)
     return editScene(sc => {(sc.lights ??= []).push({key, x, y, ...LIGHT});}, key);
 }
 
+// 呼吸（src/core/spotlight.js 的 setBreath）：☐ 週期 t 秒、最暗 min（0～1）；勾＝寫預設、取消＝拿掉整個 breath
+const BREATH_DEF = {t: 2, min: 0.6};
+function breathRow(row, b, set)
+{
+    const num = (k, step, lo, hi) => h('input', {type: 'number', step, min: lo, max: hi, value: b?.[k] ?? '', class: 'n', dataset: {k: `breath.${k}`}, disabled: !b,
+        onchange: (e) => {
+            const v = +e.target.value;
+            if (e.target.value === '' || !(v >= lo)) return renderRight();
+            set({breath: {...b, [k]: hi === undefined ? v : Math.min(hi, v)}});
+        }});
+    return row('呼吸', h('input', {type: 'checkbox', checked: !!b, dataset: {k: 'breath'}, title: '亮度在「最暗～原本強度」之間平滑來回，每盞起點隨機',
+        onchange: (e) => set({breath: e.target.checked ? {...BREATH_DEF} : undefined})}),
+        ' 週期 ', num('t', 0.1, 0.1), ' 秒　最暗 ', num('min', 0.05, 0, 1));
+}
+
 function setLight(key, patch)
 {
     return editScene(sc => {
@@ -1555,6 +1571,7 @@ function lightPanel(l)
             row('柔和', n('soft', 0.05, '0.2', point)),
             row('顏色', h('input', {type: 'color', value: l.color ?? '#ffcc88', dataset: {k: 'color'}, onchange: (e) => setLight(l.key, {color: e.target.value})})),
             row('強度', n('i', 0.1, '1')),
+            breathRow(row, l.breath, (patch) => setLight(l.key, patch)),
             row('跟著', followSelect(l, (patch) => setLight(l.key, patch)))),
         h('div', {class: 'hint dim'}, '強度空白＝1（同遊戲 GM.LIGHT；日夜由 shader 處理：天越亮燈越加不上去、白天看不出來）；光錐空白或 ≥360＝點光源，方向 0＝右、順時針，柔和＝錐邊淡出比例（0～1）；跟著角色時寫的是角色朝右的樣子，朝左自動鏡像；'
             + '拖圓點移動、拖虛線上的把手改半徑（聚光燈：中線末端的把手連方向一起改、弧兩端的把手改光錐；Shift 吸 16px／15°）；方向鍵 1px、Shift＋方向鍵一格'),

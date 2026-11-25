@@ -17,7 +17,7 @@ run('prefab', async t => {
                 {img: 'Crate', y: -20, look: 'on', fx: 'burn', depth: 1},
                 {img: 'Crate', y: -20, look: 'off', sx: 0.5, sy: 0.5},
                 {particle: 'campfire', y: -30, look: 'on'},
-                {light: {r: 100, color: '#ff8800'}, y: -16, look: 'on'},
+                {light: {r: 100, color: '#ff8800', breath: {t: 1.5}}, y: -16, look: 'on'},
                 {particle: 't_p100', y: -10, look: 'on'},
                 {def: {img: 'p-dot', mode: 'stream', frequency: 50}, look: 'on'},
                 {img: 'Crate', off: true},
@@ -60,6 +60,7 @@ run('prefab', async t => {
         const {defaultImgs} = await import('/src/core/prefab.js');
         out.offGhost = defaultImgs({...d.DB._prefabDB.t_forge, look: 'off'}).some(p => p.off);
         out.lightPos = (() => {const l = go.view._parts.find(e => e.light).light; return [l.x - go.x, l.y - go.y];})();
+        out.lightBreath = (() => {const b = go.view._parts.find(e => e.light).light.breath; return b && [b.t, b.min, b.base === d.GM.LIGHT];})();
 
         go.save();
         out.saved = d.Record.getByUid(gs._data.map, 987654);
@@ -98,6 +99,7 @@ run('prefab', async t => {
     t.eq('停用的零件（off）：不建（png、粒子都是）', r.offPart, false);
     t.eq('停用的 png：不算進縮圖／ghost（defaultImgs）', r.offGhost, false);
     t.eq('光源在錨點＋(0,-16)', JSON.stringify(r.lightPos), '[0,-16]');
+    t.eq('光源零件的呼吸：沒寫 min＝0.6、基準＝GM.LIGHT', JSON.stringify(r.lightBreath), '[1.5,0.6,true]');
     t.eq('存檔記 look', JSON.stringify(r.saved), '{"look":"on"}');
     t.eq('移除後光源拿掉', r.afterRemoveLights, 0);
     t.eq('讀檔還原 on', JSON.stringify(r.reload), '[true,false,true]');
