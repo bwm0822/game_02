@@ -90,7 +90,7 @@
 ## 場景分頁
 
 - 左欄（每段都可摺疊，記住）：
-  - 最上方「prefab 庫 ＋」：列出 prefab.json 全部（縮圖），點一下＝選目前場景第一個用它的實例、鏡頭移過去（sandbox `focus {key}`，沒有就提示拖進畫面），拖進畫面＝放實例；右鍵 改名…／複製…／刪除；＋＝新增空白 prefab（取 id → 立刻寫空的一筆 → 畫面中央放實例並選中）；有草稿的那筆標紅 ●。
+  - 最上方「prefab 庫 ＋」：列出 prefab.json 全部（縮圖），點一下＝選目前場景第一個用它的實例、鏡頭移過去＋閃一下（sandbox `focus {key, at}`，見 scene-tool.md；沒有就提示拖進畫面），拖進畫面＝放實例；右鍵 改名…／複製…／刪除；＋＝新增空白 prefab（取 id → 立刻寫空的一筆 → 畫面中央放實例並選中）；有草稿的那筆標紅 ●。
   - 場景清單、角色／擺設／粒子／光源，多一段「prefab 實例 ＋」（＋ 選單挑 id、放地圖中間；畫面右鍵「放 prefab ▸」）。
 - 實例（scenes.json）：`{key, prefab, x, y, look?}`；是真正的遊戲物件（同遊戲程式）。
 - 組成：多選擺設／粒子／光源 → 右鍵「組成 prefab…」：錨點預設第一個擺設的錨點；`file:` 圖照 pct 烤成 `textures/prefabs/<id>/<檔名>.png`（撞名加 `-2`）、改寫 texture key、自動更新圖片清單；有自己那份 `def`（✎）的發射點在對話框每個一列（2026-11-22）：「另存新 id」（預設 `<prefab>-<原 id>`、跟著 prefab id 欄改預設，手改過就不動；撞名／彼此重複擋）或「覆寫 <原 id>」（標共用幾處），內容寫進 particle.json、零件寫 `{particle: id}`，跟 scenes.json＋prefab.json 同一筆 undo（測試用 `composePrefab(start, {keys, id, particles: {發射點 key: {mode: 'new'|'over', id?}}})`，沒給＝另存預設 id）；沒自己那份的直接 `{particle: id}`。原本那幾個東西換成一個實例。

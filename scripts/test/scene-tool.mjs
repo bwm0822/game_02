@@ -148,6 +148,22 @@ run('scene-tool', async t => {
         out.hide = await until(() => pup('r1').visible === false) && [await disk() === before, !sb()._roleAt(pup('r1').x, pup('r1').y - 8)];
         sc.toggleHide('r1');
 
+        // 左欄點一列：鏡頭滑到物件中央、閃一下；再點一次＝取消選取，不動鏡頭
+        const camMid = () => {const m = sb().cameras.main.midPoint; return [Math.round(m.x), Math.round(m.y)];};
+        const rowEl = (k) => doc.querySelector(`#tree .item[data-key="${k}"]`);
+        sb().cameras.main.centerOn(0, 0);
+        rowEl('r1').click();
+        const flashed = await until(() => sb()._flash?.key === 'r1');
+        const r1c = (() => {const r = pup('r1').getShapeRect(); return [Math.round(r.centerX), Math.round(r.centerY)];})();
+        await until(() => camMid().join() === r1c.join());
+        out.focus = [sc.S.pick, flashed, camMid().join() === r1c.join(), await until(() => !sb()._flash)];
+        sb().cameras.main.centerOn(0, 0);
+        rowEl('r1').click();
+        await new Promise(res => setTimeout(res, 400));
+        out.unfocus = [sc.S.pick, camMid().join(), !sb()._flash];
+        sb()._send({sb: 'select', key: 'r2'});
+        await until(() => sc.S.pick === 'r2');
+
         sb()._send({sb: 'key', key: 'Delete'});
         out.delRole = await until(async () => (await scDisk()).roles.length === 1) && await until(() => sb().roles.length === 1) && [sc.S.pick, sb().roles[0].key];
         sb()._send({sb: 'key', key: 'z', ctrl: true});
@@ -794,6 +810,8 @@ run('scene-tool', async t => {
     t.check('sandbox 拖曳放開：寫檔、重建在新格子', r.move);
     t.eq('sandbox 右鍵：放角色／擺設／粒子／光源／prefab＋刪除', JSON.stringify(r.ctx), JSON.stringify(['在這裡放角色…（3, 3）', '在這裡放擺設…', '在這裡放粒子…', '在這裡放光源', '在這裡放 prefab…', '刪除 mary']));
     t.eq('👁 暫藏：不寫檔、點不到', JSON.stringify(r.hide), JSON.stringify([true, true]));
+    t.eq('左欄點列：選取、閃、鏡頭對準物件中央、閃完清掉', JSON.stringify(r.focus), JSON.stringify(['r1', true, true, true]));
+    t.eq('左欄再點一次：取消選取、鏡頭不動、不閃', JSON.stringify(r.unfocus), JSON.stringify([null, '0,0', true]));
     t.eq('sandbox 裡按 Del：刪選中的', JSON.stringify(r.delRole), JSON.stringify([null, 'r1']));
     t.eq('sandbox 裡按 Ctrl+Z：復原、選回去', JSON.stringify(r.undoDel), JSON.stringify([['r1', 'r2'], 'r2']));
 

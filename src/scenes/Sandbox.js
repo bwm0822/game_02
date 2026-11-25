@@ -21,6 +21,7 @@ const ZOOM = [0.25, 8];
 const GRID_DEPTH = 1e7;
 const HANDLE = 6;   // 擺設大小把手（螢幕 px）
 const SEL_COLOR = 0xffffff;   // 選中的記號（不能跟占地方塊 grid/zone 撞色）
+const FOCUS_PAN = 250, FLASH_MS = 600, FLASH_N = 3, FLASH_COLOR = 0xffdd33;
 const DEFAULT_TIME = '08:00';   // 同 Record.game_def 的開局時間
 
 let dataLoaded = false;
@@ -1178,6 +1179,53 @@ export class Sandbox extends GameScene
         const a = this._anchorPt();
         if(a) {this._insts?.[this._sel]?.go.active ? this._drawInstAnchor(g, z, a, 1) : this._drawAnchor(g, z, a, 1);}
         this._drawInspect(g, z);   // 占地方塊畫在選取框上面，重疊的邊才看得到
+        this._drawFlash(g, z);
+    }
+
+    //------------------------------------------------------
+    //  左欄點選：鏡頭滑到物件中央（倍率不變），到了閃 3 下黃框（粒子／光源＝錨點擴散圓圈）；
+    //  位置照 sandbox 現在的樣子（走掉的角色、跟著跑的粒子），沒建（藏起來的 prefab）＝分頁送的場景檔座標 at
+    //------------------------------------------------------
+    _focusGeom(key, at)
+    {
+        const p = this._puppet(key), o = this._props?.[key], fi = this._insts?.[key], e = this._emitters?.[key], l = this._lights?.[key];
+        if(p?.getShapeRect) {return {rect:p.getShapeRect()};}
+        if(o) {return {rect:o.sp.getBounds()};}
+        if(fi?.go.active) {return {rect:this._instBox(fi)};}
+        if(e) {return {pt:this._emitPos(e)};}
+        if(l) {return {pt:this._lightPos(l)};}
+        return at ? {pt:at} : null;
+    }
+
+    _focus(key, at)
+    {
+        const f = this._focusGeom(key, at);
+        if(!f) {return;}
+        const c = f.rect ? {x:f.rect.centerX, y:f.rect.centerY} : f.pt;
+        this.cameras.main.pan(c.x, c.y, FOCUS_PAN, 'Sine.easeInOut');
+        this._flash = {key, at, t0:this.time.now + FOCUS_PAN};
+    }
+
+    _drawFlash(g, z)
+    {
+        const fl = this._flash;
+        if(!fl) {return;}
+        const t = this.time.now - fl.t0;
+        if(t<0) {return;}
+        const f = t<FLASH_MS ? this._focusGeom(fl.key, fl.at) : null;
+        if(!f) {this._flash = null; return;}
+        const ph = (t/FLASH_MS*FLASH_N) % 1;
+        if(f.rect)
+        {
+            if(ph>=0.5) {return;}
+            const r = f.rect, d = 3/z;
+            for(const [w, col] of [[4/z, 0x000000], [2/z, FLASH_COLOR]]) {g.lineStyle(w, col, 1).strokeRect(r.x-d, r.y-d, r.width+d*2, r.height+d*2);}
+        }
+        else
+        {
+            const rad = (6 + ph*26)/z, a = 1 - ph;
+            for(const [w, col] of [[4/z, 0x000000], [2/z, FLASH_COLOR]]) {g.lineStyle(w, col, a).strokeCircle(f.pt.x, f.pt.y, rad);}
+        }
     }
 
     // 黃點黑框＋十字：錨點常壓在選取框下邊上，要跟框線分得開
@@ -1318,7 +1366,7 @@ export class Sandbox extends GameScene
             case 'icons': this._icons = {light:!!m.light, particle:!!m.particle}; break;
             case 'home': this._home(); break;
             case 'inspect': if(m.inspect?.key!==this._inspect?.key) {this._pzsel = null;} this._inspect = m.inspect ?? null; break;
-            case 'focus': {const go = this._insts?.[m.key]?.go; if(go) {this.cameras.main.pan(go.x, go.y, 250, 'Sine.easeInOut');} break;}
+            case 'focus': this._focus(m.key, m.at); break;
             case 'select': this._sel = m.key ?? null; this._size = {lock:m.lock ?? 'pct', ratio:m.ratio ?? true}; break;
             case 'arm': this._arm = m.act ?? null; this._drawSel(); this._cursor(); break;
             case 'do': this._do(m.act); break;

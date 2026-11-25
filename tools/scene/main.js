@@ -314,6 +314,14 @@ const instOf = (key) => {
     return insts().find(o => o.key === key);
 };
 const isInst = (key) => /^f\d+$/.test(key ?? '');
+// 左欄點選：sandbox 鏡頭滑過去＋閃一下；at＝藏起來沒建的實例用場景檔座標
+function focusOn(key)
+{
+    const o = instOf(key);
+    toGame({sb: 'focus', key, ...(o && {at: {x: o.x, y: o.y}})});
+}
+// 左欄場景樹點一列：選到＝對準＋閃，再點一次＝取消選取
+const pickRow = (key) => pickRole(key === S.pick ? null : key, true);
 const instKey = (sc = scene()) => {let i = 1; while ((sc?.prefabs ?? []).some(o => o.key === `f${i}`)) i++; return `f${i}`;};
 const PREFAB_FILES = [ST.FILE, ST.PREFAB];
 // 狀態清單：預設 look＋零件的 look＋acts 切到的
@@ -396,8 +404,7 @@ function pickPrefab(id)
     if (S.sel === null) return status('先選或新增一個場景');
     const o = insts().find(x => x.prefab === id);
     if (!o) return status(`這個場景還沒放 ${id}（拖進畫面放一個）`);
-    pickRole(o.key);
-    toGame({sb: 'focus', key: o.key});
+    pickRole(o.key, true);
 }
 
 // 用到這個 prefab 的實例：[[場景名, 個數]]
@@ -2363,9 +2370,10 @@ function selMsg()
     return {sb: 'select', key: S.pick, lock: sizeLock(), ratio: !p || ((p.sx ?? 1) === (p.sy ?? 1) && !freeRatio.has(p.key))};
 }
 
-function pickRole(key)
+// focus＝左欄點的：選到之後 sandbox 鏡頭對準＋閃一下
+function pickRole(key, focus = false)
 {
-    if (S.draft && key !== S.draft.key) {leaveDraft().then(ok => (ok ? pickRole(key) : toGame(selMsg()))); return;}
+    if (S.draft && key !== S.draft.key) {leaveDraft().then(ok => (ok ? pickRole(key, focus) : toGame(selMsg()))); return;}
     if (S.arm && S.arm.key !== key) {S.arm = null; toGame({sb: 'arm', act: null});}
     if (key !== S.pick) {S.part = null; clearSel();}
     S.pick = key;
@@ -2373,6 +2381,7 @@ function pickRole(key)
     toGame(inspectMsg());
     renderTree();
     renderRight();
+    if (focus && key) focusOn(key);
 }
 
 function toggleHide(key)
@@ -2519,7 +2528,7 @@ async function gotoItem(id)
         select(name, false);
         S.pick = S.data[name].items.find(o => o.item === id).key;
         refresh();
-        return toGame({sb: 'focus', key: S.pick});
+        return focusOn(S.pick);
     }
     if (S.sel === null)
     {
@@ -2535,8 +2544,7 @@ function pickItem(id)
     if (S.sel === null) return status('先選或新增一個場景');
     const o = itemInsts().find(x => x.item === id);
     if (!o) return status(`這個場景還沒放 ${id}（拖進畫面放一個）`);
-    pickRole(o.key);
-    toGame({sb: 'focus', key: o.key});
+    pickRole(o.key, true);
 }
 
 // 左欄 prefab 展開的記號（跟摺疊記在同一份 tools.scene.fold，有＝展開）
@@ -2558,8 +2566,7 @@ async function pickLibPart(id, i)
     if (S.pick !== o.key)
     {
         if (S.draft && !await leaveDraft()) return;
-        pickRole(o.key);
-        toGame({sb: 'focus', key: o.key});
+        pickRole(o.key, true);
     }
     if (!pfOf(id)?.parts?.[i]) return;
     if (!pfOf(id).parts[i].off) S.psel = {key: o.key, boxes: [], parts: [i]};
@@ -2598,38 +2605,38 @@ function renderTree()
     box.replaceChildren(
         ...sec('roles', `角色（${roles().length}）`, plus('放角色', () => placeAt(...S.center)), () => roles().map(r => h('div', {
             class: `item${r.key === S.pick ? ' sel' : ''}${S.hidden.has(r.key) ? ' hid' : ''}`, dataset: {key: r.key},
-            onclick: () => pickRole(r.key === S.pick ? null : r.key),
+            onclick: () => pickRow(r.key),
             oncontextmenu: (e) => menu(e, [['刪除', () => deleteRole(r.key)]]),
         }, h('button', {class: 'eye', title: '暫時藏起來（不存檔）', onclick: (e) => {e.stopPropagation(); toggleHide(r.key);}}, S.hidden.has(r.key) ? '◌' : '👁'),
            h('span', {class: 'id'}, r.id), h('span', {class: 'lab'}, roleLab(r.id)), h('span', {class: 'mark dim'}, `${r.tx},${r.ty}`)))),
         ...sec('props', `擺設（${props().length}）`, plus('放擺設', () => placeProp(S.center[0] * 32 + 16, S.center[1] * 32 + 32)), () => props().map(p => h('div', {
             class: `item${p.key === S.pick ? ' sel' : ''}${S.hidden.has(p.key) ? ' hid' : ''}`, dataset: {key: p.key},
-            onclick: () => pickRole(p.key === S.pick ? null : p.key),
+            onclick: () => pickRow(p.key),
             oncontextmenu: (e) => menu(e, [...(canCut(p) ? [['切前後片…', () => cutProp(p.key)]] : []), ['組成 prefab…', () => composePrefab(p.key)], ...addToItems(p.key, e), ['刪除', () => deleteObj(p.key)]]),
         }, h('button', {class: 'eye', title: '暫時藏起來（不存檔）', onclick: (e) => {e.stopPropagation(); toggleHide(p.key);}}, S.hidden.has(p.key) ? '◌' : '👁'),
            imgEl(p.img, 20), h('span', {class: 'id'}, p.img.startsWith(FILE) ? p.img.split('/').pop() : p.img), h('span', {class: 'mark dim'}, `${p.x},${p.y}`)))),
         ...sec('particles', `粒子（${emitters().length}）`, plus('放粒子發射點', () => placeEmitter(S.center[0] * 32 + 16, S.center[1] * 32 + 16)), () => emitters().map(e => h('div', {
             class: `item${e.key === S.pick ? ' sel' : ''}${S.hidden.has(e.key) ? ' hid' : ''}`, dataset: {key: e.key},
-            onclick: () => pickRole(e.key === S.pick ? null : e.key),
+            onclick: () => pickRow(e.key),
             oncontextmenu: (ev) => menu(ev, [['組成 prefab…', () => composePrefab(e.key)], ...addToItems(e.key, ev), ...toItemMenu(e.key, ev), ['刪除', () => deleteObj(e.key)]]),
         }, h('button', {class: 'eye', title: '暫時藏起來（不存檔）', onclick: (ev) => {ev.stopPropagation(); toggleHide(e.key);}}, S.hidden.has(e.key) ? '◌' : '👁'),
            h('span', {class: defOf(e) ? 'id' : 'id warn', title: e.def ? '自訂（發射點自己那份）' : ''}, e.def ? `${e.id} ✎` : e.id), e.follow && h('span', {class: 'lab'}, `→ ${followName(e.follow)}`), h('span', {class: 'mark dim'}, `${e.x},${e.y}`)))),
         ...sec('lights', `光源（${lights().length}）`, plus('放光源', () => addLight(S.center[0] * 32 + 16, S.center[1] * 32 + 16)), () => lights().map(l => h('div', {
             class: `item${l.key === S.pick ? ' sel' : ''}${S.hidden.has(l.key) ? ' hid' : ''}`, dataset: {key: l.key},
-            onclick: () => pickRole(l.key === S.pick ? null : l.key),
+            onclick: () => pickRow(l.key),
             oncontextmenu: (ev) => menu(ev, [['組成 prefab…', () => composePrefab(l.key)], ...addToItems(l.key, ev), ...toItemMenu(l.key, ev), ['刪除', () => deleteObj(l.key)]]),
         }, h('button', {class: 'eye', title: '暫時藏起來（不存檔）', onclick: (ev) => {ev.stopPropagation(); toggleHide(l.key);}}, S.hidden.has(l.key) ? '◌' : '👁'),
            h('span', {title: `光色 ${l.color ?? '#ffcc88'}`}, '💡'), h('span', {class: 'id'}, l.key),
            l.follow && h('span', {class: 'lab'}, `→ ${followName(l.follow)}`), h('span', {class: 'mark dim'}, `${l.x},${l.y}`)))),
         ...sec('prefabs', `prefab（${insts().length}）`, plus('放 prefab', () => placeInst(S.center[0] * 32 + 16, S.center[1] * 32 + 32)), () => insts().map(o => h('div', {
             class: cls(o.key), dataset: {key: o.key},
-            onclick: () => pickRole(o.key === S.pick ? null : o.key),
+            onclick: () => pickRow(o.key),
             oncontextmenu: (ev) => menu(ev, [...toItemMenu(o.key, ev), ['刪除', () => deleteObj(o.key)]]),
         }, eye(o.key), pfIcon(o.prefab, 20), h('span', {class: S.prefabs[o.prefab] ? 'id' : 'id warn'}, o.prefab),
            o.look && h('span', {class: 'lab'}, o.look), h('span', {class: 'mark dim'}, `${o.x},${o.y}`)))),
         ...sec('items', `道具（${itemInsts().length}）`, null, () => itemInsts().map(o => h('div', {
             class: cls(o.key), dataset: {key: o.key},
-            onclick: () => pickRole(o.key === S.pick ? null : o.key),
+            onclick: () => pickRow(o.key),
             oncontextmenu: (ev) => menu(ev, [['刪除', () => deleteObj(o.key)]]),
         }, eye(o.key), IC.iconEl(S.refs.items[o.item]?.icon, 20), h('span', {class: isHandItem(S.refs.items[o.item]) ? 'id' : 'id warn'}, o.item),
            h('span', {class: 'lab dim'}, handOf1(o.item)), h('span', {class: 'mark dim'}, `${o.x},${o.y}`)))),
