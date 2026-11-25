@@ -26,7 +26,7 @@
 - `defAct`：選填，左鍵預設動作；沒寫的話 acts 不進左鍵預設（`ORDER`）。
 - `grid`／`zone`：占地方塊（相對錨點的 `{x,y,w,h}`，見 [anchor.md](anchor.md)），**沒寫＝沒有**（沒 grid＝不佔格、沒 zone＝點不到）；Tiled 物件寫了量邊的 `gl…`／`zl…`（量縮圖外框）就整組蓋掉。body 已拿掉。
 - `thumb`：縮圖範圍＝**所有狀態**的 png 零件（停用 `off` 的不算）旋轉後外接框的聯集，相對錨點的 `{x,y,w,h}`；Tiled tile 物件座標換算回錨點、`view.rect`（遮擋、點選、fx 對齊）都用它，所以要包住任何狀態會出現的 png。沒有 png＝不寫（`thumbOf()` 預設 32×32、錨點在底部中間）。工具算（`thumbFor()`），不要手改。
-- **縮圖圖**（`textures/prefabs/prefab-<id>.png`＝Tiled 圖示＝場景分頁 prefab 庫的圖示）：只畫**永遠出現**（沒寫 `look`、沒 `off`）的 png 照 depth 合成（`src/core/prefab.js` 的 `thumbImgs()`），所以掛 `look` 的零件佔範圍但不畫（留透明邊）；一張都畫不出來＝半透明底＋1px 外框。不人工挑選、沒有欄位（2026-11-24 定案）。放置道具的 ghost 不跟縮圖，照舊畫預設狀態的 png（`defaultImgs()`）。
+- **縮圖圖**（`textures/prefabs/prefab-<id>.png`＝Tiled 圖示＝場景分頁放置面板／物件清單的 prefab 圖示）：只畫**永遠出現**（沒寫 `look`、沒 `off`）的 png 照 depth 合成（`src/core/prefab.js` 的 `thumbImgs()`），所以掛 `look` 的零件佔範圍但不畫（留透明邊）；一張都畫不出來＝半透明底＋1px 外框。不人工挑選、沒有欄位（2026-11-24 定案）。放置道具的 ghost 不跟縮圖，照舊畫預設狀態的 png（`defaultImgs()`）。
 - 零件：
   - `img`：texture key，`sx`/`sy`/`angle`/`flip`/`ox`/`oy`/`depth`（只排 prefab 內部前後），選填 `fx`（fx.json id，跑 `fxcell.js` 的 idle，切狀態時 spawn／end）。
   - 粒子（2026-11-22 改）**只能是 `{particle: id}`**＝參照 particle.json，內容一律集中在 particle.json（粒子分頁的引用／未使用／缺粒子才算得準、方便 mod 蓋）。零件自己的 `{def}`（11-21～11-22 有過）已拿掉：遊戲只播 `DB.particle(particle)`、查不到不噴＋dlog，`{def}` 零件不建；場景分頁零件列標「⚠ 零件自己的粒子（已不支援）」、表單只能換成一個 id。原本 forge 的兩個 `{def}` 搬成 `forge-smoke`／`forge-fire`。粒子零件也能寫 `depth`（2026-11-21）：粒子勾 `local` 時跟 png 一起照零件 `depth`（同值照清單順序）排，**不管粒子自己的 `depth:'under'`**；沒勾 local 的粒子不能插在 png 中間，整個在 prefab 前面（root depth +0.5）、粒子 `depth:'under'`＝整個在後面（−0.5），零件 `depth` 無效（右欄反灰）。光源不是畫面物件、沒有前後，只照亮 Light2D 的 png（粒子不吃燈）。
@@ -67,7 +67,7 @@
 - 舊的 `com_light`（道具 `light` 欄位、角色中心一盞燈）已刪；道具發光一律走 `equip.parts` 的光源。
 - 工具：
   - 場景分頁木偶有第六格「道具」（sandbox 跑真的 `RoleView`，看得到火焰／光跟著手）。
-  - **道具實例**：左欄「道具」庫拖進畫面＝`scenes.json` 的 `items:[{key:'i<n>', item, x, y}]`，錨點＝握點；右欄＝零件清單（＋粒子／＋光源、勾選＝off、粒子表單多「後面」＝under），草稿儲存寫 item.json（＋particle.json）；發射點／光源右鍵「加到道具 ▸」、零件「移到場景」，見 [scene-tool.md](scene-tool.md)「道具實例」。
+  - **道具實例**：放置面板「道具」分頁點／拖＝`scenes.json` 的 `items:[{key:'i<n>', item, x, y}]`，錨點＝握點；右欄＝零件清單（＋粒子／＋光源、勾選＝off、粒子表單多「後面」＝under），草稿儲存寫 item.json（＋particle.json）；發射點／光源右鍵「加到道具 ▸」、零件「移到場景」，見 [scene-tool.md](scene-tool.md)「道具實例」。
   - 道具分頁 equip 裡「手上零件」只唯讀列出（🔥 粒子／💡 光源、x,y、後面／停用；粒子不存在、不是粒子也不是光源標 ⚠），「↗ 場景」去編；還寫著舊的 `equip.prefab`／`equip.particle` 標 ⚠。
   - 粒子分頁刪粒子時有道具的 `equip.parts` 在用就擋（改名只列）。
   - 試穿只畫記號（粒子橘菱形、光源黃圓，跟著道具轉，`off` 不畫），跑不了粒子。
@@ -89,14 +89,12 @@
 
 ## 場景分頁
 
-- 左欄（每段都可摺疊，記住）：
-  - 最上方「prefab 庫 ＋」：列出 prefab.json 全部（縮圖），點一下＝選目前場景第一個用它的實例、鏡頭移過去＋閃一下（sandbox `focus {key, at}`，見 scene-tool.md；沒有就提示拖進畫面），拖進畫面＝放實例；右鍵 改名…／複製…／刪除；＋＝新增空白 prefab（取 id → 立刻寫空的一筆 → 畫面中央放實例並選中）；有草稿的那筆標紅 ●。
-  - 場景清單、角色／擺設／粒子／光源，多一段「prefab 實例 ＋」（＋ 選單挑 id、放地圖中間；畫面右鍵「放 prefab ▸」）。
+- prefab 本身（2026-11-25 起沒有左欄 prefab 庫）：中欄空地右鍵的放置面板「prefab」分頁（見 [scene-tool.md](scene-tool.md)「左欄與放置面板」）列出 prefab.json 全部（縮圖＋草稿 ●＋場景用了幾個），點一下＝放實例在右鍵位置、拖到畫面＝放在那裡；右鍵 改名…／複製…／重產縮圖／刪除；標題 ＋＝新增空白 prefab（取 id → 立刻寫空的一筆 → 右鍵位置放實例並選中）、⟳＝全部重產縮圖。
+  - 左欄物件清單（一層）列場景裡的實例（縮圖＋prefab id＋狀態），點列＝選取＋鏡頭對準閃一下（sandbox `focus {key, at}`）。
 - 實例（scenes.json）：`{key, prefab, x, y, look?}`；是真正的遊戲物件（同遊戲程式）。
 - 組成：多選擺設／粒子／光源 → 右鍵「組成 prefab…」：錨點預設第一個擺設的錨點；`file:` 圖照 pct 烤成 `textures/prefabs/<id>/<檔名>.png`（撞名加 `-2`）、改寫 texture key、自動更新圖片清單；有自己那份 `def`（✎）的發射點在對話框每個一列（2026-11-22）：「另存新 id」（預設 `<prefab>-<原 id>`、跟著 prefab id 欄改預設，手改過就不動；撞名／彼此重複擋）或「覆寫 <原 id>」（標共用幾處），內容寫進 particle.json、零件寫 `{particle: id}`，跟 scenes.json＋prefab.json 同一筆 undo（測試用 `composePrefab(start, {keys, id, particles: {發射點 key: {mode: 'new'|'over', id?}}})`，沒給＝另存預設 id）；沒自己那份的直接 `{particle: id}`。原本那幾個東西換成一個實例。
 - **加到 prefab**（2026-11-24）：擺設／粒子／光源右鍵（左欄或畫面）「加到 prefab ▸」→ 子選單列目前場景的實例（沒有實例＝反灰），**不開對話框**：加點的那個，點的是擺設就連跟著它的粒子／光源一起；位置換成相對那個實例的錨點（畫面不動）、新零件沒有 `look`、`depth` 原樣；`file:` 圖照 pct 烤、✎ 的發射點自動另存 `<prefab>-<原 id>`（撞名加 `-2`…）進 particle.json；**立刻寫** prefab.json＋scenes.json，收尾（`finishEdit()`）併成一筆 undo；有草稿先問 儲存／放棄／取消；完成後選中實例、新零件設成選取、零件區打開（`addToPrefab(key, 實例 key)`；`toParts()`／`dropFromScene()` 跟組成共用）。
-- **移到場景**（2026-11-24，**沒有複製**）：零件搬成場景的擺設／發射點／光源（絕對位置＝實例錨點＋零件 x/y、不跟著東西；粒子零件變 `{id}`），prefab 拿掉它們；場景沒有的 `look`／`off`／`fx` 丟掉、狀態列列出；`depth` 原樣；舊的 `{def}` 零件不能移；**立刻寫**一筆 undo、有草稿先問（放棄後零件跟按的時候不一樣就不移）；最後一個零件也能移（prefab 變空）；完成後選中新的第一個。入口：展開的零件表單最上面「移到場景」、畫面上對選取的零件右鍵（多選＝全部，sandbox 的 `ctx` 訊息多帶 `part`）、左欄零件列右鍵（`partsToScene(實例 key, [i…])`）。
-- **左欄 prefab 庫展開**（2026-11-24）：每筆 ▸/▾（可同時展開多筆，記在 `tools.scene.fold` 的 `libOpen:<id>`，改名跟著改，選實例不自動展開），零件列照草稿畫（同右欄的縮圖／🔥／💡＋名稱＋狀態，`off` 標灰）；點一下＝選那個 prefab 的實例（選中的實例是它就用它，不然場景第一個；沒有就提示）＋選取並展開那個零件，右鍵＝移到場景。
+- **移到場景**（2026-11-24，**沒有複製**）：零件搬成場景的擺設／發射點／光源（絕對位置＝實例錨點＋零件 x/y、不跟著東西；粒子零件變 `{id}`），prefab 拿掉它們；場景沒有的 `look`／`off`／`fx` 丟掉、狀態列列出；`depth` 原樣；舊的 `{def}` 零件不能移；**立刻寫**一筆 undo、有草稿先問（放棄後零件跟按的時候不一樣就不移）；最後一個零件也能移（prefab 變空）；完成後選中新的第一個。入口：展開的零件表單最上面「移到場景」、畫面上對選取的零件右鍵（多選＝全部，sandbox 的 `ctx` 訊息多帶 `part`）（`partsToScene(實例 key, [i…])`；左欄 prefab 庫展開零件 2026-11-25 拿掉）。
 - **沒有編輯模式**（2026-11-18 拿掉）：選中實例時右欄三區，見下面「右欄編輯＋草稿」。
 - scenes.json 的改動（含實例自己的欄位）立刻寫檔＋廣播；prefab.json＋scenes.json＋產生的檔案共用一個 undo 堆疊，一次動作＝一筆。
 
@@ -166,9 +164,9 @@
    - ✅ 4c 錨點十字、占地方塊畫在畫面上可拖：`gameScene()` 多送 `edit:{anchor, boxes}`，sandbox `_drawEdit()` 畫橘色十字＋body 紅／grid 藍／zone 綠框，`_editHandleAt()` 優先於其他把手；拖的時候改副本 `_editLive`，放開送 `moveAnchor {x,y}`（分頁 `moveAnchor()`：零件、方塊、thumb 反向挪，實例搬到新錨點，畫面不動）或 `editBox {k, box}`（`setPf`）；Shift 吸 16px。方塊要先在 prefab 面板勾起來才畫。
 5. ✅ Tiled：縮圖＋tsj＋template 自動產生、mapcheck（`tools/scene/tiled.js`，測試同 prefab-tool.mjs）。
    - 縮圖檔名是 `textures/prefabs/prefab-<id>.png`（texture key `prefab-<id>`，避免跟別的圖撞名），`renderThumb()` 把永遠出現的 png 零件照 depth（含 flip／angle／scale／pct）合成進 thumb 框（規則見上面「縮圖圖」）；`finishEdit()`（儲存草稿、組成、加到 prefab、零件移到場景）在烤圖前呼叫 `syncPrefab()`，所以 file: 圖直接讀原圖。
-   - 只有這四個動作會自動重產；零件的 png 在別處改了、手改 prefab.json 之後要手動：左欄 prefab 右鍵「重產縮圖」或 prefab 庫標題的 ⟳（全部，`regenThumbs()`，一筆 undo）。不做自動檢查（2026-11-24 定案）。
+   - 只有這四個動作會自動重產；零件的 png 在別處改了、手改 prefab.json 之後要手動：放置面板 prefab 分頁右鍵「重產縮圖」或分頁標題的 ⟳（全部，`regenThumbs()`，一筆 undo）。不做自動檢查（2026-11-24 定案）。
    - `finishEdit()` 算出來的 thumb 跟舊的不一樣、而且有地圖在用（`prefabRefs()`）：狀態列提示「錨點會偏 (dx, dy)」＋列出地圖（Tiled 物件左下角不動算），只提示、不改地圖。
-   - 左欄 prefab 庫的圖示＝縮圖（`IC.iconEl('prefab-<id>')`，更新圖片清單後 `IC.onReload` 重畫）；有草稿那筆照草稿即時 `renderThumb()` 成 canvas。
+   - prefab 的圖示（放置面板、左欄物件清單）＝縮圖（`IC.iconEl('prefab-<id>')`，更新圖片清單後 `IC.onReload` 重畫）；有草稿那筆照草稿即時 `renderThumb()` 成 canvas。
    - `tilesets/prefabs.tsj`：圖片集合型，tile id 給了就不換（地圖裡的 gid＝firstgid＋id 才不會跑），改名只換 `image`、刪除只拿掉那格（id 空著）。
    - `templates/prefabs/<id>.tj`：`gid`、寬高＝thumb、屬性 `prefab`；已有的保留 `type` 跟其他屬性（預設 `item`）。
    - 改名（`renamePrefab()`）：`maproles.js` 的 `roleRefs`／`renameRoleRefs` 多了 `prop` 參數（`'prefab'`）改地圖物件跟 template 的屬性；自己的 template 改檔名、地圖裡 `template` 路徑指到舊檔的跟著改（廣播 `maps/...`）；縮圖 png 改名、tsj 圖路徑改。刪除：地圖物件或用它 template 的地圖還在就擋（列出來），沒人用才刪 template／縮圖／tsj 那格。複製：產生新的一套。這些檔**不進 undo**。

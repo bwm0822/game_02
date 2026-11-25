@@ -2,7 +2,18 @@
 
 模擬場景的整合驗收台：在遊戲本身裡擺角色、播動作、掛特效、放擺設、調日夜，看到的＝玩家會看到的。
 
-> 狀態：2026-11-15 定案，同日 6 步全部完成（計畫見最後），剩實用調整。
+> 狀態：2026-11-15 定案，同日 6 步全部完成（計畫見最後），剩實用調整。2026-11-25 左欄攤平＋中欄右鍵放置面板（見「左欄與放置面板」）。
+
+## 左欄與放置面板（2026-11-25）
+
+- **左欄**＝場景清單＋目前場景的東西＋↶↷＋狀態列，沒有 prefab 庫／道具庫、沒有分段、沒有＋：
+  - 場景清單**只能切換**（沒有新增／複製／改名／刪除，要改手改 `scenes.json`；`addScene`／`dupScene`／`renameScene`／`deleteScene` 只留給無頭測試 `window.__sc`）；**永遠選著一個**（記 `tools.scene.sel`，沒有／被刪了＝第一個，再點一次不會取消）；`scenes.json` 一個場景都沒有時開專案自動建「場景」（底圖 sandbox，不進 undo）。
+  - 物件清單一層：角色 → prefab 實例 → 道具實例 → 擺設 → 粒子 → 光源（同類照陣列順序，靠圖示分辨），每列 👁＋圖示＋名字＋座標；點列＝選取＋鏡頭對準閃一下（再點＝取消）、右鍵＝物件動作（刪除、切前後片、組成 prefab、加到 prefab／道具…）。
+- **放置面板**（`tools/scene/panel.js`）：中欄**空地**右鍵跳出（點到物件＝照舊的物件動作選單，沒有「放…」），約 320×360、放不下翻邊；上排分頁 `prefab｜角色｜道具｜粒子｜光源｜擺設`（記 `tools.scene.panelTab`）、搜尋框（打開就有焦點，Esc 關）、列表。
+  - 點一筆＝放在右鍵那個位置（角色＝那一格、其他＝錨點）然後關；**Shift＋點**＝放了不關（連放，都在同一點）；也能**拖**到畫面任意位置（`application/x-prefab`＝prefab id 或 `role:`／`item:`／`particle:`／`light:`／`prop:` 開頭，sandbox 回 `dropPrefab {id, wx, wy, tx, ty}`，分頁 `dropAt()`），拖的時候面板不關。
+  - prefab 分頁：縮圖＋id＋草稿 ●＋場景用了幾個；標題 ＋（新增空白 prefab，實例放在右鍵位置）／⟳（全部重產縮圖）；每筆右鍵 改名…／複製…／重產縮圖／刪除。
+  - 角色分頁照 kind／grp 小標題分組（不能摺）；道具＝拿在手上的（標 🔥n 💡n）；粒子＝particle.json（上次放的標橘）；光源只有一筆「💡 放光源」；擺設＝textures 資料夾瀏覽（麵包屑、📁 點進去、單張圖點了放、sheet／atlas 開選圖器挑格子）＋「📂 外部 png…」，有搜尋＝整個 textures 攤平找（最多 200 筆）。
+  - 面板開著時分頁送 `modal {on:true}`：sandbox 裡**左鍵只回 `dismiss`、這一下不作用**（不選、不拖），分頁收面板；右鍵照常（空地＝面板換位置）。分頁那邊點面板外（對話框／右鍵選單除外）也會關。
 
 ## 架構
 
@@ -12,9 +23,9 @@
   - `GameScene` 的 constructor 收 key（預設 `'GameScene'`），`Sandbox` 用 `'Sandbox'`。
   - `map.js`：`scene.sandbox` 時不建 `type:npc` 物件、跳過 `@群組` 圖層（不碰存檔）。
 - 分頁的 HTML 面板用 postMessage 操作 iframe 裡的 sandbox（同無頭測試走 `window.__dbg` 的精神）。訊息都帶 `sb` 欄位：
-  - sandbox → 分頁另有 `zone {key, k, z}`（拖完發射點的 emitZone／deathZone）、`moveInst {key, x, y}`／`dropPrefab {id, wx, wy}`／`part {key, i}`／`movePart {key, i, x, y}`（prefab 實例，見 prefab.md）。
-  - 分頁 → sandbox 另有 `inspect {inspect:{key, boxes, part}｜null}`（選中的 prefab 實例畫錨點／方塊／展開零件的外框）、`focus {key, at?}`（左欄點列選到時：鏡頭 250ms 滑到物件中央、倍率不變，到了閃 3 下黃框（0.6 秒；角色／擺設＝圖範圍、prefab／道具實例＝點選框、粒子／光源＝錨點擴散圓圈），位置照 sandbox 現在的樣子（走掉的角色、跟著跑的粒子／光源），藏起來沒建的實例用分頁送的場景檔座標 `at`；`_focus()`／`_drawFlash()`）。左欄場景樹六段、prefab 庫、道具庫點了選到才送（`pickRole(key, true)`），再點一次＝取消選取不動鏡頭；畫面上點選不送；藏起來（◌）的照樣對準＋閃。
-- 分頁 → sandbox：`load {scene}`（底圖不同就 `scene.restart` 帶著 scene 重開，同一張直接套用）、`grid {on}`、`anchor {on}`、`icons {light, particle}`（記號開關）、`home`（整張地圖放進畫面）、`select {key}`（選取框）、`hide {keys}`（👁）、`arm {act}`（指定目標，null＝取消）、`do {act}`、`replay`、`reset`、`hit`／`die`／`revive {key}`、`fxTick {key, id}`、`time {t}`（預覽時間）、`ambient {color}`（預覽環境色）、`play {speed}`（0＝停）、`textures`（圖片清單更新，見下）。
+  - sandbox → 分頁另有 `zone {key, k, z}`（拖完發射點的 emitZone／deathZone）、`moveInst {key, x, y}`／`dropPrefab {id, wx, wy, tx, ty}`（放置面板拖進來）／`dismiss`（面板開著時的左鍵）／`part {key, i}`／`movePart {key, i, x, y}`（prefab 實例，見 prefab.md）。
+  - 分頁 → sandbox 另有 `inspect {inspect:{key, boxes, part}｜null}`（選中的 prefab 實例畫錨點／方塊／展開零件的外框）、`focus {key, at?}`（左欄點列選到時：鏡頭 250ms 滑到物件中央、倍率不變，到了閃 3 下黃框（0.6 秒；角色／擺設＝圖範圍、prefab／道具實例＝點選框、粒子／光源＝錨點擴散圓圈），位置照 sandbox 現在的樣子（走掉的角色、跟著跑的粒子／光源），藏起來沒建的實例用分頁送的場景檔座標 `at`；`_focus()`／`_drawFlash()`）。左欄物件清單點了選到才送（`pickRole(key, true)`），再點一次＝取消選取不動鏡頭；畫面上點選不送；藏起來（◌）的照樣對準＋閃。
+- 分頁 → sandbox：`load {scene}`（底圖不同就 `scene.restart` 帶著 scene 重開，同一張直接套用）、`grid {on}`、`anchor {on}`、`icons {light, particle}`（記號開關）、`home`（整張地圖放進畫面）、`select {key}`（選取框）、`hide {keys}`（👁）、`arm {act}`（指定目標，null＝取消）、`do {act}`、`replay`、`reset`、`hit`／`die`／`revive {key}`、`fxTick {key, id}`、`time {t}`（預覽時間）、`ambient {color}`（預覽環境色）、`play {speed}`（0＝停）、`textures`（圖片清單更新，見下）、`modal {on}`（放置面板開著）。
   - `act`＝`{key（誰做）, kind:'attack'|'ability'|'walk', id（技能）, tx, ty（目標格子）, tkey（點到的角色）}`。
   - sandbox → 分頁：`ready`（剛開好、還沒有場景，分頁收到就送 `load`）、`loaded {map, w, h}`（套用完；w/h＝地圖格數，「＋」放在中間用）、`error {msg}`（地圖載入失敗、角色 id 不存在，顯示在狀態列）、`select {key}`（左鍵點到的角色，空白處＝null）、`move {key, tx, ty}`（角色拖曳放開）、`moveProp {key, x, y}`（擺設拖曳放開）、`moveEmitter {key, x, y}`（粒子發射點拖曳放開，跟著角色／擺設時是相對位置）、`resizeProp {key, patch}`（擺設大小把手放開）、`moveLight {key, x, y}`／`radiusLight {key, r, dir?}`／`arcLight {key, arc}`（光源拖曳／半徑把手（聚光燈連方向）／弧端把手放開）、`ctx {tx, ty, wx, wy, key, cx, cy}`（右鍵，wx/wy 世界座標，cx/cy 是 iframe 裡的 client 座標）、`key {key, ctrl, shift, alt}`（iframe 有焦點時的鍵盤，分頁照自己的快捷鍵處理）、`disarm`（指定中按右鍵）、`time {t}`（▶ 播放中的時鐘）。
 - 角色、物品、部位等遊戲資料（`role.json`、`item.json`、`part.json`、`anim.json`、`fx.json`、`ability.json`、`local.json`）在別的分頁存檔時，sandbox 的 DB 就舊了：分頁收到廣播就整個重開 iframe（工具列「重開」同）。`particle.json` 例外（2026-11-22）：load 訊息帶整份（加上 prefab 草稿的粒子副本）、sandbox 直接換 `DB._particleDB` 不重開，發射點／prefab 實例的簽名含用到的粒子內容，變了才重建。
@@ -50,11 +61,11 @@
 - 位置永遠在格子中心（遊戲的走路／擊退靠它）。
 - 木偶：`src/roles/puppet.js`（`Puppet`，照 `Dummy` 木樁的組法）掛 `RoleView`＋`COM_Inventory`＋`COM_Anim`＋`COM_Action`＋`COM_Nav`＋`COM_Stats`＋`COM_Disp`＋`COM_Ability`，不掛 AI／作息／感知、不進回合、不讀寫存檔、`bb.interactive=false`（點選是 sandbox 自己判斷：身體方塊包住游標的最上面那個，沒有就看站在那格的）；`bb.meta` 是 role.json 那筆的淺拷貝、`inv.equips` 換成套完覆寫的（`Puppet.equipsOf()`）。只在 Sandbox 用到，正式版一起被 tree-shake 掉。
 - sandbox 套場景時照 `key` 比對：那筆資料（JSON）沒變的角色留著，變了（換角色、格子、面向、裝備）或不見的就 `dismiss()` 重建（重新登記路網權重）。
-- 操作：畫面上左鍵點選（白框）＋拖曳（跟著格子跳、放開才寫檔）、右鍵「在這裡放角色…」（挑角色對話框：照 kind／grp 分組、搜尋、雙擊確定、預設上次挑的 `tools.scene.lastRole`）／「刪除」；左欄角色清單（👁 暫藏只在這次開著時、不寫檔、藏著點不到；右鍵刪除；「＋」放在地圖中間）；右欄 角色（換 id）、格子、面向、裝備六格（下拉＝（原本：…）／（空）／那一類有 `equip` 的道具，限定性別不符的不列）、刪除；Del 刪選中的（分頁或 sandbox 有焦點都行）。
+- 操作：畫面上左鍵點選（白框）＋拖曳（跟著格子跳、放開才寫檔）、空地右鍵＝放置面板的「角色」分頁、角色上右鍵「刪除」；左欄物件清單的角色列（👁 暫藏只在這次開著時、不寫檔、藏著點不到；右鍵刪除）；右欄 角色（換 id）、格子、面向、裝備六格（下拉＝（原本：…）／（空）／那一類有 `equip` 的道具，限定性別不符的不列）、刪除；Del 刪選中的（分頁或 sandbox 有焦點都行）。
 
 ## 道具實例（2026-11-24：直接編道具手上的粒子／光源 `equip.parts`）
 
-- 左欄 prefab 庫下面「道具」庫：拿在手上的道具（有 `equip` 的 `CAT_WEAPON`／`CAT_EQUIP`），標手上零件數（`🔥n 💡n`，停用的不算）；拖進畫面＝放道具實例、點一下＝選這個場景裡第一個；樹多一段「道具」（👁、右鍵刪除）。道具分頁的「↗ 場景」跳過來（`item:<道具>`）：選第一個放了它的場景的實例，都沒有就放在目前場景（沒選＝第一個）中間。
+- 放置面板的「道具」分頁：拿在手上的道具（有 `equip` 的 `CAT_WEAPON`／`CAT_EQUIP`），標手上零件數（`🔥n 💡n`，停用的不算）；點／拖＝放道具實例；左欄物件清單的道具列（👁、右鍵刪除）。道具分頁的「↗ 場景」跳過來（`item:<道具>`）：選第一個放了它的場景的實例，都沒有就放在目前場景（沒選＝第一個）中間。
 - sandbox 畫**直立的 `equip.sprite`**（`scale`／`ox`／`oy`）＋手上的零件，錨點＝握點、零件座標 1:1（遊戲裡零件不乘 `equip.scale`）。做法：分頁的 `instOf()` 把道具實例當 prefab 實例（`prefab`＝`@<道具>`＝`equip.parts` 合成的 prefab，`synPf()`），sandbox 收到 `@item:<道具>`＝那筆的零件＋**最後**墊道具圖（depth −1e4，零件 index 不變，`itemSandboxPf()`；`under` 的粒子補 depth −2e4＝排在道具圖後面，不 local 的 `ItemView` 看零件的 `under` 排到目標底下），所以選取、拖零件、zone、光源把手都沿用 prefab 實例那套；沒有占地方塊、沒有屬性區。
 - 右欄：「道具 `i<n>`」（換道具、位置，立刻寫 scenes.json）＋「手上零件」＝prefab 的零件清單（標題列只有 ＋粒子／＋光源；勾選＝`off`、左鍵選取、右鍵展開表單、↑↓✕、Del／方向鍵）：
   - 粒子表單：粒子下拉（含 `[新增]`）／x／y／☐ 後面（`under`）／粒子內容（共用 n 處、另存新 id，同 prefab），沒有深度、狀態。
@@ -86,7 +97,7 @@
 ## 光源
 
 - `lights: [{key:'l<n>', x, y, r, color, i?, follow?, dir?, arc?, soft?}]`：Light2D 光源（擺設、角色、地形都是 Light2D）。`arc`（光錐全寬，度）有填且 <360＝聚光燈，`dir`＝方向（度，0 右、順時針）、`soft`＝錐邊淡出比例（0～1，預設 0.2），沒填＝點光源；`Light2D` 已換成 `src/core/spotlight.js` 的 pipeline（`light.spot`，sandbox `_lightSpot()` 寫）。跟著角色時資料＝角色朝右的樣子，角色 `faceDir()` 是 −1 就鏡像（x 偏移取負、方向 `180−dir`，`_mirror()`；拖曳／把手寫回的是鏡像前的數字），跟著擺設不翻。`i` 沒寫＝`GM.LIGHT`（1，同 `com_lamp`／`com_light`），寫了用它；強度不跟日夜變，天越亮燈越加不上去是 shader 的柔性壓縮做的（見下面）。新的預設 `{r:120, color:'#ffcc88'}`。擺設原本的 `light`（黏在圖上的發光）拿掉了，燈＝擺設＋跟著它的光源。
-- 畫面：每個光源一個太陽記號（2026-11-23，`Sandbox._drawSun()`：光色實心圓半徑 6 螢幕 px＋圈外 8 條光線 8～12 px，黑框、選中白框；prefab 選取的光源零件也是太陽，藍色空心）；選中時畫虛線圈＝半徑、圈右邊一個白色把手拖 `r`（游標到圓心的距離，整數、最少 1，Shift 吸 16 的倍數，放開送 `radiusLight`）；聚光燈改畫扇形虛線（兩條邊＋弧，中線淡淡的），半徑把手在中線末端、拖它連 `dir` 一起改（Shift 吸 15°），弧兩端各一個把手拖 `arc`（＝兩倍的游標跟中線夾角，1～359，Shift 吸 15°，放開送 `arcLight`）。把手位置、範圍畫法、拖曳數學是靜態函式（`_lightHandles()`／`_drawLightRange()`／`_radiusFrom()`／`_arcFrom()`），prefab 選取的光源零件也用（藍色，見 [prefab.md](prefab.md)）。點選優先於角色／擺設（排在發射點後面）、拖曳（Shift 吸 16px）、方向鍵、Del、👁（藏＝強度 0、點不到）。右鍵「在這裡放光源」、左欄「光源（n）」＋（地圖中間），不問東西直接放。
+- 畫面：每個光源一個太陽記號（2026-11-23，`Sandbox._drawSun()`：光色實心圓半徑 6 螢幕 px＋圈外 8 條光線 8～12 px，黑框、選中白框；prefab 選取的光源零件也是太陽，藍色空心）；選中時畫虛線圈＝半徑、圈右邊一個白色把手拖 `r`（游標到圓心的距離，整數、最少 1，Shift 吸 16 的倍數，放開送 `radiusLight`）；聚光燈改畫扇形虛線（兩條邊＋弧，中線淡淡的），半徑把手在中線末端、拖它連 `dir` 一起改（Shift 吸 15°），弧兩端各一個把手拖 `arc`（＝兩倍的游標跟中線夾角，1～359，Shift 吸 15°，放開送 `arcLight`）。把手位置、範圍畫法、拖曳數學是靜態函式（`_lightHandles()`／`_drawLightRange()`／`_radiusFrom()`／`_arcFrom()`），prefab 選取的光源零件也用（藍色，見 [prefab.md](prefab.md)）。點選優先於角色／擺設（排在發射點後面）、拖曳（Shift 吸 16px）、方向鍵、Del、👁（藏＝強度 0、點不到）。放置面板「光源」分頁只有一筆「💡 放光源」，不問東西直接放。
 - 右欄：位置（跟著時是相對）、半徑、光錐／方向／柔和（光錐空白＝點光源，方向跟柔和反灰）、顏色、強度（空白＝自動）、跟著。
 - 遊戲裡 Tiled 的燈（`com_lamp`）照讀自訂屬性 `dir`／`arc`／`soft`（不能叫 `angle`：Phaser 會直接設到 Container 本身的 angle）；道具手上的光源是 `equip.parts` 的光源零件（同欄位，見 prefab.md），舊的 `com_light` 已刪。shader 另外把「環境光＋燈光」每通道超過起壓點（0.8 跟環境光取大的）的部分柔性壓縮、不超過 1（疊燈不爆白、環境光本身不被壓暗、白天燈自然加不上去）；燈的強度因此固定 `GM.LIGHT`，不再照環境光算（舊的 `GM.LIGHT − 環境光.r`、`regTS`／`UPDATETIME` 重算都拿掉了）。
 
@@ -99,7 +110,7 @@
 - `follow` 可以是角色 key（相對 root＝站的格子中心，分頁換算用 `tx*32+16`）或擺設 key（相對擺設的錨點 x/y）。sandbox 用 `_target(key)`（木偶或擺設的 sprite）；擺設是非同步建的（外部圖要載），所以 `_apply()` 等擺設套完才套粒子跟光源，對象換了（重建）就跟著重建。跟著的光每幀在 `update()` 跟上（`_syncLights()`），粒子用 `playParticle` 的 `target`。
 - 右欄「跟著」下拉（`followSelect()`）：（不跟）／角色／擺設，換對象時位置換算（`refollow()`），畫面上不動。
 - 刪掉被跟的角色／擺設：跟著它的粒子、光源改成不跟、位置加回去變絕對（`deleteObj()`，同一筆 undo）。
-- 畫面上每個發射點畫一個橘色菱形（選中變白，只在 sandbox 裡）：點選優先於角色／擺設、拖曳（同擺設，Shift 吸 16px）、方向鍵、Del、👁（藏粒子＋記號、點不到）。右鍵「在這裡放粒子…」、左欄「＋」（地圖中間；挑粒子對話框預設上次挑的 `tools.scene.lastParticle`）。
+- 畫面上每個發射點畫一個橘色菱形（選中變白，只在 sandbox 裡）：點選優先於角色／擺設、拖曳（同擺設，Shift 吸 16px）、方向鍵、Del、👁（藏粒子＋記號、點不到）。放置面板「粒子」分頁放（上次放的記 `tools.scene.lastParticle`、標橘）。
 - 區域（火牆等）走技能施放。
 
 ## 擺設
@@ -112,7 +123,7 @@
 - 深度照錨點 y 自動排，跟角色互相遮擋；不擋路。
 - 切前後片：擺設右鍵（左欄／畫面）或面板「切前後片…」，見下面「切前後片」。
 - 錨點：工具列「☑ 錨點」（預設勾、記 `tools.scene.anchor`、送 `anchor {on}`）勾著時選中的擺設（sprite x/y）或角色（root x/y＝站的點）畫黃點黑框＋十字（半徑 4 螢幕 px；原本的綠點跟選取框同色、壓在框線下邊上看不出來），沒勾不畫；只畫選中的那個（`_anchorPt()`）。prefab 實例例外：勾著時每個都畫、畫成準星不是黃點（沒選中的半透明），而且**點錨點才選得到**（沒有白框、縮圖矩形不參與），沒勾＝不畫也點不到，見 [prefab.md](prefab.md)。
-- 操作：右鍵「在這裡放擺設…」（錨點＝點的位置）、左欄「＋」（地圖中間）；左鍵點選（白框＋錨點黃點；選中的記號一律白色 `SEL_COLOR`，不跟 prefab 占地方塊的紅／藍／綠撞色；角色跟擺設重疊時點到深度高的）、自由拖（整數 px，按住 Shift 錨點吸 16px＝格子交點＋格子中心，圖跟光一起動，放開才寫檔）；方向鍵 1px、Shift＋方向鍵 32px（每按一下一筆 undo）；Del 刪。
+- 操作：放置面板「擺設」分頁（錨點＝右鍵的位置／拖放的位置）；左鍵點選（白框＋錨點黃點；選中的記號一律白色 `SEL_COLOR`，不跟 prefab 占地方塊的紅／藍／綠撞色；角色跟擺設重疊時點到深度高的）、自由拖（整數 px，按住 Shift 錨點吸 16px＝格子交點＋格子中心，圖跟光一起動，放開才寫檔）；方向鍵 1px、Shift＋方向鍵 32px（每按一下一筆 undo）；Del 刪。
 - 畫面上拉大小：選中的擺設白框上 8 個白底黑框把手（4 角＋4 邊中點，固定 6 螢幕 px，游標換 resize；`angle≠0` 不出把手，用面板調），把手優先於點選。拉邊改一軸、拉角兩軸，**對邊（對角）固定**、錨點 x/y 重算（取到 0.01）；改什麼照面板：鎖 %＝`sx`/`sy`（等比勾著兩軸等比：角照拖得多的那軸、邊的另一軸繞錨點長），鎖 scale（file 圖）＝`pct`（一定等比）。Shift＝被拉的邊吸 16px（½ 格），等比時另一軸照比例。最小 1px、拉過對邊不翻面；拖曳中 sandbox 直接改 sprite 預覽，放開送 `resizeProp {key, patch}`、分頁 `setProp` 一筆 undo（sx/sy＝1、pct＝100 拿掉）。鎖跟等比狀態由分頁在 `select {key, lock, ratio}` 帶給 sandbox（`selMsg()`），切換鎖／等比時重送。sandbox：`_handles()`／`_handleAt()`／`_startResize()`／`_resizeTo()`。
 
 ## 切前後片
@@ -160,7 +171,7 @@
 
 ## 版面（三欄，排在「粒子」後面）
 
-- 左：最上面 prefab 庫（見 prefab.md）；每段標題點一下摺疊（記 `tools.scene.fold`）；場景清單（＋ 新增；右鍵 改名／複製／刪除，雙擊改名；點選中的再點一次＝取消選取＝空白 sandbox；選取記 `tools.scene.sel`）＋目前場景物件樹（角色／擺設／粒子，👁 暫藏、Del 刪；第 2 步起）；下方 ↶／↷（Ctrl+Z／Ctrl+Y）。
+- 左：場景清單（只能切換、永遠選一個，選取記 `tools.scene.sel`）＋目前場景物件一層清單（👁 暫藏、Del 刪）；下方 ↶／↷（Ctrl+Z／Ctrl+Y）。見最上面「左欄與放置面板」（2026-11-25 前是 prefab 庫＋可摺的分段樹＋場景新增／改名／刪除）。
 - 中：iframe＋工具列（底圖、格線、置中、重置、重開）＋第二排（時間／▶／倍速／自訂環境色）；左鍵選取拖曳、右鍵選單放東西。
 - 右：選中物件的屬性；角色下方是動作區。左邊框可拖拉改寬（`data-resize-right`，記 `tools.right.scene`，雙擊回預設 320px），遊戲畫面吃剩下的。
 

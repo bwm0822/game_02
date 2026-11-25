@@ -34,7 +34,11 @@ run('prefab-tool', async t => {
         await T.setProject(proj);
         await until(() => sc.S.root);
         await sc.flush();
-        out.emptyLib = doc.getElementById('lib').textContent;
+        sb()._send({sb: 'ctx', tx: 1, ty: 1, wx: 48, wy: 64, key: null, cx: 30, cy: 30});
+        await until(() => doc.querySelector('.addpanel'));
+        doc.querySelector('.addpanel [data-tab="prefab"]').click();
+        out.emptyLib = doc.querySelector('.addpanel .plist').textContent;
+        sc.panel.close();
 
         await sc.addScene('測試');
         // 新增空白 prefab：寫 prefab.json、場景中間放一個實例、選起來
@@ -56,7 +60,19 @@ run('prefab-tool', async t => {
         const inst = () => sb()._insts?.f1;
         out.built = await until(() => inst()?.go?.view?._parts?.length === 3) && [inst().go.constructor.name, inst().go.bb.prefab, inst().go.getLook(),
             inst().go.view._shape.list.map(c => c.visible)];
-        out.libRow = [...doc.querySelectorAll('#lib .item')].map(e => [e.dataset.prefab, e.draggable]);
+        // 放置面板（空地右鍵）的 prefab 分頁：列出、可拖、右鍵管理
+        const openPanel = async (tab = 'prefab') => {
+            sb()._send({sb: 'ctx', tx: 1, ty: 1, wx: 48, wy: 64, key: null, cx: 30, cy: 30});
+            await until(() => doc.querySelector('.addpanel'));
+            doc.querySelector(`.addpanel [data-tab="${tab}"]`).click();
+        };
+        await openPanel();
+        out.libRow = [...doc.querySelectorAll('.addpanel .prow')].map(e => [e.dataset.prefab, e.draggable]);
+        doc.querySelector('.addpanel .prow[data-prefab="forge"]').dispatchEvent(new win.MouseEvent('contextmenu', {bubbles: true, clientX: 60, clientY: 60}));
+        out.libMenu = [...doc.querySelectorAll('.ctxmenu button')].map(b => b.textContent);
+        doc.querySelector('.ctxmenu')?.remove();
+        out.libHead = [...doc.querySelectorAll('.addpanel .phead button')].map(b => b.textContent);
+        sc.panel.close();
 
         // 點選：sandbox 點得到、右欄
         const g = inst().go;
@@ -128,13 +144,8 @@ run('prefab-tool', async t => {
         sc.toggleHide('f2');
         out.unhide = await until(() => sb()._insts.f2?.go?.active);
 
-        // 左欄摺疊：prefab 庫收起來、記 localStorage
-        sc.toggleFold('lib');
-        out.fold = [doc.querySelectorAll('#lib .item').length, doc.querySelector('#lib .head .tw').textContent, JSON.parse(win.localStorage.getItem('tools.scene.fold'))];
-        sc.toggleFold('lib');
-        sc.toggleFold('prefabs');
-        out.foldTree = doc.querySelectorAll('#tree .item[data-key^="f"]').length;
-        sc.toggleFold('prefabs');
+        // 左欄：沒有 prefab 庫、物件一層（沒有可摺的段）
+        out.fold = [!!doc.getElementById('lib'), doc.querySelectorAll('#left [data-fold]').length, [...doc.querySelectorAll('#tree .item')].map(e => e.dataset.key)];
 
         // 刪 prefab：連場景裡的實例一起拿掉；undo 一起回來
         await sc.deletePrefab('forge', true);
@@ -176,7 +187,8 @@ run('prefab-tool', async t => {
         const draft = () => sc.S.draft?.pf;
         await sc.setPart('forge', 0, {x: 10});
         out.moveImg = [draft().parts[0], JSON.stringify(await pfDisk()) === pf0, JSON.stringify(await scDisk()) === sc0,
-            !!doc.querySelector('#right .head[data-fold="right.inst"] [data-k="saveDraft"]'), doc.querySelector('#lib .item[data-prefab="forge"] .warn')?.textContent];
+            !!doc.querySelector('#right .head[data-fold="right.inst"] [data-k="saveDraft"]'), await openPanel().then(() => doc.querySelector('.addpanel .prow[data-prefab="forge"] .lab')?.textContent)];
+        sc.panel.close();
         out.sbDraft = await until(() => inst()?.go?.view?._shape?.list?.[0]?.x === 10);
         // 加光源：零件摺著時按標題列的＋光源＝放在錨點、沒有 look、自動打開並展開它；光源欄位寫進 light
         sc.toggleFold('right.parts');
@@ -280,10 +292,14 @@ run('prefab-tool', async t => {
         await answer('theirs');
         await until(() => !sc.S.draft);
         out.conflict = [sc.S.draft, sc.S.prefabs.forge.defAct, sc.S.prefabs.forge.look];
-        // prefab 庫點一下：選這個場景第一個用它的實例
+        // 面板點 prefab 一下：放在右鍵的位置、選起來、面板關
         sc.pickRole(null);
-        doc.querySelector('#lib .item[data-prefab="forge"]').click();
-        out.libPick = [sc.S.pick, doc.querySelector('#lib .item[data-prefab="forge"]').classList.contains('sel')];
+        await openPanel();
+        const nInst = (await scDisk()).prefabs.length;
+        doc.querySelector('.addpanel .prow[data-prefab="forge"]').click();
+        out.libPick = await until(async () => (await scDisk()).prefabs.length === nInst + 1)
+            && [(o => [o.prefab, o.x, o.y, o.key === sc.S.pick])((await scDisk()).prefabs.at(-1)), !doc.querySelector('.addpanel')];
+        await sc.deleteObj(sc.S.pick);
 
         // ---------- 組成 prefab ----------
         await sc.addScene('組成');
@@ -347,9 +363,10 @@ run('prefab-tool', async t => {
         out.thumbDraw = [px(lookOnly, 2, 2) === px(lookOnly, barrel.w >> 1, barrel.h >> 1), px(lookOnly, 0, 0).split(',')[3] !== '0',
             px(plain, barrel.w >> 1, barrel.h >> 1) !== px(lookOnly, barrel.w >> 1, barrel.h >> 1)];
         // 左欄圖示：沒草稿＝縮圖（不是第一個零件），有草稿＝即時合成的 canvas
-        const libIcon = () => doc.querySelector('#lib .item[data-prefab="fire_pit"]');
+        const fpKey = (await cDisk()).prefabs.find(o => o.prefab === 'fire_pit').key;
+        const libIcon = () => doc.querySelector(`#tree .item[data-key="${fpKey}"]`);
         out.libIcon = [!!libIcon()?.querySelector('canvas')];
-        sc.pickRole((await cDisk()).prefabs.find(o => o.prefab === 'fire_pit').key);
+        sc.pickRole(fpKey);
         await sc.setPf('fire_pit', {look: 'on'});
         out.libIcon.push(await until(() => !!libIcon()?.querySelector('canvas')));
         sc.dropDraft();
@@ -642,13 +659,15 @@ run('prefab-tool', async t => {
         return out;
     });
 
-    t.check('prefab 庫：沒有 prefab 時提示', r.emptyLib.includes('還沒有 prefab'), r.emptyLib);
+    t.check('面板 prefab 分頁：沒有 prefab 時提示', r.emptyLib.includes('還沒有 prefab'), r.emptyLib);
     t.eq('新增空白 prefab：prefab.json 一筆、場景中間放 f1、選起來（右欄實例面板）', JSON.stringify(r.newPf), JSON.stringify([{forge: {}}, [{key: 'f1', prefab: 'forge', x: 400, y: 288}], 'f1', '實例 f1']));
     t.check('id 不合法擋下', r.badId.includes('英數字'), r.badId);
     t.eq('undo：prefab.json 跟 scenes.json 一起回去', JSON.stringify(r.undoNew), JSON.stringify([{}, null]));
     t.eq('redo：兩個檔一起回來', JSON.stringify(r.redoNew), JSON.stringify([['forge'], 1]));
     t.eq('別處改 prefab.json：sandbox 照新內容建成 Item、預設 off', JSON.stringify(r.built), JSON.stringify(['Item', 'forge', 'off', [true, false]]));
-    t.eq('prefab 庫列出、可拖', JSON.stringify(r.libRow), JSON.stringify([['forge', true]]));
+    t.eq('放置面板 prefab 分頁：列出、可拖', JSON.stringify(r.libRow), JSON.stringify([['forge', true]]));
+    t.eq('面板 prefab 右鍵：改名／複製／重產縮圖／刪除', JSON.stringify(r.libMenu), JSON.stringify(['改名…', '複製…', '重產縮圖', '刪除']));
+    t.eq('面板 prefab 分頁標題：＋／⟳', JSON.stringify(r.libHead), JSON.stringify(['＋', '⟳']));
     t.eq('sandbox 點錨點選得到實例', r.pick, 'f1');
     t.eq('點選框＝目前看得見的 png 外框（Barrel 17×22）', JSON.stringify(r.box), JSON.stringify([-8.5, -22, 17, 22]));
     t.eq('點選框裡錨點以外選得到、框外選不到', JSON.stringify(r.pickThumb), JSON.stringify(['f1', null]));
@@ -664,8 +683,7 @@ run('prefab-tool', async t => {
     t.check('從 prefab 庫拖進畫面：放 f2、選起來、sandbox 建好', r.drop && r.drop[0] === 'f2' && r.drop[1] === 'forge' && r.drop[2] === 'f2' && r.drop[3], JSON.stringify(r.drop));
     t.check('👁 藏：sandbox 不建', r.hide);
     t.check('取消藏：建回來', r.unhide);
-    t.eq('摺疊 prefab 庫：沒有列、▸、記 localStorage', JSON.stringify(r.fold), JSON.stringify([0, '▸', ['lib']]));
-    t.eq('摺疊物件樹的 prefab 段', r.foldTree, 0);
+    t.check('左欄：沒有 prefab 庫、沒有可摺的段、實例列在物件清單', r.fold && !r.fold[0] && r.fold[1] === 0 && r.fold[2].includes('f1') && r.fold[2].includes('f2'), JSON.stringify(r.fold));
     t.eq('刪 prefab：prefab.json 拿掉、實例一起刪、sandbox 清掉', JSON.stringify(r.delPf), JSON.stringify([{}, null, true]));
     t.eq('undo 刪除：兩個檔一起回來', JSON.stringify(r.undoDel), JSON.stringify([['forge'], 2]));
     t.eq('刪實例', JSON.stringify(r.delInst), JSON.stringify(['f1']));
@@ -679,7 +697,7 @@ run('prefab-tool', async t => {
     t.eq('零件摺著時開零件：自動打開、記住', JSON.stringify(r.rAutoOpen), JSON.stringify(['▾', 1, []]));
     t.eq('收起零件不自動摺回', r.rStayOpen, '▾');
     t.eq('點零件：展開它的表單（一次一個）；右欄沒有漏出 false、沒有橘色說明', JSON.stringify(r.open), JSON.stringify([1, true, '0', false, 0]));
-    t.eq('改零件＝草稿：相對錨點、兩個檔都不動、右欄出現儲存、庫標 ●', JSON.stringify(r.moveImg), JSON.stringify([{img: 'Barrel', x: 10}, true, true, true, '●']));
+    t.eq('改零件＝草稿：相對錨點、兩個檔都不動、右欄出現儲存、面板標 ●', JSON.stringify(r.moveImg), JSON.stringify([{img: 'Barrel', x: 10}, true, true, true, '●']));
     t.check('sandbox 照草稿重建', r.sbDraft);
     t.eq('零件標題列右邊：＋png／＋粒子／＋光源（摺著也在）', JSON.stringify(r.addBtns), JSON.stringify(['＋png', '＋粒子', '＋光源']));
     t.eq('摺著按＋光源：在錨點、沒有 look、自動打開並展開它', JSON.stringify(r.addLight), JSON.stringify([{light: {r: 120, color: '#ffcc88'}}, 3, '▾', 1]));
@@ -703,7 +721,7 @@ run('prefab-tool', async t => {
     t.eq('有草稿取消選取 → 放棄：取消選取、prefab.json 不動', JSON.stringify(r.leaveDrop), JSON.stringify([null, null, true]));
     t.eq('有草稿取消選取 → 儲存：寫檔再取消選取', JSON.stringify(r.leaveSave), JSON.stringify([null, 'on']));
     t.eq('別處改了草稿那筆 → 用新的：草稿丟掉、讀到新內容', JSON.stringify(r.conflict), JSON.stringify([null, 'turn_off', 'on']));
-    t.eq('prefab 庫點一下：選場景裡用它的實例、庫那列反白', JSON.stringify(r.libPick), JSON.stringify(['f1', true]));
+    t.eq('面板點 prefab：放在右鍵位置、選起來、面板關', JSON.stringify(r.libPick), JSON.stringify([['forge', 48, 64, true], true]));
 
     // 組成
     const [cpf, cpart, cscene, cpick] = r.compose;

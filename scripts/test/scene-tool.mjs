@@ -55,7 +55,13 @@ run('scene-tool', async t => {
 
         out.boot = await until(() => sc.S.ready && game()?.__sb?.map) && [game().__sb.mapName, game().__dbg.Record.noSave];
         await T.setProject(proj);
-        out.empty = await until(() => sc.S.root) && [JSON.stringify(sc.S.data), await disk(), doc.getElementById('list').textContent];
+        out.empty = await until(() => sc.S.root && Object.keys(sc.S.data).length) && [JSON.stringify(sc.S.data), await disk(), sc.S.sel, [...doc.querySelectorAll('#list .item .id')].map(e => e.textContent)];
+        // 分頁不能新增場景：清單列沒有右鍵選單、沒有 ＋
+        doc.querySelector('#list .item').dispatchEvent(new win.MouseEvent('contextmenu', {bubbles: true, clientX: 50, clientY: 50}));
+        out.noSceneUi = [!!doc.querySelector('.ctxmenu'), !!doc.querySelector('#left button#btnNew')];
+        // 下面的步驟從空的開始（新增／改名／刪除只留給測試用）
+        await sc.deleteScene('場景', true);
+        sc.S.undo.length = 0;
 
         // 新增：立刻寫 tools/scenes.json、選起來
         await sc.addScene('夜晚');
@@ -141,6 +147,38 @@ run('scene-tool', async t => {
         sb()._send({sb: 'ctx', tx: 3, ty: 3, key: 'r1', cx: 10, cy: 10});
         out.ctx = await until(() => doc.querySelector('.ctxmenu')) && [...doc.querySelectorAll('.ctxmenu button')].map(b => b.textContent);
         doc.querySelector('.ctxmenu').remove();
+
+        // 空地右鍵＝放置面板：分頁、搜尋、Shift＋點連放、sandbox 左鍵只收面板
+        sb()._send({sb: 'ctx', tx: 2, ty: 7, wx: 80, wy: 240, key: null, cx: 20, cy: 20});
+        await until(() => doc.querySelector('.addpanel'));
+        out.panel = [[...doc.querySelectorAll('.addpanel .ptabs button')].map(b => b.textContent), !doc.querySelector('.ctxmenu'), await until(() => sb()._modal === true)];
+        doc.querySelector('.addpanel [data-tab="role"]').click();
+        const pq = doc.querySelector('.addpanel .q');
+        pq.value = 'wick';
+        pq.dispatchEvent(new win.Event('input'));
+        out.panelSearch = [...doc.querySelectorAll('.addpanel .prow')].map(e => e.dataset.role);
+        doc.querySelector('.addpanel .prow[data-role="wick"]').dispatchEvent(new win.MouseEvent('click', {bubbles: true, shiftKey: true}));
+        out.panelShift = await until(async () => (await scDisk()).roles.length === 3) && [(await scDisk()).roles[2], !!doc.querySelector('.addpanel'), win.localStorage.getItem('tools.scene.panelTab')];
+        await until(() => sc.S.pick === 'r3');
+        const fakeDown = {middleButtonDown: () => false, leftButtonDown: () => true, rightButtonDown: () => false, worldX: 0, worldY: 0, x: 0, y: 0, event: {}};
+        sb().input.emit('pointerdown', fakeDown);
+        out.dismiss = await until(() => !doc.querySelector('.addpanel')) && [sb()._modal, sc.S.pick];
+        // 沒按 Shift：放了就關；光源分頁
+        sb()._send({sb: 'ctx', tx: 2, ty: 7, wx: 80, wy: 240, key: null, cx: 20, cy: 20});
+        await until(() => doc.querySelector('.addpanel'));
+        out.panelTab = doc.querySelector('.addpanel .ptabs button.on')?.dataset.tab;
+        doc.querySelector('.addpanel [data-tab="light"]').click();
+        doc.querySelector('.addpanel .prow').click();
+        out.panelLight = await until(async () => (await scDisk()).lights?.length === 1) && [(l => [l.key, l.x, l.y])((await scDisk()).lights[0]), !doc.querySelector('.addpanel'), await until(() => sb()._modal === false)];
+        await sc.deleteObj('l1');
+        // 從面板拖到畫面任意位置：角色放在那一格
+        sb()._send({sb: 'dropPrefab', id: 'role:mary', wx: 140, wy: 300, tx: 4, ty: 9});
+        out.panelDrop = await until(async () => (await scDisk()).roles.length === 4) && (await scDisk()).roles[3];
+        await sc.deleteObj('r4');
+        await sc.deleteObj('r3');
+        await until(() => sb().roles.length === 2);
+        sb()._send({sb: 'select', key: 'r2'});
+        await until(() => sc.S.pick === 'r2');
 
         // 👁 只藏 sandbox、不寫檔
         const before = await disk();
@@ -785,12 +823,14 @@ run('scene-tool', async t => {
         return out;
     });
     t.eq('分頁：iframe 跑 /?sandbox、不寫存檔', JSON.stringify(r.boot), JSON.stringify(['sandbox', true]));
-    t.eq('分頁：沒有 scenes.json＝空清單、不建檔', JSON.stringify(r.empty?.slice(0, 2)), JSON.stringify(['{}', null]));
+    t.check('分頁：沒有 scenes.json＝自動建「場景」、寫檔、選起來', r.empty && r.empty[0] === JSON.stringify({'場景': {map: 'sandbox'}}) && JSON.parse(r.empty[1] ?? '{}')['場景']?.map === 'sandbox'
+            && r.empty[2] === '場景' && JSON.stringify(r.empty[3]) === JSON.stringify(['場景']), JSON.stringify(r.empty));
+    t.eq('場景清單：沒有右鍵選單、沒有 ＋', JSON.stringify(r.noSceneUi), JSON.stringify([false, false]));
     t.eq('新增：立刻寫 tools/scenes.json、選起來、清單照順序', JSON.stringify(r.add),
          JSON.stringify([{'夜晚': {map: 'sandbox'}, '白天': {map: 'sandbox'}}, '白天', ['夜晚', '白天']]));
     t.eq('改名保留順序、選取跟著改；複製選到新的', JSON.stringify(r.edit), JSON.stringify([['夜晚', '正午', '夜晚2'], '夜晚2']));
     t.check('重名擋下、提示', r.dupName.includes('已經有'), r.dupName);
-    t.eq('刪除選中的＝取消選取', JSON.stringify(r.del), JSON.stringify([['夜晚', '正午'], null]));
+    t.eq('刪除選中的＝選第一個（永遠選著一個）', JSON.stringify(r.del), JSON.stringify([['夜晚', '正午'], '夜晚']));
     t.eq('undo 刪除：回來、選回去', JSON.stringify(r.undo), JSON.stringify([['夜晚', '正午', '夜晚2'], '夜晚2']));
     t.eq('undo 複製：選回複製前選的', JSON.stringify(r.undo2), JSON.stringify([['夜晚', '正午'], '正午']));
     t.eq('redo 複製', JSON.stringify(r.redo), JSON.stringify([['夜晚', '正午', '夜晚2'], '夜晚2']));
@@ -808,7 +848,14 @@ run('scene-tool', async t => {
     t.eq('面向左／右', JSON.stringify(r.face), JSON.stringify([true, true]));
     t.eq('sandbox 點選：左欄跟著選', r.pick, 'r2');
     t.check('sandbox 拖曳放開：寫檔、重建在新格子', r.move);
-    t.eq('sandbox 右鍵：放角色／擺設／粒子／光源／prefab＋刪除', JSON.stringify(r.ctx), JSON.stringify(['在這裡放角色…（3, 3）', '在這裡放擺設…', '在這裡放粒子…', '在這裡放光源', '在這裡放 prefab…', '刪除 mary']));
+    t.eq('sandbox 右鍵物件：只有物件動作', JSON.stringify(r.ctx), JSON.stringify(['刪除 mary']));
+    t.eq('空地右鍵：放置面板（分頁）、沒有選單、sandbox 進 modal', JSON.stringify(r.panel), JSON.stringify([['prefab', '角色', '道具', '粒子', '光源', '擺設'], true, true]));
+    t.eq('面板搜尋', JSON.stringify(r.panelSearch), JSON.stringify(['wick']));
+    t.eq('Shift＋點：放在右鍵那格、面板不關、記住分頁', JSON.stringify(r.panelShift), JSON.stringify([{key: 'r3', id: 'wick', tx: 2, ty: 7}, true, 'role']));
+    t.eq('sandbox 左鍵：只收面板、不選別的', JSON.stringify(r.dismiss), JSON.stringify([false, 'r3']));
+    t.eq('再開面板：上次的分頁', r.panelTab, 'role');
+    t.eq('點一筆：放在右鍵位置、面板關、modal 解除', JSON.stringify(r.panelLight), JSON.stringify([['l1', 80, 240], true, true]));
+    t.eq('從面板拖到畫面：角色放在那一格', JSON.stringify(r.panelDrop), JSON.stringify({key: 'r4', id: 'mary', tx: 4, ty: 9}));
     t.eq('👁 暫藏：不寫檔、點不到', JSON.stringify(r.hide), JSON.stringify([true, true]));
     t.eq('左欄點列：選取、閃、鏡頭對準物件中央、閃完清掉', JSON.stringify(r.focus), JSON.stringify(['r1', true, true, true]));
     t.eq('左欄再點一次：取消選取、鏡頭不動、不閃', JSON.stringify(r.unfocus), JSON.stringify([null, '0,0', true]));

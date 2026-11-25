@@ -485,7 +485,7 @@ export class Sandbox extends GameScene
         o.go.view?._syncLights?.();
     }
 
-    // 從場景分頁左欄的 prefab 庫拖進來（HTML5 拖放，同源 iframe 讀得到 dataTransfer）
+    // 從場景分頁的放置面板拖進來（HTML5 拖放，同源 iframe 讀得到 dataTransfer；id＝prefab 或 <種類>:<id>，分頁判斷）
     _initDrop()
     {
         const cv = this.game.canvas, cam = this.cameras.main;
@@ -496,7 +496,8 @@ export class Sandbox extends GameScene
             e.preventDefault();
             const r = cv.getBoundingClientRect();
             const p = cam.getWorldPoint((e.clientX - r.left) * cv.width / r.width, (e.clientY - r.top) * cv.height / r.height);
-            this._send({sb:'dropPrefab', id, wx:Math.round(p.x), wy:Math.round(p.y)});
+            const [tx, ty] = this.map.worldToTile(p.x, p.y);
+            this._send({sb:'dropPrefab', id, wx:Math.round(p.x), wy:Math.round(p.y), tx, ty});
         };
         cv.addEventListener('dragover', over);
         cv.addEventListener('drop', drop);
@@ -1362,6 +1363,7 @@ export class Sandbox extends GameScene
                 else {this._apply(m.scene);}
                 break;
             case 'grid': this._gridOn = !!m.on; this._drawGrid(); break;
+            case 'modal': this._modal = !!m.on; break;
             case 'anchor': this._anchorOn = !!m.on; break;
             case 'icons': this._icons = {light:!!m.light, particle:!!m.particle}; break;
             case 'home': this._home(); break;
@@ -1454,6 +1456,8 @@ export class Sandbox extends GameScene
         });
         this.input.on('pointerdown', (p)=>{
             if(p.middleButtonDown()) {this._pan = {x:p.x, y:p.y, sx:cam.scrollX, sy:cam.scrollY}; this._cursor(p); return;}
+            // 分頁的放置面板開著：左鍵只叫分頁收面板，這一下不作用
+            if(this._modal && p.leftButtonDown()) {this._modal = false; this._send({sb:'dismiss'}); return;}
             const [tx, ty] = this.map.worldToTile(p.worldX, p.worldY);
             if(this._arm && p.leftButtonDown())
             {

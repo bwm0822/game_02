@@ -10,21 +10,29 @@
     #left { width: 240px; }
     #left .row2 { display: flex; gap: 4px; align-items: center; font-size: 14px; }
     #left .sec { color: #aaa; font-weight: bold; font-size: 14px; }
-    #list { flex: none; max-height: 35%; overflow: auto; }
-    #lib { flex: none; max-height: 30%; overflow: auto; border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 4px; }
-    #itemLib { flex: none; max-height: 20%; overflow: auto; border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 4px; }
-    #lib .item, #itemLib .item { cursor: grab; }
-    #lib .item > .tw { cursor: pointer; width: 12px; flex: none; }
-    #lib .libpart { padding-left: 28px; cursor: pointer; }
-    #lib .libpart.off > .id, #lib .libpart.off > .lab { opacity: .45; }
-    #lib .libpart .id { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #list { flex: none; max-height: 30%; overflow: auto; }
+    /* 放置面板（panel.js）：中欄右鍵空地 */
+    .addpanel { position: fixed; z-index: 15; width: 320px; height: 360px; display: flex; flex-direction: column; background: #2b2d31; border: 1px solid #666; box-shadow: 0 4px 12px rgba(0,0,0,.5); font-size: 14px; }
+    .addpanel .ptabs { flex: none; display: flex; flex-wrap: wrap; gap: 2px; padding: 4px 4px 0; border-bottom: 1px solid #444; }
+    .addpanel .ptabs button { border-radius: 3px 3px 0 0; padding: 2px 7px; }
+    .addpanel .ptabs button.on { background: #2f6db5; color: #fff; }
+    .addpanel .phead { flex: none; display: flex; gap: 4px; padding: 4px; }
+    .addpanel .phead .q { flex: 1; min-width: 0; }
+    .addpanel .plist { flex: 1; min-height: 0; overflow: auto; padding: 0 4px 4px; }
+    .addpanel .prow { cursor: pointer; }
+    .addpanel .prow[draggable=true] { cursor: grab; }
+    .addpanel .prow .id { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .addpanel .prow.last .id { color: #fc8; }
+    .addpanel .pgroup { color: #aaa; font-size: 12px; font-weight: bold; margin: 6px 0 2px; }
+    .addpanel .pcrumb { color: #aaa; font-size: 12px; margin: 2px 0 4px; }
+    .addpanel .pcrumb a { cursor: pointer; color: #8bf; }
     .head .tw, .head .sec { cursor: pointer; user-select: none; }
     .head .tw { width: 16px; color: #aaa; font-size: 16px; }
     #tree { flex: 1; overflow: auto; border-top: 1px solid #333; padding-top: 6px; }
     #tree .item .eye { padding: 0 3px; font-size: 12px; line-height: 1.3; }
     #tree .item.hid .id, #tree .item.hid .lab { opacity: .45; }
     #tree .item .id { overflow: hidden; text-overflow: ellipsis; }
-    #tree .row2 { margin-top: 6px; }
+    #tree .row2 { margin-bottom: 2px; }
     #right .sec { color: #aaa; font-weight: bold; margin: 10px 0 4px; }
     #right .sec:first-child { margin-top: 0; }
     #right .head { margin: 10px 0 4px; border-top: 1px solid #3a3c40; padding-top: 6px; }
@@ -103,9 +111,6 @@
 <body>
 <main>
     <aside id="left">
-        <div id="lib"></div>
-        <div id="itemLib"></div>
-        <div id="scenesHead"></div>
         <div id="list"></div>
         <div id="tree" hidden></div>
         <div class="row2"><span class="grow"></span><button id="btnUndo" title="復原（Ctrl+Z，直接寫回 scenes.json）">↶</button><button id="btnRedo" title="重做（Ctrl+Y）">↷</button></div>
@@ -123,7 +128,7 @@
             <button id="btnReset" title="表演完的角色（走掉、倒地、被擊退）回到場景檔的樣子">重置</button>
             <button id="btnReload" title="重開 sandbox（role.json 等遊戲資料在別的分頁存檔時會自動重開）">重開</button>
             <span class="grow"></span>
-            <span class="dim">左鍵選取／拖曳、右鍵放東西、滾輪縮放、中鍵平移</span>
+            <span class="dim">左鍵選取／拖曳、空地右鍵放東西、滾輪縮放、中鍵平移</span>
         </div>
         <div id="bar2">
             <span title="遊戲時鐘：環境光照 GameScene 的 lutAmbient（整點換），燈跟著變亮變暗">🕒</span>

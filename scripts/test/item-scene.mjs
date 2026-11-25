@@ -35,8 +35,12 @@ run('item-scene', async t => {
         await sc.flush();
         await sc.addScene('測試');
 
-        // 左欄道具庫：只列拿在手上的（有 equip 的武器／CAT_EQUIP），標手上零件數
-        out.lib = [...doc.querySelectorAll('#itemLib .item')].map(e => `${e.dataset.item}|${e.querySelector('.lab').textContent}`);
+        // 放置面板的道具分頁：只列拿在手上的（有 equip 的武器／CAT_EQUIP），標手上零件數
+        sb()._send({sb: 'ctx', tx: 1, ty: 1, wx: 48, wy: 64, key: null, cx: 30, cy: 30});
+        await until(() => doc.querySelector('.addpanel'));
+        doc.querySelector('.addpanel [data-tab="item"]').click();
+        out.lib = [...doc.querySelectorAll('.addpanel .prow')].map(e => `${e.dataset.item}|${e.querySelector('.lab')?.textContent ?? ''}`);
+        sc.panel.close();
 
         // 放道具實例：寫 scenes.json 的 items、選起來；sandbox 建成 @item:<道具>＝手上的零件＋最後墊道具圖
         await sc.addItemInst('t-torch', 300, 200);
@@ -196,7 +200,7 @@ run('item-scene', async t => {
         T.show('scene');
         return out;
     });
-    t.eq('道具庫只列拿在手上的、標手上零件數', JSON.stringify(r.lib), JSON.stringify(['t-torch|🔥1 💡1', 't-wand|🔥1', 't-plain|']));
+    t.eq('面板道具分頁只列拿在手上的、標手上零件數', JSON.stringify(r.lib), JSON.stringify(['t-torch|🔥1 💡1', 't-wand|🔥1', 't-plain|']));
     t.eq('放道具實例：t-bag 擋掉、寫 items', JSON.stringify(r.disk), JSON.stringify([{key: 'i1', item: 't-torch', x: 300, y: 200}, {key: 'i2', item: 't-wand', x: 400, y: 200}, {key: 'i3', item: 't-plain', x: 500, y: 200}]));
     t.eq('選起最後放的、編的 prefab＝@道具、右欄有道具下拉', JSON.stringify(r.pick), JSON.stringify(['i3', '@t-torch', '@t-wand', true]));
     t.eq('sandbox：@item:<道具>＝手上零件＋最後墊道具圖（scale＝equip.scale）', JSON.stringify(r.sandbox), JSON.stringify([

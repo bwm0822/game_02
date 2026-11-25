@@ -39,12 +39,8 @@ run('prefab-move', async t => {
         await sc.setEmitter('e1', {follow: 'p1', def: {img: 'p-dot', mode: 'stream', speedY: -20}});
         await sc.addLight(100, 100);
 
-        // 左欄展開：▸ 點了列出零件、記在 tools.scene.fold
-        const libRows = () => [...doc.querySelectorAll('#lib .libpart')].map(e => e.textContent);
-        out.libClosed = libRows().length;
-        doc.querySelector('#lib .item[data-prefab="forge"] [data-k="libOpen"]').click();
-        out.libOpen = [libRows(), JSON.parse(localStorage.getItem('tools.scene.fold')).includes('libOpen:forge'),
-            doc.querySelector('#lib .libpart[data-part="1"]').classList.contains('off')];
+        // 左欄沒有 prefab 庫（零件不再展開在左欄）
+        out.noLib = [!!doc.getElementById('lib'), doc.querySelectorAll('.libpart').length];
 
         // 選單：沒有實例時反灰（這裡有 f1 → 子選單）
         doc.querySelector('#tree .item[data-key="p1"]').dispatchEvent(new win.MouseEvent('contextmenu', {bubbles: true, clientX: 50, clientY: 50}));
@@ -59,17 +55,18 @@ run('prefab-move', async t => {
         await sc.flush();
         const pfA = await pfDisk(), scA = await scDisk();
         out.add = [pfA.parts.slice(3), (await read(json, 'particle.json'))['forge-fire-charge'], scA.props ?? null, scA.particles ?? null, scA.lights.length,
-            sc.S.pick, sc.S.psel?.parts, libRows().length];
+            sc.S.pick, sc.S.psel?.parts];
         await sc.undo();
         out.addUndo = [(await pfDisk()).parts.length, (await scDisk()).props?.length, (await scDisk()).particles?.[0]?.follow];
         await sc.redo();
         out.addRedo = (await pfDisk()).parts.length;
 
-        // 左欄零件列點一下：選實例、選取＋展開那個零件、列反白
+        // 選實例、選取＋展開零件 3：表單有「移到場景」
         sc.pickRole(null);
-        await sc.pickLibPart('forge', 3);
-        out.libPick = [sc.S.pick, sc.S.part, sc.S.psel?.parts, doc.querySelector('#lib .libpart[data-part="3"]').classList.contains('sel'),
-            !!doc.querySelector('#right .partform [data-k="toScene"]')];
+        sc.pickRole('f1');
+        sc.togglePartSel(3);
+        sc.openPart(3);
+        out.libPick = [sc.S.pick, sc.S.part, sc.S.psel?.parts, !!doc.querySelector('#right .partform [data-k="toScene"]')];
 
         // 畫面上對選取的零件右鍵：出「移到場景」
         const g = sb()._insts.f1.go;
@@ -101,7 +98,7 @@ run('prefab-move', async t => {
         const left = (await pfDisk()).parts.length;
         await sc.partsToScene('f1', [...Array(left).keys()]);
         await sc.flush();
-        out.empty = [strip(await pfDisk()), libRows()];
+        out.empty = strip(await pfDisk());
 
         // 沒有實例：選單反灰
         await sc.deleteObj('f1');
@@ -112,21 +109,20 @@ run('prefab-move', async t => {
         return out;
     });
 
-    t.eq('左欄 prefab 預設收著', r.libClosed, 0);
-    t.eq('▸ 展開：列出零件（off 狀態的標灰）、記 localStorage', JSON.stringify(r.libOpen), JSON.stringify([['Barrel', 'Crateon', '💡光源 r80'], true, false]));
+    t.eq('左欄沒有 prefab 庫、沒有零件列', JSON.stringify(r.noLib), JSON.stringify([false, 0]));
     t.eq('右鍵「加到 prefab ▸」', JSON.stringify(r.menu), JSON.stringify(['加到 prefab ▸', false]));
     t.eq('子選單列場景裡的實例', JSON.stringify(r.sub), JSON.stringify(['f1　forge']));
-    t.eq('加到 prefab：擺設＋跟著的 ✎ 粒子（另存 forge-fire-charge）相對錨點、場景拿掉、光源不動、選實例、新零件選取、左欄跟著',
-         JSON.stringify(r.add), JSON.stringify([[{img: 'Crate', x: 30, y: 10}, {particle: 'forge-fire-charge', x: 30}], {img: 'p-dot', mode: 'stream', speedY: -20}, null, null, 1, 'f1', [3, 4], 5]));
+    t.eq('加到 prefab：擺設＋跟著的 ✎ 粒子（另存 forge-fire-charge）相對錨點、場景拿掉、光源不動、選實例、新零件選取',
+         JSON.stringify(r.add), JSON.stringify([[{img: 'Crate', x: 30, y: 10}, {particle: 'forge-fire-charge', x: 30}], {img: 'p-dot', mode: 'stream', speedY: -20}, null, null, 1, 'f1', [3, 4]]));
     t.eq('undo 加到 prefab：一筆退回（跟隨還在）', JSON.stringify(r.addUndo), JSON.stringify([3, 1, 'p1']));
     t.eq('redo', r.addRedo, 5);
-    t.eq('左欄點零件：選實例、選取＋展開、列反白、表單有「移到場景」', JSON.stringify(r.libPick), JSON.stringify(['f1', 3, [3], true, true]));
+    t.eq('選取＋展開零件：表單有「移到場景」', JSON.stringify(r.libPick), JSON.stringify(['f1', 3, [3], true]));
     t.eq('畫面上選取的零件右鍵：移到場景', r.ctx, '移到場景（零件 4）');
     t.eq('移到場景：絕對位置、look/fx 丟掉並提示、prefab 拿掉、選新的', JSON.stringify(r.move),
          JSON.stringify([['Barrel', 'Crate', 'forge-fire-charge'], [{key: 'p1', img: 'Crate', x: 200, y: 176}],
              [{key: 'l1', x: 100, y: 100, r: 120, color: '#ffcc88'}, {key: 'l2', x: 205, y: 200, r: 80, color: '#ffcc88'}], 'p1', true]));
     t.eq('undo 移到場景：一筆退回', JSON.stringify(r.moveUndo), JSON.stringify([5, null, 1]));
     t.eq('有草稿先問、儲存後照草稿位置移', JSON.stringify(r.draftMove), JSON.stringify([null, {key: 'p1', img: 'Barrel', x: 203, y: 200}, false]));
-    t.eq('最後一個零件也能移：prefab 變空、左欄「沒有零件」', JSON.stringify(r.empty), JSON.stringify([{look: 'off'}, ['（沒有零件）']]));
+    t.eq('最後一個零件也能移：prefab 變空', JSON.stringify(r.empty), JSON.stringify({look: 'off'}));
     t.eq('沒有實例：「加到 prefab」反灰', JSON.stringify(r.noInst), JSON.stringify(['加到 prefab（場景裡沒有實例）', true]));
 });
