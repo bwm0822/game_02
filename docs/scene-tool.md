@@ -96,16 +96,18 @@
 
 ## 光源
 
-- `lights: [{key:'l<n>', x, y, r, color, i?, follow?, dir?, arc?, soft?, breath?}]`：Light2D 光源（擺設、角色、地形都是 Light2D）。`arc`（光錐全寬，度）有填且 <360＝聚光燈，`dir`＝方向（度，0 右、順時針）、`soft`＝錐邊淡出比例（0～1，預設 0.2），沒填＝點光源；`Light2D` 已換成 `src/core/spotlight.js` 的 pipeline（`light.spot`，sandbox `_lightSpot()` 寫）。跟著角色時資料＝角色朝右的樣子，角色 `faceDir()` 是 −1 就鏡像（x 偏移取負、方向 `180−dir`，`_mirror()`；拖曳／把手寫回的是鏡像前的數字），跟著擺設不翻。`i` 沒寫＝`GM.LIGHT`（1，同 `com_lamp`／`com_light`），寫了用它；強度不跟日夜變，天越亮燈越加不上去是 shader 的柔性壓縮做的（見下面）。新的預設 `{r:120, color:'#ffcc88'}`。擺設原本的 `light`（黏在圖上的發光）拿掉了，燈＝擺設＋跟著它的光源。
+- `lights: [{key:'l<n>', x, y, r, color, i?, follow?, dir?, arc?, soft?, flicker?}]`：Light2D 光源（擺設、角色、地形都是 Light2D）。`arc`（光錐全寬，度）有填且 <360＝聚光燈，`dir`＝方向（度，0 右、順時針）、`soft`＝錐邊淡出比例（0～1，預設 0.2），沒填＝點光源；`Light2D` 已換成 `src/core/spotlight.js` 的 pipeline（`light.spot`，sandbox `_lightSpot()` 寫）。跟著角色時資料＝角色朝右的樣子，角色 `faceDir()` 是 −1 就鏡像（x 偏移取負、方向 `180−dir`，`_mirror()`；拖曳／把手寫回的是鏡像前的數字），跟著擺設不翻。`i` 沒寫＝`GM.LIGHT`（1，同 `com_lamp`／`com_light`），寫了用它；強度不跟日夜變，天越亮燈越加不上去是 shader 的柔性壓縮做的（見下面）。新的預設 `{r:120, color:'#ffcc88'}`。擺設原本的 `light`（黏在圖上的發光）拿掉了，燈＝擺設＋跟著它的光源。
 - 畫面：每個光源一個太陽記號（2026-11-23，`Sandbox._drawSun()`：光色實心圓半徑 6 螢幕 px＋圈外 8 條光線 8～12 px，黑框、選中白框；prefab 選取的光源零件也是太陽，藍色空心）；選中時畫虛線圈＝半徑、圈右邊一個白色把手拖 `r`（游標到圓心的距離，整數、最少 1，Shift 吸 16 的倍數，放開送 `radiusLight`）；聚光燈改畫扇形虛線（兩條邊＋弧，中線淡淡的），半徑把手在中線末端、拖它連 `dir` 一起改（Shift 吸 15°），弧兩端各一個把手拖 `arc`（＝兩倍的游標跟中線夾角，1～359，Shift 吸 15°，放開送 `arcLight`）。把手位置、範圍畫法、拖曳數學是靜態函式（`_lightHandles()`／`_drawLightRange()`／`_radiusFrom()`／`_arcFrom()`），prefab 選取的光源零件也用（藍色，見 [prefab.md](prefab.md)）。點選優先於角色／擺設（排在發射點後面）、拖曳（Shift 吸 16px）、方向鍵、Del、👁（藏＝強度 0、點不到）。放置面板「光源」分頁只有一筆「💡 放光源」，不問東西直接放。
-- 右欄：位置（跟著時是相對）、半徑、光錐／方向／柔和（光錐空白＝點光源，方向跟柔和反灰）、顏色、強度（空白＝自動）、呼吸、跟著。
+- 右欄：位置（跟著時是相對）、半徑、光錐／方向／柔和（光錐空白＝點光源，方向跟柔和反灰）、顏色、強度（空白＝自動）、擾動、跟著。
 
-### 光源呼吸（2026-11-25）
+### 光源擾動（2026-11-25，取代同日的「呼吸」）
 
-- 欄位 `breath: {t, min}`（選填，沒寫＝不呼吸）：`t`＝一次暗→亮→暗幾秒（最少 0.1）、`min`＝最暗＝基準亮度的幾成（0～1，沒寫＝0.6）；只變亮度，半徑／光錐不動；平滑 cos 波；每盞燈建立時隨機起點（不同步）；用畫面真實時間跑（遊戲暫停照樣呼吸）。
-- 四個地方同一個欄位：場景 `lights`、prefab 光源零件 `light`、道具手上 `equip.parts` 的 `light`、Tiled 燈（`com_lamp`，自訂屬性攤平成 `breath_t`／`breath_min`，`breathOf()`）。
-- 實作在 `src/core/spotlight.js`：`setBreath(light, breath, base)` 把 `{t, min, ph, base}` 掛在燈上（`light.breath`，同 `light.spot`），聚光燈 pipeline 的 `onRender` 先照 `game.loop.time` 算 `intensity = base × breathAt()` 再上傳；`addLight` 會從池子拿舊燈，所以每個 `addLight` 都跟著 `setBreath`（沒有＝清掉）；改基準（sandbox 👁 藏＝0）再叫一次，起點不變。
-- 工具：場景光源右欄跟 prefab／道具光源零件表單都有 `呼吸 ☐ 週期 [t] 秒 最暗 [min]`（勾＝寫預設 `{t:2, min:0.6}`、取消＝拿掉、沒勾時數字反灰），sandbox 一直照著呼吸播；`LIGHT_KEYS` 含 `breath`，組成／加到／移到場景都帶著；道具分頁唯讀零件列標「呼吸 ts」。
+- 欄位 `flicker: {i, r, xy, hz}`（選填，沒寫＝不擾動；工具勾起來寫預設 `{i:0.3, r:0.1, xy:2, hz:8}`）：`i`＝亮度最多掉幾成（0～1）、`r`＝半徑最多縮幾成（0～1）、`xy`＝中心最多偏幾 px、`hz`＝每秒大約幾個雜訊點（0.1～60）；某項 0＝那項不動；缺的欄位用預設、亂填用預設。
+- 亮度跟半徑用同一條平滑雜訊（暗＝光圈小，像同一團火），位置 x、y 各一條；雜訊＝整數點隨機值之間 smoothstep 內插（`noise()`），不是每幀亂跳；每盞燈自己的隨機種子（不同步）；用 `game.loop.time`（遊戲暫停照樣抖）。
+- 四個地方同一個欄位：場景 `lights`、prefab 光源零件 `light`、道具手上 `equip.parts` 的 `light`（火把預設值）、Tiled 燈（`com_lamp`，攤平成 `flicker_i`／`flicker_r`／`flicker_xy`／`flicker_hz`，寫了任一個就開，`flickerOf()`）。
+- 實作在 `src/core/spotlight.js`：`setFlicker(light, f)` 掛 `light.flicker`（同 `light.spot`，再叫一次種子不變、null＝清掉）；聚光燈 pipeline 的 `onRender` 先把有擾動的燈換成這一幀的亮度／半徑／位置（`flickerAt()`），上傳（含聚光燈錐那段）完**換回原值**——所以跟隨、拖曳、把手、sandbox 的半徑虛線圈都看資料原本的值，不會越抖越偏；`addLight` 會從池子拿舊燈，所以每個 `addLight` 都跟著 `setFlicker`（沒有＝清掉）。sandbox 👁 藏＝亮度 0、擾動照留。
+- 工具：場景光源右欄跟 prefab／道具光源零件表單都有兩列 `擾動 ☐ 速度 [hz] 次／秒`／`亮度 [i] 半徑 [r] 位置 [xy] px`（勾＝寫預設、取消＝拿掉、沒勾時數字反灰），sandbox 一直照著抖；`LIGHT_KEYS` 含 `flicker`，組成／加到／移到場景都帶著；道具分頁唯讀零件列標「擾動」。
+
 - 遊戲裡 Tiled 的燈（`com_lamp`）照讀自訂屬性 `dir`／`arc`／`soft`（不能叫 `angle`：Phaser 會直接設到 Container 本身的 angle）；道具手上的光源是 `equip.parts` 的光源零件（同欄位，見 prefab.md），舊的 `com_light` 已刪。shader 另外把「環境光＋燈光」每通道超過起壓點（0.8 跟環境光取大的）的部分柔性壓縮、不超過 1（疊燈不爆白、環境光本身不被壓暗、白天燈自然加不上去）；燈的強度因此固定 `GM.LIGHT`，不再照環境光算（舊的 `GM.LIGHT − 環境光.r`、`regTS`／`UPDATETIME` 重算都拿掉了）。
 
 ## 記號開關（光源、粒子）

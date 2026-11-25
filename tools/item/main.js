@@ -247,7 +247,7 @@ function fieldRow(id, it, k)
     return [label, F.withDrop(fieldInput(def, v, val => set(id, [k], val), k), id, k, v)];
 }
 
-// equip.parts：一列一個（🔥 粒子 id／💡 光源 r＋顏色、x,y、呼吸／後面／停用），粒子不存在標 ⚠；到場景分頁編
+// equip.parts：一列一個（🔥 粒子 id／💡 光源 r＋顏色、x,y、擾動／後面／停用），粒子不存在標 ⚠；到場景分頁編
 function handPartsView(id, parts)
 {
     const xy = (p) => h('span', {class: 'dim'}, ` ${p.x ?? 0},${p.y ?? 0}`);
@@ -257,7 +257,7 @@ function handPartsView(id, parts)
             p.particle ? [h('span', null, '🔥 '), h('span', {class: S.particles && !S.particles.includes(p.particle) ? 'warn' : ''}, p.particle)]
                 : p.light ? [h('span', null, '💡 '), h('span', {style: `display:inline-block; width:10px; height:10px; background:${p.light.color ?? '#ffcc88'}`}), ` r${p.light.r ?? 120}`]
                 : h('span', {class: 'warn'}, '⚠ 不是粒子也不是光源'),
-            xy(p), tag(p.light?.breath, `呼吸 ${p.light?.breath?.t}s`), tag(p.under, '後面'), tag(p.off, '停用'))),
+            xy(p), tag(p.light?.flicker, '擾動'), tag(p.under, '後面'), tag(p.off, '停用'))),
         h('button', {type: 'button', title: '到場景分頁打開這個道具編手上的粒子／光源', onclick: () => SH.gotoTab('scene', [`item:${id}`])}, '↗ 場景編'));
 }
 

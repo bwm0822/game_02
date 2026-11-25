@@ -1,4 +1,4 @@
-// 聚光燈：取代 Phaser 的 Light2D pipeline（同名，現有 setPipeline('Light2D') 不用改），每盞燈多吃 light.spot、light.breath（呼吸，見 setBreath）
+// 聚光燈：取代 Phaser 的 Light2D pipeline（同名，現有 setPipeline('Light2D') 不用改），每盞燈多吃 light.spot、light.flicker（擾動，見 setFlicker）
 //   light.spot = {dir（度，0 右、順時針）, arc（光錐全寬，度；沒寫或 ≥360＝點光源）, soft（0～1，錐側邊淡出比例，預設 0.2）}
 //   不叫 angle：Tiled 自訂屬性撞到 Container 本身的 angle 會直接轉物件、進不了 bb
 // 距離衰減照 Phaser 原本的公式，錐的淡出跟它相乘
@@ -117,27 +117,39 @@ export function setSpot(light, {dir, arc, soft} = {})
     return light;
 }
 
-// 呼吸：light.breath＝{t（一次暗→亮→暗幾秒）, min（最暗＝基準的幾成，0～1）, ph（隨機起點）, base（基準亮度）}，
-//  pipeline 每幀照時間算 intensity；addLight 會從池子拿舊的燈，所以每個 addLight 都要跟著 setBreath（沒有＝清掉），同 setSpot
-//  base 沒給＝燈現在的 intensity；改基準（藏起來＝0）再叫一次，起點不變
-export const BREATH_MIN = 0.6;
-export function setBreath(light, breath, base)
+// 擾動：light.flicker＝{i（亮度最多掉幾成）, r（半徑最多縮幾成）, xy（中心最多偏幾 px）, hz（每秒約幾個雜訊點）, seed}，
+//  只在畫面上抖：pipeline 上傳前換成擾動後的值、上傳完換回來（資料位置／半徑不動，拖曳、跟隨、把手照原樣）；
+//  addLight 會從池子拿舊的燈，所以每個 addLight 都要跟著 setFlicker（沒有＝清掉），同 setSpot；再叫一次種子不變
+export const FLICKER_DEF = {i:0.3, r:0.1, xy:2, hz:8};
+export function setFlicker(light, f)
 {
     if(!light) {return light;}
-    if(base !== undefined) {light.intensity = base;}
-    else if(light.breath) {light.intensity = light.breath.base;}
-    const t = +breath?.t;
-    if(!(t > 0)) {light.breath = null; return light;}
-    const min = Math.min(1, Math.max(0, breath.min ?? BREATH_MIN));
-    light.breath = {t:Math.max(0.1, t), min, ph:light.breath?.ph ?? Math.random(), base:light.intensity};
+    if(!f || typeof f !== 'object') {light.flicker = null; return light;}
+    const num = (v, d, lo, hi) => {v = v === undefined || v === null || v === '' ? d : +v; return Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : d;};
+    const D = FLICKER_DEF;
+    light.flicker = {i:num(f.i, D.i, 0, 1), r:num(f.r, D.r, 0, 1), xy:num(f.xy, D.xy, 0, 1000), hz:num(f.hz, D.hz, 0.1, 60), seed:light.flicker?.seed ?? Math.random() * 1000};
     return light;
 }
 
-// 呼吸的倍率（min～1，平滑 cos），sec＝秒
-export const breathAt = (b, sec) => b.min + (1 - b.min) * (0.5 + 0.5 * Math.cos(2 * Math.PI * (sec / b.t + b.ph)));
+// 平滑雜訊 0～1：整數點上的隨機值之間 smoothstep 內插
+const hash = (n) => {const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s);};
+export function noise(t)
+{
+    const k = Math.floor(t), u = t - k, s = u * u * (3 - 2 * u);
+    return hash(k) * (1 - s) + hash(k + 1) * s;
+}
 
-// Tiled 自訂屬性是平的：breath_t／breath_min
-export const breathOf = (bb) => (bb?.breath ?? (bb?.breath_t ? {t:bb.breath_t, min:bb.breath_min} : null));
+// sec 秒時的擾動：亮度、半徑倍率（同一條雜訊，暗＝光圈小）＋位置偏移（x、y 各一條）
+export function flickerAt(f, sec)
+{
+    const t = sec * f.hz + f.seed, n = noise(t);
+    return {i:1 - f.i * n, r:1 - f.r * n, x:(noise(t + 101.3) * 2 - 1) * f.xy, y:(noise(t + 207.9) * 2 - 1) * f.xy};
+}
+
+// Tiled 自訂屬性是平的：flicker_i／flicker_r／flicker_xy／flicker_hz（寫了任一個就開，其他用預設）
+const FLAT = ['i', 'r', 'xy', 'hz'];
+export const flickerOf = (bb) => bb?.flicker
+    ?? (FLAT.some(k => bb?.[`flicker_${k}`] !== undefined) ? Object.fromEntries(FLAT.map(k => [k, bb[`flicker_${k}`]])) : null);
 
 class SpotLightPipeline extends Phaser.Renderer.WebGL.Pipelines.LightPipeline
 {
@@ -148,16 +160,29 @@ class SpotLightPipeline extends Phaser.Renderer.WebGL.Pipelines.LightPipeline
 
     onRender(scene, camera)
     {
-        const sec = this.game.loop.time / 1000;
-        for(const l of scene.sys.lights?.lights ?? []) {if(l.breath) {l.intensity = l.breath.base * breathAt(l.breath, sec);}}
-        super.onRender(scene, camera);
-        if(!this.lightsActive) {return;}
-        const lights = scene.sys.lights.getLights(camera);
-        for(let i=0; i<lights.length; i++)
+        // 擾動：換成這一幀的值，聚光燈那段用同一份排序算完才換回來
+        const sec = this.game.loop.time / 1000, back = [];
+        for(const l of scene.sys.lights?.lights ?? [])
         {
-            const [x, y, o, n] = spotCone(lights[i].light.spot);
-            this.set4f(`uLights[${i}].cone`, x, y, o, n);
+            if(!l.flicker) {continue;}
+            const v = flickerAt(l.flicker, sec);
+            back.push([l, l.x, l.y, l.radius, l.intensity]);
+            l.x += v.x;
+            l.y += v.y;
+            l.radius *= v.r;
+            l.intensity *= v.i;
         }
+        super.onRender(scene, camera);
+        if(this.lightsActive)
+        {
+            const lights = scene.sys.lights.getLights(camera);
+            for(let i=0; i<lights.length; i++)
+            {
+                const [x, y, o, n] = spotCone(lights[i].light.spot);
+                this.set4f(`uLights[${i}].cone`, x, y, o, n);
+            }
+        }
+        for(const [l, x, y, r, i] of back) {l.x = x; l.y = y; l.radius = r; l.intensity = i;}
     }
 }
 

@@ -52,7 +52,7 @@ run('手持道具', async t => {
         // local 的進 holder（道具前面，under＝道具後面的另一個 holder）；off／什麼都不是的不建；卸下清掉
         d.DB._particleDB['t-fire'] = {img: 'p-square', speedY: -20, lifespan: 300, frequency: 50};
         d.DB._particleDB['t-loc'] = {img: 'p-square', speedY: -20, lifespan: 300, frequency: 50, local: true};
-        it('t-torch').equip.parts = [{particle: 't-fire', x: 3, y: -35}, {light: {r: 60, i: 1.5, breath: {t: 2, min: 0.5}}, x: 3, y: -35}, {particle: 't-fire', y: -10, under: true},
+        it('t-torch').equip.parts = [{particle: 't-fire', x: 3, y: -35}, {light: {r: 60, i: 1.5, flicker: {i: 0.2, hz: 5}}, x: 3, y: -35}, {particle: 't-fire', y: -10, under: true},
                                      {particle: 't-loc'}, {particle: 't-loc', under: true}, {light: {r: 60}, off: true}, {particle: 't-fire', off: true}, {x: 1}];
         const lights0 = p.scene.lights.lights.length;
         p.view._updateEquips();
@@ -69,7 +69,7 @@ run('手持道具', async t => {
                          ems[0].parentContainer === rig && rig.getIndex(ems[0]) === rig.getIndex(wb) + 1,
                          ems[1].parentContainer === rig && rig.getIndex(ems[1]) === rig.getIndex(wb) - 1,
                          holder.list.length, under?.list.length, wb.getIndex(under) < wb.getIndex(sprite), wb.getIndex(holder) > wb.getIndex(sprite)];
-            out.breath = lt.light.breath && [lt.light.breath.t, lt.light.breath.min, lt.light.breath.base];
+            out.flicker = lt.light.flicker && [lt.light.flicker.i, lt.light.flicker.r, lt.light.flicker.hz, lt.light.intensity];
             p.view._removeEquips();
             out.parts.push(p.scene.lights.lights.length === lights0, !p.view._eqParts);
             delete it('t-torch').equip.parts;
@@ -85,7 +85,7 @@ run('手持道具', async t => {
         p.view._updateEquips();
         return out;
     });
-    t.eq('手上光源零件的呼吸：breath＋基準＝i', JSON.stringify(r.breath), '[2,0.5,1.5]');
+    t.eq('手上光源零件的擾動：flicker（沒寫的用預設）、亮度＝i', JSON.stringify(r.flicker), '[0.2,0.1,5,1.5]');
     t.eq('同一隻手才撞；沒 equip 的不算', JSON.stringify(r.clash), '[true,false,true,false]');
     t.eq('撞手時武器優先', JSON.stringify(r.items), '["bow-short"]');
     t.eq('手腕位移：武器的＋道具自己那隻手的', r.held, JSON.stringify({sprite: 'sword-bronze', x: 1, y: -2, wristB: {x: 11, y: -3, a: 0}}));

@@ -554,22 +554,25 @@ run('scene-tool', async t => {
         sb().lights.removeLight(fake.light);
         await sc.setLight('l1', {arc: undefined, dir: undefined});
         out.spotBack = await until(() => lo('l1') && !lo('l1').light.spot) && await until(() => kDis('dir') === true);
-        // 呼吸：右欄勾「呼吸」＝寫預設 {t:2, min:0.6}、sandbox 的燈帶 breath；改週期；藏起來＝0；取消勾拿掉
-        const bChk = () => doc.querySelector('#right [data-k="breath"]');
-        out.breathUi = [!!bChk(), bChk()?.checked, doc.querySelector('#right [data-k="breath.t"]')?.disabled];
-        bChk().click();
-        out.breathOn = await until(async () => (await scDisk()).lights[0].breath) && await until(() => lo('l1')?.light.breath) &&
-            [(await scDisk()).lights[0].breath, lo('l1').light.breath.base, doc.querySelector('#right [data-k="breath.t"]')?.disabled];
-        const bt = doc.querySelector('#right [data-k="breath.t"]');
-        bt.value = '3';
-        bt.dispatchEvent(new Event('change'));
-        out.breathT = await until(() => lo('l1')?.light.breath?.t === 3) && (await scDisk()).lights[0].breath;
+        // 擾動：右欄勾「擾動」＝寫預設、sandbox 的燈帶 flicker；改數字；藏起來＝0（擾動照留）；取消勾拿掉；畫面抖但資料位置不動
+        const fChk = () => doc.querySelector('#right [data-k="flicker"]');
+        const fNum = (k) => doc.querySelector(`#right [data-k="flicker.${k}"]`);
+        out.flickerUi = [!!fChk(), fChk()?.checked, ['hz', 'i', 'r', 'xy'].map(k => fNum(k)?.disabled)];
+        fChk().click();
+        out.flickerOn = await until(async () => (await scDisk()).lights[0].flicker) && await until(() => lo('l1')?.light.flicker) &&
+            [(await scDisk()).lights[0].flicker, ['hz', 'i', 'r', 'xy'].map(k => fNum(k)?.disabled)];
+        const fp0 = sb()._lightPos(lo('l1'));
+        await new Promise(res => setTimeout(res, 200));
+        out.flickerPos = [lo('l1').light.x === fp0.x, lo('l1').light.y === fp0.y, lo('l1').light.radius === lo('l1').data.r];
+        fNum('xy').value = '5';
+        fNum('xy').dispatchEvent(new Event('change'));
+        out.flickerXy = await until(() => lo('l1')?.light.flicker?.xy === 5) && (await scDisk()).lights[0].flicker;
         sc.toggleHide('l1');
-        out.breathHide = await until(() => lo('l1')?.light.breath?.base === 0) && lo('l1').light.intensity;
+        out.flickerHide = await until(() => sb()._hidden.has('l1') && lo('l1')?.light.intensity === 0) && !!lo('l1').light.flicker;
         sc.toggleHide('l1');
-        await until(() => lo('l1')?.light.breath?.base === 1);
-        bChk().click();
-        out.breathOff = await until(async () => !(await scDisk()).lights[0].breath) && await until(() => lo('l1') && !lo('l1').light.breath) && lo('l1').light.intensity;
+        await until(() => lo('l1')?.light.intensity === 1);
+        fChk().click();
+        out.flickerOff = await until(async () => !(await scDisk()).lights[0].flicker) && await until(() => lo('l1') && !lo('l1').light.flicker) && lo('l1').light.intensity;
         // 粒子也能跟擺設
         const sid0 = Object.entries(sc.S.refs.particles).find(([, d]) => d.mode !== 'burst')[0];
         await sc.addEmitter(sid0, 0, 0);
@@ -951,11 +954,12 @@ run('scene-tool', async t => {
     t.check('聚光燈：拖弧端＝光錐（兩倍夾角）、寫檔', r.spotArc);
     t.eq('聚光燈：跟著角色，朝左鏡像 x 跟方向', JSON.stringify(r.spotMirror), JSON.stringify([[1, 5, 30], [-1, -5, 150]]));
     t.check('聚光燈：清掉 arc 回點光源', r.spotBack);
-    t.eq('呼吸：右欄有勾選、沒勾時週期反灰', JSON.stringify(r.breathUi), JSON.stringify([true, false, true]));
-    t.eq('呼吸：勾＝寫預設、sandbox 的燈帶 breath（基準 1）、週期能改', JSON.stringify(r.breathOn), JSON.stringify([{t: 2, min: 0.6}, 1, false]));
-    t.eq('呼吸：改週期寫檔、sandbox 跟著', JSON.stringify(r.breathT), JSON.stringify({t: 3, min: 0.6}));
-    t.eq('呼吸：藏起來＝基準 0、亮度 0', r.breathHide, 0);
-    t.eq('呼吸：取消勾拿掉、回到固定亮度', r.breathOff, 1);
+    t.eq('擾動：右欄有勾選、沒勾時數字反灰', JSON.stringify(r.flickerUi), JSON.stringify([true, false, [true, true, true, true]]));
+    t.eq('擾動：勾＝寫預設、sandbox 的燈帶 flicker、數字能改', JSON.stringify(r.flickerOn), JSON.stringify([{i: 0.3, r: 0.1, xy: 2, hz: 8}, [false, false, false, false]]));
+    t.eq('擾動：畫完資料位置／半徑不動', JSON.stringify(r.flickerPos), JSON.stringify([true, true, true]));
+    t.eq('擾動：改位置寫檔、sandbox 跟著', JSON.stringify(r.flickerXy), JSON.stringify({i: 0.3, r: 0.1, xy: 5, hz: 8}));
+    t.check('擾動：藏起來＝亮度 0、擾動設定留著', r.flickerHide);
+    t.eq('擾動：取消勾拿掉', r.flickerOff, 1);
     t.eq('粒子也能跟擺設', JSON.stringify(r.emProp), JSON.stringify([true, true]));
     t.eq('刪被跟的擺設：光源、粒子改成不跟、位置換成絕對', JSON.stringify(r.detach), JSON.stringify([null, true, true, null, true, true].map(v => v ?? undefined)));
     t.eq('刪被跟的擺設：undo 回來', JSON.stringify(r.detachUndo), JSON.stringify(['p2', 'p2']));
