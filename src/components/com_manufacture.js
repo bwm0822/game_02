@@ -141,6 +141,7 @@ export class COM_Manu extends Com
         this.addRt('cat',{ro:true})
         root.check=this.check.bind(this);
         root.make=this.make.bind(this);
+        root.receive=(content,i)=>{this._storage.items[i]=content; return 0;};
 
         // 3.註冊(event)給其他元件或外部呼叫
         root.on(GM.COOK, this.cook.bind(this));

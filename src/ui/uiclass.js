@@ -446,6 +446,8 @@ export class MatSlot extends Slot
     // get, set 都要 assign 才會正常 work
     get content() {return super.content;}
     set content(value) {super.content=value; this.onset?.();}
+
+    rightButtonDown() {}
 }
 
 export class OutputSlot extends Slot
@@ -465,6 +467,8 @@ export class OutputSlot extends Slot
     set content(value) {this.owner.output=value; this.setSlot(value); this.onset?.();}
 
     empty() {this.content={id:this.content.id,count:0};}
+
+    rightButtonDown() {}
 }
 
 export class AbilitySlot extends Pic
