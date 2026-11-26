@@ -172,6 +172,7 @@
     "Crate": "textures/props/Crate.png",
     "Door ( Opened )": "textures/props/Door ( Opened ).png",
     "Door": "textures/props/Door.png",
+    "dummy": "textures/props/dummy.png",
     "forge": "textures/props/new/forge.png",
     "Rug": "textures/props/Rug.png",
     "Table": "textures/props/Table.png",

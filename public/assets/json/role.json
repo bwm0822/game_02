@@ -1665,7 +1665,7 @@
   "dummy": {
     "lab": "木樁",
     "des": "練習攻擊用",
-    "icon": "rogue",
+    "icon": "dummy",
     "faceR": true,
     "grid": {
       "x": -16,
@@ -1675,11 +1675,11 @@
     },
     "zone": {
       "x": -16,
-      "y": -16,
+      "y": -42,
       "w": 32,
-      "h": 32
+      "h": 58
     },
-    "body": "rogue",
+    "body": "body-dummy",
     "attrs": {
       "hpMax": 500,
       "def": 0,

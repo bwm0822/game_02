@@ -124,6 +124,13 @@
     "y": 16,
     "name": "習近平"
   },
+  "body-dummy": {
+    "kind": "body",
+    "sprite": "dummy",
+    "scale": 0.25,
+    "y": 16,
+    "name": "練習木樁"
+  },
   "hand-man": {
     "kind": "hand",
     "sprite": "hand-man",

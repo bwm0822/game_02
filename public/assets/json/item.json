@@ -1871,7 +1871,7 @@
   },
   "dummy": {
     "cat": "CAT_DEVICE",
-    "icon": "rogue",
+    "icon": "dummy",
     "gold": 50,
     "device": {
       "class": "dummy"
